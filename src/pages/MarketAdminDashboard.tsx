@@ -961,7 +961,6 @@ const MarketAdminDashboard = () => {
                     <p className="text-sm font-medium text-muted-foreground mb-1">Total Quotes</p>
                     <p className="text-3xl font-bold text-foreground">{quotesData?.totalQuotes ?? 0}</p>
                   </div>
-                  )}
                   <div className="p-3 bg-primary/10 rounded-lg">
                     <FileText className="w-6 h-6 text-primary" />
                   </div>

@@ -277,8 +277,8 @@ const EditBroker = () => {
       setLoadError(friendly);
       toast({ title: 'Error', description: friendly });
     } finally {
-      setShowStatusDialog(false);
-      setPendingStatusChange(null);
+    setShowStatusDialog(false);
+    setPendingStatusChange(null);
       setStatusChanging(false);
     }
   };
@@ -296,7 +296,7 @@ const EditBroker = () => {
       });
       return;
     }
-    
+
     setIsLoading(true);
     
     try {
@@ -338,7 +338,7 @@ const EditBroker = () => {
       };
 
       await updateBroker(id, payload);
-
+      
       toast({
         title: "Broker Updated Successfully",
         description: `${values.name} details have been updated.`,
