@@ -1,0 +1,1107 @@
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Building, MapPin, Calendar, DollarSign, Shield, FileText, Plus, Trash2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LocationSearch } from "./LocationSearch";
+import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesByProjectType } from "@/lib/masters-data";
+import { getActiveCountries, getRegionsByCountry, getZonesByRegion } from "@/lib/location-data";
+export const ProposalForm = () => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const navigate = useNavigate();
+  const location = useLocation();
+  const {
+    navigateBack
+  } = useNavigationHistory();
+  const activeProjectTypes = getActiveProjectTypes();
+  const activeConstructionTypes = getActiveConstructionTypes();
+  const activeCountries = getActiveCountries();
+
+  // Default form data
+  const getDefaultFormData = () => ({
+    projectName: "Al Habtoor Tower Development",
+    projectType: "commercial",
+    subProjectType: "office-buildings",
+    constructionType: "concrete",
+    country: "uae",
+    region: "dubai",
+    zone: "business-bay",
+    projectAddress: "Sheikh Zayed Road, Business Bay, Dubai, UAE",
+    coordinates: "25.2048, 55.2708",
+    projectValue: "9175000",
+    startDate: new Date().toISOString().split('T')[0],
+    completionDate: "2024-09-15",
+    constructionPeriod: "18",
+    maintenancePeriod: "24",
+    thirdPartyLimit: "7340000",
+    insuredName: "Al Habtoor Construction LLC",
+    roleOfInsured: "contractor",
+    mainContractor: "Al Habtoor Construction LLC",
+    principalOwner: "Dubai Development Authority",
+    contractType: "turnkey",
+    contractNumber: "DDA-2024-CT-001",
+    experienceYears: "15",
+    consultants: [{
+      id: 1,
+      name: "Atkins Middle East",
+      role: "Structural Engineer",
+      licenseNumber: "ENG-2024-001"
+    }],
+    subContractors: [{
+      id: 1,
+      name: "Emirates Steel",
+      contractType: "supply",
+      contractNumber: "ES-2024-001"
+    }, {
+      id: 2,
+      name: "Dubai Glass",
+      contractType: "install",
+      contractNumber: "DG-2024-002"
+    }],
+    nearWaterBody: "no",
+    waterBodyDistance: "",
+    floodProneZone: "no",
+    withinCityCenter: "",
+    cityAreaType: "",
+    soilType: "sandy",
+    existingStructure: "no",
+    existingStructureDetails: "",
+    blastingExcavation: "no",
+    siteSecurityArrangements: "24-7-guarded",
+    sumInsuredMaterial: "7340000",
+    sumInsuredPlant: "1835000",
+    sumInsuredTemporary: "0",
+    tplLimit: "3670000",
+    crossLiabilityCover: "yes",
+    principalExistingProperty: "0",
+    removalDebrisLimit: "458750",
+    // Auto-calculated as 5% of project value
+    surroundingPropertyLimit: "550500",
+    lossesInLastFiveYears: "yes",
+    lossesDetails: "Minor equipment damage in 2022 - AED 50,000 claim settled",
+    claimsHistory: [{
+      year: 2025,
+      claimCount: 0,
+      amount: "",
+      description: ""
+    }, {
+      year: 2024,
+      claimCount: 1,
+      amount: "50000",
+      description: "Minor equipment damage"
+    }, {
+      year: 2023,
+      claimCount: 0,
+      amount: "",
+      description: ""
+    }, {
+      year: 2022,
+      claimCount: 0,
+      amount: "",
+      description: ""
+    }, {
+      year: 2021,
+      claimCount: 0,
+      amount: "",
+      description: ""
+    }],
+    otherMaterials: ""
+  });
+
+  const [formData, setFormData] = useState(() => {
+    // Check if we're editing an existing quote
+    const editingQuote = location.state?.editingQuote;
+    if (editingQuote) {
+      // Map quote data to form structure
+      return {
+        projectName: editingQuote.projectName || "",
+        projectType: editingQuote.projectType?.toLowerCase() || "",
+        subProjectType: editingQuote.subProjectType || "",
+        constructionType: editingQuote.constructionType?.toLowerCase() || "",
+        country: "uae", // Default to UAE
+        region: "dubai", // Default based on project location
+        zone: "business-bay", // Default zone
+        projectAddress: editingQuote.projectAddress || "",
+        coordinates: editingQuote.coordinates || "",
+        projectValue: editingQuote.projectValue?.replace(/[^0-9]/g, '') || "",
+        startDate: editingQuote.startDate || new Date().toISOString().split('T')[0],
+        completionDate: editingQuote.completionDate || "",
+        constructionPeriod: editingQuote.constructionPeriod || "18",
+        maintenancePeriod: editingQuote.maintenancePeriod || "24",
+        thirdPartyLimit: editingQuote.thirdPartyLimit?.replace(/[^0-9]/g, '') || "",
+        insuredName: editingQuote.insuredName || "",
+        roleOfInsured: "contractor",
+        mainContractor: editingQuote.mainContractor || editingQuote.insuredName || "",
+        principalOwner: editingQuote.principalOwner || "",
+        contractType: editingQuote.contractType || "turnkey",
+        contractNumber: editingQuote.contractNumber || "",
+        experienceYears: editingQuote.experienceYears || "",
+        consultants: editingQuote.consultants || [{
+          id: 1,
+          name: "",
+          role: "",
+          licenseNumber: ""
+        }],
+        subContractors: editingQuote.subContractors || [{
+          id: 1,
+          name: "",
+          contractType: "supply",
+          contractNumber: ""
+        }],
+        nearWaterBody: editingQuote.nearWaterBody || "no",
+        waterBodyDistance: editingQuote.waterBodyDistance || "",
+        floodProneZone: editingQuote.floodProneZone || "no",
+        withinCityCenter: editingQuote.withinCityCenter || "",
+        cityAreaType: editingQuote.cityAreaType || "",
+        soilType: editingQuote.soilType || "sandy",
+        existingStructure: editingQuote.existingStructure || "no",
+        existingStructureDetails: editingQuote.existingStructureDetails || "",
+        blastingExcavation: editingQuote.blastingExcavation || "no",
+        siteSecurityArrangements: editingQuote.siteSecurityArrangements || "24-7-guarded",
+        sumInsuredMaterial: editingQuote.sumInsuredMaterial?.replace(/[^0-9]/g, '') || "",
+        sumInsuredPlant: editingQuote.sumInsuredPlant?.replace(/[^0-9]/g, '') || "",
+        sumInsuredTemporary: editingQuote.sumInsuredTemporary?.replace(/[^0-9]/g, '') || "0",
+        tplLimit: editingQuote.tplLimit?.replace(/[^0-9]/g, '') || "",
+        crossLiabilityCover: editingQuote.crossLiabilityCover || "yes",
+        principalExistingProperty: editingQuote.principalExistingProperty?.replace(/[^0-9]/g, '') || "0",
+        removalDebrisLimit: editingQuote.removalDebrisLimit?.replace(/[^0-9]/g, '') || "",
+        surroundingPropertyLimit: editingQuote.surroundingPropertyLimit?.replace(/[^0-9]/g, '') || "",
+        lossesInLastFiveYears: editingQuote.lossesInLastFiveYears || "no",
+        lossesDetails: editingQuote.lossesDetails || "",
+        claimsHistory: editingQuote.claimsHistory || [{
+          year: 2025,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }, {
+          year: 2024,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }, {
+          year: 2023,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }, {
+          year: 2022,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }, {
+          year: 2021,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }],
+        otherMaterials: editingQuote.otherMaterials || ""
+      };
+    }
+    return getDefaultFormData();
+  });
+
+  // Rule engine for default calculations
+  const calculateDefaultValues = (projectValue: string) => {
+    const pv = parseFloat(projectValue) || 0;
+    return {
+      debrisRemovalLimit: Math.round(pv * 0.05).toString(),
+      // 5% of project value
+      professionalFeesLimit: Math.round(pv * 0.03).toString() // 3% of project value
+      // Add more default calculations as needed
+    };
+  };
+
+  // Validation logic
+  const validateCoverageRequirements = () => {
+    const errors: Record<string, string> = {};
+    const projectValue = parseFloat(formData.projectValue) || 0;
+    const sumInsuredTotal = parseInt(formData.sumInsuredMaterial || "0") + parseInt(formData.sumInsuredPlant || "0") + parseInt(formData.sumInsuredTemporary || "0") + parseInt(formData.otherMaterials || "0") + parseInt(formData.principalExistingProperty || "0");
+    if (sumInsuredTotal === 0) {
+      errors.sumInsured = "Sum Insured for Material Damage cannot be 0";
+    } else if (sumInsuredTotal < projectValue) {
+      errors.sumInsured = `Sum Insured (${sumInsuredTotal.toLocaleString()}) must not be less than Project Value (${projectValue.toLocaleString()})`;
+    }
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Update debris removal limit when project value changes
+  const handleProjectValueChange = (value: string) => {
+    const defaults = calculateDefaultValues(value);
+    setFormData({
+      ...formData,
+      projectValue: value,
+      removalDebrisLimit: defaults.debrisRemovalLimit
+    });
+  };
+  const handleSubmit = () => {
+    // Validate coverage requirements before submission
+    if (currentStep === 4) {
+      // Coverage tab
+      if (!validateCoverageRequirements()) {
+        return;
+      }
+    }
+    // In a real app, you would submit the form data here
+    navigate('/customer/documents');
+  };
+  const addSubcontractor = () => {
+    const newId = Math.max(...formData.subContractors.map(sc => sc.id), 0) + 1;
+    setFormData({
+      ...formData,
+      subContractors: [...formData.subContractors, {
+        id: newId,
+        name: "",
+        contractType: "supply",
+        contractNumber: ""
+      }]
+    });
+  };
+  const removeSubcontractor = (id: number) => {
+    setFormData({
+      ...formData,
+      subContractors: formData.subContractors.filter(sc => sc.id !== id)
+    });
+  };
+  const addConsultant = () => {
+    const newId = Math.max(...formData.consultants.map(c => c.id), 0) + 1;
+    setFormData({
+      ...formData,
+      consultants: [...formData.consultants, {
+        id: newId,
+        name: "",
+        role: "",
+        licenseNumber: ""
+      }]
+    });
+  };
+  const removeConsultant = (id: number) => {
+    setFormData({
+      ...formData,
+      consultants: formData.consultants.filter(c => c.id !== id)
+    });
+  };
+  const updateClaimsHistory = (year: number, field: string, value: string | number) => {
+    setFormData({
+      ...formData,
+      claimsHistory: formData.claimsHistory.map(claim => claim.year === year ? {
+        ...claim,
+        [field]: value
+      } : claim)
+    });
+  };
+  const updateSubcontractor = (id: number, field: string, value: string) => {
+    setFormData({
+      ...formData,
+      subContractors: formData.subContractors.map(sc => sc.id === id ? {
+        ...sc,
+        [field]: value
+      } : sc)
+    });
+  };
+  const updateConsultant = (id: number, field: string, value: string) => {
+    setFormData({
+      ...formData,
+      consultants: formData.consultants.map(c => c.id === id ? {
+        ...c,
+        [field]: value
+      } : c)
+    });
+  };
+  const steps = [{
+    id: "project",
+    label: "Project Details",
+    icon: Building
+  }, {
+    id: "insured",
+    label: "Insured Details",
+    icon: MapPin
+  }, {
+    id: "contract",
+    label: "Contract Structure",
+    icon: Shield
+  }, {
+    id: "site",
+    label: "Site Risks",
+    icon: FileText
+  }, {
+    id: "coverage",
+    label: "Cover Requirements",
+    icon: Shield
+  }];
+  return <section className="pt-6 pb-20 bg-background min-h-screen">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <Card className="shadow-large border-border w-full overflow-hidden">
+          <CardHeader className="px-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+              <CardTitle className="text-xl">
+                {location.state?.editingQuote ? 'Edit Quote' : 'Create New Quote'}
+              </CardTitle>
+              <div className="text-sm text-muted-foreground">
+                Step {currentStep + 1} of {steps.length}
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-muted rounded-full h-2">
+              <div className="bg-gradient-primary h-2 rounded-full transition-smooth" style={{
+              width: `${(currentStep + 1) / steps.length * 100}%`
+            }} />
+            </div>
+          </CardHeader>
+
+          <CardContent className="px-4 sm:px-6">
+            <Tabs value={steps[currentStep].id} className="w-full">
+              {/* Step Navigation */}
+              <div className="mb-8">
+                <div className="w-full">
+                  {/* Mobile: Horizontal scroll */}
+                  <div className="md:hidden">
+                    <div className="overflow-x-auto scrollbar-hide pb-2">
+                      <div className="flex items-center gap-2 bg-muted p-2 rounded-lg w-max">
+                        {steps.map((step, index) => <button key={step.id} onClick={() => setCurrentStep(index)} disabled={index > currentStep} className={`flex items-center gap-2 p-3 rounded-md text-xs font-medium transition-smooth flex-shrink-0 whitespace-nowrap ${index === currentStep ? 'bg-primary text-primary-foreground shadow-glow' : index < currentStep ? 'bg-accent text-accent-foreground hover:bg-accent/80' : 'bg-card text-muted-foreground cursor-not-allowed opacity-60'} ${index <= currentStep ? 'hover:scale-105' : ''}`}>
+                            <span className="text-xs font-bold">{index + 1}</span>
+                            <step.icon className="w-3 h-3 flex-shrink-0" />
+                            <span className="text-[10px] leading-tight">
+                              {step.label}
+                            </span>
+                          </button>)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Desktop: Horizontal scroll */}
+                  <div className="hidden md:block">
+                    <div className="bg-muted p-4 rounded-lg">
+                       <div className="overflow-x-auto scrollbar-hide">
+                        <div className="flex items-center gap-3 w-max mx-auto">
+                          {steps.map((step, index) => <button key={step.id} onClick={() => setCurrentStep(index)} disabled={index > currentStep} className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-smooth whitespace-nowrap ${index === currentStep ? 'bg-primary text-primary-foreground shadow-glow' : index < currentStep ? 'bg-success text-success-foreground' : 'bg-card text-muted-foreground cursor-not-allowed opacity-60'} ${index <= currentStep ? 'hover:scale-105' : ''}`}>
+                              <span className="text-lg font-bold">{index + 1}</span>
+                              <step.icon className="w-5 h-5 flex-shrink-0" />
+                              <span className="text-sm">
+                                {step.label}
+                              </span>
+                            </button>)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <TabsContent value="project" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="projectName">Project Name *</Label>
+                    <Input id="projectName" value={formData.projectName} onChange={e => setFormData({
+                    ...formData,
+                    projectName: e.target.value
+                  })} placeholder="Full name of the construction project" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="projectType">Project Type *</Label>
+                     <Select value={formData.projectType} onValueChange={value => setFormData({
+                    ...formData,
+                    projectType: value,
+                    subProjectType: ""
+                  })}>
+                       <SelectTrigger>
+                         <SelectValue placeholder="Select project type" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {activeProjectTypes.map(type => <SelectItem key={type.value} value={type.value}>
+                             {type.label}
+                           </SelectItem>)}
+                       </SelectContent>
+                     </Select>
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="subProjectType">Sub Project Type *</Label>
+                     <Select value={formData.subProjectType} onValueChange={value => setFormData({
+                    ...formData,
+                    subProjectType: value
+                  })} disabled={!formData.projectType}>
+                       <SelectTrigger>
+                         <SelectValue placeholder="Select sub project type" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {formData.projectType && getSubProjectTypesByProjectType(activeProjectTypes.find(pt => pt.value === formData.projectType)?.id || 0).map(subType => <SelectItem key={subType.value} value={subType.value}>
+                             {subType.label}
+                           </SelectItem>)}
+                       </SelectContent>
+                     </Select>
+                   </div>
+                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="constructionType">Construction Type *</Label>
+                    <Select value={formData.constructionType} onValueChange={value => setFormData({
+                    ...formData,
+                    constructionType: value
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select construction type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {activeConstructionTypes.map(type => <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="projectAddress">Project Address *</Label>
+                    <Textarea id="projectAddress" value={formData.projectAddress} onChange={e => setFormData({
+                    ...formData,
+                    projectAddress: e.target.value
+                  })} placeholder="Location of the project site" rows={2} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country *</Label>
+                    <Select value={formData.country} onValueChange={value => setFormData({
+                    ...formData,
+                    country: value,
+                    region: "",
+                    zone: ""
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {activeCountries.map(country => <SelectItem key={country.value} value={country.value}>
+                            {country.label}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="region">Region *</Label>
+                    <Select value={formData.region} onValueChange={value => setFormData({
+                    ...formData,
+                    region: value,
+                    zone: ""
+                  })} disabled={!formData.country}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select region" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {formData.country && getRegionsByCountry(activeCountries.find(c => c.value === formData.country)?.id || 0).map(region => <SelectItem key={region.value} value={region.value}>
+                            {region.label}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="zone">Zone *</Label>
+                    <Select value={formData.zone} onValueChange={value => setFormData({
+                    ...formData,
+                    zone: value
+                  })} disabled={!formData.region}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select zone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {formData.region && getZonesByRegion(getRegionsByCountry(activeCountries.find(c => c.value === formData.country)?.id || 0).find(r => r.value === formData.region)?.id || 0).map(zone => <SelectItem key={zone.value} value={zone.value}>
+                            {zone.label}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4 md:gap-6">
+                  <LocationSearch value={formData.coordinates} onChange={coordinates => setFormData({
+                  ...formData,
+                  coordinates
+                })} projectAddress={formData.projectAddress} onAddressChange={address => setFormData({
+                  ...formData,
+                  projectAddress: address
+                })} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Start Date *</Label>
+                    <Input id="startDate" type="date" value={formData.startDate} onChange={e => setFormData({
+                    ...formData,
+                    startDate: e.target.value
+                  })} />
+                    <p className="text-xs text-muted-foreground">Planned project commencement date</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="completionDate">Completion Date *</Label>
+                    <Input id="completionDate" type="date" value={formData.completionDate} onChange={e => setFormData({
+                    ...formData,
+                    completionDate: e.target.value
+                  })} />
+                    <p className="text-xs text-muted-foreground">Expected project end date</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="constructionPeriod">Construction Period (Months)</Label>
+                    <Input id="constructionPeriod" value={formData.constructionPeriod} placeholder="Auto-calculated" disabled />
+                    <p className="text-xs text-muted-foreground">Derived from start and end date</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maintenancePeriod">Maintenance Period (Months) *</Label>
+                    <Input id="maintenancePeriod" value={formData.maintenancePeriod} onChange={e => setFormData({
+                    ...formData,
+                    maintenancePeriod: e.target.value
+                  })} placeholder="12" />
+                    <p className="text-xs text-muted-foreground">Typically 12-24 months</p>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="insured" className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="insuredName">Insured Name *</Label>
+                    <Input id="insuredName" value={formData.insuredName} onChange={e => setFormData({
+                    ...formData,
+                    insuredName: e.target.value
+                  })} placeholder="Main contractor or developer" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="roleOfInsured">Role of Insured *</Label>
+                    <Select value={formData.roleOfInsured} onValueChange={value => setFormData({
+                    ...formData,
+                    roleOfInsured: value
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="principal">Principal</SelectItem>
+                        <SelectItem value="contractor">Contractor</SelectItem>
+                        <SelectItem value="subcontractor">Subcontractor</SelectItem>
+                        <SelectItem value="jv">JV</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+
+
+                {/* Claims History Section */}
+                <div className="space-y-4 border-t border-border pt-6">
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-medium">Claims History</h3>
+                    <p className="text-sm text-muted-foreground">Information about past insurance claims</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="lossesInLastFiveYears">Any insurance losses in last 5 years? *</Label>
+                      <Select value={formData.lossesInLastFiveYears} onValueChange={value => setFormData({
+                      ...formData,
+                      lossesInLastFiveYears: value
+                    })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Select if you have had any insurance claims in the past 5 years</p>
+                    </div>
+                    
+                    {formData.lossesInLastFiveYears === "yes" && <div className="space-y-4">
+                        <div className="bg-muted/30 p-4 rounded-lg">
+                          <h4 className="font-medium text-foreground mb-4">Claims History Matrix (2021-2025)</h4>
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-20">Year</TableHead>
+                                  <TableHead className="w-32">Count of Claims</TableHead>
+                                  <TableHead className="w-40">Amount of Claims (AED)</TableHead>
+                                  <TableHead>Description</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {formData.claimsHistory.map(claim => <TableRow key={claim.year}>
+                                    <TableCell className="font-medium">{claim.year}</TableCell>
+                                    <TableCell>
+                                      <Input type="number" min="0" max="99" value={claim.claimCount} onChange={e => updateClaimsHistory(claim.year, 'claimCount', parseInt(e.target.value) || 0)} className="w-20" placeholder="0" />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input type="number" min="0" value={claim.amount} onChange={e => updateClaimsHistory(claim.year, 'amount', e.target.value)} className="w-36" placeholder="0" disabled={claim.claimCount === 0} required={claim.claimCount > 0} />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input value={claim.description} onChange={e => updateClaimsHistory(claim.year, 'description', e.target.value)} placeholder="Description of claim" disabled={claim.claimCount === 0} required={claim.claimCount > 0} />
+                                    </TableCell>
+                                  </TableRow>)}
+                              </TableBody>
+                            </Table>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            * Amount and description are mandatory when claim count is greater than 0
+                          </p>
+                        </div>
+                      </div>}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="contract" className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="mainContractor">Main Contractor *</Label>
+                    <Input id="mainContractor" value={formData.mainContractor} onChange={e => setFormData({
+                    ...formData,
+                    mainContractor: e.target.value
+                  })} placeholder="Name of the executing contractor" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="principalOwner">Principal/Owner *</Label>
+                    <Input id="principalOwner" value={formData.principalOwner} onChange={e => setFormData({
+                    ...formData,
+                    principalOwner: e.target.value
+                  })} placeholder="Name of project owner" />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="contractType">Contract Type *</Label>
+                    <Select value={formData.contractType} onValueChange={value => setFormData({
+                    ...formData,
+                    contractType: value
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select contract type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="turnkey">Turnkey</SelectItem>
+                        <SelectItem value="epc">EPC</SelectItem>
+                        <SelectItem value="design-build">Design & Build</SelectItem>
+                        <SelectItem value="supply">Supply</SelectItem>
+                        <SelectItem value="install">Install</SelectItem>
+                        <SelectItem value="others">Others</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contractNumber">Contract Number</Label>
+                    <Input id="contractNumber" value={formData.contractNumber} onChange={e => setFormData({
+                    ...formData,
+                    contractNumber: e.target.value
+                  })} placeholder="Reference if any" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="experienceYears">Experience in years *</Label>
+                    <Input 
+                      id="experienceYears" 
+                      type="number" 
+                      min="0" 
+                      max="100" 
+                      value={formData.experienceYears} 
+                      onChange={e => setFormData({
+                        ...formData,
+                        experienceYears: e.target.value
+                      })} 
+                      placeholder="Years of experience" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-medium">Sub-Contractors</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={addSubcontractor}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Sub-Contractor
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {formData.subContractors.map((subcontractor, index) => <div key={subcontractor.id} className="grid md:grid-cols-4 gap-4 p-4 border border-border rounded-lg bg-muted/30">
+                        <div className="space-y-2">
+                          <Label htmlFor={`subcontractor-name-${subcontractor.id}`}>Name *</Label>
+                          <Input id={`subcontractor-name-${subcontractor.id}`} value={subcontractor.name} onChange={e => updateSubcontractor(subcontractor.id, 'name', e.target.value)} placeholder="Subcontractor name" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`subcontractor-type-${subcontractor.id}`}>Contract Type *</Label>
+                          <Select value={subcontractor.contractType} onValueChange={value => updateSubcontractor(subcontractor.id, 'contractType', value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="supply">Supply</SelectItem>
+                              <SelectItem value="install">Install</SelectItem>
+                              <SelectItem value="supply-install">Supply & Install</SelectItem>
+                              <SelectItem value="design">Design</SelectItem>
+                              <SelectItem value="others">Others</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`subcontractor-contract-${subcontractor.id}`}>Contract Number</Label>
+                          <Input id={`subcontractor-contract-${subcontractor.id}`} value={subcontractor.contractNumber} onChange={e => updateSubcontractor(subcontractor.id, 'contractNumber', e.target.value)} placeholder="Reference number" />
+                        </div>
+                        <div className="flex items-end">
+                          <Button type="button" variant="destructive" size="sm" onClick={() => removeSubcontractor(subcontractor.id)} disabled={formData.subContractors.length === 1}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>)}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-medium">Engineer / Consultant Details</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={addConsultant}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Consultant
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {formData.consultants.map((consultant, index) => <div key={consultant.id} className="grid md:grid-cols-4 gap-4 p-4 border border-border rounded-lg bg-muted/30">
+                        <div className="space-y-2">
+                          <Label htmlFor={`consultant-name-${consultant.id}`}>Name *</Label>
+                          <Input id={`consultant-name-${consultant.id}`} value={consultant.name} onChange={e => updateConsultant(consultant.id, 'name', e.target.value)} placeholder="Consultant name" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`consultant-role-${consultant.id}`}>Role / Specialization</Label>
+                          <Select value={consultant.role} onValueChange={value => updateConsultant(consultant.id, 'role', value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Structural Engineer">Structural Engineer</SelectItem>
+                              <SelectItem value="MEP Engineer">MEP Engineer</SelectItem>
+                              <SelectItem value="Civil Engineer">Civil Engineer</SelectItem>
+                              <SelectItem value="Architect">Architect</SelectItem>
+                              <SelectItem value="Project Manager">Project Manager</SelectItem>
+                              <SelectItem value="Geotechnical Engineer">Geotechnical Engineer</SelectItem>
+                              <SelectItem value="Environmental Consultant">Environmental Consultant</SelectItem>
+                              <SelectItem value="Safety Consultant">Safety Consultant</SelectItem>
+                              <SelectItem value="Others">Others</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`consultant-license-${consultant.id}`}>License Number</Label>
+                          <Input id={`consultant-license-${consultant.id}`} value={consultant.licenseNumber} onChange={e => updateConsultant(consultant.id, 'licenseNumber', e.target.value)} placeholder="Professional license" />
+                        </div>
+                        <div className="flex items-end">
+                          <Button type="button" variant="destructive" size="sm" onClick={() => removeConsultant(consultant.id)} disabled={formData.consultants.length === 1}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>)}
+                  </div>
+                </div>
+
+              </TabsContent>
+
+              <TabsContent value="site" className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="nearWaterBody">Is site near water body? (Within 100 meters)*</Label>
+                    <Select value={formData.nearWaterBody} onValueChange={value => setFormData({
+                    ...formData,
+                    nearWaterBody: value
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {formData.nearWaterBody === "yes" && <div className="space-y-2 mt-3">
+                        <Label htmlFor="waterBodyDistance">Distance from water body (meters)</Label>
+                        <Input id="waterBodyDistance" value={formData.waterBodyDistance} onChange={e => setFormData({
+                      ...formData,
+                      waterBodyDistance: e.target.value
+                    })} placeholder="Enter distance in meters" />
+                        {formData.waterBodyDistance && parseInt(formData.waterBodyDistance) < 100 && <p className="text-xs text-destructive font-medium">⚠️ High Risk: Site is less than 100 meters from water body</p>}
+                      </div>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="floodProneZone">Is site in flood-prone zone? *</Label>
+                    <Select value={formData.floodProneZone} onValueChange={value => setFormData({
+                    ...formData,
+                    floodProneZone: value
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="external-api">Check via External API</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="withinCityCenter">Is site within city center? *</Label>
+                    <Select value={formData.withinCityCenter} onValueChange={value => setFormData({
+                    ...formData,
+                    withinCityCenter: value
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {formData.withinCityCenter === "yes" && <div className="space-y-2 mt-3">
+                        <Label htmlFor="cityAreaType">Area Type</Label>
+                        <Select value={formData.cityAreaType} onValueChange={value => setFormData({
+                      ...formData,
+                      cityAreaType: value
+                    })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select area type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="urban">Urban</SelectItem>
+                            <SelectItem value="congested">Congested Area</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="soilType">Soil Type *</Label>
+                    <Select value={formData.soilType} onValueChange={value => setFormData({
+                    ...formData,
+                    soilType: value
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select soil type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rock">Rock</SelectItem>
+                        <SelectItem value="clay">Clay</SelectItem>
+                        <SelectItem value="sandy">Sandy</SelectItem>
+                        <SelectItem value="mixed">Mixed</SelectItem>
+                        <SelectItem value="unknown">Unknown</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="existingStructure">Existing Structure on Site? *</Label>
+                    <Select value={formData.existingStructure} onValueChange={value => setFormData({
+                    ...formData,
+                    existingStructure: value
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {formData.existingStructure === "yes" && <div className="space-y-2 mt-3">
+                        <Label htmlFor="existingStructureDetails">Describe existing structure</Label>
+                        <Textarea id="existingStructureDetails" value={formData.existingStructureDetails} onChange={e => setFormData({
+                      ...formData,
+                      existingStructureDetails: e.target.value
+                    })} placeholder="Provide details about the existing structure" rows={3} />
+                      </div>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="blastingExcavation">Blasting/Deep Excavation? *</Label>
+                    <Select value={formData.blastingExcavation} onValueChange={value => setFormData({
+                    ...formData,
+                    blastingExcavation: value
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="siteSecurityArrangements">Site Security Arrangements *</Label>
+                    <Select value={formData.siteSecurityArrangements} onValueChange={value => setFormData({
+                    ...formData,
+                    siteSecurityArrangements: value
+                  })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select security level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="24-7-guarded">24/7 Guarded</SelectItem>
+                        <SelectItem value="cctv">CCTV</SelectItem>
+                        <SelectItem value="fenced">Fenced</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="coverage" className="space-y-6">
+                <div className="space-y-8">
+                  {/* Section 1: Contract Value (Material Damage) */}
+                  <Card className="border-border">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Building className="w-5 h-5" />
+                        Section 1: Contract Value (Material Damage)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid md:grid-cols-1 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="projectValue">Project Value (AED/USD) *</Label>
+                          <Input id="projectValue" type="number" value={formData.projectValue} onChange={e => handleProjectValueChange(e.target.value)} placeholder="Total contract value" />
+                          <p className="text-xs text-muted-foreground">Total estimated project cost</p>
+                        </div>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="contractWorks">Contract Works *</Label>
+                          <Input id="contractWorks" type="number" value={formData.sumInsuredMaterial} onChange={e => setFormData({
+                          ...formData,
+                          sumInsuredMaterial: e.target.value
+                        })} placeholder="Enter amount (AED)" />
+                          <p className="text-xs text-muted-foreground">Main construction value</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="plantEquipment">Plant & Equipment (CPM)</Label>
+                          <Input id="plantEquipment" type="number" value={formData.sumInsuredPlant} onChange={e => setFormData({
+                          ...formData,
+                          sumInsuredPlant: e.target.value
+                        })} placeholder="Enter amount (AED)" />
+                          <p className="text-xs text-muted-foreground">Construction Plant & Machinery</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="temporaryWorks">Temporary Works</Label>
+                          <Input id="temporaryWorks" type="number" value={formData.sumInsuredTemporary} onChange={e => setFormData({
+                          ...formData,
+                          sumInsuredTemporary: e.target.value
+                        })} placeholder="Enter amount (AED)" />
+                          <p className="text-xs text-muted-foreground">Temporary structures and formwork</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="otherMaterials">Other Materials</Label>
+                          <Input id="otherMaterials" type="number" value={formData.otherMaterials || ""} onChange={e => setFormData({
+                          ...formData,
+                          otherMaterials: e.target.value
+                        })} placeholder="Enter amount (AED)" />
+                          <p className="text-xs text-muted-foreground">Additional materials coverage</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid md:grid-cols-1 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="principalExistingProperty">Principal's Existing/Surrounding Property</Label>
+                          <Input id="principalExistingProperty" type="number" value={formData.principalExistingProperty} onChange={e => setFormData({
+                          ...formData,
+                          principalExistingProperty: e.target.value
+                        })} placeholder="Enter amount (AED)" />
+                          <p className="text-xs text-muted-foreground">Value of adjacent structures owned by principal</p>
+                        </div>
+                      </div>
+                      
+                      <div className={`bg-muted p-4 rounded-lg ${validationErrors.sumInsured ? 'border-2 border-destructive' : ''}`}>
+                        <div className="flex items-center justify-between">
+                          <Label className="font-semibold">Sum Insured - Contract Value</Label>
+                          <span className={`text-lg font-bold ${validationErrors.sumInsured ? 'text-destructive' : 'text-primary'}`}>
+                            AED {(parseInt(formData.sumInsuredMaterial || "0") + parseInt(formData.sumInsuredPlant || "0") + parseInt(formData.sumInsuredTemporary || "0") + parseInt(formData.otherMaterials || "0") + parseInt(formData.principalExistingProperty || "0")).toLocaleString()}
+                          </span>
+                        </div>
+                        {validationErrors.sumInsured && <p className="text-xs text-destructive mt-2">{validationErrors.sumInsured}</p>}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Section 2: Third Party Liability */}
+                  <Card className="border-border">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Shield className="w-5 h-5" />
+                        Section 2: Liability Covers
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid md:grid-cols-1 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="crossLiabilityCover">Cross Liability Cover</Label>
+                        <Select value={formData.crossLiabilityCover} onValueChange={value => setFormData({
+                        ...formData,
+                        crossLiabilityCover: value
+                      })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Include cross liability" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Coverage between co-insureds</p>
+                      </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                </div>
+              </TabsContent>
+
+            </Tabs>
+
+            <div className="flex justify-between mt-8">
+              {currentStep > 0 && <Button variant="outline" onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}>
+                  Back
+                </Button>}
+              
+              <div className="ml-auto">
+                {currentStep === steps.length - 1 ? <Button variant="hero" size="lg" onClick={handleSubmit}>
+                    Proceed
+                  </Button> : <Button onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}>
+                    Next
+                  </Button>}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </section>;
+};
