@@ -1180,7 +1180,7 @@ const MarketAdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
-                    <TableSkeleton rows={6} cols={9} />
+                    <TableSkeleton rowCount={6} colCount={9} />
                   ) : loadError ? (
                     <div className="rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
                       {loadError}
