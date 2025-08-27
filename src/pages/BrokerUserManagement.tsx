@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,90 +7,78 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Eye, Edit, Trash2, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { TableSkeleton } from "@/components/loaders/TableSkeleton";
+import { getUsersByAdmin, type AdminUserListItem } from "@/lib/api/users";
 
-// Mock user data with enhanced fields
-const mockUsers = [
-  {
-    id: "U001",
-    name: "John Smith",
-    email: "john.smith@broker.com",
-    role: "Senior Broker",
-    isAdmin: false,
-    status: "Active",
-    lastLogin: "2024-01-15 14:30",
-    createdDate: "2023-06-15",
-    activeSince: "2023-06-15",
-    inactiveSince: null
-  },
-  {
-    id: "U002",
-    name: "Sarah Johnson",
-    email: "sarah.johnson@broker.com",
-    role: "Junior Broker",
-    isAdmin: false,
-    status: "Active",
-    lastLogin: "2024-01-14 16:45",
-    createdDate: "2023-08-22",
-    activeSince: "2023-08-22",
-    inactiveSince: null
-  },
-  {
-    id: "U003",
-    name: "Mike Wilson",
-    email: "mike.wilson@broker.com",
-    role: "Broker Manager",
-    isAdmin: true,
-    status: "Inactive",
-    lastLogin: "2024-01-10 09:15",
-    createdDate: "2023-03-10",
-    activeSince: null,
-    inactiveSince: "2024-01-08"
-  },
-  {
-    id: "U004",
-    name: "Emily Davis",
-    email: "emily.davis@broker.com",
-    role: "Senior Broker",
-    isAdmin: false,
-    status: "Active",
-    lastLogin: "2024-01-15 11:20",
-    createdDate: "2023-09-05",
-    activeSince: "2023-09-05",
-    inactiveSince: null
-  },
-  {
-    id: "U005",
-    name: "Robert Brown",
-    email: "robert.brown@broker.com",
-    role: "Junior Broker",
-    isAdmin: false,
-    status: "Pending",
-    lastLogin: "Never",
-    createdDate: "2024-01-12",
-    activeSince: null,
-    inactiveSince: null
-  }
-];
+type UiUser = {
+  id: number;
+  name?: string;
+  email: string;
+  role: string;
+  userType: "admin" | "user" | string;
+  status: string;
+  createdAt: string;
+};
 
 export default function BrokerUserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<UiUser[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      setLoading(true);
+      setErrorMessage(null);
+      try {
+        const apiUsers = await getUsersByAdmin();
+        if (!isMounted) return;
+        const mapped: UiUser[] = apiUsers.map((u: AdminUserListItem) => ({
+          id: u.id,
+          name: (u as any).name,
+          email: u.email,
+          role: u.role,
+          userType: u.user_type,
+          status: u.status,
+          createdAt: u.created_at,
+        }));
+        setUsers(mapped);
+      } catch (err: any) {
+        const status = err?.status as number | undefined;
+        const message = err?.message as string | undefined;
+        if (status === 400) setErrorMessage(message || "Bad request. Please adjust filters and try again.");
+        else if (status === 401) setErrorMessage("You are not authenticated. Please log in.");
+        else if (status === 403) setErrorMessage("You don't have permission to view users.");
+        else if (status && status >= 500) setErrorMessage("Server error. Please try again later.");
+        else setErrorMessage(message || "Failed to load users.");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    const q = searchTerm.toLowerCase();
+    return users.filter(user =>
+      (user.name?.toLowerCase().includes(q) ?? false) ||
+      user.email.toLowerCase().includes(q) ||
+      user.role.toLowerCase().includes(q) ||
+      user.userType.toLowerCase().includes(q)
+    );
+  }, [users, searchTerm]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Active":
+      case "active":
         return "bg-green-100 text-green-800 border-green-200";
-      case "Inactive":
+      case "inactive":
         return "bg-red-100 text-red-800 border-red-200";
-      case "Pending":
+      case "pending":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
@@ -128,6 +116,13 @@ export default function BrokerUserManagement() {
           </Button>
         </div>
 
+        {errorMessage && (
+          <Alert variant="destructive">
+            <AlertTitle>Failed to load users</AlertTitle>
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
@@ -147,9 +142,7 @@ export default function BrokerUserManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {users.filter(u => u.isAdmin).length}
-              </div>
+              <div className="text-2xl font-bold text-purple-600">{users.filter(u => u.userType === 'admin').length}</div>
             </CardContent>
           </Card>
           <Card>
@@ -159,9 +152,7 @@ export default function BrokerUserManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {users.filter(u => u.status === "Active").length}
-              </div>
+              <div className="text-2xl font-bold text-green-600">{users.filter(u => u.status === 'active').length}</div>
             </CardContent>
           </Card>
           <Card>
@@ -171,9 +162,7 @@ export default function BrokerUserManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {users.filter(u => u.status === "Inactive").length}
-              </div>
+              <div className="text-2xl font-bold text-red-600">{users.filter(u => u.status === 'inactive').length}</div>
             </CardContent>
           </Card>
         </div>
@@ -202,27 +191,25 @@ export default function BrokerUserManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>User</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
                         <TableHead>User Type</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Created On</TableHead>
-                        <TableHead>Active/Inactive Since</TableHead>
-                        <TableHead>Last Login</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
+                      {loading && <TableSkeleton rowCount={5} colCount={5} />}
                       {filteredUsers.map((user) => (
                         <TableRow key={user.id}>
                           <TableCell>
-                            <div>
-                              <div className="font-medium">{user.name}</div>
-                              <div className="text-sm text-muted-foreground">{user.email}</div>
-                            </div>
+                            {user.name || user.email?.split('@')[0] || '-'}
                           </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={user.isAdmin ? "bg-purple-100 text-purple-800 border-purple-200" : "bg-blue-100 text-blue-800 border-blue-200"}>
-                              {user.isAdmin ? "Admin" : "User"}
+                            <Badge variant="outline" className={user.userType === 'admin' ? "bg-purple-100 text-purple-800 border-purple-200" : "bg-blue-100 text-blue-800 border-blue-200"}>
+                              {user.userType === 'admin' ? "Admin" : "User"}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -230,15 +217,7 @@ export default function BrokerUserManagement() {
                               {user.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {user.createdDate}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {user.activeSince || user.inactiveSince || "-"}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {user.lastLogin}
-                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{new Date(user.createdAt).toLocaleString()}</TableCell>
                           <TableCell className="text-right">
                             <Button 
                               variant="outline" 

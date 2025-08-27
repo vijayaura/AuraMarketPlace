@@ -7,6 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Plus, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 interface VariableOption {
   id: number;
@@ -130,26 +141,38 @@ export const ClausePricingCard = ({ clause, onToggle, onUpdateVariable, onAddVar
         {/* Expandable Options Section */}
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
           <CollapsibleContent>
-            <div className="p-4 bg-muted/20 space-y-4">
+            <div className="p-4 bg-muted/20 space-y-4 overflow-x-scroll custom-scrollbars">
               {/* Column Headers */}
-              <div className="grid grid-cols-12 gap-3 text-sm font-medium text-muted-foreground px-1">
-                <div className="col-span-4">Label</div>
+              <div className="grid grid-cols-12 gap-3 text-sm font-medium text-muted-foreground px-1 min-w-[1000px]">
+                <div className="col-span-3">Label</div>
+                <div className="col-span-3">Description</div>
                 <div className="col-span-3">Limits</div>
-                <div className="col-span-4">Type & Value</div>
+                <div className="col-span-2">Type & Value</div>
                 <div className="col-span-1 text-center">Action</div>
               </div>
 
               {/* Variable Options */}
-              <div className="space-y-3">
+              <div className="space-y-3 min-w-[1000px]">
                 {clause.variableOptions.map((option) => (
                   <div key={option.id} className="grid grid-cols-12 gap-3 items-end p-3 bg-background rounded-lg border border-border">
                     {/* Label Input */}
-                    <div className="col-span-4">
+                    <div className="col-span-3">
                       <Label className="text-xs text-muted-foreground mb-1 block">Label</Label>
                       <Input
                         placeholder="Standard Rate"
                         value={option.label}
                         onChange={(e) => onUpdateVariable(clause.id, option.id, 'label', e.target.value)}
+                        disabled={!clause.enabled}
+                        className="h-9"
+                      />
+                    </div>
+                    {/* Description Input */}
+                    <div className="col-span-3">
+                      <Label className="text-xs text-muted-foreground mb-1 block">Description</Label>
+                      <Input
+                        placeholder="Short description"
+                        value={(option as any).description || ''}
+                        onChange={(e) => onUpdateVariable(clause.id, option.id, 'description', e.target.value)}
                         disabled={!clause.enabled}
                         className="h-9"
                       />
@@ -168,7 +191,7 @@ export const ClausePricingCard = ({ clause, onToggle, onUpdateVariable, onAddVar
                     </div>
                     
                     {/* Type & Value */}
-                    <div className="col-span-4">
+                    <div className="col-span-2">
                       <Label className="text-xs text-muted-foreground mb-1 block">Type & Value</Label>
                       <div className="flex gap-2">
                         <Select
@@ -197,18 +220,33 @@ export const ClausePricingCard = ({ clause, onToggle, onUpdateVariable, onAddVar
                       </div>
                     </div>
                     
-                    {/* Remove Button */}
-                    <div className="col-span-1 flex justify-center">
+                    {/* Remove Button with confirmation */}
+                    <div className="col-span-1 flex justify-center min-w-[64px]">
                       {clause.variableOptions.length > 1 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onRemoveVariable(clause.id, option.id)}
-                          disabled={!clause.enabled}
-                          className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={!clause.enabled}
+                              className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove variable option?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. The variable option will be permanently removed.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => onRemoveVariable(clause.id, option.id)}>Remove</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       )}
                     </div>
                   </div>
@@ -221,7 +259,7 @@ export const ClausePricingCard = ({ clause, onToggle, onUpdateVariable, onAddVar
                 size="sm"
                 onClick={onAddVariable}
                 disabled={!clause.enabled}
-                className="w-full h-10 border-dashed border-2 hover:bg-muted/50"
+                className="w-full h-10 border-dashed border-2 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Variable Option

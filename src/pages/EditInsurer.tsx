@@ -17,7 +17,7 @@ import {
 import { ArrowLeft } from "lucide-react";
 import InsurerForm, { InsurerFormData } from "@/components/InsurerForm";
 import { toast } from "sonner";
-import { countries as allCountries, regions as allRegions, zones as allZones } from "@/lib/location-data";
+import { listMasterCountries, listMasterRegions, listMasterZones, type Country, type Region, type Zone } from "@/lib/api";
 import FormSkeleton from "@/components/loaders/FormSkeleton";
 import { getInsurer, updateInsurer, type UpdateInsurerRequest, activateInsurer, deactivateInsurer } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,8 +98,11 @@ const EditInsurer = () => {
   const [isActive, setIsActive] = useState(true);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<boolean | null>(null);
-  const [availableRegions, setAvailableRegions] = useState<any[]>([]);
-  const [availableZones, setAvailableZones] = useState<any[]>([]);
+  const [availableRegions, setAvailableRegions] = useState<Region[]>([]);
+  const [availableZones, setAvailableZones] = useState<Zone[]>([]);
+  const [masterCountries, setMasterCountries] = useState<Country[]>([]);
+  const [masterRegions, setMasterRegions] = useState<Region[]>([]);
+  const [masterZones, setMasterZones] = useState<Zone[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -114,17 +117,31 @@ const EditInsurer = () => {
           return;
         }
         if (insurerId) {
-          const data = await getInsurer(insurerId);
-          // Map API to form shape used by InsurerForm
+          const [c, r, z, data] = await Promise.all([
+            listMasterCountries(),
+            listMasterRegions(),
+            listMasterZones(),
+            getInsurer(insurerId),
+          ]);
+          setMasterCountries(c);
+          setMasterRegions(r);
+          setMasterZones(z);
+          // Use mapped Insurer shape returned by API module
+          const apiCountries = data.operatingCountries || [];
+          const apiRegions = data.operatingRegions || [];
+          const apiZones = data.operatingZones || [];
+
           // Resolve ids from labels
-          const countryIds = (data.operatingCountries || [])
-            .map(label => allCountries.find(c => c.label === label)?.id)
+          const countryIds = apiCountries
+            .map(label => c.find(cn => cn.label === label)?.id)
             .filter((v): v is number => typeof v === 'number');
-          const regionIds = (data.operatingRegions || [])
-            .map(r => allRegions.find(reg => reg.label === r.name && allCountries.find(c => c.id === reg.countryId)?.label === r.country)?.id)
+
+          const regionIds = apiRegions
+            .map(regObj => r.find(reg => reg.label === regObj.name && (c.find(cn => cn.id === reg.countryId)?.label === regObj.country))?.id)
             .filter((v): v is number => typeof v === 'number');
-          const zoneIds = (data.operatingZones || [])
-            .map(z => allZones.find(zn => zn.label === z.name && (allRegions.find(r => r.id === zn.regionId)?.label === z.region))?.id)
+
+          const zoneIds = apiZones
+            .map(znObj => z.find(zn => zn.label === znObj.name && (r.find(reg => reg.id === zn.regionId)?.label === znObj.region))?.id)
             .filter((v): v is number => typeof v === 'number');
 
           const mapped = {
@@ -138,19 +155,19 @@ const EditInsurer = () => {
             countries: countryIds,
             regions: regionIds,
             zones: zoneIds,
-            adminUserEmail: (data as any).adminEmail || (data as any).admin_email || "",
-            adminUserPassword: (data as any).adminPassword || (data as any).admin_password || "",
+            adminUserEmail: data.adminEmail || "",
+            adminUserPassword: data.adminPassword || "",
             status: data.status,
           };
           setInsurerData(mapped);
           setIsActive(data.status === "active");
           // Also set available regions/zones given the selections
           if (countryIds.length) {
-            const selRegions = countryIds.flatMap(cid => allRegions.filter(r => r.countryId === cid));
+            const selRegions = countryIds.flatMap(cid => r.filter(reg => reg.countryId === cid));
             setAvailableRegions(selRegions);
           }
           if (regionIds.length) {
-            const selZones = regionIds.flatMap(rid => allZones.filter(z => z.regionId === rid));
+            const selZones = regionIds.flatMap(rid => z.filter(zn => zn.regionId === rid));
             setAvailableZones(selZones);
           }
 
@@ -179,18 +196,18 @@ const EditInsurer = () => {
       if (!insurerId) throw new Error('Missing insurer id');
       // Map selected ids to labels/objects per API shape
       const selectedCountryLabels = (formData.countries || [])
-        .map((id) => allCountries.find(c => c.id === id)?.label)
+        .map((id) => masterCountries.find(c => c.id === id)?.label)
         .filter((v): v is string => Boolean(v));
       const selectedRegionObjects = (formData.regions || [])
-        .map((id) => allRegions.find(r => r.id === id))
-        .filter((v): v is typeof allRegions[number] => Boolean(v))
-        .map(r => ({ name: r.label, country: allCountries.find(c => c.id === r.countryId)?.label || "" }));
+        .map((id) => masterRegions.find(r => r.id === id))
+        .filter((v): v is typeof masterRegions[number] => Boolean(v))
+        .map(r => ({ name: r.label, country: masterCountries.find(c => c.id === r.countryId)?.label || "" }));
       const selectedZoneObjects = (formData.zones || [])
-        .map((id) => allZones.find(z => z.id === id))
-        .filter((v): v is typeof allZones[number] => Boolean(v))
+        .map((id) => masterZones.find(z => z.id === id))
+        .filter((v): v is typeof masterZones[number] => Boolean(v))
         .map(z => {
-          const region = allRegions.find(r => r.id === z.regionId);
-          const countryLabel = region ? (allCountries.find(c => c.id === region.countryId)?.label || "") : "";
+          const region = masterRegions.find(r => r.id === z.regionId);
+          const countryLabel = region ? (masterCountries.find(c => c.id === region.countryId)?.label || "") : "";
           return { name: z.label, region: region?.label || "", country: countryLabel };
         });
 

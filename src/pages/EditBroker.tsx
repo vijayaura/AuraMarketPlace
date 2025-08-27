@@ -177,20 +177,46 @@ const EditBroker = () => {
       setLoadError(null);
       try {
         const data = await getBroker(id);
+        // Normalized compare helper
+        const norm = (s: string | null | undefined) => (s || '').toString().trim().toLowerCase();
         // Map labels to ids
         const preCountryIds = (data.operatingCountries || [])
-          .map(label => countries.find(c => c.label === label)?.id)
+          .map(label => countries.find(c => norm(c.label) === norm(label))?.id)
           .filter((v): v is number => typeof v === 'number');
+        // Map regions/zones from API; accept both string labels and objects
         const preRegionIds = (data.operatingRegions || [])
-          .map(r => allRegions.find(reg => reg.label === r.name && (countries.find(c => c.id === reg.countryId)?.label === r.country))?.id)
+          .map((rItem: any) => {
+            const regionLabel = typeof rItem === 'string' ? rItem : rItem?.name;
+            // If country is present, prefer matching region that belongs to that country label; otherwise fallback to label-only
+            const countryLabel = typeof rItem === 'string' ? undefined : rItem?.country;
+            if (!regionLabel) return undefined;
+            // Prefer match with country, fallback to label-only
+            let found = allRegions.find(reg => norm(reg.label) === norm(regionLabel) && (!countryLabel || norm(countries.find(c => c.id === reg.countryId)?.label) === norm(countryLabel)));
+            if (!found) found = allRegions.find(reg => norm(reg.label) === norm(regionLabel));
+            return found?.id;
+          })
           .filter((v): v is number => typeof v === 'number');
         const preZoneIds = (data.operatingZones || [])
-          .map(z => allZones.find(zn => zn.label === z.name && (allRegions.find(r => r.id === zn.regionId)?.label === z.region))?.id)
+          .map((zItem: any) => {
+            const zoneLabel = typeof zItem === 'string' ? zItem : zItem?.name;
+            const regionLabel = typeof zItem === 'string' ? undefined : zItem?.region;
+            if (!zoneLabel) return undefined;
+            // Prefer match with region, fallback to label-only
+            let found = allZones.find(zn => norm(zn.label) === norm(zoneLabel) && (!regionLabel || norm(allRegions.find(r => r.id === zn.regionId)?.label) === norm(regionLabel)));
+            if (!found) found = allZones.find(zn => norm(zn.label) === norm(zoneLabel));
+            return found?.id;
+          })
           .filter((v): v is number => typeof v === 'number');
 
         // Initialize available lists based on selections
-        const initRegions = allRegions.filter(r => preCountryIds.includes(r.countryId));
-        const initZones = allZones.filter(z => preRegionIds.includes(z.regionId));
+        let initRegions = allRegions.filter(r => preCountryIds.includes(r.countryId));
+        if (initRegions.length === 0 && preRegionIds.length > 0) {
+          initRegions = allRegions.filter(r => preRegionIds.includes(r.id));
+        }
+        let initZones = allZones.filter(z => preRegionIds.includes(z.regionId));
+        if (initZones.length === 0 && preZoneIds.length > 0) {
+          initZones = allZones.filter(z => preZoneIds.includes(z.id));
+        }
 
         form.reset({
           name: data.name || "",

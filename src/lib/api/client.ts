@@ -1,5 +1,6 @@
 // Axios-based JSON API client with typed helpers, interceptors, and error handling
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
+import { toast } from '@/components/ui/sonner';
 import { getRefreshToken, setAuthTokens, clearAuth } from '@/lib/auth';
 
 export class ApiError extends Error {
@@ -59,7 +60,13 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as (AxiosRequestConfig & { _retry?: boolean; _skipAuth?: boolean });
+    type InternalAxiosConfig = AxiosRequestConfig & {
+      _retry?: boolean;
+      _skipAuth?: boolean;
+      _suppressGlobalErrorToast?: boolean;
+    };
+
+    const originalRequest = error.config as InternalAxiosConfig;
     const status = error.response?.status;
     const data: any = error.response?.data;
 
@@ -88,7 +95,26 @@ api.interceptors.response.use(
         return api.request(originalRequest);
       } catch (refreshErr) {
         clearAuth();
-        // bubble up original error after clearing auth
+        // Notify and redirect to appropriate login page after refresh failure
+        try {
+          if (!originalRequest?._suppressGlobalErrorToast) {
+            toast.error('Session expired', { description: 'Please log in again.' });
+          }
+          // Avoid multiple rapid redirects
+          if (typeof window !== 'undefined') {
+            const currentPath = window.location?.pathname || '/';
+            const goTo =
+              currentPath.startsWith('/broker') ? '/broker/login' :
+              currentPath.startsWith('/insurer') ? '/insurer/login' :
+              '/admin/login';
+            if (!currentPath.startsWith(goTo)) {
+              window.location.assign(goTo);
+            }
+          }
+        } catch {
+          // ignore toast or location errors
+        }
+        // bubble up original error after handling
       }
     }
 
@@ -98,6 +124,19 @@ api.interceptors.response.use(
     if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
       console.error('[API ERROR]', { message, status, code, data });
+    }
+
+    // Global server error toast (5xx) or network error
+    try {
+      const isServerError = typeof status === 'number' && status >= 500;
+      const isNetworkError = !error.response && (error as any).message?.toString()?.toLowerCase().includes('network');
+      if ((isServerError || isNetworkError) && !originalRequest?._suppressGlobalErrorToast) {
+        const title = isNetworkError ? 'Network error' : 'Server error';
+        const description = isNetworkError ? 'Please check your connection and try again.' : (message || 'An unexpected error occurred.');
+        toast.error(title, { description });
+      }
+    } catch {
+      // ignore toast errors
     }
 
     throw new ApiError(message, status, code, data);

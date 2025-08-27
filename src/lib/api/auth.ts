@@ -36,7 +36,7 @@ export async function refresh(body: RefreshRequestBody): Promise<RefreshResponse
 }
 
 export interface LogoutResponse {
-  message: string;
+  refreshToken: string;
 }
 
 export interface LogoutRequestBody {

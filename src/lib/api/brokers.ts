@@ -67,13 +67,117 @@ function mapBroker(dto: BrokerDTO): Broker {
 }
 
 export async function listBrokers(): Promise<Broker[]> {
-  const data = await apiGet<BrokerDTO[]>('/brokers');
-  return Array.isArray(data) ? data.map(mapBroker) : [];
+  type BrokerListResponse = { brokers: Array<{
+    id: number;
+    broker_name: string;
+    email: string | null;
+    license_no: string | null;
+    status: 'active' | 'inactive' | string;
+    is_active?: boolean;
+    products_assigned?: string | number;
+  }>; };
+
+  const data = await apiGet<BrokerDTO[] | BrokerListResponse>('/brokers');
+
+  if (Array.isArray(data)) {
+    return data.map(mapBroker);
+  }
+
+  if (data && Array.isArray((data as BrokerListResponse).brokers)) {
+    return (data as BrokerListResponse).brokers.map((item) => ({
+      id: item.id,
+      name: item.broker_name || '',
+      email: item.email || undefined,
+      phone: undefined,
+      company: undefined,
+      licenseNumber: item.license_no || undefined,
+      licenseStartDate: undefined,
+      licenseEndDate: undefined,
+      joinDate: undefined,
+      operatingCountries: undefined,
+      operatingRegions: undefined,
+      operatingZones: undefined,
+      companyLogo: null,
+      status: item.status,
+    }));
+  }
+
+  return [];
 }
 
 export async function getBroker(brokerId: string | number): Promise<Broker> {
-  const data = await apiGet<BrokerDTO>(`/brokers/${encodeURIComponent(String(brokerId))}`);
-  return mapBroker(data);
+  type WrappedBroker = {
+    broker: {
+      id: number;
+      name: string;
+      license_number: string | null;
+      contact_email: string | null;
+      phone: string | null;
+      company_logo?: string | null;
+      operating_countries?: string[] | null;
+      operating_regions?: string[] | null; // strings in new response
+      operating_zones?: string[] | null;   // strings in new response
+      license_start_date?: string | null;
+      license_end_date?: string | null;
+      license_doc?: string | null;
+      join_date?: string | null;
+      status: 'active' | 'inactive' | string;
+      admin_user_id?: number;
+      created_at?: string;
+      updated_at?: string;
+      members_count?: number;
+    };
+    admin_user?: { id: number; name?: string; email?: string; status?: string };
+  };
+
+  const data = await apiGet<BrokerDTO | WrappedBroker>(`/brokers/${encodeURIComponent(String(brokerId))}`);
+
+  // Old shape
+  if ((data as any).id !== undefined) {
+    return mapBroker(data as BrokerDTO);
+  }
+
+  // New wrapped shape
+  const wrapped = data as WrappedBroker;
+  const b = wrapped.broker;
+  const broker: Broker = {
+    id: b.id,
+    name: b.name || '',
+    email: b.contact_email ?? undefined,
+    phone: b.phone ?? undefined,
+    company: undefined,
+    licenseNumber: b.license_number ?? undefined,
+    licenseStartDate: (b.license_start_date || null) ? (b.license_start_date as string).slice(0, 10) : null,
+    licenseEndDate: (b.license_end_date || null) ? (b.license_end_date as string).slice(0, 10) : null,
+    joinDate: b.join_date ?? undefined,
+    operatingCountries: b.operating_countries ?? undefined,
+    // Normalize regions: handle array of strings OR array of objects
+    operatingRegions: Array.isArray(b.operating_regions)
+      ? (b.operating_regions as any[]).map((item: any) => {
+          if (item && typeof item === 'object' && 'name' in item) {
+            return { name: String(item.name), country: String((item as any).country || '') };
+          }
+          return { name: String(item), country: '' };
+        })
+      : undefined,
+    // Normalize zones: handle array of strings OR array of objects
+    operatingZones: Array.isArray(b.operating_zones)
+      ? (b.operating_zones as any[]).map((item: any) => {
+          if (item && typeof item === 'object' && 'name' in item) {
+            return {
+              name: String(item.name),
+              region: String((item as any).region || ''),
+              country: String((item as any).country || ''),
+            };
+          }
+          return { name: String(item), region: '', country: '' };
+        })
+      : undefined,
+    companyLogo: b.company_logo ?? null,
+    status: b.status,
+  };
+
+  return broker;
 }
 
 export interface CreateBrokerRequest {

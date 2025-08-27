@@ -136,7 +136,7 @@ const App = () => (
           <Route path="/insurer" element={<InsurerLayout />}>
             <Route index element={<InsurerDashboard />} />
             <Route path="dashboard" element={<InsurerDashboard />} />
-            <Route path="user-management" element={<div />} />
+            <Route path="user-management" element={<InsurerUserManagement />} />
             <Route path="product-config" element={<InsurerProductConfig />} />
             <Route path="broker-assignments" element={<div />} />
             <Route path="product-config/products" element={<ProductsList />} />

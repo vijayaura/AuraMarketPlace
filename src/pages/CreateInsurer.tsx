@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import InsurerForm, { InsurerFormData } from "@/components/InsurerForm";
-import { createInsurer, type CreateInsurerRequest } from "@/lib/api";
-import { getActiveCountries, getRegionsByCountry, getZonesByRegion, countries as allCountries, regions as allRegions, zones as allZones } from "@/lib/location-data";
+import { createInsurer, type CreateInsurerRequest, listMasterCountries, listMasterRegions, listMasterZones } from "@/lib/api";
 import FormSkeleton from "@/components/loaders/FormSkeleton";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,20 +22,28 @@ const CreateInsurer = () => {
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      // Map selected ids (from InsurerForm structure) to labels
+      // Load master lists to map selected ids to labels (ensures consistency with InsurerForm)
+      const [masterCountries, masterRegions, masterZones] = await Promise.all([
+        listMasterCountries(),
+        listMasterRegions(),
+        listMasterZones(),
+      ]);
+
       const selectedCountryLabels = (values.countries || [])
-        .map((id) => allCountries.find(c => c.id === id)?.label)
+        .map((id) => masterCountries.find(c => c.id === id)?.label)
         .filter((v): v is string => Boolean(v));
+
       const selectedRegionLabels = (values.regions || [])
-        .map((id) => allRegions.find(r => r.id === id))
-        .filter((v): v is typeof allRegions[number] => Boolean(v))
-        .map(r => ({ name: r.label, country: allCountries.find(c => c.id === r.countryId)?.label || "" }));
+        .map((id) => masterRegions.find(r => r.id === id))
+        .filter((v): v is typeof masterRegions[number] => Boolean(v))
+        .map(r => ({ name: r.label, country: masterCountries.find(c => c.id === r.countryId)?.label || "" }));
+
       const selectedZoneLabels = (values.zones || [])
-        .map((id) => allZones.find(z => z.id === id))
-        .filter((v): v is typeof allZones[number] => Boolean(v))
+        .map((id) => masterZones.find(z => z.id === id))
+        .filter((v): v is typeof masterZones[number] => Boolean(v))
         .map(z => {
-          const region = allRegions.find(r => r.id === z.regionId);
-          const countryLabel = region ? (allCountries.find(c => c.id === region.countryId)?.label || "") : "";
+          const region = masterRegions.find(r => r.id === z.regionId);
+          const countryLabel = region ? (masterCountries.find(c => c.id === region.countryId)?.label || "") : "";
           return { name: z.label, region: region?.label || "", country: countryLabel };
         });
 

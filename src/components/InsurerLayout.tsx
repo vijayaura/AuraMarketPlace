@@ -14,6 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { logout, type LogoutResponse } from "@/lib/api/auth";
+import { getRefreshToken, clearAuth } from "@/lib/auth";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 const sidebarItems = [{
   title: "Dashboard",
   url: "/insurer/dashboard",
@@ -36,18 +39,29 @@ function InsurerSidebar() {
   const {
     toast
   } = useToast();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
   const getNavCls = (isActive: boolean) => isActive ? "bg-primary text-primary-foreground font-semibold shadow-md" : "hover:bg-muted/50 transition-all text-muted-foreground";
-  const handleLogout = () => {
-    // In real app, this would clear auth tokens, user session, etc.
-    localStorage.removeItem('authToken');
-    sessionStorage.clear();
-    toast({
-      title: "Logged out successfully",
-      description: "You have been securely logged out of the system."
-    });
-
-    // Redirect to login or home page
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      setLogoutError(null);
+      const rt = getRefreshToken() || '';
+      const res: LogoutResponse = await logout({ refreshToken: rt });
+      clearAuth();
+      toast({ title: 'Logged out', description: 'You have been securely logged out.' });
+      navigate('/');
+    } catch (err: any) {
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      if (status === 400) setLogoutError(message || 'Bad request.');
+      else if (status === 401) setLogoutError('Session expired.');
+      else if (status === 403) setLogoutError("You don't have permission to logout.");
+      else if (status && status >= 500) setLogoutError('Server error. Please try again later.');
+      else setLogoutError(message || 'Failed to logout.');
+    } finally {
+      setLoggingOut(false);
+    }
   };
   return <Sidebar className="border-r bg-gradient-to-b from-background to-muted/30">
       <SidebarHeader className="border-b bg-primary p-6">
@@ -63,6 +77,12 @@ function InsurerSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="p-4">
+        {logoutError && (
+          <Alert variant="destructive" className="mb-3">
+            <AlertTitle>Logout failed</AlertTitle>
+            <AlertDescription>{logoutError}</AlertDescription>
+          </Alert>
+        )}
         <SidebarGroup>
           <div className="mb-6 p-3 bg-gradient-to-r from-muted/30 to-muted/50 rounded-lg border">
             <p className="text-sm font-medium text-foreground mb-1">Sarah Wilson</p>
@@ -90,9 +110,9 @@ function InsurerSidebar() {
       <SidebarFooter className="border-t bg-gradient-to-r from-muted/30 to-muted/50 p-4">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start gap-3 px-3 py-2.5 hover:bg-destructive/10 hover:text-destructive transition-all">
+            <Button variant="ghost" className="w-full justify-start gap-3 px-3 py-2.5 hover:bg-destructive/10 hover:text-destructive transition-all" disabled={loggingOut}>
               <LogOut className="w-5 h-5" />
-              <span className="font-medium">Log Out</span>
+              <span className="font-medium">{loggingOut ? 'Logging out...' : 'Log Out'}</span>
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>

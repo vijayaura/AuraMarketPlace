@@ -1,0 +1,523 @@
+
+> vite_react_shadcn_ts@0.0.0 dev
+> vite
+
+Re-optimizing dependencies because lockfile has changed
+
+  VITE v5.4.10  ready in 399 ms
+
+  ➜  Local:   http://localhost:8080/
+  ➜  Network: http://192.168.29.77:8080/
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+1:27:00 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx
+1:27:07 PM [vite] hmr update /src/index.css, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx
+1:28:54 PM [vite] hmr update /src/pages/AddUser.tsx, /src/index.css
+1:29:02 PM [vite] hmr update /src/pages/AddUser.tsx, /src/index.css
+1:29:27 PM [vite] hmr update /src/pages/AddInsurerUser.tsx, /src/index.css
+1:29:42 PM [vite] hmr update /src/pages/AddUser.tsx, /src/index.css
+1:29:42 PM [vite] hmr update /src/index.css, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx
+1:29:42 PM [vite] hmr update /src/pages/AddInsurerUser.tsx, /src/index.css
+1:29:42 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx
+1:47:54 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx
+1:48:13 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+1:48:31 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+1:48:43 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+1:48:43 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+1:48:43 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+2:06:16 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+2:06:37 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+2:06:57 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+2:07:15 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+2:07:15 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+2:07:15 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+2:08:25 PM [vite] hmr update /src/pages/BrokerUserManagement.tsx, /src/index.css
+2:08:55 PM [vite] hmr update /src/pages/InsurerUserManagement.tsx, /src/index.css
+2:09:10 PM [vite] hmr update /src/pages/InsurerUserManagement.tsx, /src/index.css
+2:09:10 PM [vite] hmr update /src/pages/BrokerUserManagement.tsx, /src/index.css
+2:10:34 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+2:10:41 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+2:10:49 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+2:10:49 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+2:51:56 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+2:52:00 PM [vite] hmr update /src/pages/BrokerUserManagement.tsx, /src/index.css
+2:52:00 PM [vite] hmr update /src/pages/AddInsurerUser.tsx, /src/index.css
+2:52:00 PM [vite] hmr update /src/pages/InsurerUserManagement.tsx, /src/index.css
+2:52:00 PM [vite] hmr update /src/pages/AddUser.tsx, /src/index.css
+2:52:00 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+3:16:08 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+3:16:17 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+3:16:27 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+3:16:27 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+3:16:30 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+3:16:32 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+4:32:42 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+4:32:50 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+4:32:54 PM [vite] hmr update /src/pages/BrokerUserManagement.tsx, /src/index.css
+4:32:59 PM [vite] hmr update /src/pages/InsurerUserManagement.tsx, /src/index.css
+4:33:18 PM [vite] hmr update /src/pages/AddUser.tsx, /src/index.css
+4:33:27 PM [vite] hmr update /src/pages/AddInsurerUser.tsx, /src/index.css
+4:33:49 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+4:34:03 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+4:34:24 PM [vite] hmr update /src/pages/BrokerUserManagement.tsx, /src/index.css
+4:34:24 PM [vite] hmr update /src/pages/InsurerUserManagement.tsx, /src/index.css
+4:34:24 PM [vite] hmr update /src/pages/AddInsurerUser.tsx, /src/index.css
+4:34:24 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+4:34:24 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+4:34:24 PM [vite] hmr update /src/pages/AddUser.tsx, /src/index.css
+4:34:24 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+5:05:36 PM [vite] page reload src/lib/api/auth.ts
+5:06:10 PM [vite] hmr update /src/components/BrokerLayout.tsx, /src/index.css
+5:06:15 PM [vite] hmr update /src/components/BrokerLayout.tsx, /src/index.css
+5:06:28 PM [vite] hmr update /src/components/InsurerLayout.tsx, /src/index.css
+5:06:42 PM [vite] hmr update /src/components/InsurerLayout.tsx, /src/index.css
+5:06:42 PM [vite] hmr update /src/components/BrokerLayout.tsx, /src/index.css
+5:06:42 PM [vite] page reload src/lib/api/auth.ts
+5:06:46 PM [vite] hmr update /src/components/BrokerLayout.tsx, /src/index.css
+5:06:46 PM [vite] hmr update /src/components/InsurerLayout.tsx, /src/index.css
+7:04:57 PM [vite] hmr update /src/pages/InsurerLogin.tsx, /src/index.css
+7:05:10 PM [vite] hmr update /src/pages/InsurerLogin.tsx, /src/index.css
+7:07:49 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+7:07:49 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:07:49 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:07:49 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:07:49 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:07:49 PM [vite] Internal server error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+  Plugin: vite:react-swc
+  File: /Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts
+  
+7:07:49 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:07:49 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:07:49 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:07:49 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:07:49 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:18 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+7:08:18 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:18 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:39 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+7:08:39 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:39 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:54 PM [vite] hmr update /src/pages/EditInsurerUser.tsx, /src/index.css
+7:08:54 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+7:08:54 PM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+7:08:54 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:54 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:54 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:54 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:54 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:55 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:55 PM [vite] Internal server error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+  Plugin: vite:react-swc
+  File: /Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts
+  
+7:08:55 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:55 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:08:55 PM [vite] Pre-transform error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+7:10:56 PM [vite] Internal server error:   [31mx[0m the name `apiPost` is defined multiple times
+   ,-[[36;1;4m/Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts[0m:2:1]
+ [2m1[0m | import { apiGet } from './client';
+ [2m2[0m | import { apiPost } from './client';
+   : [35;1m         ^^^|^^^[0m
+   :             [35;1m`-- [35;1mprevious definition of `apiPost` here[0m[0m
+ [2m3[0m | import { apiPut } from './client';
+ [2m4[0m | import { apiPost } from './client';
+   : [33;1m         ^^^|^^^[0m
+   :             [33;1m`-- [33;1m`apiPost` redefined here[0m[0m
+ [2m5[0m | 
+ [2m6[0m | export interface AdminUserListItem {
+ [2m7[0m |   id: number;
+   `----
+
+  Plugin: vite:react-swc
+  File: /Users/vijay/Desktop/build-risk-bridge-63-main/src/lib/api/users.ts
+  
+7:11:36 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+7:11:45 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+7:11:47 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+7:16:22 PM [vite] hmr update /src/pages/AddInsurerUser.tsx, /src/index.css
+7:16:35 PM [vite] hmr update /src/pages/AddInsurerUser.tsx, /src/index.css
+7:23:12 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+7:23:19 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+7:23:24 PM [vite] hmr update /src/index.css, /src/pages/BrokerUserManagement.tsx, /src/pages/InsurerUserManagement.tsx, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx, /src/pages/AddUser.tsx, /src/pages/AddInsurerUser.tsx, /src/pages/EditUser.tsx, /src/pages/EditInsurerUser.tsx
+11:39:33 PM [vite] hmr update /src/pages/CreateInsurer.tsx, /src/index.css
+11:39:47 PM [vite] hmr update /src/pages/CreateInsurer.tsx, /src/index.css
+11:39:48 PM [vite] hmr update /src/pages/CreateInsurer.tsx, /src/index.css
+12:12:26 AM [vite] hmr update /src/pages/EditInsurer.tsx, /src/index.css
+12:12:44 AM [vite] hmr update /src/pages/EditInsurer.tsx, /src/index.css
+12:12:47 AM [vite] hmr update /src/pages/EditInsurer.tsx, /src/index.css
+12:24:05 AM [vite] hmr update /src/pages/CreateInsurer.tsx, /src/index.css
+12:24:09 AM [vite] hmr update /src/App.tsx, /src/index.css
+12:24:11 AM [vite] hmr update /src/index.css, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx
+12:24:12 AM [vite] hmr update /src/pages/BrokerUserManagement.tsx, /src/index.css
+12:24:12 AM [vite] hmr update /src/pages/BrokerUserManagement.tsx, /src/index.css
+12:24:14 AM [vite] hmr update /src/pages/InsurerUserManagement.tsx, /src/index.css
+12:24:15 AM [vite] hmr update /src/pages/AddUser.tsx, /src/index.css
+12:24:17 AM [vite] page reload src/lib/api/auth.ts
+12:24:18 AM [vite] hmr update /src/components/BrokerLayout.tsx, /src/index.css
+12:24:19 AM [vite] hmr update /src/pages/BrokerUserManagement.tsx, /src/index.css
+12:24:19 AM [vite] hmr update /src/index.css, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx
+12:24:20 AM [vite] hmr update /src/components/InsurerLayout.tsx, /src/index.css
+12:24:21 AM [vite] hmr update /src/pages/InsurerLogin.tsx, /src/index.css
+12:24:22 AM [vite] hmr update /src/pages/InsurerUserManagement.tsx, /src/index.css
+12:24:22 AM [vite] hmr update /src/pages/AddUser.tsx, /src/index.css
+12:24:23 AM [vite] hmr update /src/pages/EditUser.tsx, /src/index.css
+12:24:51 AM [vite] hmr update /src/pages/EditInsurer.tsx, /src/index.css
+12:25:09 AM [vite] hmr update /src/pages/EditInsurer.tsx, /src/index.css
+12:28:59 AM [vite] hmr update /src/pages/EditInsurer.tsx, /src/index.css
+12:29:39 AM [vite] hmr update /src/pages/EditInsurer.tsx, /src/index.css
+12:29:52 AM [vite] hmr update /src/pages/EditInsurer.tsx, /src/index.css
+12:35:51 AM [vite] hmr update /src/index.css, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx
+12:36:03 AM [vite] hmr update /src/index.css, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx
+12:40:48 AM [vite] hmr update /src/index.css, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx
+12:41:01 AM [vite] hmr update /src/index.css, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx
+12:42:47 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+12:43:08 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+12:45:02 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+12:45:18 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+12:51:08 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+12:51:26 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+12:56:22 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+12:56:39 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+12:59:55 AM [vite] hmr update /src/index.css, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx
+1:00:16 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+1:00:19 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+1:00:43 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css
+1:00:43 AM [vite] hmr update /src/index.css, /src/pages/BrokerLogin.tsx, /src/pages/MarketAdminLogin.tsx, /src/pages/BrokerDashboard.tsx, /src/components/RequireAuth.tsx, /src/components/MarketAdminLayout.tsx, /src/pages/MarketAdminInsurerManagement.tsx, /src/pages/MarketAdminDashboard.tsx, /src/pages/MarketAdminBrokerManagement.tsx, /src/pages/CreateInsurer.tsx, /src/pages/EditInsurer.tsx, /src/pages/MastersManagement.tsx, /src/pages/EditBroker.tsx, /src/pages/CreateBroker.tsx, /src/components/InsurerForm.tsx, /src/pages/InsurerLogin.tsx
+1:00:48 AM [vite] hmr update /src/pages/EditBroker.tsx, /src/index.css

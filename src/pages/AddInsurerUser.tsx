@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { createUser, type CreateUserRequestBody, type CreateUserResponseBody } from "@/lib/api/users";
 
 export default function AddInsurerUser() {
   const navigate = useNavigate();
@@ -20,8 +21,10 @@ export default function AddInsurerUser() {
     isAdmin: false,
     status: "Active"
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const addUser = () => {
+  const addUser = async () => {
     if (!newUser.name || !newUser.email || !newUser.password) {
       toast({
         title: "Error",
@@ -30,15 +33,32 @@ export default function AddInsurerUser() {
       });
       return;
     }
-
-    // In real app, this would make an API call to create the user
-    toast({
-      title: "User added successfully",
-      description: `${newUser.name} has been added to the system.`,
-    });
-    
-    // Navigate back to user management
-    navigate("/insurer/user-management");
+    try {
+      setSubmitting(true);
+      setErrorMessage(null);
+      const payload: CreateUserRequestBody = {
+        name: newUser.name,
+        email: newUser.email,
+        password: newUser.password,
+        user_type: newUser.isAdmin ? 'admin' : 'user',
+      };
+      const response: CreateUserResponseBody = await createUser(payload);
+      toast({
+        title: response.message || 'User created',
+        description: `${newUser.email} has been added as ${response.user_type}.`,
+      });
+      navigate("/insurer/user-management");
+    } catch (err: any) {
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      if (status === 400) setErrorMessage(message || 'Invalid data. Check inputs and try again.');
+      else if (status === 401) setErrorMessage('You are not authenticated. Please log in.');
+      else if (status === 403) setErrorMessage("You don't have permission to create users.");
+      else if (status && status >= 500) setErrorMessage('Server error. Please try again later.');
+      else setErrorMessage(message || 'Failed to create user.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -73,6 +93,12 @@ export default function AddInsurerUser() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {errorMessage && (
+              <Alert variant="destructive">
+                <AlertTitle>Failed to create user</AlertTitle>
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="userName">Full Name *</Label>
@@ -122,14 +148,7 @@ export default function AddInsurerUser() {
               </Select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="userStatus"
-                checked={newUser.status === "Active"}
-                onCheckedChange={(checked) => setNewUser(prev => ({ ...prev, status: checked ? "Active" : "Inactive" }))}
-              />
-              <Label htmlFor="userStatus">Set as Active User</Label>
-            </div>
+            
 
             <div className="flex justify-end gap-4 pt-6">
               <Button 
@@ -138,9 +157,9 @@ export default function AddInsurerUser() {
               >
                 Cancel
               </Button>
-              <Button onClick={addUser} className="gap-2">
+              <Button onClick={addUser} className="gap-2" disabled={submitting}>
                 <UserPlus className="w-4 h-4" />
-                Add User
+                {submitting ? 'Adding...' : 'Add User'}
               </Button>
             </div>
           </CardContent>

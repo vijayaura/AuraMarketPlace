@@ -1513,16 +1513,12 @@ const SingleProductConfig = () => {
                         Configure rating algorithms and pricing factors
                       </CardDescription>
                     </div>
-                    <Button onClick={saveConfiguration} size="sm">
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Configuration
-                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-6 h-[calc(100vh-16rem)]">
+                  <div className="flex gap-6 h-[calc(100vh-16rem)] overflow-scroll custom-scrollbars">
                     {/* Sidebar Navigation */}
-                    <div className="w-80 bg-muted/30 rounded-lg p-4 overflow-y-auto">
+                    <div className="w-80 bg-muted/30 rounded-lg p-4 overflow-y-scroll custom-scrollbars">
                       <h3 className="font-semibold text-foreground mb-4">Pricing Configuration</h3>
                       <div className="space-y-2">
                         {[
@@ -1567,12 +1563,20 @@ const SingleProductConfig = () => {
                     </div>
 
                     {/* Content Area */}
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-scroll custom-scrollbars">
                       {activePricingTab === "base-rates" && (
                         <Card className="h-full">
                           <CardHeader>
-                            <CardTitle>Base Rates</CardTitle>
-                            <CardDescription>Configure base premium rates for different sub-project types</CardDescription>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle>Base Rates</CardTitle>
+                                <CardDescription>Configure base premium rates for different sub-project types</CardDescription>
+                              </div>
+                              <Button onClick={saveConfiguration} size="sm">
+                                <Save className="w-4 h-4 mr-2" />
+                                Save
+                              </Button>
+                            </div>
                           </CardHeader>
                           <CardContent>
                             <SubProjectBaseRates
@@ -1589,8 +1593,12 @@ const SingleProductConfig = () => {
                       {activePricingTab === "project-risk" && (
                         <Card className="h-full">
                           <CardHeader>
-                            <CardTitle>Project Risk Factors</CardTitle>
-                            <CardDescription>Configure risk adjustments based on project characteristics</CardDescription>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle>Project Risk Factors</CardTitle>
+                                <CardDescription>Configure risk adjustments based on project characteristics</CardDescription>
+                              </div>
+                            </div>
                           </CardHeader>
                            <CardContent className="p-6">
                              <div className="space-y-6">
@@ -1600,13 +1608,19 @@ const SingleProductConfig = () => {
                                       <CardTitle className="text-sm">Project Duration Loadings/Discounts</CardTitle>
                                       <p className="text-xs text-muted-foreground">Configure pricing based on project duration ranges</p>
                                     </div>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={addDurationLoading}
-                                    >
-                                      Add Row
-                                    </Button>
+                                    <div className="flex items-center gap-2">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={addDurationLoading}
+                                      >
+                                        Add Row
+                                      </Button>
+                                      <Button onClick={saveConfiguration} size="sm">
+                                        <Save className="w-4 h-4 mr-1" />
+                                        Save
+                                      </Button>
+                                    </div>
                                   </CardHeader>
                                   <CardContent>
                                      <Table>
@@ -1707,13 +1721,19 @@ const SingleProductConfig = () => {
                                        <CardTitle className="text-sm">Maintenance Period Loadings/Discounts</CardTitle>
                                        <p className="text-xs text-muted-foreground">Configure pricing based on maintenance period ranges</p>
                                      </div>
-                                     <Button 
-                                       variant="outline" 
-                                       size="sm"
-                                       onClick={addMaintenancePeriodLoading}
-                                     >
-                                       Add Row
-                                     </Button>
+                                     <div className="flex items-center gap-2">
+                                       <Button 
+                                         variant="outline" 
+                                         size="sm"
+                                         onClick={addMaintenancePeriodLoading}
+                                       >
+                                         Add Row
+                                       </Button>
+                                       <Button onClick={saveConfiguration} size="sm">
+                                         <Save className="w-4 h-4 mr-1" />
+                                         Save
+                                       </Button>
+                                     </div>
                                    </CardHeader>
                                    <CardContent>
                                      <Table>
@@ -1810,7 +1830,15 @@ const SingleProductConfig = () => {
 
                                 <Card className="border border-border bg-card">
                                   <CardHeader className="pb-3">
-                                    <CardTitle className="text-sm">Location Hazard Loadings/Discounts</CardTitle>
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <CardTitle className="text-sm">Location Hazard Loadings/Discounts</CardTitle>
+                                        <Button onClick={saveConfiguration} size="sm">
+                                          <Save className="w-4 h-4 mr-1" />
+                                          Save
+                                        </Button>
+                                      </div>
+                                    </div>
                                   </CardHeader>
                                   <CardContent className="space-y-6">
                                     {/* Risk Definition Table */}
@@ -2138,7 +2166,13 @@ const SingleProductConfig = () => {
 
                                     {/* Rate Configuration */}
                                     <div className="space-y-3">
-                                      <Label className="text-sm font-medium">Location Hazard Rates</Label>
+                                      <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-medium">Location Hazard Rates</Label>
+                                        <Button onClick={saveConfiguration} size="sm">
+                                          <Save className="w-4 h-4 mr-1" />
+                                          Save
+                                        </Button>
+                                      </div>
                                       <Table>
                                         <TableHeader>
                                           <TableRow>
@@ -2203,8 +2237,12 @@ const SingleProductConfig = () => {
                       {activePricingTab === "contractor-risk" && (
                         <Card className="h-full">
                           <CardHeader>
-                            <CardTitle>Contractor Risk Factors</CardTitle>
-                            <CardDescription>Configure risk adjustments based on contractor profile</CardDescription>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle>Contractor Risk Factors</CardTitle>
+                                <CardDescription>Configure risk adjustments based on contractor profile</CardDescription>
+                              </div>
+                            </div>
                           </CardHeader>
                            <CardContent className="p-6">
                              <div className="space-y-6">
@@ -2214,13 +2252,19 @@ const SingleProductConfig = () => {
                                        <CardTitle className="text-sm">Experience Loadings/Discounts</CardTitle>
                                        <p className="text-xs text-muted-foreground">Experience in years</p>
                                      </div>
-                                     <Button 
-                                       variant="outline" 
-                                       size="sm"
-                                       onClick={() => addContractorRiskEntry('experienceDiscounts')}
-                                     >
-                                       Add Row
-                                     </Button>
+                                     <div className="flex items-center gap-2">
+                                       <Button 
+                                         variant="outline" 
+                                         size="sm"
+                                         onClick={() => addContractorRiskEntry('experienceDiscounts')}
+                                       >
+                                         Add Row
+                                       </Button>
+                                       <Button onClick={saveConfiguration} size="sm">
+                                         <Save className="w-4 h-4 mr-1" />
+                                         Save
+                                       </Button>
+                                     </div>
                                    </CardHeader>
                                    <CardContent>
                                      <Table>
@@ -2316,13 +2360,19 @@ const SingleProductConfig = () => {
                                         <div>
                                           <div className="flex items-center justify-between mb-3">
                                             <Label className="text-sm font-medium">Claim Frequency (Last 5 Years)</Label>
-                                            <Button 
-                                              variant="outline" 
-                                              size="sm"
-                                              onClick={() => addContractorRiskEntry('claimFrequency')}
-                                            >
-                                              Add Row
-                                            </Button>
+                                            <div className="flex items-center gap-2">
+                                              <Button 
+                                                variant="outline" 
+                                                size="sm"
+                                                onClick={() => addContractorRiskEntry('claimFrequency')}
+                                              >
+                                                Add Row
+                                              </Button>
+                                              <Button onClick={saveConfiguration} size="sm">
+                                                <Save className="w-4 h-4 mr-1" />
+                                                Save
+                                              </Button>
+                                            </div>
                                           </div>
                                           <Table>
                                             <TableHeader>
@@ -2409,13 +2459,19 @@ const SingleProductConfig = () => {
                                         <div>
                                           <div className="flex items-center justify-between mb-3">
                                             <Label className="text-sm font-medium">Claim Amount Categories</Label>
-                                            <Button 
-                                              variant="outline" 
-                                              size="sm"
-                                              onClick={() => addContractorRiskEntry('claimAmountCategories')}
-                                            >
-                                              Add Row
-                                            </Button>
+                                            <div className="flex items-center gap-2">
+                                              <Button 
+                                                variant="outline" 
+                                                size="sm"
+                                                onClick={() => addContractorRiskEntry('claimAmountCategories')}
+                                              >
+                                                Add Row
+                                              </Button>
+                                              <Button onClick={saveConfiguration} size="sm">
+                                                <Save className="w-4 h-4 mr-1" />
+                                                Save
+                                              </Button>
+                                            </div>
                                           </div>
                                           <Table>
                                             <TableHeader>
@@ -2509,13 +2565,19 @@ const SingleProductConfig = () => {
                                       <CardTitle className="text-sm">Contractor Number Based Configuration</CardTitle>
                                       <p className="text-xs text-muted-foreground">Number of contractors</p>
                                     </div>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => addContractorRiskEntry('contractorNumbers')}
-                                    >
-                                      Add Row
-                                    </Button>
+                                    <div className="flex items-center gap-2">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => addContractorRiskEntry('contractorNumbers')}
+                                      >
+                                        Add Row
+                                      </Button>
+                                      <Button onClick={saveConfiguration} size="sm">
+                                        <Save className="w-4 h-4 mr-1" />
+                                        Save
+                                      </Button>
+                                    </div>
                                   </CardHeader>
                                   <CardContent>
                                     <Table>
@@ -2608,13 +2670,19 @@ const SingleProductConfig = () => {
                                       <CardTitle className="text-sm">Subcontractor Number Based Configuration</CardTitle>
                                       <p className="text-xs text-muted-foreground">Number of subcontractors</p>
                                     </div>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => addContractorRiskEntry('subcontractorNumbers')}
-                                    >
-                                      Add Row
-                                    </Button>
+                                    <div className="flex items-center gap-2">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => addContractorRiskEntry('subcontractorNumbers')}
+                                      >
+                                        Add Row
+                                      </Button>
+                                      <Button onClick={saveConfiguration} size="sm">
+                                        <Save className="w-4 h-4 mr-1" />
+                                        Save
+                                      </Button>
+                                    </div>
                                   </CardHeader>
                                   <CardContent>
                                     <Table>
@@ -2719,13 +2787,19 @@ const SingleProductConfig = () => {
                                         <CardTitle className="text-sm">Sum Insured</CardTitle>
                                         <p className="text-xs text-muted-foreground">Rate based on sum insured value ranges (AED)</p>
                                       </div>
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={() => addCoverRequirementEntry('sumInsured')}
-                                      >
-                                        Add Row
-                                      </Button>
+                                      <div className="flex items-center gap-2">
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => addCoverRequirementEntry('sumInsured')}
+                                        >
+                                          Add Row
+                                        </Button>
+                                        <Button onClick={saveConfiguration} size="sm">
+                                          <Save className="w-4 h-4 mr-1" />
+                                          Save
+                                        </Button>
+                                      </div>
                                     </CardHeader>
                                     <CardContent>
                                       <Table>
@@ -2818,13 +2892,19 @@ const SingleProductConfig = () => {
                                         <CardTitle className="text-sm">Project Value</CardTitle>
                                         <p className="text-xs text-muted-foreground">Rate based on project value ranges (AED)</p>
                                       </div>
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={() => addCoverRequirementEntry('projectValue')}
-                                      >
-                                        Add Row
-                                      </Button>
+                                      <div className="flex items-center gap-2">
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => addCoverRequirementEntry('projectValue')}
+                                        >
+                                          Add Row
+                                        </Button>
+                                        <Button onClick={saveConfiguration} size="sm">
+                                          <Save className="w-4 h-4 mr-1" />
+                                          Save
+                                        </Button>
+                                      </div>
                                     </CardHeader>
                                     <CardContent>
                                       <Table>
@@ -2917,13 +2997,19 @@ const SingleProductConfig = () => {
                                        <CardTitle className="text-sm">Contract Works (Material Damage)</CardTitle>
                                        <p className="text-xs text-muted-foreground">Rate based on contract works value ranges (AED)</p>
                                      </div>
-                                     <Button 
-                                       variant="outline" 
-                                       size="sm"
-                                       onClick={() => addCoverRequirementEntry('contractWorks')}
-                                     >
-                                       Add Row
-                                     </Button>
+                                     <div className="flex items-center gap-2">
+                                       <Button 
+                                         variant="outline" 
+                                         size="sm"
+                                         onClick={() => addCoverRequirementEntry('contractWorks')}
+                                       >
+                                         Add Row
+                                       </Button>
+                                       <Button onClick={saveConfiguration} size="sm">
+                                         <Save className="w-4 h-4 mr-1" />
+                                         Save
+                                       </Button>
+                                     </div>
                                    </CardHeader>
                                     <CardContent>
                                       <Table>
@@ -3016,13 +3102,19 @@ const SingleProductConfig = () => {
                                        <CardTitle className="text-sm">Plant & Equipment (CPM)</CardTitle>
                                        <p className="text-xs text-muted-foreground">Rate based on plant & machinery value ranges (AED)</p>
                                      </div>
-                                     <Button 
-                                       variant="outline" 
-                                       size="sm"
-                                       onClick={() => addCoverRequirementEntry('plantEquipment')}
-                                     >
-                                       Add Row
-                                     </Button>
+                                     <div className="flex items-center gap-2">
+                                       <Button 
+                                         variant="outline" 
+                                         size="sm"
+                                         onClick={() => addCoverRequirementEntry('plantEquipment')}
+                                       >
+                                         Add Row
+                                       </Button>
+                                       <Button onClick={saveConfiguration} size="sm">
+                                         <Save className="w-4 h-4 mr-1" />
+                                         Save
+                                       </Button>
+                                     </div>
                                    </CardHeader>
                                     <CardContent>
                                       <Table>
@@ -3112,8 +3204,16 @@ const SingleProductConfig = () => {
 
                                  <Card className="border border-border bg-card">
                                    <CardHeader className="pb-3">
-                                     <CardTitle className="text-sm">Cross Liability Cover</CardTitle>
-                                     <p className="text-xs text-muted-foreground">Rate based on cross liability cover selection</p>
+                                     <div className="flex items-center justify-between">
+                                       <div>
+                                         <CardTitle className="text-sm">Cross Liability Cover</CardTitle>
+                                         <p className="text-xs text-muted-foreground">Rate based on cross liability cover selection</p>
+                                       </div>
+                                       <Button onClick={saveConfiguration} size="sm">
+                                         <Save className="w-4 h-4 mr-1" />
+                                         Save
+                                       </Button>
+                                     </div>
                                    </CardHeader>
                                    <CardContent>
                                      <Table>
@@ -3184,27 +3284,77 @@ const SingleProductConfig = () => {
                               <div className="space-y-6">
                                 <Card className="border border-border bg-card">
                                   <CardHeader className="pb-3">
-                                    <CardTitle className="text-sm">Policy Limits</CardTitle>
+                                    <div className="flex items-center justify-between">
+                                      <CardTitle className="text-sm">Policy Limits</CardTitle>
+                                      <Button onClick={saveConfiguration} size="sm">
+                                        <Save className="w-4 h-4 mr-1" />
+                                        Save
+                                      </Button>
+                                    </div>
                                   </CardHeader>
-                                    <CardContent className="overflow-x-auto">
-                                      <Table>
-                                        <TableHeader>
-                                          <TableRow>
-                                            <TableHead>Limit Type</TableHead>
-                                            <TableHead>Pricing Type</TableHead>
-                                            <TableHead>Value (AED)</TableHead>
-                                          </TableRow>
-                                        </TableHeader>
-                                       <TableBody>
+                                  <CardContent className="overflow-x-auto">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>Limit Type</TableHead>
+                                          <TableHead>Pricing Type</TableHead>
+                                          <TableHead>Value (AED)</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                     <TableBody>
+                                       <TableRow>
+                                         <TableCell className="font-medium">Minimum Premium</TableCell>
+                                         <TableCell>
+                                           <Select defaultValue="fixed">
+                                             <SelectTrigger className="w-32">
+                                               <SelectValue />
+                                             </SelectTrigger>
+                                             <SelectContent>
+                                               <SelectItem value="percentage-sum-insured">Percentage of Sum Insured</SelectItem>
+                                               <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                             </SelectContent>
+                                           </Select>
+                                         </TableCell>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              value={ratingConfig.limits.minimumPremium}
+                                              onChange={(e) => updateLimits('minimumPremium', parseInt(e.target.value) || 0)}
+                                              className="w-32"
+                                            />
+                                          </TableCell>
+                                       </TableRow>
+                                       <TableRow>
+                                         <TableCell className="font-medium">Maximum Cover</TableCell>
+                                         <TableCell>
+                                           <Select defaultValue="fixed">
+                                             <SelectTrigger className="w-32">
+                                               <SelectValue />
+                                             </SelectTrigger>
+                                             <SelectContent>
+                                               <SelectItem value="percentage-sum-insured">Percentage of Sum Insured</SelectItem>
+                                               <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                             </SelectContent>
+                                           </Select>
+                                         </TableCell>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              value={ratingConfig.limits.maximumCover}
+                                              onChange={(e) => updateLimits('maximumCover', parseInt(e.target.value) || 0)}
+                                              className="w-32"
+                                            />
+                                           </TableCell>
+                                         </TableRow>
                                          <TableRow>
-                                           <TableCell className="font-medium">Minimum Premium</TableCell>
+                                           <TableCell className="font-medium">Base Broker Commission</TableCell>
                                            <TableCell>
-                                             <Select defaultValue="fixed">
+                                             <Select defaultValue="percentage">
                                                <SelectTrigger className="w-32">
                                                  <SelectValue />
                                                </SelectTrigger>
                                                <SelectContent>
-                                                 <SelectItem value="percentage-sum-insured">Percentage of Sum Insured</SelectItem>
+                                                 <SelectItem value="percentage">Percentage</SelectItem>
                                                  <SelectItem value="fixed">Fixed Amount</SelectItem>
                                                </SelectContent>
                                              </Select>
@@ -3212,77 +3362,33 @@ const SingleProductConfig = () => {
                                             <TableCell>
                                               <Input
                                                 type="number"
-                                                value={ratingConfig.limits.minimumPremium}
-                                                onChange={(e) => updateLimits('minimumPremium', parseInt(e.target.value) || 0)}
+                                                value={ratingConfig.limits.baseBrokerCommission}
+                                                onChange={(e) => updateLimits('baseBrokerCommission', parseInt(e.target.value) || 0)}
                                                 className="w-32"
                                               />
                                             </TableCell>
                                          </TableRow>
                                          <TableRow>
-                                           <TableCell className="font-medium">Maximum Cover</TableCell>
+                                           <TableCell className="font-medium">Minimum Broker Commission</TableCell>
+                                          <TableCell>
+                                            <Select defaultValue="percentage">
+                                              <SelectTrigger className="w-32">
+                                                <SelectValue />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="percentage">Percentage</SelectItem>
+                                                <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </TableCell>
                                            <TableCell>
-                                             <Select defaultValue="fixed">
-                                               <SelectTrigger className="w-32">
-                                                 <SelectValue />
-                                               </SelectTrigger>
-                                               <SelectContent>
-                                                 <SelectItem value="percentage-sum-insured">Percentage of Sum Insured</SelectItem>
-                                                 <SelectItem value="fixed">Fixed Amount</SelectItem>
-                                               </SelectContent>
-                                             </Select>
+                                             <Input
+                                               type="number"
+                                               value={ratingConfig.limits.minimumBrokerCommission}
+                                               onChange={(e) => updateLimits('minimumBrokerCommission', parseInt(e.target.value) || 0)}
+                                               className="w-32"
+                                             />
                                            </TableCell>
-                                            <TableCell>
-                                              <Input
-                                                type="number"
-                                                value={ratingConfig.limits.maximumCover}
-                                                onChange={(e) => updateLimits('maximumCover', parseInt(e.target.value) || 0)}
-                                                className="w-32"
-                                              />
-                                             </TableCell>
-                                           </TableRow>
-                                           <TableRow>
-                                             <TableCell className="font-medium">Base Broker Commission</TableCell>
-                                             <TableCell>
-                                               <Select defaultValue="percentage">
-                                                 <SelectTrigger className="w-32">
-                                                   <SelectValue />
-                                                 </SelectTrigger>
-                                                 <SelectContent>
-                                                   <SelectItem value="percentage">Percentage</SelectItem>
-                                                   <SelectItem value="fixed">Fixed Amount</SelectItem>
-                                                 </SelectContent>
-                                               </Select>
-                                             </TableCell>
-                                              <TableCell>
-                                                <Input
-                                                  type="number"
-                                                  value={ratingConfig.limits.baseBrokerCommission}
-                                                  onChange={(e) => updateLimits('baseBrokerCommission', parseInt(e.target.value) || 0)}
-                                                  className="w-32"
-                                                />
-                                              </TableCell>
-                                           </TableRow>
-                                           <TableRow>
-                                             <TableCell className="font-medium">Minimum Broker Commission</TableCell>
-                                            <TableCell>
-                                              <Select defaultValue="percentage">
-                                                <SelectTrigger className="w-32">
-                                                  <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                  <SelectItem value="percentage">Percentage</SelectItem>
-                                                  <SelectItem value="fixed">Fixed Amount</SelectItem>
-                                                </SelectContent>
-                                              </Select>
-                                            </TableCell>
-                                             <TableCell>
-                                               <Input
-                                                 type="number"
-                                                 value={ratingConfig.limits.minimumBrokerCommission}
-                                                 onChange={(e) => updateLimits('minimumBrokerCommission', parseInt(e.target.value) || 0)}
-                                                 className="w-32"
-                                               />
-                                             </TableCell>
                                           </TableRow>
                                           <TableRow>
                                             <TableCell className="font-medium">Maximum Broker Commission</TableCell>
@@ -3317,13 +3423,19 @@ const SingleProductConfig = () => {
                                        <CardTitle className="text-sm">Sub-limits</CardTitle>
                                        <p className="text-xs text-muted-foreground">Define coverage sub-limits and restrictions</p>
                                      </div>
-                                     <Button 
-                                       variant="outline" 
-                                       size="sm"
-                                       onClick={() => addCoverRequirementEntry('subLimits')}
-                                     >
-                                       Add Sub-limit
-                                     </Button>
+                                     <div className="flex items-center gap-2">
+                                       <Button 
+                                         variant="outline" 
+                                         size="sm"
+                                         onClick={() => addCoverRequirementEntry('subLimits')}
+                                       >
+                                         Add Sub-limit
+                                       </Button>
+                                       <Button onClick={saveConfiguration} size="sm">
+                                         <Save className="w-4 h-4 mr-1" />
+                                         Save
+                                       </Button>
+                                     </div>
                                    </CardHeader>
                                     <CardContent className="overflow-x-auto">
                                       <Table>
@@ -3409,13 +3521,19 @@ const SingleProductConfig = () => {
                                        <CardTitle className="text-sm">Deductibles</CardTitle>
                                        <p className="text-xs text-muted-foreground">Configure deductible options and pricing</p>
                                      </div>
-                                     <Button 
-                                       variant="outline" 
-                                       size="sm"
-                                       onClick={() => addCoverRequirementEntry('deductibles')}
-                                     >
-                                       Add Deductible
-                                     </Button>
+                                     <div className="flex items-center gap-2">
+                                       <Button 
+                                         variant="outline" 
+                                         size="sm"
+                                         onClick={() => addCoverRequirementEntry('deductibles')}
+                                       >
+                                         Add Deductible
+                                       </Button>
+                                       <Button onClick={saveConfiguration} size="sm">
+                                         <Save className="w-4 h-4 mr-1" />
+                                         Save
+                                       </Button>
+                                     </div>
                                    </CardHeader>
                                     <CardContent className="overflow-x-auto">
                                       <Table>
@@ -3508,8 +3626,16 @@ const SingleProductConfig = () => {
                       {activePricingTab === "clause-pricing" && (
                         <Card className="h-full">
                           <CardHeader>
-                            <CardTitle>Clause Pricing Configuration</CardTitle>
-                            <CardDescription>Configure pricing for specific policy clauses</CardDescription>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle>Clause Pricing Configuration</CardTitle>
+                                <CardDescription>Configure pricing for specific policy clauses</CardDescription>
+                              </div>
+                              <Button onClick={saveConfiguration} size="sm">
+                                <Save className="w-4 h-4 mr-1" />
+                                Save
+                              </Button>
+                            </div>
                           </CardHeader>
                            <CardContent className="overflow-x-auto">
                              <div className="grid gap-6">
@@ -3553,8 +3679,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "construction-types" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Construction Types</CardTitle>
-                              <CardDescription>Configure pricing for different construction types</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Construction Types</CardTitle>
+                                  <CardDescription>Configure pricing for different construction types</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                            <CardContent className="overflow-x-auto">
                              <Table>
@@ -3606,8 +3740,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "countries" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Countries</CardTitle>
-                              <CardDescription>Configure pricing for different countries</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Countries</CardTitle>
+                                  <CardDescription>Configure pricing for different countries</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                              <CardContent className="overflow-x-auto">
                                <Table>
@@ -3659,8 +3801,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "regions" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Regions</CardTitle>
-                              <CardDescription>Configure pricing for different regions</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Regions</CardTitle>
+                                  <CardDescription>Configure pricing for different regions</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                            <CardContent className="overflow-x-auto">
                              <Table>
@@ -3712,8 +3862,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "zones" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Zones</CardTitle>
-                              <CardDescription>Configure pricing for different zones</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Zones</CardTitle>
+                                  <CardDescription>Configure pricing for different zones</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                              <CardContent className="overflow-x-auto">
                                <Table>
@@ -3765,8 +3923,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "role-types" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Role Types</CardTitle>
-                              <CardDescription>Configure pricing for different role types</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Role Types</CardTitle>
+                                  <CardDescription>Configure pricing for different role types</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                              <CardContent className="overflow-x-auto">
                                <Table>
@@ -3818,8 +3984,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "contract-types" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Contract Types</CardTitle>
-                              <CardDescription>Configure pricing for different contract types</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Contract Types</CardTitle>
+                                  <CardDescription>Configure pricing for different contract types</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                             <CardContent>
                               <Table>
@@ -3871,8 +4045,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "soil-types" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Soil Types</CardTitle>
-                              <CardDescription>Configure pricing for different soil types</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Soil Types</CardTitle>
+                                  <CardDescription>Configure pricing for different soil types</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                             <CardContent>
                               <Table>
@@ -3924,8 +4106,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "subcontractor-types" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Subcontractor Types</CardTitle>
-                              <CardDescription>Configure pricing for different subcontractor types</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Subcontractor Types</CardTitle>
+                                  <CardDescription>Configure pricing for different subcontractor types</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                             <CardContent>
                               <Table>
@@ -3977,8 +4167,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "consultant-roles" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Consultant Roles</CardTitle>
-                              <CardDescription>Configure pricing for different consultant roles</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Consultant Roles</CardTitle>
+                                  <CardDescription>Configure pricing for different consultant roles</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                             <CardContent>
                               <Table>
@@ -4030,8 +4228,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "security-types" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Security Types</CardTitle>
-                              <CardDescription>Configure pricing for different security types</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Security Types</CardTitle>
+                                  <CardDescription>Configure pricing for different security types</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                             <CardContent>
                               <Table>
@@ -4083,8 +4289,16 @@ const SingleProductConfig = () => {
                         {activePricingTab === "area-types" && (
                           <Card className="h-full">
                             <CardHeader>
-                              <CardTitle>Area Types</CardTitle>
-                              <CardDescription>Configure pricing for different area types</CardDescription>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle>Area Types</CardTitle>
+                                  <CardDescription>Configure pricing for different area types</CardDescription>
+                                </div>
+                                <Button onClick={saveConfiguration} size="sm">
+                                  <Save className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
                             </CardHeader>
                             <CardContent>
                               <Table>
@@ -4141,23 +4355,29 @@ const SingleProductConfig = () => {
                                   <CardTitle>Fee Types</CardTitle>
                                   <CardDescription>Configure fees and taxes applicable to quotes (VAT, GST, etc.)</CardDescription>
                                 </div>
-                                <Button onClick={() => {
-                                  const newId = Math.max(...ratingConfig.feeTypes.map(f => f.id), 0) + 1;
-                                  setRatingConfig(prev => ({
-                                    ...prev,
-                                    feeTypes: [...prev.feeTypes, {
-                                      id: newId,
-                                      label: "New Fee",
-                                      pricingType: "percentage",
-                                      value: 0,
-                                      active: true
-                                    }]
-                                  }));
-                                  markAsChanged();
-                                }}>
-                                  <Plus className="w-4 h-4 mr-2" />
-                                  Add Fee Type
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                  <Button onClick={() => {
+                                    const newId = Math.max(...ratingConfig.feeTypes.map(f => f.id), 0) + 1;
+                                    setRatingConfig(prev => ({
+                                      ...prev,
+                                      feeTypes: [...prev.feeTypes, {
+                                        id: newId,
+                                        label: "New Fee",
+                                        pricingType: "percentage",
+                                        value: 0,
+                                        active: true
+                                      }]
+                                    }));
+                                    markAsChanged();
+                                  }}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Add Fee Type
+                                  </Button>
+                                  <Button onClick={saveConfiguration} size="sm">
+                                    <Save className="w-4 h-4 mr-1" />
+                                    Save
+                                  </Button>
+                                </div>
                               </div>
                             </CardHeader>
                             <CardContent>

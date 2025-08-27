@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, User, Save, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { updateUser, type UpdateUserRequestBody, type UpdateUserResponseBody, activateUser, deactivateUser } from "@/lib/api/users";
+import { getUserById, type GetUserByIdResponseBody } from "@/lib/api/users";
+import { FormSkeleton } from "@/components/loaders/FormSkeleton";
 
 export default function EditUser() {
   const navigate = useNavigate();
@@ -17,6 +21,8 @@ export default function EditUser() {
   const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const [userData, setUserData] = useState({
     id: "",
@@ -31,24 +37,51 @@ export default function EditUser() {
     lastLogin: ""
   });
 
+  const [loading, setLoading] = useState<boolean>(true);
+  const fetchedRef = useRef(false);
   useEffect(() => {
-    console.log("EditUser component mounted, userId:", userId);
-    // In real app, this would fetch user data from API
-    // For now, using mock data based on userId
-    const mockUser = {
-      id: userId || "U001",
-      name: "John Smith",
-      email: "john.smith@broker.com",
-      password: "********",
-      isAdmin: false,
-      status: "Active",
-      createdDate: "2023-06-15",
-      activeSince: "2023-06-15",
-      inactiveSince: null,
-      lastLogin: "2024-01-15 14:30"
-    };
-    setUserData(mockUser);
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    let isMounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setErrorMessage(null);
+        const data: GetUserByIdResponseBody = await getUserById(userId || '');
+        if (!isMounted) return;
+        setUserData(prev => ({
+          ...prev,
+          id: String(data.id),
+          name: data.name || prev.name || '',
+          email: data.email,
+          password: '********',
+          isAdmin: data.user_type === 'admin',
+          status: data.status === 'active' ? 'Active' : data.status === 'inactive' ? 'Inactive' : 'Active',
+        }));
+      } catch (err: any) {
+        const status = err?.status as number | undefined;
+        const message = err?.message as string | undefined;
+        if (status === 400) setErrorMessage(message || 'Bad request.');
+        else if (status === 401) setErrorMessage('You are not authenticated. Please log in.');
+        else if (status === 403) setErrorMessage("You don't have permission to view this user.");
+        else if (status && status >= 500) setErrorMessage('Server error. Please try again later.');
+        else setErrorMessage(message || 'Failed to load user.');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
   }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-6">
+        <div className="max-w-4xl mx-auto">
+          <FormSkeleton pairs={6} />
+        </div>
+      </div>
+    );
+  }
 
   const handleSave = () => {
     showConfirmDialog(
@@ -57,15 +90,30 @@ export default function EditUser() {
         description: `Are you sure you want to save the changes to ${userData.name}'s account? This action will update their information immediately.`,
         confirmText: "Save Changes"
       },
-      () => {
-        // In real app, this would make an API call to update the user
-        toast({
-          title: "User updated successfully",
-          description: `${userData.name}'s information has been updated.`,
-        });
-        
-        // Navigate back to user management
-        navigate("/broker/user-management");
+      async () => {
+        try {
+          setSubmitting(true);
+          setErrorMessage(null);
+          const payload: UpdateUserRequestBody = {
+            name: userData.name || undefined,
+            email: userData.email || undefined,
+            password: userData.password && userData.password !== '********' ? userData.password : undefined,
+            user_type: userData.isAdmin ? 'admin' : 'user',
+          };
+          const response: UpdateUserResponseBody = await updateUser(userId || userData.id, payload);
+          toast({ title: response.message || 'User updated' });
+          navigate("/broker/user-management");
+        } catch (err: any) {
+          const status = err?.status as number | undefined;
+          const message = err?.message as string | undefined;
+          if (status === 400) setErrorMessage(message || 'Invalid data. Check inputs and try again.');
+          else if (status === 401) setErrorMessage('You are not authenticated. Please log in.');
+          else if (status === 403) setErrorMessage("You don't have permission to update users.");
+          else if (status && status >= 500) setErrorMessage('Server error. Please try again later.');
+          else setErrorMessage(message || 'Failed to update user.');
+        } finally {
+          setSubmitting(false);
+        }
       }
     );
   };
@@ -81,13 +129,29 @@ export default function EditUser() {
         confirmText: newStatus === "Active" ? "Activate" : "Deactivate",
         variant: newStatus === "Inactive" ? "destructive" : "default"
       },
-      () => {
-        setUserData(prev => ({ ...prev, status: newStatus }));
-        toast({
-          title: "User status updated",
-          description: `${userData.name} has been ${newStatus.toLowerCase()}.`,
-        });
-        setPendingStatus(null);
+      async () => {
+        try {
+          setSubmitting(true);
+          setErrorMessage(null);
+          if (newStatus === 'Active') {
+            await activateUser(userId || userData.id);
+          } else {
+            await deactivateUser(userId || userData.id);
+          }
+          setUserData(prev => ({ ...prev, status: newStatus }));
+          toast({ title: 'User status updated', description: `${userData.name} has been ${newStatus.toLowerCase()}.` });
+        } catch (err: any) {
+          const status = err?.status as number | undefined;
+          const message = err?.message as string | undefined;
+          if (status === 400) setErrorMessage(message || 'Invalid request.');
+          else if (status === 401) setErrorMessage('You are not authenticated. Please log in.');
+          else if (status === 403) setErrorMessage("You don't have permission to change status.");
+          else if (status && status >= 500) setErrorMessage('Server error. Please try again later.');
+          else setErrorMessage(message || 'Failed to update status.');
+        } finally {
+          setSubmitting(false);
+          setPendingStatus(null);
+        }
       }
     );
   };
@@ -136,6 +200,12 @@ export default function EditUser() {
             </CardDescription>
           </CardHeader>
           <CardContent className={`space-y-6 transition-all duration-300 ${userData.status === "Inactive" ? 'opacity-50 pointer-events-none' : ''}`}>
+            {errorMessage && (
+              <Alert variant="destructive">
+                <AlertTitle>Failed to update user</AlertTitle>
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="userName">Full Name *</Label>
@@ -208,9 +278,9 @@ export default function EditUser() {
               >
                 Cancel
               </Button>
-              <Button onClick={handleSave} className="gap-2">
+              <Button onClick={handleSave} className="gap-2" disabled={submitting}>
                 <Save className="w-4 h-4" />
-                Save Changes
+                {submitting ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </CardContent>
