@@ -9,7 +9,8 @@ import { Plus, Search, Eye, Edit, Trash2, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TableSkeleton } from "@/components/loaders/TableSkeleton";
-import { getUsersByAdmin, type AdminUserListItem } from "@/lib/api/users";
+import { getInsurerUsers, type PortalUserListItem } from "@/lib/api/users";
+import { getInsurerCompanyId } from "@/lib/auth";
 
 type UiUser = {
   id: number;
@@ -35,9 +36,11 @@ export default function InsurerUserManagement() {
       setLoading(true);
       setErrorMessage(null);
       try {
-        const apiUsers = await getUsersByAdmin();
+        const companyId = getInsurerCompanyId();
+        if (!companyId) throw new Error('Missing insurer company id');
+        const apiUsers = await getInsurerUsers(companyId);
         if (!isMounted) return;
-        const mapped: UiUser[] = apiUsers.map((u: AdminUserListItem) => ({
+        const mapped: UiUser[] = apiUsers.map((u: PortalUserListItem) => ({
           id: u.id,
           name: (u as any).name,
           email: u.email,

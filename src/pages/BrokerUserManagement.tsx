@@ -9,7 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TableSkeleton } from "@/components/loaders/TableSkeleton";
-import { getUsersByAdmin, type AdminUserListItem } from "@/lib/api/users";
+import { getBrokerUsers, type PortalUserListItem } from "@/lib/api/users";
+import { getBrokerCompanyId } from "@/lib/auth";
 
 type UiUser = {
   id: number;
@@ -35,9 +36,11 @@ export default function BrokerUserManagement() {
       setLoading(true);
       setErrorMessage(null);
       try {
-        const apiUsers = await getUsersByAdmin();
+        const companyId = getBrokerCompanyId();
+        if (!companyId) throw new Error('Missing broker company id');
+        const apiUsers = await getBrokerUsers(companyId);
         if (!isMounted) return;
-        const mapped: UiUser[] = apiUsers.map((u: AdminUserListItem) => ({
+        const mapped: UiUser[] = apiUsers.map((u: PortalUserListItem) => ({
           id: u.id,
           name: (u as any).name,
           email: u.email,

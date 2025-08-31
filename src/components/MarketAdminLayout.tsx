@@ -40,9 +40,17 @@ function MarketAdminSidebar() {
       const rt = getRefreshToken();
       if (rt) {
         await logout({ refreshToken: rt });
+      } else {
+        // No refresh token found – likely already expired or cleared
+        toast({ title: 'Session expired', description: 'No refresh token found. Logging you out.' });
       }
     } catch (err: any) {
-      // best-effort logout; proceed to clear client-side state
+      // Best-effort logout; surface error if it looks like a missing/invalid refresh token
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      if (status === 400) {
+        toast({ title: 'Logout failed', description: message || 'Refresh token is required.' });
+      }
     } finally {
       clearAuth();
       sessionStorage.clear();

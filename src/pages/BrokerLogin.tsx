@@ -8,9 +8,9 @@ import { Users, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import siteLogo from "@/assets/logo.png";
 import illustration from "@/assets/illustration.svg";
-import { login } from "@/lib/api";
+import { login, getBroker } from "@/lib/api";
 import { setAuthToken } from "@/lib/api";
-import { setAuthTokens, setAuthUser } from "@/lib/auth";
+import { setAuthTokens, setAuthUser, setBrokerCompany } from "@/lib/auth";
 
 const BrokerLogin = () => {
   const navigate = useNavigate();
@@ -30,8 +30,18 @@ const BrokerLogin = () => {
       setErrorMessage(null);
       const res = await login({ email: formData.email, password: formData.password });
       setAuthToken(res.token);
-      setAuthTokens(res.token, res.refreshToken);
+      if (res.refreshToken) setAuthTokens(res.token, res.refreshToken);
       setAuthUser(res.user);
+
+      if (res.user?.company_id) {
+        try {
+          const company = await getBroker(res.user.company_id);
+          setBrokerCompany({ id: company.id, name: company.name, logo: company.companyLogo ?? null });
+        } catch (e: any) {
+          // Non-blocking if company fetch fails
+        }
+      }
+
       toast({ title: "Login Successful", description: `Welcome, ${res.user.email}!` });
       navigate("/broker/dashboard");
     } catch (err: any) {

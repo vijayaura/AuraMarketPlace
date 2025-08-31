@@ -53,6 +53,14 @@ api.interceptors.request.use((config) => {
   if (authToken) {
     headers.set('Authorization', `Bearer ${authToken}`);
   }
+  // For all GET requests, disable caches and add a cache-busting param to ensure fresh data
+  if (String(config.method).toLowerCase() === 'get') {
+    headers.set('Cache-Control', 'no-cache');
+    headers.set('Pragma', 'no-cache');
+    const params = new URLSearchParams((config.params as any) || {});
+    if (!params.has('_ts')) params.set('_ts', String(Date.now()));
+    config.params = params;
+  }
   config.headers = headers;
   return config;
 });
@@ -79,7 +87,7 @@ api.interceptors.response.use(
 
         // Use a raw axios call to avoid recursion via interceptors
         const resp = await axios.post<{ token: string; refreshToken: string }>(
-          `${api.defaults.baseURL}/auth/refresh`,
+          `${api.defaults.baseURL}/auth/refresh-token`,
           { refreshToken },
           { headers: { Accept: 'application/json' }, timeout: 15000 }
         );

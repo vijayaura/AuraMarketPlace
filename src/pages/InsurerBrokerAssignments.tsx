@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,60 +6,51 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Footer } from "@/components/Footer";
-import { ArrowLeft, Save, Calculator, Download, Upload, Package } from "lucide-react";
+import { ArrowLeft, Calculator, Download, Upload, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { getInsurerCompanyId } from "@/lib/auth";
+import { getInsurerBrokerAssignments, toggleBrokerStatus, getBrokerAssignedProducts, type BrokerAssignment, type BrokerProductAssignment } from "@/lib/api/insurers";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { TableSkeleton } from "@/components/loaders/TableSkeleton";
 const InsurerBrokerAssignments = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
 
-  // Mock data for brokers
-  const [brokersData, setBrokersData] = useState([{
-    id: 1,
-    name: "Gulf Insurance Brokers",
-    email: "info@gulfbrokers.ae",
-    license: "BRK-001-2024",
-    isActive: true,
-    status: "Active",
-    productsAssigned: 2
-  }, {
-    id: 2,
-    name: "Emirates Risk Management",
-    email: "contact@emiratesrisk.com",
-    license: "BRK-002-2024",
-    isActive: true,
-    status: "Active",
-    productsAssigned: 1
-  }, {
-    id: 3,
-    name: "Dubai Insurance Services",
-    email: "hello@dubaiinsurance.ae",
-    license: "BRK-003-2024",
-    isActive: false,
-    status: "Active",
-    productsAssigned: 0
-  }, {
-    id: 4,
-    name: "Al Khaleej Insurance Brokers",
-    email: "info@alkhaleejbrokers.com",
-    license: "BRK-004-2024",
-    isActive: false,
-    status: "Inactive",
-    productsAssigned: 0
-  }, {
-    id: 5,
-    name: "Middle East Insurance Partners",
-    email: "partners@meipartners.ae",
-    license: "BRK-005-2024",
-    isActive: true,
-    status: "Active",
-    productsAssigned: 2
-  }]);
+  // API state
+  const [loading, setLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [brokersData, setBrokersData] = useState<BrokerAssignment[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      setLoading(true);
+      setErrorMessage(null);
+      try {
+        const insurerId = getInsurerCompanyId();
+        if (!insurerId) throw new Error('Missing insurer company id');
+        const list = await getInsurerBrokerAssignments(insurerId);
+        if (isMounted) setBrokersData(list);
+      } catch (err: any) {
+        const status = err?.status as number | undefined;
+        const message = err?.message as string | undefined;
+        if (status === 400) setErrorMessage(message || 'Bad request.');
+        else if (status === 401) setErrorMessage('You are not authenticated. Please log in.');
+        else if (status === 403) setErrorMessage("You don't have permission to view this page.");
+        else if (status && status >= 500) setErrorMessage('Server error. Please try again later.');
+        else setErrorMessage(message || 'Failed to load broker assignments.');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
 
   // Mock data for products
   const [productsData] = useState([{
@@ -76,47 +67,9 @@ const InsurerBrokerAssignments = () => {
 
   // State for product assignment dialog
   const [selectedBroker, setSelectedBroker] = useState<number | null>(null);
-  const [brokerProducts, setBrokerProducts] = useState<{
-    [brokerId: number]: {
-      [productId: number]: {
-        assigned: boolean;
-        minCommission: number;
-        maxCommission: number;
-      };
-    };
-  }>({
-    1: {
-      1: {
-        assigned: true,
-        minCommission: 2.0,
-        maxCommission: 5.0
-      },
-      2: {
-        assigned: true,
-        minCommission: 1.5,
-        maxCommission: 4.0
-      }
-    },
-    2: {
-      1: {
-        assigned: true,
-        minCommission: 2.0,
-        maxCommission: 5.0
-      }
-    },
-    5: {
-      1: {
-        assigned: true,
-        minCommission: 2.0,
-        maxCommission: 5.0
-      },
-      2: {
-        assigned: true,
-        minCommission: 1.5,
-        maxCommission: 4.0
-      }
-    }
-  });
+  const [productsLoading, setProductsLoading] = useState<boolean>(false);
+  const [productsError, setProductsError] = useState<string | null>(null);
+  const [brokerProducts, setBrokerProducts] = useState<Record<number, BrokerProductAssignment[]>>({});
 
   // State for confirmation dialog
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -132,67 +85,47 @@ const InsurerBrokerAssignments = () => {
   });
   const handleToggleRequest = (brokerId: number) => {
     const broker = brokersData.find(b => b.id === brokerId);
-    if (broker) {
-      setConfirmDialog({
-        open: true,
-        brokerId: brokerId,
-        brokerName: broker.name,
-        currentStatus: broker.isActive
-      });
-    }
-  };
-  const confirmToggleBrokerStatus = () => {
-    const {
-      brokerId
-    } = confirmDialog;
-    if (brokerId) {
-      setBrokersData(prev => prev.map(broker => broker.id === brokerId ? {
-        ...broker,
-        isActive: !broker.isActive,
-        status: !broker.isActive ? "Active" : "Inactive"
-      } : broker));
-      const broker = brokersData.find(b => b.id === brokerId);
-      toast({
-        title: broker?.isActive ? "Broker Deactivated" : "Broker Activated",
-        description: `${broker?.name} has been ${broker?.isActive ? 'deactivated' : 'activated'}.`
-      });
-    }
+    if (!broker) return;
     setConfirmDialog({
-      open: false,
-      brokerId: null,
-      brokerName: "",
-      currentStatus: false
+      open: true,
+      brokerId: brokerId,
+      brokerName: broker.name,
+      currentStatus: broker.isActive
     });
+  };
+  const [toggling, setToggling] = useState<boolean>(false);
+  const confirmToggleBrokerStatus = async () => {
+    const { brokerId, currentStatus } = confirmDialog;
+    if (!brokerId) return;
+    const insurerId = getInsurerCompanyId();
+    if (!insurerId) return;
+    try {
+      setToggling(true);
+      const resp = await toggleBrokerStatus(insurerId, brokerId, !currentStatus);
+      setBrokersData(prev => prev.map(b => b.id === brokerId ? { ...b, isActive: !currentStatus, status: resp.status } : b));
+      toast({
+        title: resp.status === 'active' ? 'Broker Activated' : 'Broker Deactivated',
+        description: `${confirmDialog.brokerName} has been ${resp.status === 'active' ? 'activated' : 'deactivated'}.`
+      });
+    } catch (err: any) {
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      if (status === 400) toast({ title: 'Bad request', description: message || 'Please try again.' });
+      else if (status === 401) toast({ title: 'Unauthorized', description: 'Please log in again.' });
+      else if (status === 403) toast({ title: 'Forbidden', description: "You don't have permission." });
+      else if (status && status >= 500) toast({ title: 'Server error', description: 'Please try again later.' });
+      else toast({ title: 'Error', description: message || 'Failed to update status.' });
+    } finally {
+      setToggling(false);
+      setConfirmDialog({ open: false, brokerId: null, brokerName: "", currentStatus: false });
+    }
   };
   const toggleProductAssignment = (brokerId: number, productId: number) => {
     setBrokerProducts(prev => {
-      const current = prev[brokerId]?.[productId]?.assigned || false;
-      const product = productsData.find(p => p.id === productId);
-      return {
-        ...prev,
-        [brokerId]: {
-          ...prev[brokerId],
-          [productId]: {
-            assigned: !current,
-            minCommission: product?.minCommission || 0,
-            maxCommission: product?.maxCommission || 0
-          }
-        }
-      };
+      const list = prev[brokerId] || [];
+      const next = list.map(p => p.productId === productId ? { ...p, assigned: !p.assigned } : p);
+      return { ...prev, [brokerId]: next };
     });
-
-    // Update products assigned count
-    setBrokersData(prev => prev.map(broker => {
-      if (broker.id === brokerId) {
-        const assignedCount = Object.values(brokerProducts[brokerId] || {}).filter(p => p.assigned).length;
-        const newCount = brokerProducts[brokerId]?.[productId]?.assigned ? assignedCount - 1 : assignedCount + 1;
-        return {
-          ...broker,
-          productsAssigned: newCount
-        };
-      }
-      return broker;
-    }));
   };
   const updateProductCommission = (brokerId: number, productId: number, field: 'minCommission' | 'maxCommission', value: number) => {
     setBrokerProducts(prev => ({
@@ -246,10 +179,7 @@ const InsurerBrokerAssignments = () => {
               </h1>
               <p className="text-sm text-muted-foreground">Configure broker settings and commission structure</p>
             </div>
-            <Button onClick={saveConfiguration} className="bg-primary hover:bg-primary/90">
-              <Save className="w-4 h-4 mr-2" />
-              Save Configuration
-            </Button>
+            {/* Removed page-level Save button; saving is done inside the product assignments dialog */}
           </div>
         </div>
       </div>
@@ -298,14 +228,45 @@ const InsurerBrokerAssignments = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {brokersData.map(broker => <TableRow key={broker.id} className={!broker.isActive ? "opacity-50" : ""}>
+                    {loading && <TableSkeleton rowCount={5} colCount={5} />}
+                    {errorMessage && (
+                      <TableRow>
+                        <TableCell colSpan={5}>
+                          <Alert variant="destructive">
+                            <AlertTitle>Failed to load</AlertTitle>
+                            <AlertDescription>{errorMessage}</AlertDescription>
+                          </Alert>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {!loading && !errorMessage && brokersData.map(broker => <TableRow key={broker.id} className={!broker.isActive ? "opacity-50" : ""}>
                         <TableCell className="font-medium">{broker.name}</TableCell>
-                        <TableCell>{broker.email}</TableCell>
-                        <TableCell>{broker.license}</TableCell>
+                        <TableCell>{broker.email || '-'}</TableCell>
+                        <TableCell>{broker.licenseNumber || '-'}</TableCell>
                         <TableCell>
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" onClick={() => setSelectedBroker(broker.id)}>
+                              <Button variant="outline" size="sm" onClick={async () => {
+                                setSelectedBroker(broker.id);
+                                const insurerId = getInsurerCompanyId();
+                                if (!insurerId) return;
+                                setProductsLoading(true);
+                                setProductsError(null);
+                                try {
+                                  const assigned = await getBrokerAssignedProducts(insurerId, broker.id);
+                                  setBrokerProducts(prev => ({ ...prev, [broker.id]: assigned }));
+                                } catch (err: any) {
+                                  const status = err?.status as number | undefined;
+                                  const message = err?.message as string | undefined;
+                                  if (status === 400) setProductsError(message || 'Bad request while loading products.');
+                                  else if (status === 401) setProductsError('Unauthorized. Please log in again.');
+                                  else if (status === 403) setProductsError("You don't have access to these products.");
+                                  else if (status && status >= 500) setProductsError('Server error. Please try again later.');
+                                  else setProductsError(message || 'Failed to load assigned products.');
+                                } finally {
+                                  setProductsLoading(false);
+                                }
+                              }}>
                                 <Package className="w-4 h-4 mr-2" />
                                 {broker.productsAssigned} Products
                               </Button>
@@ -314,41 +275,43 @@ const InsurerBrokerAssignments = () => {
                               <DialogHeader className="pr-10">
                                 <div className="flex items-center justify-between gap-4">
                                   <DialogTitle className="flex-1">Product Assignments - {broker.name}</DialogTitle>
-                                  <div className="flex items-center gap-2 flex-shrink-0">
-                                    <Button variant="outline" size="sm" onClick={downloadTemplate}>
-                                      <Download className="w-4 h-4 mr-2" />
-                                      Download Template
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={() => document.getElementById('product-file-upload')?.click()}>
-                                      <Upload className="w-4 h-4 mr-2" />
-                                      Upload Excel
-                                    </Button>
-                                    <input id="product-file-upload" type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" />
-                                  </div>
                                 </div>
                               </DialogHeader>
                               <div className="mt-4">
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead className="text-center">Assigned</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
+                                {productsError && (
+                                  <Alert variant="destructive" className="mb-3">
+                                    <AlertTitle>Failed to load products</AlertTitle>
+                                    <AlertDescription>{productsError}</AlertDescription>
+                                  </Alert>
+                                )}
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Product</TableHead>
+                                      <TableHead className="text-center">Assigned</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
                                   <TableBody>
-                                    {productsData.map(product => {
-                                  const assignment = brokerProducts[broker.id]?.[product.id];
-                                  const isAssigned = assignment?.assigned || false;
-                                  return <TableRow key={product.id}>
-                                          <TableCell className="font-medium">{product.name}</TableCell>
-                                          <TableCell className="text-center">
-                                            <Checkbox checked={isAssigned} onCheckedChange={() => toggleProductAssignment(broker.id, product.id)} />
-                                          </TableCell>
-                                        </TableRow>;
-                                })}
+                                    {productsLoading && <TableSkeleton rowCount={3} colCount={2} />}
+                                    {!productsLoading && (brokerProducts[broker.id] || []).map(item => (
+                                      <TableRow key={item.productId}>
+                                        <TableCell className="font-medium">{item.productName}</TableCell>
+                                        <TableCell className="text-center">
+                                          <Checkbox checked={!!item.assigned} disabled={!item.isActive} onCheckedChange={() => toggleProductAssignment(broker.id, item.productId)} />
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
                                   </TableBody>
                                 </Table>
                               </div>
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button variant="outline">Cancel</Button>
+                                </DialogClose>
+                                <DialogClose asChild>
+                                  <Button className="bg-primary hover:bg-primary/90">Save</Button>
+                                </DialogClose>
+                              </DialogFooter>
                             </DialogContent>
                           </Dialog>
                         </TableCell>
@@ -357,7 +320,7 @@ const InsurerBrokerAssignments = () => {
                             <Badge variant={broker.isActive ? "default" : "secondary"} className={broker.isActive ? "bg-green-100 text-green-800" : ""}>
                               {broker.isActive ? "Active" : "Inactive"}
                             </Badge>
-                            <Switch checked={broker.isActive} onCheckedChange={() => handleToggleRequest(broker.id)} />
+                            <Switch checked={broker.isActive} onCheckedChange={() => handleToggleRequest(broker.id)} disabled={toggling} />
                           </div>
                         </TableCell>
                       </TableRow>)}

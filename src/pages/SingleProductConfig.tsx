@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,12 +17,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Footer } from "@/components/Footer";
-import { ArrowLeft, Save, Calculator, FileText, Upload, Eye, Plus, Minus, Image, ChevronDown, ChevronRight, Trash2, X, MapPin, Edit, DollarSign, TrendingUp, Shield, Layout, Check, Percent } from "lucide-react";
+import { ArrowLeft, Save, Calculator, FileText, Upload, Eye, Plus, Minus, Image, ChevronDown, ChevronRight, Trash2, X, MapPin, Edit, DollarSign, TrendingUp, Shield, Layout, Check, Percent, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesByProjectType } from "@/lib/masters-data";
 import { getActiveCountries, getRegionsByCountry, getZonesByRegion } from "@/lib/location-data";
 import { ClausePricingCard } from "@/components/product-config/ClausePricingCard";
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest } from "@/lib/api/insurers";
+import { getInsurerCompanyId } from "@/lib/auth";
 
 interface VariableOption {
   id: number;
@@ -104,7 +106,7 @@ const SoilTypeMultiSelect = ({ defaultValues = [], onValueChange }: {
 const SingleProductConfig = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { insurerId, productId } = useParams();
+  const { insurerId, productId, "*": rest } = useParams();
   
   // Detect if we're in insurer portal or market admin
   const isInsurerPortal = location.pathname.startsWith('/insurer');
@@ -123,36 +125,13 @@ const SingleProductConfig = () => {
   };
 
   // State for geographic selection
-  const [selectedCountries, setSelectedCountries] = useState<number[]>([1]); // UAE by default
-  const [selectedRegions, setSelectedRegions] = useState<number[]>([1]); // Dubai by default
-  const [availableRegions, setAvailableRegions] = useState(() => getRegionsByCountry(1));
-  const [availableZones, setAvailableZones] = useState(() => getZonesByRegion(1));
 
-  // Handle geographic selection changes
-  const handleCountryChange = (countryIds: number[]) => {
-    setSelectedCountries(countryIds);
-    const regions = countryIds.flatMap(countryId => getRegionsByCountry(countryId));
-    setAvailableRegions(regions);
-    updateQuoteConfig('details', 'countries', countryIds);
-    updateQuoteConfig('details', 'regions', []);
-    updateQuoteConfig('details', 'zones', []);
-    setSelectedRegions([]);
-    setAvailableZones([]);
-  };
-
-  const handleRegionChange = (regionIds: number[]) => {
-    setSelectedRegions(regionIds);
-    const zones = regionIds.flatMap(regionId => getZonesByRegion(regionId));
-    setAvailableZones(zones);
-    updateQuoteConfig('details', 'regions', regionIds);
-    updateQuoteConfig('details', 'zones', []);
-  };
 
   // Initialize base rates from masters data
   const initializeBaseRates = () => {
     const rates: Record<string, number> = {};
     activeProjectTypes.forEach(type => {
-      rates[type.value] = type.baseRate;
+      rates[type.value] = 0; // Start with 0 instead of pre-filled base rates
     });
     return rates;
   };
@@ -174,7 +153,7 @@ const SingleProductConfig = () => {
           projectType: type.value,
           subProjectType: subType.label,
           pricingType: 'percentage',
-          baseRate: type.baseRate,
+          baseRate: 0, // Start with 0 instead of pre-filled base rates
           quoteOption: 'quote'
         });
       });
@@ -183,31 +162,60 @@ const SingleProductConfig = () => {
     return entries;
   };
 
-  const [uploadedWordings, setUploadedWordings] = useState([
-    { id: 1, name: "Standard CAR Policy Wording v2.1", uploadDate: "2024-01-15", size: "245 KB", active: true },
-    { id: 2, name: "Enhanced Coverage Wording", uploadDate: "2024-01-10", size: "189 KB", active: false }
-  ]);
+  const [uploadedWordings, setUploadedWordings] = useState([]);
   const [activePricingTab, setActivePricingTab] = useState("base-rates");
   const [isNewWordingDialogOpen, setIsNewWordingDialogOpen] = useState(false);
   const [newWordingName, setNewWordingName] = useState("");
   const [isWordingUploadDialogOpen, setIsWordingUploadDialogOpen] = useState(false);
   const [wordingUploadTitle, setWordingUploadTitle] = useState("");
+  const [wordingUploadActive, setWordingUploadActive] = useState(true);
+  const [wordingUploadFile, setWordingUploadFile] = useState<File | null>(null);
+  const [isUploadingWording, setIsUploadingWording] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [editingWording, setEditingWording] = useState<any>(null);
   const [isEditClauseDialogOpen, setIsEditClauseDialogOpen] = useState(false);
   const [selectedClause, setSelectedClause] = useState<any>(null);
   const [isAddClauseDialogOpen, setIsAddClauseDialogOpen] = useState(false);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [isConfirmSaveDialogOpen, setIsConfirmSaveDialogOpen] = useState(false);
-  const [isUnsavedChangesDialogOpen, setIsUnsavedChangesDialogOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("quote-config");
   
+  // Quote Format state
+  const [isLoadingQuoteFormat, setIsLoadingQuoteFormat] = useState(false);
+  const [quoteFormatError, setQuoteFormatError] = useState<string | null>(null);
+  const quoteFormatApiRef = useRef(false);
+  const hasLoadedQuoteFormatRef = useRef(false);
+  const [quoteFormatId, setQuoteFormatId] = useState<number | null>(null);
+  const [quoteLogoFile, setQuoteLogoFile] = useState<File | null>(null);
+  const [isSavingQuoteFormat, setIsSavingQuoteFormat] = useState(false);
+  
   // Required Documents state
-  const [requiredDocuments, setRequiredDocuments] = useState([
-    { id: 1, label: "KYC Document", description: "Know Your Customer document", required: true, active: true, order: 1, template: { name: "KYC_Template_v1.2.pdf", uploadDate: "2024-01-20", size: "156 KB" } },
-    { id: 2, label: "Signed Proposal Form", description: "Completed and signed proposal form", required: true, active: true, order: 2, template: { name: "Proposal_Form_Template.pdf", uploadDate: "2024-01-18", size: "89 KB" } }
-  ]);
+  const [isLoadingRequiredDocs, setIsLoadingRequiredDocs] = useState(false);
+  const [requiredDocsError, setRequiredDocsError] = useState<string | null>(null);
+  const requiredDocsApiRef = useRef(false);
+  
+  // Insurer metadata state
+  const [insurerMetadata, setInsurerMetadata] = useState<InsurerMetadata | null>(null);
+  const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
+  const [metadataError, setMetadataError] = useState<string | null>(null);
+  
+  // Quote config data state
+  const [quoteConfigData, setQuoteConfigData] = useState<QuoteConfigUIResponse | null>(null);
+  const [isLoadingQuoteConfig, setIsLoadingQuoteConfig] = useState(false);
+  const [quoteConfigError, setQuoteConfigError] = useState<string | null>(null);
+  const [isSavingQuoteConfig, setIsSavingQuoteConfig] = useState(false);
+  
+  // Policy Wordings state
+  const [policyWordings, setPolicyWordings] = useState<PolicyWording[]>([]);
+  const [isLoadingPolicyWordings, setIsLoadingPolicyWordings] = useState(false);
+  const [policyWordingsError, setPolicyWordingsError] = useState<string | null>(null);
+  const policyWordingsApiRef = useRef(false);
+  
+  // Required Documents state
+  const [requiredDocuments, setRequiredDocuments] = useState([]);
   const [editingDocument, setEditingDocument] = useState<any>(null);
   const [newDocument, setNewDocument] = useState<any>({ label: "", description: "", required: false, active: true, template: null });
   
@@ -239,163 +247,460 @@ const SingleProductConfig = () => {
   const [selectedProjectTypes, setSelectedProjectTypes] = useState<Set<string>>(new Set());
 
   // State for TPL limit & Extensions
-  const [tplLimit, setTplLimit] = useState("10,000,000");
+  const [tplLimit, setTplLimit] = useState("");
+  
+  // Load insurer metadata when Quote Configurator tab is active
+  useEffect(() => {
+    const loadInsurerMetadata = async () => {
+      if (activeTab === "quote-config" && !insurerMetadata && !isLoadingMetadata) {
+        setIsLoadingMetadata(true);
+        setMetadataError(null);
+        try {
+          const insurerId = getInsurerCompanyId();
+          if (insurerId) {
+            const metadata = await getInsurerMetadata(insurerId);
+            setInsurerMetadata(metadata);
+          }
+        } catch (err: any) {
+          const status = err?.status as number | undefined;
+          const message = err?.message as string | undefined;
+          if (status === 400) setMetadataError(message || 'Bad request while loading insurer metadata.');
+          else if (status === 401) setMetadataError('Unauthorized. Please log in again.');
+          else if (status === 403) setMetadataError("You don't have access to insurer metadata.");
+          else if (status && status >= 500) setMetadataError('Server error. Please try again later.');
+          else setMetadataError(message || 'Failed to load insurer metadata.');
+        } finally {
+          setIsLoadingMetadata(false);
+        }
+      }
+    };
+    
+    loadInsurerMetadata();
+  }, [activeTab, insurerMetadata]);
+  
+  // Load quote config data after metadata is loaded
+  useEffect(() => {
+    const loadQuoteConfigData = async () => {
+      if (insurerMetadata && !quoteConfigData && !isLoadingQuoteConfig && activeTab === "quote-config") {
+        setIsLoadingQuoteConfig(true);
+        setQuoteConfigError(null);
+        try {
+          const insurerId = getInsurerCompanyId();
+          if (insurerId && product.id) {
+            const configData = await getQuoteConfigForUI(insurerId, product.id as string);
+            setQuoteConfigData(configData);
+            
+            // Populate the UI with the fetched data (correct mapping)
+            setQuoteConfig(prev => ({
+              ...prev,
+              details: {
+                ...prev.details,
+                validityDays: String(configData.validity_days || ''),
+                backdateWindow: String(configData.backdate_days || ''),
+                countries: configData.operating_countries || [],
+                regions: configData.operating_regions || [],
+                zones: configData.operating_zones || [],
+              }
+            }));
+          }
+        } catch (err: any) {
+          const status = err?.status as number | undefined;
+          const message = err?.message as string | undefined;
+          if (status === 400) setQuoteConfigError(message || 'Bad request while loading quote config.');
+          else if (status === 401) setQuoteConfigError('Unauthorized. Please log in again.');
+          else if (status === 403) setQuoteConfigError("You don't have access to quote config.");
+          else if (status && status >= 500) setQuoteConfigError('Server error. Please try again later.');
+          else setQuoteConfigError(message || 'Failed to load quote config.');
+        } finally {
+          setIsLoadingQuoteConfig(false);
+        }
+      }
+    };
+    
+    loadQuoteConfigData();
+  }, [insurerMetadata, quoteConfigData, activeTab, product.id]);
+  
+  // Load policy wordings when Wording Configuration tab is active
+  useEffect(() => {
+    const loadPolicyWordings = async () => {
+      if (activeTab === "wording" && !isLoadingPolicyWordings && !policyWordingsApiRef.current && product.id) {
+        policyWordingsApiRef.current = true;
+        setIsLoadingPolicyWordings(true);
+        setPolicyWordingsError(null);
+        try {
+          const insurerId = getInsurerCompanyId();
+          if (insurerId && product.id) {
+            const wordingsData = await getPolicyWordings(insurerId, product.id as string);
+            setPolicyWordings(wordingsData.wordings);
+          }
+        } catch (err: any) {
+          const status = err?.status as number | undefined;
+          const message = err?.message as string | undefined;
+          if (status === 400) setPolicyWordingsError(message || 'Bad request while loading policy wordings.');
+          else if (status === 401) setPolicyWordingsError('Unauthorized. Please log in again.');
+          else if (status === 403) setPolicyWordingsError("You don't have access to policy wordings.");
+          else if (status && status >= 500) setPolicyWordingsError('Server error. Please try again later.');
+          else setPolicyWordingsError(message || 'Failed to load policy wordings.');
+        } finally {
+          setIsLoadingPolicyWordings(false);
+          policyWordingsApiRef.current = false;
+        }
+      }
+    };
+    
+    loadPolicyWordings();
+    
+    // Cleanup function to reset the ref when tab changes
+    return () => {
+      if (activeTab !== "wording") {
+        policyWordingsApiRef.current = false;
+      }
+    };
+  }, [activeTab, product.id]);
+
+  // Load TPL limits & extensions when CEWs tab is active
+  useEffect(() => {
+    const loadTpl = async () => {
+      if (activeTab !== 'cews') return;
+      if (tplApiRef.current || hasLoadedTplRef.current) return;
+      tplApiRef.current = true;
+      setIsLoadingTpl(true);
+      setTplError(null);
+      try {
+        const insurerId = getInsurerCompanyId();
+        if (!insurerId || !product.id) return;
+        const data: GetTplResponse = await getTplLimitsAndExtensions(insurerId, product.id as string);
+        // Map limits
+        setTplLimit(String(data?.limits?.default_limit || ''));
+        // Map extensions
+        const mapped = (data?.extensions || []).map((e) => ({
+          id: e.id,
+          title: e.title || '',
+          description: e.description || '',
+          tplLimitValue: String(e.limit_value || ''),
+          pricingType: (String(e.pricing_type || '').toLowerCase() === 'fixed_rate' ? 'fixed' : 'percentage') as 'percentage' | 'fixed',
+          loadingDiscount: Number(e.pricing_value || 0),
+        }));
+        setTplExtensions(mapped);
+        hasLoadedTplRef.current = true;
+      } catch (err: any) {
+        const status = err?.status as number | undefined;
+        const message = err?.message as string | undefined;
+        if (status === 400) setTplError(message || 'Bad request while loading TPL data.');
+        else if (status === 401) setTplError('Unauthorized. Please log in again.');
+        else if (status === 403) setTplError("You don't have access to TPL data.");
+        else if (status && status >= 500) setTplError('Server error. Please try again later.');
+        else setTplError(message || 'Failed to load TPL data.');
+      } finally {
+        setIsLoadingTpl(false);
+        tplApiRef.current = false;
+      }
+    };
+    loadTpl();
+    return () => {
+      if (activeTab !== 'cews') {
+        hasLoadedTplRef.current = false;
+        tplApiRef.current = false;
+      }
+    };
+  }, [activeTab, product.id]);
+
+  // Load Clauses/Exclusions/Warranties when CEWs tab is active
+  useEffect(() => {
+    const loadClauses = async () => {
+      if (activeTab !== 'cews') return;
+      if (clausesApiRef.current) return;
+      clausesApiRef.current = true;
+      setIsLoadingClauses(true);
+      setClausesError(null);
+      try {
+        const insurerId = getInsurerCompanyId();
+        if (!insurerId || !product.id) return;
+        const resp: GetClausesResponse = await getCewsClauses(insurerId, product.id as string);
+        const list = Array.isArray(resp?.clauses) ? resp.clauses : [];
+        const mapped = list.map((c) => ({
+          id: c.id,
+          code: c.clause_code || '',
+          title: c.title || '',
+          purposeDescription: c.purpose_description || '',
+          wording: c.clause_wording || '',
+          type: ((c.clause_type || '').toUpperCase() === 'EXCLUSION'
+                  ? 'Exclusion'
+                  : (c.clause_type || '').toUpperCase() === 'WARRANTY'
+                    ? 'Warranty'
+                    : 'Clause'),
+          show: (c.show_type || '').toUpperCase() === 'MANDATORY' ? 'Mandatory' : 'Optional',
+          pricingType: (c.pricing_type || '').toLowerCase() === 'fixed_rate' ? 'fixed' : 'percentage',
+          pricingValue: Number(c.pricing_value || 0),
+          displayOrder: Number(c.display_order || 0),
+          active: c.is_active === 1,
+        }));
+        setClausesData(mapped as any);
+      } catch (err: any) {
+        const status = err?.status as number | undefined;
+        const message = err?.message as string | undefined;
+        if (status === 400) setClausesError(message || 'Bad request while loading clauses.');
+        else if (status === 401) setClausesError('Unauthorized. Please log in again.');
+        else if (status === 403) setClausesError("You don't have access to clauses.");
+        else if (status && status >= 500) setClausesError('Server error. Please try again later.');
+        else setClausesError(message || 'Failed to load clauses.');
+      } finally {
+        setIsLoadingClauses(false);
+        clausesApiRef.current = false;
+      }
+    };
+    loadClauses();
+  }, [activeTab, product.id]);
+
+  // Load Quote Format when Quote Format tab is active
+  useEffect(() => {
+    const loadQuoteFormat = async () => {
+      if (activeTab !== 'quote-format') return;
+      if (quoteFormatApiRef.current) return;
+      if (hasLoadedQuoteFormatRef.current) return;
+      quoteFormatApiRef.current = true;
+      setIsLoadingQuoteFormat(true);
+      setQuoteFormatError(null);
+      try {
+        const insurerId = getInsurerCompanyId();
+        if (!insurerId || !product.id) return;
+        const data: QuoteFormatResponse = await getQuoteFormat(insurerId, product.id as string);
+        // Map API -> UI state
+        setQuoteFormatId(data?.id ?? null);
+        setQuoteConfig(prev => ({
+          ...prev,
+          header: {
+            ...prev.header,
+            companyName: data.company_name || '',
+            companyAddress: data.company_address || '',
+            contactInfo: data.contact_info?.raw || '',
+            headerColor: data.header_bg_color || '#1f2937',
+            headerTextColor: data.header_text_color || '#ffffff',
+            logoPosition: (data.logo_position || 'LEFT').toLowerCase(),
+          },
+          details: {
+            ...prev.details,
+            quotePrefix: data.quotation_prefix || '',
+          },
+          risk: {
+            ...prev.risk,
+            showProjectDetails: data.show_project_details === 1,
+            showCoverageTypes: data.show_coverage_types === 1,
+            showCoverageLimits: data.show_coverage_limits === 1,
+            showDeductibles: data.show_deductibles === 1,
+            showContractorInfo: data.show_contractor_info === 1,
+            riskSectionTitle: data.risk_section_title || 'Risk Details',
+          },
+          premium: {
+            ...prev.premium,
+            currency: data.premium_currency || 'AED',
+            premiumSectionTitle: data.premium_section_title || 'Premium Breakdown',
+            showBasePremium: data.show_base_premium === 1,
+            showRiskAdjustments: data.show_risk_adjustments === 1,
+            showFees: data.show_fees_charges === 1,
+            showTaxes: data.show_taxes_vat === 1,
+            showTotalPremium: data.show_total_premium === 1,
+          },
+          terms: {
+            ...prev.terms,
+            showWarranties: data.show_warranties === 1,
+            showExclusions: data.show_exclusions === 1,
+            showDeductibleDetails: data.show_deductible_details === 1,
+            showPolicyConditions: data.show_policy_conditions === 1,
+            termsSectionTitle: data.terms_section_title || 'Terms & Conditions',
+            additionalTerms: data.additional_terms_text || '',
+          },
+          signature: {
+            ...prev.signature,
+            showSignatureBlock: data.show_signature_block === 1,
+            authorizedSignatory: data.authorized_signatory_name || '',
+            signatoryTitle: data.signatory_title || '',
+            signatureText: data.signature_block_text || '',
+          },
+          footer: {
+            ...prev.footer,
+            showFooter: data.show_footer === 1,
+            showDisclaimer: data.show_general_disclaimer === 1,
+            showRegulatoryInfo: data.show_regulatory_info === 1,
+            generalDisclaimer: data.general_disclaimer_text || '',
+            regulatoryText: data.regulatory_info_text || '',
+            footerBgColor: data.footer_bg_color || '#ffffff',
+            footerTextColor: data.footer_text_color || '#000000',
+          },
+        }));
+        hasLoadedQuoteFormatRef.current = true;
+      } catch (err: any) {
+        const status = err?.status as number | undefined;
+        const message = err?.message as string | undefined;
+        if (status === 400) setQuoteFormatError(message || 'Bad request while loading quote format.');
+        else if (status === 401) setQuoteFormatError('Unauthorized. Please log in again.');
+        else if (status === 403) setQuoteFormatError("You don't have access to quote format.");
+        else if (status && status >= 500) setQuoteFormatError('Server error. Please try again later.');
+        else setQuoteFormatError(message || 'Failed to load quote format.');
+      } finally {
+        setIsLoadingQuoteFormat(false);
+        quoteFormatApiRef.current = false;
+      }
+    };
+    loadQuoteFormat();
+  }, [activeTab, product.id]);
+
+  // Load Required Documents when tab is active
+  useEffect(() => {
+    const loadRequiredDocs = async () => {
+      if (activeTab !== 'required-documents') return;
+      if (requiredDocsApiRef.current) return;
+      requiredDocsApiRef.current = true;
+      setIsLoadingRequiredDocs(true);
+      setRequiredDocsError(null);
+      try {
+        const insurerId = getInsurerCompanyId();
+        if (!insurerId || !product.id) return;
+        const resp: GetRequiredDocumentsResponse = await getRequiredDocuments(insurerId, product.id as string);
+        const list = Array.isArray(resp?.documents) ? resp.documents : [];
+        // map to existing requiredDocuments UI structure
+        const mapped = list.map(d => ({
+          id: d.id,
+          label: d.display_label,
+          description: d.description || '',
+          required: !!d.is_required,
+          active: (d.status || '').toLowerCase() === 'active',
+          order: d.display_order,
+          template: d.template_file_url ? { name: d.template_file_url.split('/').pop() || 'template.pdf', size: '—', url: d.template_file_url } : null,
+        }));
+        setRequiredDocuments(mapped as any);
+        // loaded successfully
+      } catch (err: any) {
+        const status = err?.status as number | undefined;
+        const message = err?.message as string | undefined;
+        if (status === 400) setRequiredDocsError(message || 'Bad request while loading required documents.');
+        else if (status === 401) setRequiredDocsError('Unauthorized. Please log in again.');
+        else if (status === 403) setRequiredDocsError("You don't have access to required documents.");
+        else if (status && status >= 500) setRequiredDocsError('Server error. Please try again later.');
+        else setRequiredDocsError(message || 'Failed to load required documents.');
+      } finally {
+        setIsLoadingRequiredDocs(false);
+        requiredDocsApiRef.current = false;
+      }
+    };
+    loadRequiredDocs();
+  }, [activeTab, product.id]);
+  
+  // Helper functions for hierarchical filtering
+  const getAvailableRegions = () => {
+    if (!insurerMetadata || !quoteConfig.details.countries || quoteConfig.details.countries.length === 0) {
+      return [];
+    }
+    return insurerMetadata.operating_regions.filter(region => 
+      quoteConfig.details.countries?.includes(region.country)
+    );
+  };
+  
+  const getAvailableZones = () => {
+    if (!insurerMetadata || !quoteConfig.details.regions || quoteConfig.details.regions.length === 0) {
+      return [];
+    }
+    return insurerMetadata.operating_zones.filter(zone => 
+      quoteConfig.details.regions?.includes(zone.region)
+    );
+  };
+  
   const [tplExtensions, setTplExtensions] = useState([
     {
       id: 1,
-      title: "Enhanced TPL Coverage",
-      description: "Additional coverage for third party liability beyond standard limits",
-      tplLimitValue: "15,000,000",
+      title: "",
+      description: "",
+      tplLimitValue: "",
       pricingType: "percentage" as "percentage" | "fixed",
-      loadingDiscount: 5.5
-    },
-    {
-      id: 2,
-      title: "Cross Liability Extension",
-      description: "Coverage between different parties named as insured under the same policy",
-      tplLimitValue: "20,000,000",
-      pricingType: "fixed" as "percentage" | "fixed",
-      loadingDiscount: 2500
+      loadingDiscount: 0
     }
   ]);
+  const [isLoadingTpl, setIsLoadingTpl] = useState(false);
+  const [tplError, setTplError] = useState<string | null>(null);
+  const tplApiRef = useRef(false);
+  const hasLoadedTplRef = useRef(false);
+  const [isSavingTpl, setIsSavingTpl] = useState(false);
 
-  // Mock data for clauses, exclusions, and warranties
-  const [clausesData, setClausesData] = useState([
-    { 
-      code: "MRe 001", 
-      title: "SRCC Coverage", 
-      type: "Clause", 
-      show: "Mandatory",
-      wording: "It is hereby agreed and understood that this Policy is extended to cover loss of or damage to the insured property directly caused by:\n\nStrikers, locked-out workers, or persons taking part in labour disturbances, riots, or civil commotions;\n\nThe action of any lawfully constituted authority in suppressing or attempting to suppress any such disturbances or minimizing the consequences of such disturbances;\n\nMalicious acts committed by any person, whether or not such act is committed in connection with a disturbance of the public peace;\n\nprovided that such loss or damage is not otherwise excluded under this Policy.\n\nHowever, the insurers shall not be liable for:\n\nLoss or damage arising out of or in connection with war, invasion, act of foreign enemy, hostilities or warlike operations (whether war be declared or not), civil war, mutiny, insurrection, rebellion, revolution, military or usurped power, or any act of terrorism.\n\nConsequential loss of any kind or description.\n\nSubject otherwise to the terms, conditions, and exclusions of the Policy.",
-      purposeDescription: "Coverage for strikes, riots, civil commotions and malicious damage",
-      purpose: "This clause extends the basic fire and allied perils coverage to include losses from civil disturbances and malicious acts. It specifically covers:\n\n• Strikes, lockouts, and labor disturbances\n• Riots and civil commotions\n• Actions by lawful authorities to suppress disturbances\n• Malicious acts by any person\n\nThe clause is essential for construction projects as these risks are common in commercial and infrastructure developments. It provides protection against social and political risks while maintaining clear exclusions for war and terrorism. The coverage ensures that legitimate civil unrest damage is covered while excluding acts of war and terrorism which require separate specialized coverage.\n\nThis endorsement is typically mandatory for all construction projects as these perils represent significant exposure that could result in total project loss. The clause helps bridge the gap between basic property coverage and specialized political risk insurance."
-    },
-    { 
-      code: "MRe 002", 
-      title: "Cross Liability", 
-      type: "Clause", 
-      show: "Mandatory",
-      wording: "It is hereby agreed and understood that, subject to the limits of indemnity stated in the Policy and subject otherwise to the terms, exclusions, provisions and conditions of the Policy, where the insured comprises more than one party, the insurance afforded by this Policy shall apply in the same manner and to the same extent as if individual insurance contracts had been issued to each such party.\n\nHowever, the total liability of the Insurer shall not exceed the limits of indemnity stated in the Schedule, regardless of the number of insured parties.",
-      purposeDescription: "Cross liability coverage for multi-party construction projects",
-      purpose: "This clause is critical for multi-party construction projects where several entities (contractor, subcontractors, principal, etc.) are named as co-insureds under a single policy. Without this clause, coverage disputes could arise when one insured party causes damage affecting another insured party.\n\nKey benefits:\n• Eliminates coverage gaps between insured parties\n• Prevents one insured from being left without coverage due to actions of another insured\n• Ensures each party receives full policy benefits as if they had separate individual policies\n• Maintains the principle of joint and several coverage while preserving overall policy limits\n\nThis is mandatory for all construction projects with multiple insured parties as it prevents coverage disputes and ensures comprehensive protection for all project stakeholders. It's particularly important in complex projects where the actions of one contractor could affect the interests of other insured parties.\n\nThe clause maintains the insurer's overall liability limit while ensuring fair and equal treatment of all co-insureds, making it essential for risk management in collaborative construction environments."
-    },
-    { 
-      code: "MRe 003", 
-      title: "Maintenance Visits", 
-      type: "Clause", 
-      show: "Mandatory",
-      wording: "It is hereby agreed and understood that this Policy covers maintenance visits and inspections conducted during the policy period. All maintenance activities must be carried out in accordance with manufacturer specifications and industry best practices.\n\nThe Insurer reserves the right to inspect the insured property at reasonable intervals to ensure compliance with maintenance requirements.",
-      purposeDescription: "Coverage for maintenance activities and inspections",
-      purpose: "This clause extends the CAR policy beyond the construction completion to cover maintenance activities performed by the contractor during the defects liability period. It addresses the significant risk gap that would otherwise exist after practical completion.\n\nKey coverage features:\n• Covers damage caused by the contractor during routine maintenance visits\n• Applies only to damage arising from maintenance operations\n• Requires payment of additional premium for the extended period\n• Covers the period specified in the construction contract (typically 12 months)\n\nThis coverage is essential because:\n• Standard CAR policies terminate at practical completion\n• Contractors remain liable for defects during the maintenance period\n• Maintenance activities can cause accidental damage to completed works\n• Without this coverage, contractors face uninsured exposure during defects liability period\n\nThe clause is mandatory for most construction contracts as it ensures continuous protection throughout the entire project lifecycle, from commencement through the defects liability period. It protects both the contractor's interests and the principal's investment in the completed works."
-    },
-    {
-      code: "MRe 003", 
-      title: "Maintenance Visits", 
-      type: "Clause", 
-      show: "Mandatory",
-      wording: "It is agreed and understood that otherwise subject to the terms, exclusions, provisions and conditions contained in the Policy or endorsed thereon and subject to the Insured having paid the agreed extra premium, this insurance shall be extended for the maintenance period specified hereunder to cover solely loss of or damage to the contract works caused by the insured contractor(s) in the course of the operations carried out for the purpose of complying with the obligations under the maintenance provisions of the contract.\n\nMaintenance cover: From: As shown in Schedule To: As shown in the Schedule\n\nExtra premium: As shown in the Schedule",
-      purpose: "This clause extends the CAR policy beyond the construction completion to cover maintenance activities performed by the contractor during the defects liability period. It addresses the significant risk gap that would otherwise exist after practical completion.\n\nKey coverage features:\n• Covers damage caused by the contractor during routine maintenance visits\n• Applies only to damage arising from maintenance operations\n• Requires payment of additional premium for the extended period\n• Covers the period specified in the construction contract (typically 12 months)\n\nThis coverage is essential because:\n• Standard CAR policies terminate at practical completion\n• Contractors remain liable for defects during the maintenance period\n• Maintenance activities can cause accidental damage to completed works\n• Without this coverage, contractors face uninsured exposure during defects liability period\n\nThe clause is mandatory for most construction contracts as it ensures continuous protection throughout the entire project lifecycle, from commencement through the defects liability period. It protects both the contractor's interests and the principal's investment in the completed works."
-    },
-    { 
-      code: "MRe 004", 
-      title: "Extended Maintenance", 
-      type: "Clause", 
-      show: "Mandatory",
-      wording: "It is agreed and understood that otherwise subject to the terms, exclusions, provisions and conditions contained in the insurance or endorsed thereon and subject to the Insured having paid the agreed extra insurance premium, this Insurance shall be extended for the maintenance period specified hereunder to cover loss of or damage to the contract works caused by the insured contractor(s) in the course of the operations carried out for the purpose of complying with the obligations under the maintenance provisions of the contract, occurring during the maintenance period provided such loss or damage was caused on the site during the construction period before the certificate of completion for the lost or damaged section was issued.\n\nMaintenance cover: From: As shown in Schedule To: As shown in Schedule\nExtra insurance premium: As Agreed",
-      purpose: "This clause provides comprehensive coverage for latent defects and pre-existing issues that manifest during the maintenance period. It specifically covers damage that:\n\n• Occurs during the maintenance period\n• Was caused during the original construction phase\n• Manifests before the completion certificate was issued for that section\n• Results from maintenance operations addressing these pre-existing issues\n\nThis extended coverage is crucial because:\n• It bridges the gap between construction-phase coverage and maintenance-period exclusions\n• Addresses the complex issue of when damage actually 'occurred' versus when it was discovered\n• Provides protection for progressive deterioration that began during construction\n• Covers the contractor's liability for remedial work on pre-existing defects\n\nThe clause is particularly important for:\n• Complex infrastructure projects with extended completion timelines\n• Projects with multiple phases and sectional completions\n• Situations where defects may not be immediately apparent\n• Long-term maintenance contracts where liability periods overlap\n\nThis mandatory coverage ensures that contractors and principals are protected against the significant financial exposure from latent construction defects that require remediation during the maintenance period."
-    },
-    { 
-      code: "MRe 005", 
-      title: "Time Schedule Condition", 
-      type: "Clause", 
-      show: "Optional",
-      wording: "It is agreed and understood that otherwise subject to the terms, exclusions, provisions and conditions contained in the insurance or endorsed thereon, the following shall apply to this Insurance:\n\nThe construction and/or erection time schedule together with any other statements made in writing by the Insured for the purpose of obtaining cover under the insurance as well as technical information forwarded to the Company shall be deemed to be incorporated herein.\n\nThe Company shall not indemnify the Insured in respect of loss or damage caused by or arising out of or aggravated by deviations from the construction and/or erection time schedule exceeding the number of weeks stated below unless the Company had agreed in writing to such a deviation before the loss occurred.\n\nDeviation from time schedule: As shown in Schedule weeks",
-      purpose: "This condition links insurance coverage to adherence to the construction time schedule, recognizing that extended project duration increases risk exposure. It serves multiple important functions:\n\n**Risk Management Benefits:**\n• Incentivizes adherence to planned construction schedules\n• Prevents insurance coverage from extending indefinitely beyond intended project duration\n• Ensures that premium calculations remain aligned with actual risk exposure periods\n• Maintains the principle that insurance terms should match project parameters\n\n**Coverage Parameters:**\n• Incorporates construction schedules as binding contract terms\n• Allows for reasonable deviation periods (typically 4-12 weeks)\n• Requires pre-approval for schedule extensions beyond the tolerance\n• Maintains coverage continuity for approved extensions\n\n**When Applied:**\n• Projects with tight completion schedules\n• High-value projects where extended duration significantly increases exposure\n• Projects in areas with seasonal risk variations\n• Contracts where delayed completion creates additional hazards\n\nThis optional clause is valuable for risk-conscious insurers and can result in premium discounts for well-managed projects that maintain schedule discipline. It encourages proactive project management while ensuring insurance coverage remains appropriate for actual project timelines."
-    },
-    { 
-      code: "MRe 006", 
-      title: "Overtime/Night Work/Express Freight", 
-      type: "Clause", 
-      show: "Optional",
-      wording: "It is agreed and understood that otherwise subject to the terms, exclusions, provisions and conditions contained in the insurance or endorsed thereon and subject to the Insured having paid the agreed extra insurance premium, this Insurance shall be extended to cover extra charges for overtime, night work, work on public holidays and express freight (excluding airfreight).\n\nProvided always that such extra charges shall be incurred in connection with any loss of or damage to the Insured items recoverable under the Insurance Certificate.\n\nIf the sum(s) Insured of the damaged item(s) is (are) less than the amount(s) required to be Insured, the amount payable under this Endorsement for such extra charges shall be reduced in the same proportion.\n\nLimit of indemnity: As shown in Schedule any one occurrence\nExtra insurance premium: As Agreed",
-      purpose: "This clause recognizes that construction projects often face schedule pressures requiring expedited repair and replacement efforts. It covers the additional costs associated with accelerated restoration activities:\n\n**Covered Additional Costs:**\n• Overtime payments for extended working hours\n• Night shift premiums for around-the-clock operations\n• Holiday work surcharges when repairs cannot wait\n• Express freight charges for urgent material delivery\n• Premium rates for expedited services\n\n**Key Applications:**\n• Projects with critical completion deadlines\n• Infrastructure projects where delays affect public services\n• Manufacturing facilities where production downtime is costly\n• Projects with liquidated damages clauses for late completion\n• Time-sensitive developments (seasonal projects, event facilities)\n\n**Important Limitations:**\n• Coverage applies only to repair/replacement of covered losses\n• Subject to proportional reduction if property is underinsured\n• Excludes airfreight (covered under separate endorsement)\n• Requires additional premium payment\n• Limited to specified maximum amounts\n\nThis optional coverage is valuable for projects where schedule adherence is critical and the cost of expedited repairs is justified by avoiding consequential delays. It helps ensure that insured parties can make economically rational decisions about repair methods without being constrained by standard labor and freight costs."
-    },
-    { 
-      code: "MRe 007", 
-      title: "Airfreight Expenses", 
-      type: "Clause", 
-      show: "Optional",
-      wording: "It is agreed and understood that otherwise subject to the terms, exclusions, provisions and conditions contained in the insurance or endorsed thereon and subject to the Insured having paid the agreed extra insurance premium, this Insurance shall be extended to cover extra charges for airfreight.\n\nProvided always that such extra charges shall be incurred in connection with any loss of or damage to the Insured items recoverable under the Insurance Certificate.\n\nProvided further that the maximum amount payable under this Endorsement in respect of airfreight shall not exceed the amount stated below during the period of Insurance.\n\nDeductible: 20% of the indemnifiable extra charges, minimum any one occurrence\nMaximum amount payable: As shown in Schedule\nExtra insurance premium: As shown in Schedule",
-      purpose: "This specialized coverage addresses the highest level of urgency in material replacement, recognizing that some construction scenarios require immediate airfreight delivery despite the substantial costs involved.\n\n**Strategic Applications:**\n• Critical infrastructure projects (hospitals, airports, power plants)\n• Projects in remote locations with limited surface transport\n• High-value specialized equipment or materials\n• Time-critical projects with severe delay penalties\n• Projects where alternative suppliers are geographically distant\n• Emergency repairs to prevent progressive damage\n\n**Coverage Features:**\n• Covers premium airfreight costs above standard shipping\n• Applies only to materials/equipment for covered losses\n• Includes 20% deductible to discourage unnecessary use\n• Subject to annual aggregate limits\n• Requires additional premium reflecting high exposure\n\n**Risk Management Considerations:**\n• Airfreight costs can be 5-10 times surface transport costs\n• Coverage helps justify economically optimal repair decisions\n• Particularly valuable for specialized/custom-manufactured items\n• Essential for projects where delay costs exceed airfreight premiums\n\nThis optional coverage provides the ultimate flexibility in loss response, ensuring that when airfreight is the most economical solution considering all project costs and constraints, insureds are not deterred by the premium transportation costs. The deductible structure encourages judicious use while providing essential protection for genuinely urgent situations."
-    },
-    { 
-      code: "MRe 008", 
-      title: "Structures in Earthquake Zones Warranty", 
-      type: "Clause", 
-      show: "Optional",
-      wording: "It is agreed and understood that otherwise subject to the terms, exclusions, provisions and conditions contained in the insurance or endorsed thereon, the Company shall only indemnify the Insured for loss, damage or liability arising out of earthquake if the Insured proves that the earthquake risk was taken into account in design according to the official building codes valid for the site and that the qualities of material and workmanship and the dimensions on which the calculations were based were adhered to.",
-      purpose: "Limits earthquake coverage to structures built according to official seismic building codes with proper materials and workmanship standards."
-    },
-    { 
-      code: "MRe 009", 
-      title: "Earthquake Clause", 
-      type: "Exclusion", 
-      show: "Optional",
-      wording: "It is agreed and understood that otherwise subject to the terms, exclusions, provisions and conditions contained in the Policy or endorsed thereon, the Insurers shall not indemnify the Insured for loss, damage or liability directly or indirectly caused by or resulting from earthquake.",
-      purpose: "Excludes coverage for any loss, damage, or liability directly or indirectly caused by earthquakes."
-    },
-    { 
-      code: "MRe 010", 
-      title: "Flood And Inundation Clause", 
-      type: "Exclusion", 
-      show: "Optional",
-      wording: "It is agreed and understood that otherwise subject to the terms, exclusions, provisions and conditions contained in the Policy or endorsed thereon, the Insurers shall not indemnify the Insured for loss, damage or liability directly or indirectly caused by or resulting from flood and inundation",
-      purpose: "Excludes coverage for any loss, damage, or liability directly or indirectly caused by flood and inundation."
-    },
-    { 
-      code: "MRe 011", 
-      title: "Serial Losses Clause", 
-      type: "Clause", 
-      show: "Optional",
-      wording: "It is agreed and understood that, otherwise subject to the terms, exclusions, provisions and conditions contained in the Insurance:\n\nLoss or damage due to faulty design, defective material or casting, or bad workmanship (other than faults in erection) arising out of the same cause to machines or equipment of the same type or design shall be indemnified after applying the insurance deductible for each loss according to the following scale:\n\n100% of the first loss\n% of the % loss (As shown in Schedule, if any)\n% of the % loss (As shown in Schedule, if any)\n% of the % loss (As shown in Schedule, if any)\n% of the % loss (As shown in Schedule, if any)\n\nFurther losses shall not be indemnified.\n\n(The percentages shall be fixed in accordance with the condition of each individual component, eg. depending on the number of items at risk.)",
-      purpose: "Provides diminishing coverage for serial losses affecting similar equipment, with reducing percentages for subsequent losses of the same type."
-    },
-    { 
-      code: "MRe 012", 
-      title: "Windstorm Or Wind Related Water Damage Clause", 
-      type: "Exclusion", 
-      show: "Optional",
-      wording: "It is agreed and understood that, notwithstanding the terms, exclusions, provisions and conditions of the insurance or any Endorsements agreed upon, the Company shall not indemnify the Insured for loss or damage or liability directly or indirectly caused by or resulting from windstorm equal to or exceeding grade 8 on the Beaufort Scale (mean wind speed exceeding 62 km/h) or any water damage occurring in connection with or as a consequence of such windstorm.",
-      purpose: "Excludes coverage for damage caused by windstorms of grade 8 or higher on the Beaufort Scale and related water damage."
-    },
-    { 
-      code: "MRe 013", 
-      title: "Property In Off-Site Storage Clause", 
-      type: "Warranty", 
-      show: "Optional",
-      wording: "It is agreed and understood that, notwithstanding the terms, exclusions, provisions and conditions contained in the insurance or any Endorsements agreed upon and subject to the Insured having paid the agreed extra insurance premium, Section 1 of the insurance shall be extended to cover loss of or damage to property Insured (except property being manufactured, processed or stored at the manufacturers, distributors or suppliers premises) in off-site storage within the territorial limits as stated below.\n\nThe Company shall not indemnify the Insured for loss or damage caused by the failure to take generally accepted loss prevention measures for warehouses or storage units. Such measures shall include, in particular:\n\nensuring that the storage area is enclosed (either a building or at least fenced in), guarded, protected against fire, as appropriate for the particular location or type of property stored;\nseparating the storage units by fire-proof walls or by a distance of at least 50 meters;\npositioning and designing the storage units in such a way as to prevent damage by accumulating water or flooding due to rainfall or by a flood with a statistical return period of less than 20 years;\nlimiting the value per storage unit to the amount stated below during the period of Insurance.\n\nTerritorial limits of: As shown in Schedule\nMaximum value per storage unit: As shown in Schedule, if any\nLimit of indemnity (any one occurrence): As shown in Schedule, if any\nDeductible: As shown in Schedule, if any 20% of loss amount, minimum As in Schedule, if any any one occurrence\nExtra insurance premium: As Agreed",
-      purpose: "Extends coverage to property in off-site storage with specific requirements for storage security, fire protection, flood prevention, and value limitations per storage unit."
+  const saveTplExtensions = async () => {
+    try {
+      setIsSavingTpl(true);
+      setTplError(null);
+      const insurerId = getInsurerCompanyId();
+      if (!insurerId || !product.id) return;
+      const body: UpdateTplRequest = {
+        product_id: Number(product.id),
+        default_limit: Number(tplLimit || 0),
+        currency: 'AED',
+        extensions: tplExtensions
+          .filter(ext => (ext.title && ext.title.trim().length > 0) || (ext.tplLimitValue && String(ext.tplLimitValue).trim().length > 0))
+          .map(ext => ({
+            id: typeof ext.id === 'number' ? ext.id : undefined,
+            title: ext.title || '',
+            description: ext.description || '',
+            limit_value: Number(ext.tplLimitValue || 0),
+            pricing_type: (ext.pricingType === 'fixed' ? 'fixed' : 'percentage'),
+            pricing_value: Number(ext.loadingDiscount || 0),
+            currency: 'AED',
+          })),
+      };
+      await updateTplLimitsAndExtensions(insurerId, product.id as string, body);
+      // refresh GET with shimmer
+      hasLoadedTplRef.current = false;
+      tplApiRef.current = false;
+      setIsLoadingTpl(true);
+      const data: GetTplResponse = await getTplLimitsAndExtensions(insurerId, product.id as string);
+      setTplLimit(String(data?.limits?.default_limit || ''));
+      const mapped = (data?.extensions || []).map((e) => ({
+        id: e.id,
+        title: e.title || '',
+        description: e.description || '',
+        tplLimitValue: String(e.limit_value || ''),
+        pricingType: (String(e.pricing_type || '').toLowerCase() === 'fixed_rate' || String(e.pricing_type || '').toLowerCase() === 'fixed' ? 'fixed' : 'percentage') as 'percentage' | 'fixed',
+        loadingDiscount: Number(e.pricing_value || 0),
+      }));
+      setTplExtensions(mapped);
+      hasLoadedTplRef.current = true;
+      setIsLoadingTpl(false);
+      toast({ title: 'TPL Extensions Saved', description: 'TPL limit & extensions updated successfully.' });
+    } catch (err: any) {
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      if (status === 400) setTplError(message || 'Bad request while saving TPL data.');
+      else if (status === 401) setTplError('Unauthorized. Please log in again.');
+      else if (status === 403) setTplError("You don't have access to save TPL data.");
+      else if (status && status >= 500) setTplError('Server error. Please try again later.');
+      else setTplError(message || 'Failed to save TPL data.');
+      setIsLoadingTpl(false);
+    } finally {
+      setIsSavingTpl(false);
     }
-  ]);
+  };
+
+  // Clauses data - start empty
+  const [clausesData, setClausesData] = useState([]);
+  const [isLoadingClauses, setIsLoadingClauses] = useState(false);
+  const [clausesError, setClausesError] = useState<string | null>(null);
+  const clausesApiRef = useRef(false);
+  const [isSavingClause, setIsSavingClause] = useState(false);
 
   const [quoteConfig, setQuoteConfig] = useState({
     header: {
-      companyName: "Emirates Insurance Company",
-      companyAddress: "P.O. Box 3766, Dubai, UAE",
-      contactInfo: "Phone: +971 4 373 8726\nEmail: info@emirates.com\nWebsite: www.emirates.com",
+      companyName: "",
+      companyAddress: "",
+      contactInfo: "",
       headerColor: "#1f2937",
       headerTextColor: "#ffffff",
       logoPosition: "left"
     },
     details: {
-      quotePrefix: "EIC-CAR-",
+      quotePrefix: "",
       dateFormat: "DD/MM/YYYY",
-      validityDays: "30",
-      geographicalScope: "United Arab Emirates",
-      countries: [1], // Array of country IDs
-      regions: [1], // Array of region IDs 
-      zones: [1], // Array of zone IDs
-      backdateWindow: "30",
+      validityDays: "",
+      geographicalScope: "",
+      countries: [], // Array of country names
+      regions: [], // Array of region names 
+      zones: [], // Array of zone names
+      backdateWindow: "",
       showQuoteNumber: true,
       showIssueDate: true,
       showValidity: true,
@@ -424,25 +729,24 @@ const SingleProductConfig = () => {
       showDeductibleDetails: true,
       showPolicyConditions: true,
       termsSectionTitle: "Terms & Conditions",
-      additionalTerms: "This insurance is subject to the terms, conditions, and exclusions of the policy wording. All claims must be reported within 7 days of occurrence."
+      additionalTerms: ""
     },
     signature: {
       showSignatureBlock: true,
-      authorizedSignatory: "Ahmed Al Mansouri",
-      signatoryTitle: "Senior Underwriting Manager",
-      signatureText: "This quotation is issued on behalf of Emirates Insurance Company by the undersigned authorized representative."
+      authorizedSignatory: "",
+      signatoryTitle: "",
+      signatureText: ""
     },
     footer: {
       showFooter: true,
       showDisclaimer: true,
       showRegulatoryInfo: true,
-      generalDisclaimer: "This quotation is valid for 30 days from the date of issue. Terms and conditions apply. Premium rates are subject to underwriting approval.",
-      regulatoryText: "Emirates Insurance Company is regulated by the Insurance Authority of UAE. Registration No: 123456789. Licensed to conduct general insurance business in the UAE.",
+      generalDisclaimer: "",
+      regulatoryText: "",
       footerBgColor: "#f8f9fa",
       footerTextColor: "#6b7280"
     }
   });
-
   const [ratingConfig, setRatingConfig] = useState({
     // Base Rates by Project Type (from masters data)
     baseRates: initializeBaseRates(),
@@ -459,137 +763,91 @@ const SingleProductConfig = () => {
     // Project Risk Factors
     projectRisk: {
       projectTypeMultipliers: {
-        residential: 1.0,
-        commercial: 1.2,
-        infrastructure: 1.5,
+        residential: 0,
+        commercial: 0,
+        infrastructure: 0,
       },
     durationLoadings: [
-      { id: 1, from: 0, to: 12, pricingType: 'percentage', value: 0, quoteOption: 'quote' },
-      { id: 2, from: 12, to: 18, pricingType: 'percentage', value: 0.02, quoteOption: 'quote' },
-      { id: 3, from: 18, to: 24, pricingType: 'percentage', value: 0.05, quoteOption: 'quote' },
-      { id: 4, from: 24, to: 999, pricingType: 'percentage', value: 0.10, quoteOption: 'quote' },
+      { id: 1, from: 0, to: 0, pricingType: 'percentage', value: 0, quoteOption: 'quote' },
     ],
     maintenancePeriodLoadings: [
-      { id: 1, from: 0, to: 12, pricingType: 'percentage', value: 0, quoteOption: 'quote' },
-      { id: 2, from: 12, to: 18, pricingType: 'percentage', value: 0.01, quoteOption: 'quote' },
-      { id: 3, from: 18, to: 24, pricingType: 'percentage', value: 0.02, quoteOption: 'quote' },
-      { id: 4, from: 24, to: 999, pricingType: 'percentage', value: 0.05, quoteOption: 'quote' },
+      { id: 1, from: 0, to: 0, pricingType: 'percentage', value: 0, quoteOption: 'quote' },
     ],
       locationHazardLoadings: {
         low: 0,
-        moderate: 0.10,
-        high: 0.25,
-        veryHigh: 0.50,
+        moderate: 0,
+        high: 0,
+        veryHigh: 0,
       },
     },
     // Contractor Risk Factors
     contractorRisk: {
       experienceDiscounts: [
-        { id: 1, from: 0, to: 2, pricingType: 'percentage', loadingDiscount: 0.20, quoteOption: 'quote' },
-        { id: 2, from: 2, to: 5, pricingType: 'percentage', loadingDiscount: 0.10, quoteOption: 'quote' },
-        { id: 3, from: 5, to: 10, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
-        { id: 4, from: 10, to: 999, pricingType: 'percentage', loadingDiscount: -0.10, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       subcontractorLoadings: {
         none: 0,
-        limited: 0.05,
-        moderate: 0.10,
-        heavy: 0.15,
+        limited: 0,
+        moderate: 0,
+        heavy: 0,
       },
       contractorNumbers: [
-        { id: 1, from: 0, to: 2, pricingType: 'percentage', loadingDiscount: 0.10, quoteOption: 'quote' },
-        { id: 2, from: 2, to: 5, pricingType: 'percentage', loadingDiscount: 0.05, quoteOption: 'quote' },
-        { id: 3, from: 5, to: 999, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       subcontractorNumbers: [
-        { id: 1, from: 0, to: 2, pricingType: 'percentage', loadingDiscount: 0.05, quoteOption: 'quote' },
-        { id: 2, from: 2, to: 5, pricingType: 'percentage', loadingDiscount: 0.10, quoteOption: 'quote' },
-        { id: 3, from: 5, to: 999, pricingType: 'percentage', loadingDiscount: 0.15, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       claimFrequency: [
-        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: -0.05, quoteOption: 'quote' },
-        { id: 2, from: 1, to: 2, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
-        { id: 3, from: 3, to: 5, pricingType: 'percentage', loadingDiscount: 0.10, quoteOption: 'quote' },
-        { id: 4, from: 6, to: 999, pricingType: 'percentage', loadingDiscount: 0.25, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       claimAmountCategories: [
-        { id: 1, from: 0, to: 100000, pricingType: 'percentage', loadingDiscount: -0.02, quoteOption: 'quote' },
-        { id: 2, from: 100000, to: 500000, pricingType: 'percentage', loadingDiscount: 0.05, quoteOption: 'quote' },
-        { id: 3, from: 500000, to: 999999999, pricingType: 'percentage', loadingDiscount: 0.15, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
     },
     // Cover Requirements (based on proposal form fields)
     coverRequirements: {
       sumInsured: [
-        { id: 1, from: 0, to: 5000000, pricingType: 'percentage', loadingDiscount: 0.05, quoteOption: 'quote' },
-        { id: 2, from: 5000000, to: 20000000, pricingType: 'percentage', loadingDiscount: 0.03, quoteOption: 'quote' },
-        { id: 3, from: 20000000, to: 50000000, pricingType: 'percentage', loadingDiscount: 0.02, quoteOption: 'quote' },
-        { id: 4, from: 50000000, to: 999999999, pricingType: 'percentage', loadingDiscount: 0.01, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       projectValue: [
-        { id: 1, from: 0, to: 10000000, pricingType: 'percentage', loadingDiscount: 0.04, quoteOption: 'quote' },
-        { id: 2, from: 10000000, to: 50000000, pricingType: 'percentage', loadingDiscount: 0.03, quoteOption: 'quote' },
-        { id: 3, from: 50000000, to: 100000000, pricingType: 'percentage', loadingDiscount: 0.02, quoteOption: 'quote' },
-        { id: 4, from: 100000000, to: 999999999, pricingType: 'percentage', loadingDiscount: 0.01, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       contractWorks: [
-        { id: 1, from: 0, to: 1000000, pricingType: 'percentage', loadingDiscount: 0.05, quoteOption: 'quote' },
-        { id: 2, from: 1000000, to: 5000000, pricingType: 'percentage', loadingDiscount: 0.03, quoteOption: 'quote' },
-        { id: 3, from: 5000000, to: 20000000, pricingType: 'percentage', loadingDiscount: 0.02, quoteOption: 'quote' },
-        { id: 4, from: 20000000, to: 999999999, pricingType: 'percentage', loadingDiscount: 0.01, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       plantEquipment: [
-        { id: 1, from: 0, to: 500000, pricingType: 'percentage', loadingDiscount: 0.08, quoteOption: 'quote' },
-        { id: 2, from: 500000, to: 2000000, pricingType: 'percentage', loadingDiscount: 0.06, quoteOption: 'quote' },
-        { id: 3, from: 2000000, to: 5000000, pricingType: 'percentage', loadingDiscount: 0.04, quoteOption: 'quote' },
-        { id: 4, from: 5000000, to: 999999999, pricingType: 'percentage', loadingDiscount: 0.03, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       temporaryWorks: [
-        { id: 1, from: 0, to: 1000000, pricingType: 'percentage', loadingDiscount: 0.10, quoteOption: 'quote' },
-        { id: 2, from: 1000000, to: 3000000, pricingType: 'percentage', loadingDiscount: 0.08, quoteOption: 'quote' },
-        { id: 3, from: 3000000, to: 10000000, pricingType: 'percentage', loadingDiscount: 0.06, quoteOption: 'quote' },
-        { id: 4, from: 10000000, to: 999999999, pricingType: 'percentage', loadingDiscount: 0.04, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       otherMaterials: [
-        { id: 1, from: 0, to: 500000, pricingType: 'percentage', loadingDiscount: 0.12, quoteOption: 'quote' },
-        { id: 2, from: 500000, to: 2000000, pricingType: 'percentage', loadingDiscount: 0.10, quoteOption: 'quote' },
-        { id: 3, from: 2000000, to: 5000000, pricingType: 'percentage', loadingDiscount: 0.08, quoteOption: 'quote' },
-        { id: 4, from: 5000000, to: 999999999, pricingType: 'percentage', loadingDiscount: 0.06, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       principalExistingProperty: [
-        { id: 1, from: 0, to: 1000000, pricingType: 'percentage', loadingDiscount: 0.06, quoteOption: 'quote' },
-        { id: 2, from: 1000000, to: 5000000, pricingType: 'percentage', loadingDiscount: 0.04, quoteOption: 'quote' },
-        { id: 3, from: 5000000, to: 20000000, pricingType: 'percentage', loadingDiscount: 0.03, quoteOption: 'quote' },
-        { id: 4, from: 20000000, to: 999999999, pricingType: 'percentage', loadingDiscount: 0.02, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       tplLimit: [
-        { id: 1, from: 0, to: 1000000, pricingType: 'percentage', loadingDiscount: 0.15, quoteOption: 'quote' },
-        { id: 2, from: 1000000, to: 5000000, pricingType: 'percentage', loadingDiscount: 0.12, quoteOption: 'quote' },
-        { id: 3, from: 5000000, to: 10000000, pricingType: 'percentage', loadingDiscount: 0.10, quoteOption: 'quote' },
-        { id: 4, from: 10000000, to: 999999999, pricingType: 'percentage', loadingDiscount: 0.08, quoteOption: 'quote' }
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       subLimits: [
-        { id: 1, title: 'Natural Catastrophes', description: 'Coverage limit for earthquake, flood, and hurricane damage', pricingType: 'percentage-sum-insured', value: 50 },
-        { id: 2, title: 'Equipment Breakdown', description: 'Maximum limit for machinery and equipment failures', pricingType: 'fixed', value: 2000000 },
-        { id: 3, title: 'Professional Fees', description: 'Limit for architect and engineer fees', pricingType: 'percentage-sum-insured', value: 15 }
+        { id: 1, title: '', description: '', pricingType: 'percentage-sum-insured', value: 0 },
       ],
       deductibles: [
-        { id: 1, deductibleType: 'fixed', value: 50000, loadingDiscount: 0, quoteOption: 'quote' },
-        { id: 2, deductibleType: 'percentage-loss', value: 1, loadingDiscount: -0.05, quoteOption: 'quote' },
-        { id: 3, deductibleType: 'percentage-sum-insured', value: 2, loadingDiscount: -0.10, quoteOption: 'quote' }
+        { id: 1, deductibleType: 'fixed', value: 0, loadingDiscount: 0, quoteOption: 'quote' },
       ],
       crossLiabilityCover: {
-        yes: 0.02,
+        yes: 0,
         no: 0,
       },
     },
     // Policy Limits
     limits: {
-      minimumPremium: 25000,
-      maximumCover: 50000000,
-      baseBrokerCommission: 10,
-      minimumBrokerCommission: 5,
-      maximumBrokerCommission: 15,
+      minimumPremium: 0,
+      maximumCover: 0,
+      baseBrokerCommission: 0,
+      minimumBrokerCommission: 0,
+      maximumBrokerCommission: 0,
     },
     // Clauses Pricing - now derived from configured CEWs
     clausesPricing: clausesData.map((clause, index) => ({
@@ -599,7 +857,7 @@ const SingleProductConfig = () => {
       enabled: clause.show === "Mandatory" ? true : false, // Mandatory always enabled
       isMandatory: clause.show === "Mandatory",
       pricingType: (clause.type === "Clause" ? "percentage" : "amount") as "percentage" | "amount",
-      pricingValue: clause.type === "Clause" ? 2.5 : 500, // Default 2.5% for clauses, AED 500 for others
+      pricingValue: clause.type === "Clause" ? 0 : 0, // Start with 0 instead of hardcoded values
       variableOptions: [
         {
           id: 1,
@@ -607,23 +865,23 @@ const SingleProductConfig = () => {
           limits: clause.show === "Mandatory" ? "All Coverage" : "Standard Coverage",
           type: (clause.type === "Clause" ? "percentage" : "amount") as "percentage" | "amount",
           value: clause.show === "Mandatory" 
-            ? (clause.type === "Clause" ? [2, 3.5, 1.5][index] || 2 : [1500, 2500, 800][Math.floor(index/2)] || 1500)
-            : (clause.type === "Clause" ? 5 : 1000)
+            ? 0 // Start with 0 instead of hardcoded values
+            : 0 // Start with 0 instead of hardcoded values
         }
       ]
     })),
     // Fee Types
     feeTypes: [
-      { id: 1, label: "VAT", pricingType: "percentage", value: 5, active: true }
+      { id: 1, label: "VAT", pricingType: "percentage", value: 0, active: true }
     ]
   });
 
   const getInsurerName = (id: string | undefined) => {
     const insurerNames: { [key: string]: string } = {
-      'emirates-insurance': 'Emirates Insurance',
-      'axa-gulf': 'AXA Gulf',
-      'oman-insurance': 'Oman Insurance',
-      'dubai-insurance': 'Dubai Insurance'
+      'emirates-insurance': '',
+      'axa-gulf': '',
+      'oman-insurance': '',
+      'dubai-insurance': ''
     };
     return insurerNames[id || ''] || 'Unknown Insurer';
   };
@@ -641,44 +899,8 @@ const SingleProductConfig = () => {
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && wordingUploadTitle.trim()) {
-      markAsChanged();
-      if (editingWording) {
-        // Update existing wording
-        setUploadedWordings(prev => 
-          prev.map(w => 
-            w.id === editingWording.id 
-              ? { ...w, name: wordingUploadTitle, size: `${Math.round(file.size / 1024)} KB` }
-              : w
-          )
-        );
-        toast({
-          title: "Document updated",
-          description: `${wordingUploadTitle} has been updated successfully.`,
-        });
-      } else {
-        // Add new wording
-        const newWording = {
-          id: uploadedWordings.length + 1,
-          name: wordingUploadTitle,
-          uploadDate: new Date().toISOString().split('T')[0],
-          size: `${Math.round(file.size / 1024)} KB`,
-          active: true
-        };
-        setUploadedWordings(prev => [...prev, newWording]);
-        toast({
-          title: "Document uploaded",
-          description: `${wordingUploadTitle} has been uploaded successfully.`,
-        });
-      }
-      // Reset dialog state
-      setIsWordingUploadDialogOpen(false);
-      setWordingUploadTitle("");
-      setEditingWording(null);
-      // Reset file input
-      event.target.value = '';
-    }
+    const file = event.target.files?.[0] || null;
+    setWordingUploadFile(file);
   };
 
   const openUploadDialog = () => {
@@ -693,9 +915,13 @@ const SingleProductConfig = () => {
     setIsWordingUploadDialogOpen(true);
   };
 
-  const saveConfiguration = () => {
-    setIsConfirmSaveDialogOpen(true);
+  const saveQuoteDetailsConfig = async () => {
+    // Removed per request: no API call for quote config save
+    toast({ title: 'Disabled', description: 'Quote Config save API is disabled for now.' });
   };
+
+  // Backward-compatible alias for existing onClick handlers
+  const saveConfiguration = saveQuoteDetailsConfig;
 
   const handleConfirmSave = () => {
     toast({
@@ -711,44 +937,16 @@ const SingleProductConfig = () => {
   };
 
   const handleTabChange = (newTab: string) => {
-    if (hasUnsavedChanges && newTab !== activeTab) {
-      setPendingNavigation(newTab);
-      setIsUnsavedChangesDialogOpen(true);
-    } else {
-      setActiveTab(newTab);
-    }
+    setActiveTab(newTab);
   };
 
   const handleBackNavigation = () => {
-    if (hasUnsavedChanges) {
-      setPendingNavigation('back');
-      setIsUnsavedChangesDialogOpen(true);
-    } else {
-      navigate(`${basePath}/product-config`);
-    }
+    navigate(`${basePath}/product-config`);
   };
 
-  const handleSaveAndContinue = () => {
-    handleConfirmSave();
-    setIsUnsavedChangesDialogOpen(false);
-    if (pendingNavigation === 'back') {
-      navigate(`${basePath}/product-config`);
-    } else if (pendingNavigation) {
-      setActiveTab(pendingNavigation);
-    }
-    setPendingNavigation(null);
-  };
 
-  const handleDiscardChanges = () => {
-    setHasUnsavedChanges(false);
-    setIsUnsavedChangesDialogOpen(false);
-    if (pendingNavigation === 'back') {
-      navigate(`${basePath}/product-config`);
-    } else if (pendingNavigation) {
-      setActiveTab(pendingNavigation);
-    }
-    setPendingNavigation(null);
-  };
+
+  // (reverted) Base Rates API wiring removed
 
   // Helper function to get the next order number
   const getNextOrder = (items: any[]) => {
@@ -1224,7 +1422,7 @@ const SingleProductConfig = () => {
     }));
   };
 
-  const addNewClause = () => {
+  const addNewClause = async () => {
     if (!newClause.code || !newClause.title) {
       toast({
         title: "Error",
@@ -1234,18 +1432,44 @@ const SingleProductConfig = () => {
       return;
     }
     
-    markAsChanged();
-    const clause = {
-      code: newClause.code,
+    try {
+      const insurerId = getInsurerCompanyId();
+      if (!insurerId || !product.id) return;
+
+      // Map UI -> API
+      const payload: CreateClauseParams = {
+        product_id: Number(product.id),
+        clause_code: newClause.code,
       title: newClause.title,
-      type: newClause.type,
-      show: newClause.show,
-      wording: newClause.wording,
-      purposeDescription: newClause.purposeDescription,
-      purpose: newClause.purpose
-    };
-    
-    setClausesData(prev => [...prev, clause]);
+        purpose_description: newClause.purposeDescription || "",
+        clause_wording: newClause.purpose || newClause.wording || "",
+        clause_type: newClause.type.toLowerCase(),
+        show_type: newClause.show.toLowerCase(),
+        pricing_type: newClause.pricingType === "percentage" ? "loading" : "fixed",
+        pricing_value: Number(newClause.pricingValue || 0),
+      };
+
+      const created = await createCewsClause(insurerId, product.id as string, payload);
+
+      // Update UI list immediately
+      setClausesData(prev => [
+        ...prev,
+        {
+          id: created.id,
+          code: created.clause_code,
+          title: created.title,
+          purposeDescription: created.purpose_description,
+          wording: created.clause_wording,
+          type: (created.clause_type || '').toLowerCase() === 'exclusion' ? 'Exclusion' : (created.clause_type || '').toLowerCase() === 'warranty' ? 'Warranty' : 'Clause',
+          show: (created.show_type || '').toLowerCase() === 'mandatory' ? 'Mandatory' : 'Optional',
+          pricingType: created.pricing_type === 'discount' || created.pricing_type === 'loading' ? 'percentage' : 'fixed',
+          pricingValue: Number(created.pricing_value || 0),
+          displayOrder: created.display_order ?? 0,
+          active: created.is_active === 1,
+        } as any
+      ]);
+
+      // Reset dialog form
     setNewClause({
       code: "",
       title: "",
@@ -1263,10 +1487,95 @@ const SingleProductConfig = () => {
       title: "Clause Added",
       description: "The new clause has been successfully added.",
     });
+    } catch (err: any) {
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      if (status === 400) toast({ title: "Invalid data", description: message || "Bad request.", variant: "destructive" });
+      else if (status === 401) toast({ title: "Unauthorized", description: "Please log in again.", variant: "destructive" });
+      else if (status === 403) toast({ title: "Forbidden", description: "You don't have access.", variant: "destructive" });
+      else if (status && status >= 500) toast({ title: "Server error", description: "Please try again later.", variant: "destructive" });
+      else toast({ title: "Failed", description: message || "Failed to add clause.", variant: "destructive" });
+    }
   };
-
-  const showPreview = () => {
+  const showPreview = async () => {
+    const insurerId = getInsurerCompanyId();
+    if (!insurerId || !product.id) return;
+    try {
+      setPreviewError(null);
+      setIsPreviewLoading(true);
+      const data = await getQuoteFormat(insurerId, product.id as string);
+      // Map API -> UI in case user hasn't manually opened Quote Format tab yet
+      setQuoteConfig(prev => ({
+        ...prev,
+        header: {
+          ...prev.header,
+          companyName: data.company_name || prev.header.companyName,
+          companyAddress: data.company_address || prev.header.companyAddress,
+          contactInfo: data.contact_info?.raw || prev.header.contactInfo,
+          headerColor: data.header_bg_color || prev.header.headerColor,
+          headerTextColor: data.header_text_color || prev.header.headerTextColor,
+          logoPosition: (data.logo_position || prev.header.logoPosition || 'LEFT').toLowerCase(),
+        },
+        details: { ...prev.details, quotePrefix: data.quotation_prefix || prev.details.quotePrefix },
+        risk: {
+          ...prev.risk,
+          showProjectDetails: data.show_project_details === 1,
+          showCoverageTypes: data.show_coverage_types === 1,
+          showCoverageLimits: data.show_coverage_limits === 1,
+          showDeductibles: data.show_deductibles === 1,
+          showContractorInfo: data.show_contractor_info === 1,
+          riskSectionTitle: data.risk_section_title || prev.risk.riskSectionTitle,
+        },
+        premium: {
+          ...prev.premium,
+          currency: data.premium_currency || prev.premium.currency,
+          premiumSectionTitle: data.premium_section_title || prev.premium.premiumSectionTitle,
+          showBasePremium: data.show_base_premium === 1,
+          showRiskAdjustments: data.show_risk_adjustments === 1,
+          showFees: data.show_fees_charges === 1,
+          showTaxes: data.show_taxes_vat === 1,
+          showTotalPremium: data.show_total_premium === 1,
+        },
+        terms: {
+          ...prev.terms,
+          showWarranties: data.show_warranties === 1,
+          showExclusions: data.show_exclusions === 1,
+          showDeductibleDetails: data.show_deductible_details === 1,
+          showPolicyConditions: data.show_policy_conditions === 1,
+          termsSectionTitle: data.terms_section_title || prev.terms.termsSectionTitle,
+          additionalTerms: data.additional_terms_text || prev.terms.additionalTerms,
+        },
+        signature: {
+          ...prev.signature,
+          showSignatureBlock: data.show_signature_block === 1,
+          authorizedSignatory: data.authorized_signatory_name || prev.signature.authorizedSignatory,
+          signatoryTitle: data.signatory_title || prev.signature.signatoryTitle,
+          signatureText: data.signature_block_text || prev.signature.signatureText,
+        },
+        footer: {
+          ...prev.footer,
+          showFooter: data.show_footer === 1,
+          showDisclaimer: data.show_general_disclaimer === 1,
+          showRegulatoryInfo: data.show_regulatory_info === 1,
+          generalDisclaimer: data.general_disclaimer_text || prev.footer.generalDisclaimer,
+          regulatoryText: data.regulatory_info_text || prev.footer.regulatoryText,
+          footerBgColor: data.footer_bg_color || prev.footer.footerBgColor,
+          footerTextColor: data.footer_text_color || prev.footer.footerTextColor,
+        },
+      }));
     setIsPreviewDialogOpen(true);
+    } catch (err: any) {
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      if (status === 400) setPreviewError(message || 'Bad request while loading quote format.');
+      else if (status === 401) setPreviewError('Unauthorized. Please log in again.');
+      else if (status === 403) setPreviewError("You don't have access to quote format.");
+      else if (status && status >= 500) setPreviewError('Server error. Please try again later.');
+      else setPreviewError(message || 'Failed to load quote format.');
+      setIsPreviewDialogOpen(true);
+    } finally {
+      setIsPreviewLoading(false);
+    }
   };
 
   return (
@@ -1334,9 +1643,36 @@ const SingleProductConfig = () => {
                       <CardTitle>Quote Details Configuration</CardTitle>
                       <CardDescription>Configure quotation numbering, dates, and validity</CardDescription>
                     </div>
-                    <Button onClick={saveConfiguration} size="sm">
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Configuration
+                    <Button 
+                      type="button"
+                      onClick={() => {
+                        console.log('[QuoteConfig] Save button clicked');
+                        setConfirmDialog({
+                          isOpen: true,
+                          title: 'Save Quote Configuration',
+                          description: 'Are you sure you want to save the quote configuration? This will overwrite previously saved settings.',
+                          action: async () => {
+                            console.log('[QuoteConfig] Confirm Save clicked');
+                            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                            await saveQuoteDetailsConfig();
+                          }
+                        });
+                      }}
+                      size="sm"
+                      disabled={isLoadingQuoteConfig || isSavingQuoteConfig}
+                      className={(isLoadingQuoteConfig || isSavingQuoteConfig) ? 'opacity-50 cursor-not-allowed' : ''}
+                    >
+                      {isSavingQuoteConfig ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Quote Config
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardHeader>
@@ -1344,30 +1680,33 @@ const SingleProductConfig = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="validity-days">Validity Period (Days)</Label>
-                      <Input 
-                        id="validity-days" 
-                        type="number" 
-                        value={quoteConfig.details.validityDays}
-                        onChange={(e) => updateQuoteConfig('details', 'validityDays', e.target.value)}
-                      />
+                      {isLoadingQuoteConfig ? (
+                        <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                      ) : (
+                        <Input 
+                          id="validity-days" 
+                          name="validity_days" 
+                          type="number" 
+                          autoComplete="off"
+                          value={quoteConfig.details.validityDays}
+                          onChange={(e) => updateQuoteConfig('details', 'validityDays', e.target.value)}
+                        />
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="backdate-window">Backdate Window (Days)</Label>
-                      <Select 
-                        value={quoteConfig.details.backdateWindow}
-                        onValueChange={(value) => updateQuoteConfig('details', 'backdateWindow', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select backdate window" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">0 days</SelectItem>
-                          <SelectItem value="10">10 days</SelectItem>
-                          <SelectItem value="30">30 days</SelectItem>
-                          <SelectItem value="60">60 days</SelectItem>
-                          <SelectItem value="90">90 days</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {isLoadingQuoteConfig ? (
+                        <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                      ) : (
+                        <Input 
+                          id="backdate-window" 
+                          name="backdate_days" 
+                          type="number" 
+                          autoComplete="off"
+                          value={quoteConfig.details.backdateWindow}
+                          onChange={(e) => updateQuoteConfig('details', 'backdateWindow', e.target.value)}
+                        />
+                      )}
                     </div>
                   </div>
                   
@@ -1378,116 +1717,243 @@ const SingleProductConfig = () => {
                       Geographic Coverage
                     </h3>
                     
-                    <div className="space-y-6">
-                      {/* Countries */}
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium">Operating Countries</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg">
-                          {activeCountries.map((country) => (
-                            <div key={country.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`country-${country.id}`}
-                                checked={quoteConfig.details.countries?.includes(country.id)}
-                                onCheckedChange={(checked) => {
-                                  const currentValue = quoteConfig.details.countries || [];
-                                  if (checked) {
-                                    const newValue = [...currentValue, country.id];
-                                    handleCountryChange(newValue);
-                                  } else {
-                                    const newValue = currentValue.filter((id) => id !== country.id);
-                                    handleCountryChange(newValue);
-                                  }
-                                }}
-                              />
-                              <label
-                                htmlFor={`country-${country.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                {country.label}
-                              </label>
-                            </div>
-                          ))}
+
+                    {metadataError && (
+                      <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2 mb-4">
+                        {metadataError}
+                      </div>
+                    )}
+                    {quoteConfigError && (
+                      <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2 mb-4">
+                        {quoteConfigError}
+                      </div>
+                    )}
+                    
+                    {/* Selection Count Indicator */}
+                    {!isLoadingMetadata && !isLoadingQuoteConfig && insurerMetadata && quoteConfig.details.countries && quoteConfig.details.countries.length > 0 && (
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="text-xs text-blue-600">
+                          <span className="font-medium">Selected:</span> {quoteConfig.details.countries.length} country(ies)
+                          {quoteConfig.details.regions && quoteConfig.details.regions.length > 0 && (
+                            <span>, {quoteConfig.details.regions.length} region(s)</span>
+                          )}
+                          {quoteConfig.details.zones && quoteConfig.details.zones.length > 0 && (
+                            <span>, {quoteConfig.details.zones.length} zone(s)</span>
+                          )}
                         </div>
                       </div>
-
-                      {/* Regions */}
-                      {availableRegions.length > 0 && (
-                        <div className="space-y-3">
-                          <Label className="text-sm font-medium">Operating Regions</Label>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg max-h-48 overflow-y-auto">
-                            {availableRegions.map((region) => {
-                              const country = activeCountries.find(c => c.id === region.countryId);
-                              return (
-                                <div key={region.id} className="flex items-start space-x-2">
-                                  <Checkbox
-                                    id={`region-${region.id}`}
-                                    checked={quoteConfig.details.regions?.includes(region.id)}
-                                    onCheckedChange={(checked) => {
-                                      const currentValue = quoteConfig.details.regions || [];
-                                      let newValue: number[];
-                                      if (checked) {
-                                        newValue = [...currentValue, region.id];
-                                      } else {
-                                        newValue = currentValue.filter((id) => id !== region.id);
-                                      }
-                                      handleRegionChange(newValue);
-                                    }}
-                                    className="mt-1"
-                                  />
-                                  <div className="flex flex-col">
-                                    <label
-                                      htmlFor={`region-${region.id}`}
-                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                    >
-                                      {region.label}
-                                    </label>
-                                    <span className="text-xs text-muted-foreground mt-1">
-                                      {country?.label}
-                                    </span>
+                    )}
+                    
+                    {/* Quote Config Loading Indicator */}
+                    {isLoadingQuoteConfig && (
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-xs text-blue-600">
+                          <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>
+                          <span>Loading saved configuration...</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="space-y-6">
+                      {/* Loading Skeleton for Geographic Coverage */}
+                      {isLoadingMetadata && (
+                        <div className="space-y-6">
+                          {/* Countries Skeleton */}
+                          <div className="space-y-3">
+                            <Label className="text-sm font-medium">Operating Countries</Label>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg">
+                              {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <div key={i} className="flex items-center space-x-2">
+                                  <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                                  <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {/* Regions Skeleton */}
+                          <div className="space-y-3">
+                            <Label className="text-sm font-medium">Operating Regions</Label>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg">
+                              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                                <div key={i} className="flex items-start space-x-2">
+                                  <div className="w-4 h-4 bg-gray-200 rounded animate-pulse mt-1"></div>
+                                  <div className="flex flex-col space-y-1">
+                                    <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
                                   </div>
                                 </div>
-                              );
-                            })}
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {/* Zones Skeleton */}
+                          <div className="space-y-3">
+                            <Label className="text-sm font-medium">Operating Zones</Label>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg">
+                              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                                <div key={i} className="flex items-start space-x-2">
+                                  <div className="w-4 h-4 bg-gray-200 rounded animate-pulse mt-1"></div>
+                                  <div className="flex flex-col space-y-1">
+                                    <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Countries */}
+                      {!isLoadingMetadata && (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-medium">Operating Countries</Label>
+                          {insurerMetadata ? (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg">
+                              {insurerMetadata.operating_countries.map((countryName) => (
+                                <div key={countryName} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`country-${countryName}`}
+                                    checked={quoteConfig.details.countries?.includes(countryName)}
+                                    onCheckedChange={(checked) => {
+                                      const currentValue = quoteConfig.details.countries || [];
+                                      if (checked) {
+                                        const newValue = [...currentValue, countryName];
+                                        updateQuoteConfig('details', 'countries', newValue);
+                                        // Clear regions and zones when adding a country
+                                        updateQuoteConfig('details', 'regions', []);
+                                        updateQuoteConfig('details', 'zones', []);
+                                      } else {
+                                        const newValue = currentValue.filter((name) => name !== countryName);
+                                        updateQuoteConfig('details', 'countries', newValue);
+                                        // Clear regions and zones when removing a country
+                                        updateQuoteConfig('details', 'regions', []);
+                                        updateQuoteConfig('details', 'zones', []);
+                                      }
+                                    }}
+                                    disabled={isLoadingQuoteConfig}
+                                  />
+                                  <label
+                                    htmlFor={`country-${countryName}`}
+                                    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
+                                      isLoadingQuoteConfig ? 'opacity-50' : ''
+                                    }`}
+                                  >
+                                    {countryName}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground p-4 border rounded-lg">
+                              No countries data available
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Regions - Only show if countries are selected */}
+                      {!isLoadingMetadata && insurerMetadata && quoteConfig.details.countries && quoteConfig.details.countries.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-medium">Operating Regions</Label>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <span>•</span>
+                              <span>Available for selected countries</span>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg max-h-48 overflow-y-auto bg-muted/20">
+                            {getAvailableRegions().map((region, index) => (
+                              <div key={index} className="flex items-start space-x-2">
+                                                                  <Checkbox
+                                    id={`region-${index}`}
+                                    checked={quoteConfig.details.regions?.includes(region.name)}
+                                    onCheckedChange={(checked) => {
+                                      const currentValue = quoteConfig.details.regions || [];
+                                      let newValue: string[];
+                                      if (checked) {
+                                        newValue = [...currentValue, region.name];
+                                        updateQuoteConfig('details', 'regions', newValue);
+                                        // Clear zones when adding a region
+                                        updateQuoteConfig('details', 'zones', []);
+                                      } else {
+                                        newValue = currentValue.filter((name) => name !== region.name);
+                                        updateQuoteConfig('details', 'regions', newValue);
+                                        // Clear zones when removing a region
+                                        updateQuoteConfig('details', 'zones', []);
+                                      }
+                                    }}
+                                    className="mt-1"
+                                    disabled={isLoadingQuoteConfig}
+                                  />
+                                <div className="flex flex-col">
+                                  <label
+                                    htmlFor={`region-${index}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    {region.name}
+                                  </label>
+                                  <span className="text-xs text-muted-foreground mt-1">
+                                    {region.country}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                            {getAvailableRegions().length === 0 && (
+                              <div className="col-span-full text-sm text-muted-foreground p-2 text-center">
+                                No regions available for selected countries
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
 
-                      {/* Zones */}
-                      {availableZones.length > 0 && (
+                      {/* Zones - Only show if regions are selected */}
+                      {!isLoadingMetadata && insurerMetadata && quoteConfig.details.regions && quoteConfig.details.regions.length > 0 && (
                         <div className="space-y-3">
-                          <Label className="text-sm font-medium">Operating Zones</Label>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg max-h-48 overflow-y-auto">
-                            {availableZones.map((zone) => {
-                              const region = availableRegions.find(r => r.id === zone.regionId);
-                              return (
-                                <div key={zone.id} className="flex items-start space-x-2">
-                                  <Checkbox
-                                    id={`zone-${zone.id}`}
-                                    checked={quoteConfig.details.zones?.includes(zone.id)}
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-medium">Operating Zones</Label>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <span>•</span>
+                              <span>Available for selected regions</span>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg max-h-48 overflow-y-auto bg-muted/20">
+                            {getAvailableZones().map((zone, index) => (
+                              <div key={index} className="flex items-start space-x-2">
+                                                                  <Checkbox
+                                    id={`zone-${index}`}
+                                    checked={quoteConfig.details.zones?.includes(zone.name)}
                                     onCheckedChange={(checked) => {
                                       const currentValue = quoteConfig.details.zones || [];
                                       if (checked) {
-                                        updateQuoteConfig('details', 'zones', [...currentValue, zone.id]);
+                                        updateQuoteConfig('details', 'zones', [...currentValue, zone.name]);
                                       } else {
-                                        updateQuoteConfig('details', 'zones', currentValue.filter((id) => id !== zone.id));
+                                        updateQuoteConfig('details', 'zones', currentValue.filter((name) => name !== zone.name));
                                       }
                                     }}
                                     className="mt-1"
+                                    disabled={isLoadingQuoteConfig}
                                   />
-                                  <div className="flex flex-col">
-                                    <label
-                                      htmlFor={`zone-${zone.id}`}
-                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                    >
-                                      {zone.label}
-                                    </label>
-                                    <span className="text-xs text-muted-foreground mt-1">
-                                      {region?.label}
-                                    </span>
-                                  </div>
+                                <div className="flex flex-col">
+                                  <label
+                                    htmlFor={`zone-${index}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    {zone.name}
+                                  </label>
+                                  <span className="text-xs text-muted-foreground mt-1">
+                                    {zone.region}, {zone.country}
+                                  </span>
                                 </div>
-                              );
-                            })}
+                              </div>
+                            ))}
+                            {getAvailableZones().length === 0 && (
+                              <div className="col-span-full text-sm text-muted-foreground p-2 text-center">
+                                No zones available for selected regions
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1497,7 +1963,6 @@ const SingleProductConfig = () => {
               </Card>
 
             </TabsContent>
-
             {/* Pricing Configurator Tab */}
             <TabsContent value="pricing" className="space-y-6">
               {/* Algorithm Overview */}
@@ -1530,8 +1995,8 @@ const SingleProductConfig = () => {
                           { id: "clause-pricing", label: "Clause Pricing Configuration", icon: FileText, count: ratingConfig.clausesPricing.length },
                           { id: "construction-types", label: "Construction Types", icon: DollarSign, count: activeConstructionTypes.length },
                           { id: "countries", label: "Countries", icon: MapPin, count: activeCountries.length },
-                          { id: "regions", label: "Regions", icon: MapPin, count: availableRegions.length },
-                          { id: "zones", label: "Zones", icon: MapPin, count: availableZones.length },
+                          { id: "regions", label: "Regions", icon: MapPin, count: 0 },
+                          { id: "zones", label: "Zones", icon: MapPin, count: 0 },
                           { id: "role-types", label: "Role Types", icon: Shield, count: 5 },
                           { id: "contract-types", label: "Contract Types", icon: FileText, count: 4 },
                           { id: "soil-types", label: "Soil Types", icon: TrendingUp, count: 6 },
@@ -1574,7 +2039,7 @@ const SingleProductConfig = () => {
                               </div>
                               <Button onClick={saveConfiguration} size="sm">
                                 <Save className="w-4 h-4 mr-2" />
-                                Save
+                                Save Base Rates
                               </Button>
                             </div>
                           </CardHeader>
@@ -1618,7 +2083,7 @@ const SingleProductConfig = () => {
                                       </Button>
                                       <Button onClick={saveConfiguration} size="sm">
                                         <Save className="w-4 h-4 mr-1" />
-                                        Save
+                                        Save Duration Loadings
                                       </Button>
                                     </div>
                                   </CardHeader>
@@ -1717,21 +2182,21 @@ const SingleProductConfig = () => {
 
                                  <Card className="border border-border bg-card">
                                    <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                                     <div>
-                                       <CardTitle className="text-sm">Maintenance Period Loadings/Discounts</CardTitle>
-                                       <p className="text-xs text-muted-foreground">Configure pricing based on maintenance period ranges</p>
-                                     </div>
-                                     <div className="flex items-center gap-2">
-                                       <Button 
-                                         variant="outline" 
-                                         size="sm"
-                                         onClick={addMaintenancePeriodLoading}
-                                       >
-                                         Add Row
-                                       </Button>
+                                                                         <div>
+                                      <CardTitle className="text-sm">Maintenance Period Loadings/Discounts</CardTitle>
+                                      <p className="text-xs text-muted-foreground">Configure pricing based on maintenance period ranges</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={addMaintenancePeriodLoading}
+                                      >
+                                        Add Row
+                                      </Button>
                                        <Button onClick={saveConfiguration} size="sm">
                                          <Save className="w-4 h-4 mr-1" />
-                                         Save
+                                         Save Maintenance Loadings
                                        </Button>
                                      </div>
                                    </CardHeader>
@@ -1831,13 +2296,13 @@ const SingleProductConfig = () => {
                                 <Card className="border border-border bg-card">
                                   <CardHeader className="pb-3">
                                     <div className="flex items-center justify-between">
-                                      <div>
-                                        <CardTitle className="text-sm">Location Hazard Loadings/Discounts</CardTitle>
-                                        <Button onClick={saveConfiguration} size="sm">
-                                          <Save className="w-4 h-4 mr-1" />
-                                          Save
-                                        </Button>
-                                      </div>
+                                                                          <div>
+                                      <CardTitle className="text-sm">Location Hazard Loadings/Discounts</CardTitle>
+                                      <Button onClick={saveConfiguration} size="sm">
+                                        <Save className="w-4 h-4 mr-1" />
+                                        Save Location Hazards
+                                      </Button>
+                                    </div>
                                     </div>
                                   </CardHeader>
                                   <CardContent className="space-y-6">
@@ -1999,16 +2464,16 @@ const SingleProductConfig = () => {
                                           <TableRow>
                                             <TableCell className="font-medium text-xs">Soil type</TableCell>
                                             <TableCell>
-                                              <SoilTypeMultiSelect defaultValues={["Rock"]} />
+                                              <SoilTypeMultiSelect defaultValues={[]} />
                                             </TableCell>
                                             <TableCell>
-                                              <SoilTypeMultiSelect defaultValues={["Sandy"]} />
+                                              <SoilTypeMultiSelect defaultValues={[]} />
                                             </TableCell>
                                             <TableCell>
-                                              <SoilTypeMultiSelect defaultValues={["Clay", "Unknown"]} />
+                                              <SoilTypeMultiSelect defaultValues={[]} />
                                              </TableCell>
                                              <TableCell>
-                                               <SoilTypeMultiSelect defaultValues={["Clay", "Peat"]} />
+                                               <SoilTypeMultiSelect defaultValues={[]} />
                                              </TableCell>
                                            </TableRow>
                                           <TableRow>
@@ -2170,7 +2635,7 @@ const SingleProductConfig = () => {
                                         <Label className="text-sm font-medium">Location Hazard Rates</Label>
                                         <Button onClick={saveConfiguration} size="sm">
                                           <Save className="w-4 h-4 mr-1" />
-                                          Save
+                                          Save Location Rates
                                         </Button>
                                       </div>
                                       <Table>
@@ -2233,7 +2698,6 @@ const SingleProductConfig = () => {
                            </CardContent>
                          </Card>
                        )}
-
                       {activePricingTab === "contractor-risk" && (
                         <Card className="h-full">
                           <CardHeader>
@@ -2262,7 +2726,7 @@ const SingleProductConfig = () => {
                                        </Button>
                                        <Button onClick={saveConfiguration} size="sm">
                                          <Save className="w-4 h-4 mr-1" />
-                                         Save
+                                         Save Experience Loadings
                                        </Button>
                                      </div>
                                    </CardHeader>
@@ -2370,7 +2834,7 @@ const SingleProductConfig = () => {
                                               </Button>
                                               <Button onClick={saveConfiguration} size="sm">
                                                 <Save className="w-4 h-4 mr-1" />
-                                                Save
+                                                Save Claim Frequency
                                               </Button>
                                             </div>
                                           </div>
@@ -2469,7 +2933,7 @@ const SingleProductConfig = () => {
                                               </Button>
                                               <Button onClick={saveConfiguration} size="sm">
                                                 <Save className="w-4 h-4 mr-1" />
-                                                Save
+                                                Save Claim Amounts
                                               </Button>
                                             </div>
                                           </div>
@@ -2575,7 +3039,7 @@ const SingleProductConfig = () => {
                                       </Button>
                                       <Button onClick={saveConfiguration} size="sm">
                                         <Save className="w-4 h-4 mr-1" />
-                                        Save
+                                        Save Contractor Numbers
                                       </Button>
                                     </div>
                                   </CardHeader>
@@ -2666,23 +3130,23 @@ const SingleProductConfig = () => {
 
                                 <Card className="border border-border bg-card">
                                   <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                                    <div>
-                                      <CardTitle className="text-sm">Subcontractor Number Based Configuration</CardTitle>
-                                      <p className="text-xs text-muted-foreground">Number of subcontractors</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={() => addContractorRiskEntry('subcontractorNumbers')}
-                                      >
-                                        Add Row
-                                      </Button>
-                                      <Button onClick={saveConfiguration} size="sm">
-                                        <Save className="w-4 h-4 mr-1" />
-                                        Save
-                                      </Button>
-                                    </div>
+                                                                      <div>
+                                    <CardTitle className="text-sm">Subcontractor Number Based Configuration</CardTitle>
+                                    <p className="text-xs text-muted-foreground">Number of subcontractors</p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => addContractorRiskEntry('subcontractorNumbers')}
+                                    >
+                                      Add Row
+                                    </Button>
+                                    <Button onClick={saveConfiguration} size="sm">
+                                      <Save className="w-4 h-4 mr-1" />
+                                                                             Save Subcontractor Numbers
+                                    </Button>
+                                  </div>
                                   </CardHeader>
                                   <CardContent>
                                     <Table>
@@ -2772,7 +3236,6 @@ const SingleProductConfig = () => {
                           </CardContent>
                          </Card>
                         )}
-
                        {activePricingTab === "coverage-options" && (
                          <Card className="h-full">
                            <CardHeader>
@@ -2797,7 +3260,7 @@ const SingleProductConfig = () => {
                                         </Button>
                                         <Button onClick={saveConfiguration} size="sm">
                                           <Save className="w-4 h-4 mr-1" />
-                                          Save
+                                          Save Sum Insured
                                         </Button>
                                       </div>
                                     </CardHeader>
@@ -2902,7 +3365,7 @@ const SingleProductConfig = () => {
                                         </Button>
                                         <Button onClick={saveConfiguration} size="sm">
                                           <Save className="w-4 h-4 mr-1" />
-                                          Save
+                                          Save Project Value
                                         </Button>
                                       </div>
                                     </CardHeader>
@@ -3007,7 +3470,7 @@ const SingleProductConfig = () => {
                                        </Button>
                                        <Button onClick={saveConfiguration} size="sm">
                                          <Save className="w-4 h-4 mr-1" />
-                                         Save
+                                         Save Contract Works
                                        </Button>
                                      </div>
                                    </CardHeader>
@@ -3112,7 +3575,7 @@ const SingleProductConfig = () => {
                                        </Button>
                                        <Button onClick={saveConfiguration} size="sm">
                                          <Save className="w-4 h-4 mr-1" />
-                                         Save
+                                         Save Plant Equipment
                                        </Button>
                                      </div>
                                    </CardHeader>
@@ -3211,7 +3674,7 @@ const SingleProductConfig = () => {
                                        </div>
                                        <Button onClick={saveConfiguration} size="sm">
                                          <Save className="w-4 h-4 mr-1" />
-                                         Save
+                                         Save Cross Liability
                                        </Button>
                                      </div>
                                    </CardHeader>
@@ -3273,7 +3736,6 @@ const SingleProductConfig = () => {
                             </CardContent>
                           </Card>
                         )}
-
                       {activePricingTab === "limits-deductibles" && (
                         <Card className="h-full">
                           <CardHeader>
@@ -3288,7 +3750,7 @@ const SingleProductConfig = () => {
                                       <CardTitle className="text-sm">Policy Limits</CardTitle>
                                       <Button onClick={saveConfiguration} size="sm">
                                         <Save className="w-4 h-4 mr-1" />
-                                        Save
+                                        Save Policy Limits
                                       </Button>
                                     </div>
                                   </CardHeader>
@@ -3433,7 +3895,7 @@ const SingleProductConfig = () => {
                                        </Button>
                                        <Button onClick={saveConfiguration} size="sm">
                                          <Save className="w-4 h-4 mr-1" />
-                                         Save
+                                         Save Sub Limits
                                        </Button>
                                      </div>
                                    </CardHeader>
@@ -3531,7 +3993,7 @@ const SingleProductConfig = () => {
                                        </Button>
                                        <Button onClick={saveConfiguration} size="sm">
                                          <Save className="w-4 h-4 mr-1" />
-                                         Save
+                                         Save Deductibles
                                        </Button>
                                      </div>
                                    </CardHeader>
@@ -3622,7 +4084,6 @@ const SingleProductConfig = () => {
                            </CardContent>
                          </Card>
                        )}
-
                       {activePricingTab === "clause-pricing" && (
                         <Card className="h-full">
                           <CardHeader>
@@ -3686,7 +4147,7 @@ const SingleProductConfig = () => {
                                 </div>
                                 <Button onClick={saveConfiguration} size="sm">
                                   <Save className="w-4 h-4 mr-1" />
-                                  Save
+                                  Save Construction Types
                                 </Button>
                               </div>
                             </CardHeader>
@@ -3716,7 +4177,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="2.5" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -3777,7 +4238,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="1.0" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -3823,7 +4284,7 @@ const SingleProductConfig = () => {
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {availableRegions.map((region) => (
+                                  {[].map((region) => (
                                     <TableRow key={region.id}>
                                       <TableCell className="font-medium">{region.label}</TableCell>
                                       <TableCell>
@@ -3838,7 +4299,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="1.2" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -3884,7 +4345,7 @@ const SingleProductConfig = () => {
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {availableZones.map((zone) => (
+                                  {[].map((zone) => (
                                     <TableRow key={zone.id}>
                                       <TableCell className="font-medium">{zone.label}</TableCell>
                                       <TableCell>
@@ -3899,7 +4360,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="0.8" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -3960,7 +4421,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="1.5" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -4021,7 +4482,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="2.0" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -4082,7 +4543,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="1.8" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -4143,7 +4604,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="3.0" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -4204,7 +4665,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="2.2" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -4265,7 +4726,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="1.3" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -4326,7 +4787,7 @@ const SingleProductConfig = () => {
                                         </Select>
                                       </TableCell>
                                       <TableCell>
-                                        <Input type="number" defaultValue="1.4" className="w-24" />
+                                        <Input type="number" defaultValue="0" className="w-24" />
                                       </TableCell>
                                       <TableCell>
                                         <Select defaultValue="quote">
@@ -4346,7 +4807,6 @@ const SingleProductConfig = () => {
                             </CardContent>
                           </Card>
                           )}
-
                         {activePricingTab === "fee-types" && (
                           <Card className="h-full">
                             <CardHeader>
@@ -4375,7 +4835,7 @@ const SingleProductConfig = () => {
                                   </Button>
                                   <Button onClick={saveConfiguration} size="sm">
                                     <Save className="w-4 h-4 mr-1" />
-                                    Save
+                                    Save Fee Types
                                   </Button>
                                 </div>
                               </div>
@@ -4502,7 +4962,26 @@ const SingleProductConfig = () => {
 
             {/* CEWs Configuration Tab */}
             <TabsContent value="cews" className="space-y-6">
-              
+              {tplError && (
+                <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
+                  {tplError}
+                </div>
+              )}
+              {isLoadingTpl && (
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-md">
+                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse mb-3" />
+                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="p-4 border rounded-md">
+                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse mb-3" />
+                    <div className="h-24 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                </div>
+              )}
+
+              {!isLoadingTpl && (
+                <>
               {/* TPL limit & Extensions Section */}
               <Card>
                 <CardHeader>
@@ -4512,6 +4991,33 @@ const SingleProductConfig = () => {
                       <CardDescription>
                         Configure Third Party Liability limit and related extensions
                       </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => {
+                          const newExtension = {
+                            id: Date.now(),
+                            title: "",
+                            description: "",
+                            tplLimitValue: "",
+                            pricingType: "percentage" as "percentage" | "fixed",
+                            loadingDiscount: 0
+                          };
+                          setTplExtensions([...tplExtensions, newExtension]);
+                        }}
+                        size="sm"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Extension
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={isSavingTpl}
+                        onClick={saveTplExtensions}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {isSavingTpl ? 'Saving…' : 'Save Extensions'}
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -4533,23 +5039,7 @@ const SingleProductConfig = () => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-medium">TPL Limit Extensions</h4>
-                      <Button
-                        onClick={() => {
-                          const newExtension = {
-                            id: Date.now(),
-                            title: "",
-                            description: "",
-                            tplLimitValue: "",
-                            pricingType: "percentage" as "percentage" | "fixed",
-                            loadingDiscount: 0
-                          };
-                          setTplExtensions([...tplExtensions, newExtension]);
-                        }}
-                        size="sm"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Extension
-                      </Button>
+                      {/* Buttons moved to CardHeader; this right-side group is removed */}
                     </div>
                     
                     <Table>
@@ -4655,24 +5145,35 @@ const SingleProductConfig = () => {
                       </TableBody>
                     </Table>
                     
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={() => {
-                          toast({
-                            title: "TPL Extensions Saved",
-                            description: "TPL limit extensions have been saved successfully.",
-                          });
-                        }}
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Extensions
-                      </Button>
-                    </div>
+                    
                   </div>
                 </CardContent>
               </Card>
+              </>
+              )}
 
               {/* Clauses, Exclusions, and Warranties Section */}
+              {isLoadingClauses ? (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <div className="w-72 h-6 bg-gray-200 rounded animate-pulse" />
+                        <div className="w-[28rem] h-4 bg-gray-200 rounded animate-pulse" />
+                      </div>
+                      <div className="w-28 h-9 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="w-full h-9 bg-gray-200 rounded animate-pulse" />
+                    <div className="space-y-2">
+                      <div className="w-full h-12 bg-gray-200 rounded animate-pulse" />
+                      <div className="w-full h-12 bg-gray-200 rounded animate-pulse" />
+                      <div className="w-full h-12 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -4691,6 +5192,11 @@ const SingleProductConfig = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
+                    {clausesError && (
+                      <div className="mb-4 text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
+                        {clausesError}
+                      </div>
+                    )}
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -4748,6 +5254,7 @@ const SingleProductConfig = () => {
                   </Table>
                 </CardContent>
               </Card>
+              )}
 
               {/* Edit and Add Clause Dialogs */}
               <Dialog open={isEditClauseDialogOpen} onOpenChange={setIsEditClauseDialogOpen}>
@@ -4846,18 +5353,79 @@ const SingleProductConfig = () => {
                         <Button variant="outline" onClick={() => setIsEditClauseDialogOpen(false)}>
                           Cancel
                         </Button>
-                        <Button onClick={() => {
-                          markAsChanged();
+                        <Button onClick={async () => {
+                          setIsSavingClause(true);
+                          try {
+                            const insurerId = getInsurerCompanyId();
+                            if (!insurerId || !product.id) return;
+                            // The endpoint expects {product_id} from the card; we keep it on the selectedClause or fall back to product.id
+                            const clauseProductId = (selectedClause as any)?.id || (selectedClause as any)?.product_id || product.id;
+
+                            const payload: UpdateClauseParams = {
+                              title: selectedClause.title,
+                              purpose_description: selectedClause.purposeDescription,
+                              clause_wording: selectedClause.purpose || selectedClause.wording,
+                              clause_type: selectedClause.type?.toUpperCase(),
+                              show_type: selectedClause.show?.toUpperCase(),
+                              pricing_type: selectedClause.pricingType === 'percentage' ? 'Percentage' : 'Fixed',
+                              pricing_value: String(selectedClause.pricingValue ?? ''),
+                            };
+
+                            const updated = await updateCewsClause(insurerId, product.id as string, clauseProductId as string, payload);
+
+                            // Update table row with response
                           setClausesData(prev => prev.map(c => 
-                            c.code === selectedClause.code ? selectedClause : c
+                              c.code === selectedClause.code ? {
+                                ...c,
+                                title: updated.title || c.title,
+                                purposeDescription: updated.purpose_description || c.purposeDescription,
+                                wording: updated.clause_wording || c.wording,
+                                type: (updated.clause_type || '').toUpperCase() === 'EXCLUSION' ? 'Exclusion' : (updated.clause_type || '').toUpperCase() === 'WARRANTY' ? 'Warranty' : 'Clause',
+                                show: (updated.show_type || '').toUpperCase() === 'MANDATORY' ? 'Mandatory' : 'Optional',
+                                pricingType: (String(updated.pricing_type || '').toLowerCase() === 'fixed' || String(updated.pricing_type || '').toLowerCase() === 'fixed_rate') ? 'fixed' : 'percentage',
+                                pricingValue: Number(updated.pricing_value || c.pricingValue),
+                              } : c
                           ));
                           setIsEditClauseDialogOpen(false);
+                            // refresh list
+                            try {
+                              clausesApiRef.current = true;
+                              const resp: GetClausesResponse = await getCewsClauses(insurerId, product.id as string);
+                              const list = Array.isArray(resp?.clauses) ? resp.clauses : [];
+                              const mapped = list.map((c) => ({
+                                id: c.id,
+                                code: c.clause_code || '',
+                                title: c.title || '',
+                                purposeDescription: c.purpose_description || '',
+                                wording: c.clause_wording || '',
+                                type: ((c.clause_type || '').toUpperCase() === 'EXCLUSION' ? 'Exclusion' : (c.clause_type || '').toUpperCase() === 'WARRANTY' ? 'Warranty' : 'Clause'),
+                                show: (c.show_type || '').toUpperCase() === 'MANDATORY' ? 'Mandatory' : 'Optional',
+                                pricingType: (c.pricing_type || '').toLowerCase() === 'fixed_rate' ? 'fixed' : 'percentage',
+                                pricingValue: Number(c.pricing_value || 0),
+                                displayOrder: Number(c.display_order || 0),
+                                active: c.is_active === 1,
+                              }));
+                              setClausesData(mapped as any);
+                            } finally {
+                              clausesApiRef.current = false;
+                            }
                           toast({
-                            title: "Clause Updated",
-                            description: "The clause has been successfully updated.",
-                          });
+                              title: 'Clause Updated',
+                              description: 'The clause has been successfully updated.',
+                            });
+                          } catch (err: any) {
+                            const status = err?.status as number | undefined;
+                            const message = err?.message as string | undefined;
+                            if (status === 400) toast({ title: 'Invalid data', description: message || 'Bad request.', variant: 'destructive' });
+                            else if (status === 401) toast({ title: 'Unauthorized', description: 'Please log in again.', variant: 'destructive' });
+                            else if (status === 403) toast({ title: 'Forbidden', description: "You don't have access.", variant: 'destructive' });
+                            else if (status && status >= 500) toast({ title: 'Server error', description: 'Please try again later.', variant: 'destructive' });
+                            else toast({ title: 'Failed', description: message || 'Failed to update clause.', variant: 'destructive' });
+                          } finally {
+                            setIsSavingClause(false);
+                          }
                         }}>
-                          Save Changes
+                          {isSavingClause ? 'Saving…' : 'Save Changes'}
                         </Button>
                       </div>
                     </div>
@@ -4975,7 +5543,6 @@ const SingleProductConfig = () => {
                 </DialogContent>
               </Dialog>
             </TabsContent>
-
             {/* Wording Configuration Tab */}
             <TabsContent value="wording" className="space-y-6">
               
@@ -4988,66 +5555,93 @@ const SingleProductConfig = () => {
                       <CardDescription>Upload and manage policy wording documents</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button onClick={saveConfiguration} size="sm">
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Configuration
-                      </Button>
                       <Button
                         variant="outline"
                         onClick={openUploadDialog}
                       >
                         <Upload className="w-4 h-4 mr-2" />
-                        Upload Document
+                         Upload New Document
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Uploaded Wordings List */}
-                  <div>
-                    <h4 className="font-medium mb-4">Uploaded Policy Wordings</h4>
+                  {/* Error Banner */}
+                  {policyWordingsError && (
+                    <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
+                      {policyWordingsError}
+                    </div>
+                  )}
+                  
+                  {/* Loading Skeleton */}
+                  {isLoadingPolicyWordings && (
                     <div className="space-y-3">
-                      {uploadedWordings.map((wording) => (
-                        <div key={wording.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex items-center gap-3">
-                            <FileText className="w-4 h-4 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">{wording.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                Uploaded: {wording.uploadDate} • Size: {wording.size}
-                              </p>
+                            <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="space-y-2">
+                              <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
+                              <div className="w-48 h-3 bg-gray-200 rounded animate-pulse"></div>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <Label htmlFor={`wording-${wording.id}`} className="text-sm">
-                                {wording.active ? 'Active' : 'Inactive'}
-                              </Label>
-                              <Switch
-                                id={`wording-${wording.id}`}
-                                checked={wording.active}
-                                onCheckedChange={(checked) => {
-                                  setUploadedWordings(prev => 
-                                    prev.map(w => 
-                                      w.id === wording.id ? { ...w, active: checked } : w
-                                    )
-                                  );
-                                }}
-                              />
-                            </div>
-                            <Button variant="outline" size="sm">
-                              <Eye className="w-4 h-4 mr-2" />
-                              View
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => openEditDialog(wording)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </Button>
+                            <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  </div>
+                  )}
+                  
+                  {/* Policy Wordings List */}
+                  {!isLoadingPolicyWordings && !policyWordingsError && (
+                    <div>
+                      <h4 className="font-medium mb-4">Policy Wordings</h4>
+                      {policyWordings.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                          <p>No policy wordings found</p>
+                          <p className="text-sm">Upload your first policy wording document to get started</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {policyWordings.map((wording) => (
+                            <div key={wording.id} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <FileText className="w-4 h-4 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium">{wording.document_title}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Uploaded: {new Date(wording.upload_date).toLocaleDateString()} • Size: {wording.file_size_kb} KB
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {/* Active/Inactive toggles removed as requested */}
+                                <Button variant="outline" size="sm">
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => {
+                                  setEditingWording(wording);
+                                  setWordingUploadTitle(wording.document_title || "");
+                                  setWordingUploadActive(wording.is_active === 1);
+                                  setWordingUploadFile(null);
+                                  setUploadError(null);
+                                  setIsWordingUploadDialogOpen(true);
+                                }}>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -5058,25 +5652,41 @@ const SingleProductConfig = () => {
                     <DialogTitle>
                       {editingWording ? "Edit Policy Wording" : "Upload Policy Wording"}
                     </DialogTitle>
+                    <DialogDescription>
+                      {editingWording
+                        ? "Update the title, active status, or replace the PDF document."
+                        : "Provide a title, mark active if needed, and select a PDF to upload."}
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
+                    {uploadError && (
+                      <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
+                        {uploadError}
+                      </div>
+                    )}
                     <div>
                       <Label htmlFor="wording-title">Title</Label>
                       <Input
                         id="wording-title"
+                        name="document_title"
                         value={wordingUploadTitle}
                         onChange={(e) => setWordingUploadTitle(e.target.value)}
                         placeholder="Enter document title"
                       />
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="wording-active" className="text-sm">Active</Label>
+                      <Switch id="wording-active" checked={wordingUploadActive} onCheckedChange={setWordingUploadActive} />
+                    </div>
                     <div>
                       <Label htmlFor="wording-file">
-                        {editingWording ? "Upload New Document (Optional)" : "Upload Document"}
+                        {editingWording ? "Upload New Document (Optional)" : "Select PDF Document"}
                       </Label>
                       <Input
                         id="wording-file"
+                        name="document"
                         type="file"
-                        accept=".pdf,.doc,.docx"
+                        accept=".pdf"
                         onChange={handleFileUpload}
                         className="mt-1"
                       />
@@ -5093,39 +5703,101 @@ const SingleProductConfig = () => {
                       onClick={() => {
                         setIsWordingUploadDialogOpen(false);
                         setWordingUploadTitle("");
+                        setWordingUploadActive(true);
+                        setWordingUploadFile(null);
+                        setUploadError(null);
                         setEditingWording(null);
                       }}
                     >
                       Cancel
                     </Button>
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
+                        const insurerId = getInsurerCompanyId();
+                        if (!insurerId || !product.id) {
+                          setUploadError('Missing insurer or product id.');
+                          return;
+                        }
+
                         if (editingWording) {
-                          // Save changes for existing wording
-                          if (wordingUploadTitle.trim()) {
-                            setUploadedWordings(prev => 
-                              prev.map(w => 
-                                w.id === editingWording.id 
-                                  ? { ...w, name: wordingUploadTitle }
-                                  : w
-                              )
-                            );
-                            toast({
-                              title: "Document updated",
-                              description: `${wordingUploadTitle} has been updated successfully.`,
-                            });
-                            setIsWordingUploadDialogOpen(false);
-                            setWordingUploadTitle("");
-                            setEditingWording(null);
+                          if (!wordingUploadTitle.trim() && wordingUploadFile == null) {
+                            setUploadError('Please update the title or select a new PDF.');
+                            return;
                           }
-                        } else {
-                          // Trigger file upload for new document
-                          document.getElementById('wording-file')?.click();
+                          setUploadError(null);
+                          try {
+                            setIsUploadingWording(true);
+                            const res = await updatePolicyWording(
+                              insurerId,
+                              product.id as string,
+                              editingWording.id,
+                              {
+                                document_title: wordingUploadTitle.trim() || undefined,
+                                is_active: String(!!wordingUploadActive),
+                                document: wordingUploadFile || undefined,
+                              }
+                            );
+                            toast({ title: 'Changes saved', description: res?.message || 'Update successful.' });
+                            const wordingsData = await getPolicyWordings(insurerId, product.id as string);
+                            setPolicyWordings(wordingsData.wordings);
+                            setIsWordingUploadDialogOpen(false);
+                            setWordingUploadTitle('');
+                            setWordingUploadActive(true);
+                            setWordingUploadFile(null);
+                            setEditingWording(null);
+                          } catch (err: any) {
+                            const status = err?.status as number | undefined;
+                            const message = err?.message as string | undefined;
+                            if (status === 400) setUploadError(message || 'Bad request while updating policy wording.');
+                            else if (status === 401) setUploadError('Unauthorized. Please log in again.');
+                            else if (status === 403) setUploadError("You don't have access to update policy wordings.");
+                            else if (status && status >= 500) setUploadError('Server error. Please try again later.');
+                            else setUploadError(message || 'Failed to update policy wording.');
+                          } finally {
+                            setIsUploadingWording(false);
+                          }
+                          return;
+                        }
+
+                        if (!wordingUploadTitle.trim()) return;
+                        if (!wordingUploadFile) {
+                          setUploadError('Please select a PDF document to upload.');
+                          return;
+                        }
+                        setUploadError(null);
+                        try {
+                          setIsUploadingWording(true);
+                          const res = await uploadPolicyWording(insurerId, product.id as string, {
+                            product_id: String(product.id),
+                            document_title: wordingUploadTitle.trim(),
+                            is_active: String(!!wordingUploadActive),
+                            document: wordingUploadFile,
+                          });
+                          toast({ title: 'Document uploaded', description: res?.message || 'Upload successful.' });
+                          const wordingsData = await getPolicyWordings(insurerId, product.id as string);
+                          setPolicyWordings(wordingsData.wordings);
+                          setIsWordingUploadDialogOpen(false);
+                          setWordingUploadTitle('');
+                          setWordingUploadActive(true);
+                          setWordingUploadFile(null);
+                        } catch (err: any) {
+                          const status = err?.status as number | undefined;
+                          const message = err?.message as string | undefined;
+                          if (status === 400) setUploadError(message || 'Bad request while uploading policy wording.');
+                          else if (status === 401) setUploadError('Unauthorized. Please log in again.');
+                          else if (status === 403) setUploadError("You don't have access to upload policy wordings.");
+                          else if (status && status >= 500) setUploadError('Server error. Please try again later.');
+                          else setUploadError(message || 'Failed to upload policy wording.');
+                        } finally {
+                          setIsUploadingWording(false);
                         }
                       }}
-                      disabled={!wordingUploadTitle.trim()}
+                      disabled={!wordingUploadTitle.trim() || isUploadingWording}
                     >
-                      {editingWording ? "Save" : "Upload"}
+                      {isUploadingWording ? (
+                        <div className="w-4 h-4 mr-2 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                      ) : null}
+                      {editingWording ? "Save Changes" : "Upload"}
                     </Button>
                   </div>
                 </DialogContent>
@@ -5135,7 +5807,38 @@ const SingleProductConfig = () => {
 
             {/* Quote Format Tab */}
             <TabsContent value="quote-format" className="space-y-6">
+              {quoteFormatError && (
+                <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
+                  {quoteFormatError}
+                </div>
+              )}
+              {isLoadingQuoteFormat && (
+                <div className="space-y-6">
+                  <div className="p-4 border rounded-md space-y-4">
+                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="p-4 border rounded-md space-y-4">
+                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-32 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="p-4 border rounded-md space-y-4">
+                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-32 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="p-4 border rounded-md space-y-4">
+                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-24 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                </div>
+              )}
               
+              {!isLoadingQuoteFormat && (
+                <>
               {/* Header Configuration */}
               <Card>
                 <CardHeader>
@@ -5147,10 +5850,142 @@ const SingleProductConfig = () => {
                       </CardTitle>
                       <CardDescription>Configure quote header with logo and company information</CardDescription>
                     </div>
-                    <Button onClick={saveConfiguration} size="sm">
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" onClick={showPreview} size="sm">
+                        <Eye className="w-4 h-4 mr-2" />
+                        Preview Template
+                      </Button>
+                      <Button onClick={async () => {
+                        const insurerId = getInsurerCompanyId();
+                        if (!insurerId || !product.id) return;
+                        try {
+                          setIsSavingQuoteFormat(true);
+                          const common = {
+                            product_id: String(product.id),
+                            company_name: quoteConfig.header.companyName || '',
+                            company_address: quoteConfig.header.companyAddress || '',
+                            quotation_prefix: quoteConfig.details.quotePrefix || '',
+                            contact_info: quoteConfig.header.contactInfo || '',
+                            header_bg_color: quoteConfig.header.headerColor || '#000000',
+                            header_text_color: quoteConfig.header.headerTextColor || '#FFFFFF',
+                            logo_position: (quoteConfig.header.logoPosition || 'left').toUpperCase(),
+                            show_project_details: String(!!quoteConfig.risk.showProjectDetails),
+                            show_coverage_types: String(!!quoteConfig.risk.showCoverageTypes),
+                            show_coverage_limits: String(!!quoteConfig.risk.showCoverageLimits),
+                            show_deductibles: String(!!quoteConfig.risk.showDeductibles),
+                            show_contractor_info: String(!!quoteConfig.risk.showContractorInfo),
+                            risk_section_title: quoteConfig.risk.riskSectionTitle || 'Risk Details',
+                            show_base_premium: String(!!quoteConfig.premium.showBasePremium),
+                            show_risk_adjustments: String(!!quoteConfig.premium.showRiskAdjustments),
+                            show_fees_charges: String(!!quoteConfig.premium.showFees),
+                            show_taxes_vat: String(!!quoteConfig.premium.showTaxes),
+                            show_total_premium: String(!!quoteConfig.premium.showTotalPremium),
+                            premium_section_title: quoteConfig.premium.premiumSectionTitle || 'Premium Breakdown',
+                            premium_currency: quoteConfig.premium.currency || 'AED',
+                            show_warranties: String(!!quoteConfig.terms.showWarranties),
+                            show_exclusions: String(!!quoteConfig.terms.showExclusions),
+                            show_deductible_details: String(!!quoteConfig.terms.showDeductibleDetails),
+                            show_policy_conditions: String(!!quoteConfig.terms.showPolicyConditions),
+                            terms_section_title: quoteConfig.terms.termsSectionTitle || 'Terms & Conditions',
+                            additional_terms_text: quoteConfig.terms.additionalTerms || '',
+                            show_signature_block: String(!!quoteConfig.signature.showSignatureBlock),
+                            authorized_signatory_name: quoteConfig.signature.authorizedSignatory || '',
+                            signatory_title: quoteConfig.signature.signatoryTitle || '',
+                            signature_block_text: quoteConfig.signature.signatureText || '',
+                            show_footer: String(!!quoteConfig.footer.showFooter),
+                            show_general_disclaimer: String(!!quoteConfig.footer.showDisclaimer),
+                            general_disclaimer_text: quoteConfig.footer.generalDisclaimer || '',
+                            show_regulatory_info: String(!!quoteConfig.footer.showRegulatoryInfo),
+                            regulatory_info_text: quoteConfig.footer.regulatoryText || '',
+                            footer_bg_color: quoteConfig.footer.footerBgColor || '#FFFFFF',
+                            footer_text_color: quoteConfig.footer.footerTextColor || '#000000',
+                            logo: quoteLogoFile || null,
+                          };
+                          if (!quoteFormatId) {
+                            const res = await createQuoteFormat(insurerId, product.id as string, common);
+                            toast({ title: 'Quote format saved', description: res?.message || 'Created successfully.' });
+                          } else {
+                            const { product_id, ...patchable } = common;
+                            const res = await updateQuoteFormat(insurerId, product.id as string, patchable);
+                            toast({ title: 'Quote format updated', description: res?.message || 'Updated successfully.' });
+                          }
+                          const refreshed = await getQuoteFormat(insurerId, product.id as string);
+                          setQuoteFormatId(refreshed?.id ?? null);
+                          // also re-map to UI to reflect any normalized values
+                          setQuoteConfig(prev => ({
+                            ...prev,
+                            header: {
+                              ...prev.header,
+                              companyName: refreshed.company_name || '',
+                              companyAddress: refreshed.company_address || '',
+                              contactInfo: refreshed.contact_info?.raw || '',
+                              headerColor: refreshed.header_bg_color || '#1f2937',
+                              headerTextColor: refreshed.header_text_color || '#ffffff',
+                              logoPosition: (refreshed.logo_position || 'LEFT').toLowerCase(),
+                            },
+                            details: { ...prev.details, quotePrefix: refreshed.quotation_prefix || '' },
+                            risk: {
+                              ...prev.risk,
+                              showProjectDetails: refreshed.show_project_details === 1,
+                              showCoverageTypes: refreshed.show_coverage_types === 1,
+                              showCoverageLimits: refreshed.show_coverage_limits === 1,
+                              showDeductibles: refreshed.show_deductibles === 1,
+                              showContractorInfo: refreshed.show_contractor_info === 1,
+                              riskSectionTitle: refreshed.risk_section_title || 'Risk Details',
+                            },
+                            premium: {
+                              ...prev.premium,
+                              currency: refreshed.premium_currency || 'AED',
+                              premiumSectionTitle: refreshed.premium_section_title || 'Premium Breakdown',
+                              showBasePremium: refreshed.show_base_premium === 1,
+                              showRiskAdjustments: refreshed.show_risk_adjustments === 1,
+                              showFees: refreshed.show_fees_charges === 1,
+                              showTaxes: refreshed.show_taxes_vat === 1,
+                              showTotalPremium: refreshed.show_total_premium === 1,
+                            },
+                            terms: {
+                              ...prev.terms,
+                              showWarranties: refreshed.show_warranties === 1,
+                              showExclusions: refreshed.show_exclusions === 1,
+                              showDeductibleDetails: refreshed.show_deductible_details === 1,
+                              showPolicyConditions: refreshed.show_policy_conditions === 1,
+                              termsSectionTitle: refreshed.terms_section_title || 'Terms & Conditions',
+                              additionalTerms: refreshed.additional_terms_text || '',
+                            },
+                            signature: {
+                              ...prev.signature,
+                              showSignatureBlock: refreshed.show_signature_block === 1,
+                              authorizedSignatory: refreshed.authorized_signatory_name || '',
+                              signatoryTitle: refreshed.signatory_title || '',
+                              signatureText: refreshed.signature_block_text || '',
+                            },
+                            footer: {
+                              ...prev.footer,
+                              showFooter: refreshed.show_footer === 1,
+                              showDisclaimer: refreshed.show_general_disclaimer === 1,
+                              showRegulatoryInfo: refreshed.show_regulatory_info === 1,
+                              generalDisclaimer: refreshed.general_disclaimer_text || '',
+                              regulatoryText: refreshed.regulatory_info_text || '',
+                              footerBgColor: refreshed.footer_bg_color || '#ffffff',
+                              footerTextColor: refreshed.footer_text_color || '#000000',
+                            },
+                          }));
+                        } catch (err: any) {
+                          const status = err?.status as number | undefined;
+                          const message = err?.message as string | undefined;
+                          if (status === 400) toast({ title: 'Bad request', description: message || 'Please review inputs.' });
+                          else if (status === 401) toast({ title: 'Unauthorized', description: 'Please log in again.' });
+                          else if (status === 403) toast({ title: 'Forbidden', description: "You don't have permission." });
+                          else if (status && status >= 500) toast({ title: 'Server error', description: 'Please try again later.' });
+                          else toast({ title: 'Error', description: message || 'Failed to save quote format.' });
+                        } finally {
+                          setIsSavingQuoteFormat(false);
+                        }
+                      }} size="sm" disabled={isSavingQuoteFormat}>
                       <Save className="w-4 h-4 mr-2" />
-                      Save Configuration
+                        {isSavingQuoteFormat ? 'Saving...' : 'Save Quote Format'}
                     </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -5159,6 +5994,8 @@ const SingleProductConfig = () => {
                       <Label htmlFor="company-name">Company Name</Label>
                       <Input 
                         id="company-name" 
+                        name="company_name"
+                        autoComplete="organization" 
                         value={quoteConfig.header.companyName}
                         onChange={(e) => updateQuoteConfig('header', 'companyName', e.target.value)}
                       />
@@ -5167,6 +6004,8 @@ const SingleProductConfig = () => {
                       <Label htmlFor="quote-prefix">Quotation Number Prefix</Label>
                       <Input 
                         id="quote-prefix" 
+                        name="quotation_prefix"
+                        autoComplete="off" 
                         value={quoteConfig.details.quotePrefix}
                         onChange={(e) => updateQuoteConfig('details', 'quotePrefix', e.target.value)}
                       />
@@ -5174,7 +6013,10 @@ const SingleProductConfig = () => {
                     <div className="space-y-2">
                       <Label htmlFor="logo-upload">Company Logo</Label>
                       <div className="flex gap-2">
-                        <Input id="logo-upload" type="file" accept="image/*" />
+                        <Input id="logo-upload" name="logo" type="file" accept="image/*" onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          setQuoteLogoFile(file);
+                        }} />
                         <Button variant="outline" size="sm">
                           <Upload className="w-4 h-4" />
                         </Button>
@@ -5186,6 +6028,8 @@ const SingleProductConfig = () => {
                       <Label htmlFor="company-address">Company Address</Label>
                       <Textarea 
                         id="company-address" 
+                        name="company_address"
+                        autoComplete="street-address" 
                         value={quoteConfig.header.companyAddress}
                         onChange={(e) => updateQuoteConfig('header', 'companyAddress', e.target.value)}
                       />
@@ -5194,6 +6038,8 @@ const SingleProductConfig = () => {
                       <Label htmlFor="contact-info">Contact Information</Label>
                       <Textarea 
                         id="contact-info" 
+                        name="contact_info"
+                        autoComplete="on" 
                         value={quoteConfig.header.contactInfo}
                         onChange={(e) => updateQuoteConfig('header', 'contactInfo', e.target.value)}
                       />
@@ -5204,6 +6050,7 @@ const SingleProductConfig = () => {
                       <Label htmlFor="header-color">Header Background Color</Label>
                       <Input 
                         id="header-color" 
+                        name="header_bg_color"
                         type="color" 
                         value={quoteConfig.header.headerColor}
                         onChange={(e) => updateQuoteConfig('header', 'headerColor', e.target.value)}
@@ -5213,6 +6060,7 @@ const SingleProductConfig = () => {
                       <Label htmlFor="header-text-color">Header Text Color</Label>
                       <Input 
                         id="header-text-color" 
+                        name="header_text_color" 
                         type="color" 
                         value={quoteConfig.header.headerTextColor}
                         onChange={(e) => updateQuoteConfig('header', 'headerTextColor', e.target.value)}
@@ -5221,10 +6069,11 @@ const SingleProductConfig = () => {
                     <div className="space-y-2">
                       <Label htmlFor="logo-position">Logo Position</Label>
                       <Select 
+                        name="logo_position"
                         value={quoteConfig.header.logoPosition}
                         onValueChange={(value) => updateQuoteConfig('header', 'logoPosition', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id="logo-position" aria-label="Logo Position">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -5312,7 +6161,7 @@ const SingleProductConfig = () => {
                         value={quoteConfig.premium.currency}
                         onValueChange={(value) => updateQuoteConfig('premium', 'currency', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id="currency" aria-label="Currency">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -5480,7 +6329,6 @@ const SingleProductConfig = () => {
                   </div>
                 </CardContent>
               </Card>
-
               {/* Footer & Disclaimers Configuration */}
               <Card>
                 <CardHeader>
@@ -5553,30 +6401,32 @@ const SingleProductConfig = () => {
                 </CardContent>
               </Card>
 
-              {/* Preview & Save Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Actions</CardTitle>
-                  <CardDescription>Preview and save your quote template configuration</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-4">
-                    <Button variant="outline" onClick={showPreview}>
-                      <Eye className="w-4 h-4 mr-2" />
-                      Preview Template
-                    </Button>
-                    <Button onClick={saveConfiguration}>
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Configuration
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Actions relocated to header of Header Configuration card */}
+
+              </>
+              )}
 
             </TabsContent>
 
             {/* Required Documents Tab */}
             <TabsContent value="required-documents" className="space-y-6">
+              {/* show shimmer in place of layout */}
+              {isLoadingRequiredDocs ? (
+                <div className="space-y-4">
+                  {[1,2].map(i => (
+                    <div key={i} className="p-4 border rounded-md">
+                      <div className="w-56 h-5 bg-gray-200 rounded animate-pulse mb-3" />
+                      <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+              <>
+              {requiredDocsError && (
+                <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
+                  {requiredDocsError}
+                </div>
+              )}
               
               {/* Documents required for policy to be issued */}
               <Card>
@@ -5680,7 +6530,47 @@ const SingleProductConfig = () => {
                           </div>
                         </div>
                         <DialogFooter>
-                          <Button onClick={handleAddDocument}>
+                          <Button onClick={async () => {
+                            const insurerId = getInsurerCompanyId();
+                            if (!insurerId || !product.id) return;
+                            try {
+                              setIsLoadingRequiredDocs(true);
+                              setRequiredDocsError(null);
+                              await createRequiredDocument(insurerId, product.id as string, {
+                                product_id: String(product.id),
+                                display_order: Number(getNextOrder(requiredDocuments)),
+                                display_label: newDocument.label,
+                                description: newDocument.description || '',
+                                is_required: String(!!newDocument.required),
+                                status: newDocument.active ? 'active' : 'inactive',
+                                template_file: (newDocument.template && (newDocument.template.file as File)) || null,
+                              });
+                              const resp = await getRequiredDocuments(insurerId, product.id as string);
+                              const list = Array.isArray(resp?.documents) ? resp.documents : [];
+                              const mapped = list.map(d => ({
+                                id: d.id,
+                                label: d.display_label,
+                                description: d.description || '',
+                                required: !!d.is_required,
+                                active: (d.status || '').toLowerCase() === 'active',
+                                order: d.display_order,
+                                template: d.template_file_url ? { name: d.template_file_url.split('/').pop() || 'template.pdf', size: '—', url: d.template_file_url } : null,
+                              }));
+                              setRequiredDocuments(mapped as any);
+                              toast({ title: 'Document added', description: 'Required document created successfully.' });
+                              setIsWordingUploadDialogOpen(false);
+                            } catch (err: any) {
+                              const status = err?.status as number | undefined;
+                              const message = err?.message as string | undefined;
+                              if (status === 400) setRequiredDocsError(message || 'Bad request while creating document.');
+                              else if (status === 401) setRequiredDocsError('Unauthorized. Please log in again.');
+                              else if (status === 403) setRequiredDocsError("You don't have access.");
+                              else if (status && status >= 500) setRequiredDocsError('Server error. Please try again later.');
+                              else setRequiredDocsError(message || 'Failed to create document.');
+                            } finally {
+                              setIsLoadingRequiredDocs(false);
+                            }
+                          }}>
                             Add Document Type
                           </Button>
                         </DialogFooter>
@@ -5866,6 +6756,8 @@ const SingleProductConfig = () => {
                   </Table>
                 </CardContent>
               </Card>
+              </>
+              )}
 
             </TabsContent>
           </Tabs>
@@ -5874,11 +6766,212 @@ const SingleProductConfig = () => {
 
       <Footer />
 
+      {/* Quote Preview Dialog */}
+      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b bg-card">
+            <div>
+              <DialogTitle>Quote Preview</DialogTitle>
+              <DialogDescription>
+                Rendered using your current Quote Format selections
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => window.print()}>
+                <FileText className="w-4 h-4 mr-2" />
+                Print / Save PDF
+              </Button>
+              <Button size="sm" onClick={() => setIsPreviewDialogOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+
+          {/* A4 styled preview body */}
+          <div className="bg-muted/20 p-4">
+            <div className="mx-auto bg-white shadow-sm border w-full max-w-[794px]" style={{ minHeight: '1122px' }}>
+              {/* Header */}
+              <div
+                className="px-8 py-6 flex items-center justify-between"
+                style={{ background: quoteConfig.header.headerColor, color: quoteConfig.header.headerTextColor }}
+              >
+                <div className="flex-1">
+                  <h1 className="text-2xl font-semibold leading-tight">
+                    {quoteConfig.header.companyName || 'Company Name'}
+                  </h1>
+                  <p className="opacity-90 text-sm whitespace-pre-line">
+                    {quoteConfig.header.companyAddress || 'Company Address'}
+                  </p>
+                </div>
+                <div className="w-28 h-12 flex items-center justify-center border border-white/30 rounded ml-6">
+                  <span className="text-xs opacity-90">Logo</span>
+                </div>
+              </div>
+
+              {/* Quotation Meta */}
+              <div className="px-8 py-6">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Quotation Prefix</p>
+                    <p className="font-medium text-sm">{quoteConfig.details.quotePrefix || '—'}</p>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <p className="text-sm text-muted-foreground">Contact</p>
+                    <p className="font-medium text-sm whitespace-pre-line max-w-[300px]">
+                      {quoteConfig.header.contactInfo || 'Phone: —\nEmail: —'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Risk Details */}
+              {quoteConfig.risk.showProjectDetails || quoteConfig.risk.showCoverageTypes || quoteConfig.risk.showCoverageLimits || quoteConfig.risk.showDeductibles || quoteConfig.risk.showContractorInfo ? (
+                <div className="px-8 pb-2">
+                  <h2 className="text-lg font-semibold mb-3">{quoteConfig.risk.riskSectionTitle || 'Risk Details'}</h2>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {quoteConfig.risk.showProjectDetails && (
+                      <div className="p-3 rounded border bg-card">Project details will appear here</div>
+                    )}
+                    {quoteConfig.risk.showCoverageTypes && (
+                      <div className="p-3 rounded border bg-card">Coverage types will appear here</div>
+                    )}
+                    {quoteConfig.risk.showCoverageLimits && (
+                      <div className="p-3 rounded border bg-card">Coverage limits summary</div>
+                    )}
+                    {quoteConfig.risk.showDeductibles && (
+                      <div className="p-3 rounded border bg-card">Deductibles information</div>
+                    )}
+                    {quoteConfig.risk.showContractorInfo && (
+                      <div className="p-3 rounded border bg-card">Contractor information</div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Premium Breakdown */}
+              <div className="px-8 py-4">
+                <h2 className="text-lg font-semibold mb-3">{quoteConfig.premium.premiumSectionTitle || 'Premium Breakdown'}</h2>
+                <div className="overflow-hidden rounded border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left px-4 py-2">Item</th>
+                        <th className="text-right px-4 py-2">Amount ({quoteConfig.premium.currency || 'AED'})</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quoteConfig.premium.showBasePremium && (
+                        <tr className="border-t">
+                          <td className="px-4 py-2">Base Premium</td>
+                          <td className="px-4 py-2 text-right">—</td>
+                        </tr>
+                      )}
+                      {quoteConfig.premium.showRiskAdjustments && (
+                        <tr className="border-t">
+                          <td className="px-4 py-2">Risk Adjustments</td>
+                          <td className="px-4 py-2 text-right">—</td>
+                        </tr>
+                      )}
+                      {quoteConfig.premium.showFees && (
+                        <tr className="border-t">
+                          <td className="px-4 py-2">Fees & Charges</td>
+                          <td className="px-4 py-2 text-right">—</td>
+                        </tr>
+                      )}
+                      {quoteConfig.premium.showTaxes && (
+                        <tr className="border-t">
+                          <td className="px-4 py-2">VAT</td>
+                          <td className="px-4 py-2 text-right">—</td>
+                        </tr>
+                      )}
+                      {quoteConfig.premium.showTotalPremium && (
+                        <tr className="border-t font-medium">
+                          <td className="px-4 py-2">Total Premium</td>
+                          <td className="px-4 py-2 text-right">—</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Terms & Conditions */}
+              {(quoteConfig.terms.showWarranties || quoteConfig.terms.showExclusions || quoteConfig.terms.showDeductibleDetails || quoteConfig.terms.showPolicyConditions) && (
+                <div className="px-8 py-2 space-y-3">
+                  <h2 className="text-lg font-semibold">{quoteConfig.terms.termsSectionTitle || 'Terms & Conditions'}</h2>
+                  {quoteConfig.terms.showWarranties && (
+                    <div>
+                      <h3 className="font-medium">Warranties</h3>
+                      <p className="text-sm text-muted-foreground">As per policy.</p>
+                    </div>
+                  )}
+                  {quoteConfig.terms.showExclusions && (
+                    <div>
+                      <h3 className="font-medium">Exclusions</h3>
+                      <p className="text-sm text-muted-foreground">As per policy.</p>
+                    </div>
+                  )}
+                  {quoteConfig.terms.showDeductibleDetails && (
+                    <div>
+                      <h3 className="font-medium">Deductible Details</h3>
+                      <p className="text-sm text-muted-foreground">As per policy.</p>
+                    </div>
+                  )}
+                  {quoteConfig.terms.showPolicyConditions && (
+                    <div>
+                      <h3 className="font-medium">Policy Conditions</h3>
+                      <p className="text-sm text-muted-foreground">As per policy.</p>
+                    </div>
+                  )}
+                  {quoteConfig.terms.additionalTerms && (
+                    <div>
+                      <h3 className="font-medium">Additional Terms</h3>
+                      <p className="text-sm whitespace-pre-line">{quoteConfig.terms.additionalTerms}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Signature */}
+              {quoteConfig.signature.showSignatureBlock && (
+                <div className="px-8 py-6">
+                  <h2 className="text-lg font-semibold mb-2">Authorisation</h2>
+                  <p className="text-sm whitespace-pre-line mb-4">{quoteConfig.signature.signatureText || '—'}</p>
+                  <div className="flex items-center justify-between max-w-xl">
+                    <div>
+                      <p className="font-medium">{quoteConfig.signature.authorizedSignatory || 'Authorized Signatory'}</p>
+                      <p className="text-sm text-muted-foreground">{quoteConfig.signature.signatoryTitle || 'Title'}</p>
+                    </div>
+                    <div className="w-40 h-12 border rounded flex items-center justify-center text-xs text-muted-foreground">Stamp/Signature</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Footer */}
+              {quoteConfig.footer.showFooter && (
+                <div className="px-8 py-6 border-t" style={{ background: quoteConfig.footer.footerBgColor, color: quoteConfig.footer.footerTextColor }}>
+                  {quoteConfig.footer.showDisclaimer && (
+                    <p className="text-xs whitespace-pre-line mb-2">
+                      {quoteConfig.footer.generalDisclaimer || 'General disclaimer text'}
+                    </p>
+                  )}
+                  {quoteConfig.footer.showRegulatoryInfo && (
+                    <p className="text-xs whitespace-pre-line">
+                      {quoteConfig.footer.regulatoryText || 'Regulatory information'}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Save Configuration Confirmation Dialog */}
       <AlertDialog open={isConfirmSaveDialogOpen} onOpenChange={setIsConfirmSaveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Save Configuration</AlertDialogTitle>
+            <AlertDialogTitle>Save All Configuration</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to save the current configuration? This will overwrite any previously saved settings.
             </AlertDialogDescription>
@@ -5886,31 +6979,13 @@ const SingleProductConfig = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmSave}>
-              Save Configuration
+              Save All Config
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Unsaved Changes Confirmation Dialog */}
-      <AlertDialog open={isUnsavedChangesDialogOpen} onOpenChange={setIsUnsavedChangesDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved changes. What would you like to do?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDiscardChanges}>
-              Discard Changes
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleSaveAndContinue}>
-              Save and Continue
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
 
       {/* Delete/Remove Confirmation Dialog */}
       <AlertDialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}>
@@ -5931,6 +7006,8 @@ const SingleProductConfig = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Network debug dialog removed per request */}
     </div>
   );
 };

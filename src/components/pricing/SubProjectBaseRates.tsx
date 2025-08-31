@@ -65,8 +65,12 @@ export const SubProjectBaseRates = ({
   onSubProjectEntryChange,
   onProjectTypeToggle,
 }: SubProjectBaseRatesProps) => {
+  // Only allow entries whose project type exists in masters list
+  const allowedProjectValues = new Set(projectTypes.map(pt => pt.value));
+  const filteredEntries = subProjectEntries.filter(e => allowedProjectValues.has(e.projectType));
+
   // Group sub project entries by project type
-  const groupedEntries = subProjectEntries.reduce((groups, entry, index) => {
+  const groupedEntries = filteredEntries.reduce((groups, entry, index) => {
     if (!groups[entry.projectType]) {
       groups[entry.projectType] = [];
     }

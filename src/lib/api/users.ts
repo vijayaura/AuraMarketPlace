@@ -71,4 +71,29 @@ export async function deactivateUser(userId: number | string): Promise<UserStatu
   return apiPatch<UserStatusResponseBody>(`/users/${userId}/deactivate-user`);
 }
 
+// Portal-scoped user listings
+export interface PortalUserListItem extends AdminUserListItem {
+  is_admin?: number | boolean;
+}
+
+export interface BrokerUsersResponse {
+  broker_id: number;
+  users: PortalUserListItem[];
+}
+
+export interface InsurerUsersResponse {
+  insurer_id: number;
+  users: PortalUserListItem[];
+}
+
+export async function getBrokerUsers(companyId: number | string): Promise<PortalUserListItem[]> {
+  const data = await apiGet<BrokerUsersResponse>(`/users/broker/${encodeURIComponent(String(companyId))}`);
+  return Array.isArray(data?.users) ? data.users : [];
+}
+
+export async function getInsurerUsers(companyId: number | string): Promise<PortalUserListItem[]> {
+  const data = await apiGet<InsurerUsersResponse>(`/users/insurer/${encodeURIComponent(String(companyId))}`);
+  return Array.isArray(data?.users) ? data.users : [];
+}
+
 
