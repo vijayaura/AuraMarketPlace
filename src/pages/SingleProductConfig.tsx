@@ -621,6 +621,8 @@ const SingleProductConfig = () => {
   const hasLoadedTplRef = useRef(false);
   const [isSavingTpl, setIsSavingTpl] = useState(false);
 
+  // Pricing tab local state only (API integrations removed on request)
+
   const saveTplExtensions = async () => {
     try {
       setIsSavingTpl(true);
@@ -675,6 +677,13 @@ const SingleProductConfig = () => {
       setIsSavingTpl(false);
     }
   };
+
+  // Load Base Rates when Pricing → Base Rates is active
+  // (removed) Base Rates API integration
+
+  // (removed) Base Rates save handler
+
+  // (removed) Project Risk API integration
 
   // Clauses data - start empty
   const [clausesData, setClausesData] = useState([]);
@@ -1327,7 +1336,6 @@ const SingleProductConfig = () => {
       return prev;
     });
   };
-
   const addCoverRequirementEntry = (category: string) => {
     setRatingConfig(prev => {
       const categoryData = prev.coverRequirements[category as keyof typeof prev.coverRequirements];
@@ -1961,7 +1969,6 @@ const SingleProductConfig = () => {
                   </div>
                 </CardContent>
               </Card>
-
             </TabsContent>
             {/* Pricing Configurator Tab */}
             <TabsContent value="pricing" className="space-y-6">
@@ -2063,6 +2070,10 @@ const SingleProductConfig = () => {
                                 <CardTitle>Project Risk Factors</CardTitle>
                                 <CardDescription>Configure risk adjustments based on project characteristics</CardDescription>
                               </div>
+                              <Button onClick={saveConfiguration} size="sm">
+                                <Save className="w-4 h-4 mr-1" />
+                                Save Project Risk Factors
+                              </Button>
                             </div>
                           </CardHeader>
                            <CardContent className="p-6">
@@ -2080,10 +2091,6 @@ const SingleProductConfig = () => {
                                         onClick={addDurationLoading}
                                       >
                                         Add Row
-                                      </Button>
-                                      <Button onClick={saveConfiguration} size="sm">
-                                        <Save className="w-4 h-4 mr-1" />
-                                        Save Duration Loadings
                                       </Button>
                                     </div>
                                   </CardHeader>
@@ -2194,10 +2201,6 @@ const SingleProductConfig = () => {
                                       >
                                         Add Row
                                       </Button>
-                                       <Button onClick={saveConfiguration} size="sm">
-                                         <Save className="w-4 h-4 mr-1" />
-                                         Save Maintenance Loadings
-                                       </Button>
                                      </div>
                                    </CardHeader>
                                    <CardContent>
@@ -2296,13 +2299,9 @@ const SingleProductConfig = () => {
                                 <Card className="border border-border bg-card">
                                   <CardHeader className="pb-3">
                                     <div className="flex items-center justify-between">
-                                                                          <div>
-                                      <CardTitle className="text-sm">Location Hazard Loadings/Discounts</CardTitle>
-                                      <Button onClick={saveConfiguration} size="sm">
-                                        <Save className="w-4 h-4 mr-1" />
-                                        Save Location Hazards
-                                      </Button>
-                                    </div>
+                                      <div>
+                                        <CardTitle className="text-sm">Location Hazard Loadings/Discounts</CardTitle>
+                                      </div>
                                     </div>
                                   </CardHeader>
                                   <CardContent className="space-y-6">
@@ -2633,10 +2632,6 @@ const SingleProductConfig = () => {
                                     <div className="space-y-3">
                                       <div className="flex items-center justify-between">
                                         <Label className="text-sm font-medium">Location Hazard Rates</Label>
-                                        <Button onClick={saveConfiguration} size="sm">
-                                          <Save className="w-4 h-4 mr-1" />
-                                          Save Location Rates
-                                        </Button>
                                       </div>
                                       <Table>
                                         <TableHeader>
@@ -2706,6 +2701,10 @@ const SingleProductConfig = () => {
                                 <CardTitle>Contractor Risk Factors</CardTitle>
                                 <CardDescription>Configure risk adjustments based on contractor profile</CardDescription>
                               </div>
+                              <Button onClick={saveConfiguration} size="sm">
+                                <Save className="w-4 h-4 mr-1" />
+                                Save Contractor Risk Factors
+                              </Button>
                             </div>
                           </CardHeader>
                            <CardContent className="p-6">
@@ -2723,10 +2722,6 @@ const SingleProductConfig = () => {
                                          onClick={() => addContractorRiskEntry('experienceDiscounts')}
                                        >
                                          Add Row
-                                       </Button>
-                                       <Button onClick={saveConfiguration} size="sm">
-                                         <Save className="w-4 h-4 mr-1" />
-                                         Save Experience Loadings
                                        </Button>
                                      </div>
                                    </CardHeader>
@@ -2832,10 +2827,6 @@ const SingleProductConfig = () => {
                                               >
                                                 Add Row
                                               </Button>
-                                              <Button onClick={saveConfiguration} size="sm">
-                                                <Save className="w-4 h-4 mr-1" />
-                                                Save Claim Frequency
-                                              </Button>
                                             </div>
                                           </div>
                                           <Table>
@@ -2930,10 +2921,6 @@ const SingleProductConfig = () => {
                                                 onClick={() => addContractorRiskEntry('claimAmountCategories')}
                                               >
                                                 Add Row
-                                              </Button>
-                                              <Button onClick={saveConfiguration} size="sm">
-                                                <Save className="w-4 h-4 mr-1" />
-                                                Save Claim Amounts
                                               </Button>
                                             </div>
                                           </div>
@@ -3037,10 +3024,6 @@ const SingleProductConfig = () => {
                                       >
                                         Add Row
                                       </Button>
-                                      <Button onClick={saveConfiguration} size="sm">
-                                        <Save className="w-4 h-4 mr-1" />
-                                        Save Contractor Numbers
-                                      </Button>
                                     </div>
                                   </CardHeader>
                                   <CardContent>
@@ -3130,23 +3113,19 @@ const SingleProductConfig = () => {
 
                                 <Card className="border border-border bg-card">
                                   <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                                                                      <div>
-                                    <CardTitle className="text-sm">Subcontractor Number Based Configuration</CardTitle>
-                                    <p className="text-xs text-muted-foreground">Number of subcontractors</p>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => addContractorRiskEntry('subcontractorNumbers')}
-                                    >
-                                      Add Row
-                                    </Button>
-                                    <Button onClick={saveConfiguration} size="sm">
-                                      <Save className="w-4 h-4 mr-1" />
-                                                                             Save Subcontractor Numbers
-                                    </Button>
-                                  </div>
+                                    <div>
+                                      <CardTitle className="text-sm">Subcontractor Number Based Configuration</CardTitle>
+                                      <p className="text-xs text-muted-foreground">Number of subcontractors</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => addContractorRiskEntry('subcontractorNumbers')}
+                                      >
+                                        Add Row
+                                      </Button>
+                                    </div>
                                   </CardHeader>
                                   <CardContent>
                                     <Table>
@@ -3239,8 +3218,16 @@ const SingleProductConfig = () => {
                        {activePricingTab === "coverage-options" && (
                          <Card className="h-full">
                            <CardHeader>
-                             <CardTitle>Cover Requirements Configuration</CardTitle>
-                             <CardDescription>Configure loading/discount rates based on cover requirement values from proposal form</CardDescription>
+                             <div className="flex items-center justify-between">
+                               <div>
+                                 <CardTitle>Cover Requirements Configuration</CardTitle>
+                                 <CardDescription>Configure loading/discount rates based on cover requirement values from proposal form</CardDescription>
+                               </div>
+                               <Button onClick={saveConfiguration} size="sm">
+                                 <Save className="w-4 h-4 mr-1" />
+                                 Save Cover Requirements
+                               </Button>
+                             </div>
                            </CardHeader>
                             <CardContent className="p-6">
                                <div className="space-y-6">
@@ -3257,10 +3244,6 @@ const SingleProductConfig = () => {
                                           onClick={() => addCoverRequirementEntry('sumInsured')}
                                         >
                                           Add Row
-                                        </Button>
-                                        <Button onClick={saveConfiguration} size="sm">
-                                          <Save className="w-4 h-4 mr-1" />
-                                          Save Sum Insured
                                         </Button>
                                       </div>
                                     </CardHeader>
@@ -3363,10 +3346,6 @@ const SingleProductConfig = () => {
                                         >
                                           Add Row
                                         </Button>
-                                        <Button onClick={saveConfiguration} size="sm">
-                                          <Save className="w-4 h-4 mr-1" />
-                                          Save Project Value
-                                        </Button>
                                       </div>
                                     </CardHeader>
                                     <CardContent>
@@ -3467,10 +3446,6 @@ const SingleProductConfig = () => {
                                          onClick={() => addCoverRequirementEntry('contractWorks')}
                                        >
                                          Add Row
-                                       </Button>
-                                       <Button onClick={saveConfiguration} size="sm">
-                                         <Save className="w-4 h-4 mr-1" />
-                                         Save Contract Works
                                        </Button>
                                      </div>
                                    </CardHeader>
@@ -3573,10 +3548,6 @@ const SingleProductConfig = () => {
                                        >
                                          Add Row
                                        </Button>
-                                       <Button onClick={saveConfiguration} size="sm">
-                                         <Save className="w-4 h-4 mr-1" />
-                                         Save Plant Equipment
-                                       </Button>
                                      </div>
                                    </CardHeader>
                                     <CardContent>
@@ -3672,10 +3643,6 @@ const SingleProductConfig = () => {
                                          <CardTitle className="text-sm">Cross Liability Cover</CardTitle>
                                          <p className="text-xs text-muted-foreground">Rate based on cross liability cover selection</p>
                                        </div>
-                                       <Button onClick={saveConfiguration} size="sm">
-                                         <Save className="w-4 h-4 mr-1" />
-                                         Save Cross Liability
-                                       </Button>
                                      </div>
                                    </CardHeader>
                                    <CardContent>
@@ -3739,8 +3706,16 @@ const SingleProductConfig = () => {
                       {activePricingTab === "limits-deductibles" && (
                         <Card className="h-full">
                           <CardHeader>
-                            <CardTitle>Policy Limits & Deductibles</CardTitle>
-                            <CardDescription>Configure policy limits and deductible adjustments</CardDescription>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle>Policy Limits & Deductibles</CardTitle>
+                                <CardDescription>Configure policy limits and deductible adjustments</CardDescription>
+                              </div>
+                              <Button onClick={saveConfiguration} size="sm">
+                                <Save className="w-4 h-4 mr-1" />
+                                Save Limits & Deductibles
+                              </Button>
+                            </div>
                           </CardHeader>
                             <CardContent className="p-6 overflow-x-auto">
                               <div className="space-y-6">
@@ -3748,10 +3723,6 @@ const SingleProductConfig = () => {
                                   <CardHeader className="pb-3">
                                     <div className="flex items-center justify-between">
                                       <CardTitle className="text-sm">Policy Limits</CardTitle>
-                                      <Button onClick={saveConfiguration} size="sm">
-                                        <Save className="w-4 h-4 mr-1" />
-                                        Save Policy Limits
-                                      </Button>
                                     </div>
                                   </CardHeader>
                                   <CardContent className="overflow-x-auto">
@@ -3893,10 +3864,6 @@ const SingleProductConfig = () => {
                                        >
                                          Add Sub-limit
                                        </Button>
-                                       <Button onClick={saveConfiguration} size="sm">
-                                         <Save className="w-4 h-4 mr-1" />
-                                         Save Sub Limits
-                                       </Button>
                                      </div>
                                    </CardHeader>
                                     <CardContent className="overflow-x-auto">
@@ -3990,10 +3957,6 @@ const SingleProductConfig = () => {
                                          onClick={() => addCoverRequirementEntry('deductibles')}
                                        >
                                          Add Deductible
-                                       </Button>
-                                       <Button onClick={saveConfiguration} size="sm">
-                                         <Save className="w-4 h-4 mr-1" />
-                                         Save Deductibles
                                        </Button>
                                      </div>
                                    </CardHeader>
