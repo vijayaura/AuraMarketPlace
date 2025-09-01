@@ -25,7 +25,7 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest } from "@/lib/api/insurers";
 import { getInsurerCompanyId } from "@/lib/auth";
 
 interface VariableOption {
@@ -2136,7 +2136,57 @@ const SingleProductConfig = () => {
                                 <CardTitle>Base Rates</CardTitle>
                                 <CardDescription>Configure base premium rates for different sub-project types</CardDescription>
                               </div>
-                              <Button onClick={saveConfiguration} size="sm">
+                              <Button onClick={async () => {
+                                const insurerId = getInsurerCompanyId();
+                                const pid = product?.id || '1';
+                                if (!insurerId || !pid) return;
+                                try {
+                                  setBaseRatesMastersError(null);
+                                  setIsLoadingBaseRatesMasters(true);
+                                  // Build request from UI state
+                                  const byProject = new Map<string, { projectLabel: string; items: { name: string; pricing_type: 'PERCENTAGE' | 'FIXED_AMOUNT'; base_rate: number; currency: '%' | 'AED'; quote_option: 'AUTO_QUOTE' | 'NO_QUOTE' | 'QUOTE_AND_REFER' }[] }>();
+                                  // Helper: reverse slug to label using masters if available
+                                  const labelBySlug = new Map<string, string>();
+                                  (projectTypesMasters || []).forEach(p => labelBySlug.set(p.label.toLowerCase().replace(/[^a-z0-9]+/g, '-'), p.label));
+                                  ratingConfig.subProjectEntries.forEach(e => {
+                                    const slug = e.projectType;
+                                    const projectLabel = labelBySlug.get(slug) || slug;
+                                    if (!byProject.has(slug)) byProject.set(slug, { projectLabel, items: [] });
+                                    const pricing_type = (String(e.pricingType).toLowerCase() === 'fixed') ? 'FIXED_AMOUNT' : 'PERCENTAGE';
+                                    const currency = pricing_type === 'FIXED_AMOUNT' ? 'AED' : '%';
+                                    const quote_option = (String(e.quoteOption).toLowerCase() === 'no-quote') ? 'NO_QUOTE' : 'AUTO_QUOTE';
+                                    byProject.get(slug)!.items.push({
+                                      name: e.subProjectType,
+                                      pricing_type,
+                                      base_rate: Number(e.baseRate || 0),
+                                      currency,
+                                      quote_option,
+                                    });
+                                  });
+                                  const body = {
+                                    base_rates: Array.from(byProject.values()).map(group => ({
+                                      project_type: group.projectLabel,
+                                      sub_projects: group.items,
+                                    }))
+                                  };
+                                  // Decide POST vs PATCH: POST if no existing data was mapped
+                                  const hasExisting = Boolean(projectTypesMasters && subProjectTypesMasters && ratingConfig.subProjectEntries.some(e => Number(e.baseRate) !== 0));
+                                  const resp = hasExisting
+                                    ? await updateBaseRates(insurerId, String(pid), body)
+                                    : await saveBaseRates(insurerId, String(pid), body);
+                                  toast({ title: 'Saved', description: resp?.message || 'Base rates saved.' });
+                                } catch (err: any) {
+                                  const status = err?.status;
+                                  const msg = status === 400 ? 'Invalid data while saving base rates.'
+                                    : status === 401 ? 'Unauthorized. Please log in again.'
+                                    : status === 403 ? 'Forbidden. You do not have access.'
+                                    : status >= 500 ? 'Server error while saving base rates.'
+                                    : (err?.message || 'Failed to save base rates.');
+                                  setBaseRatesMastersError(msg);
+                                } finally {
+                                  setIsLoadingBaseRatesMasters(false);
+                                }
+                              }} size="sm">
                                 <Save className="w-4 h-4 mr-2" />
                                 Save Base Rates
                               </Button>
