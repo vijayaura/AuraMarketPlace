@@ -25,7 +25,7 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest } from "@/lib/api/insurers";
 import { getInsurerCompanyId } from "@/lib/auth";
 
 interface VariableOption {
@@ -146,12 +146,12 @@ const SingleProductConfig = () => {
       // Keep shimmer running; fetch insurer base rates and map values onto the metadata
       const insurerId = getInsurerCompanyId();
       const pid = product?.id || '1';
-      let mappedEntries = subs.map((s) => ({
+      let mappedEntries: SubProjectEntry[] = subs.map((s) => ({
         projectType: projectSlugById.get(s.projectTypeId) || String(s.projectTypeId),
         subProjectType: s.label,
-        pricingType: 'percentage' as const,
+        pricingType: 'percentage',
         baseRate: 0,
-        quoteOption: 'quote' as const,
+        quoteOption: 'quote',
       }));
       try {
         if (insurerId && pid) {
@@ -204,6 +204,60 @@ const SingleProductConfig = () => {
     }
   };
 
+  // Fire GET on Project Risk Factors click and map to UI state
+  const fetchProjectRiskFactors = async (): Promise<void> => {
+    try {
+      const insurerId = getInsurerCompanyId();
+      const pid = product?.id || '1';
+      if (!insurerId || !pid) return;
+      const resp = await getProjectRiskFactors(insurerId, String(pid));
+      const data: any = (resp && (resp as any).data != null) ? (resp as any).data : resp || {};
+      // Map API -> UI (only fields currently bound in UI)
+      const mapDur = Array.isArray(data.project_duration_loadings)
+        ? data.project_duration_loadings.map((d: any, idx: number) => ({
+            id: idx + 1,
+            from: Number(d?.from_months ?? 0),
+            to: d?.to_months == null ? 999 : Number(d.to_months),
+            pricingType: String(d?.pricing_type || '').toUpperCase() === 'FIXED_AMOUNT' ? 'fixed' : 'percentage',
+            value: Number(d?.loading_discount ?? 0),
+            quoteOption: String(d?.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote',
+          }))
+        : undefined;
+      const mapMaint = Array.isArray(data.maintenance_period_loadings)
+        ? data.maintenance_period_loadings.map((d: any, idx: number) => ({
+            id: idx + 1,
+            from: Number(d?.from_months ?? 0),
+            to: d?.to_months == null ? 999 : Number(d.to_months),
+            pricingType: String(d?.pricing_type || '').toUpperCase() === 'FIXED_AMOUNT' ? 'fixed' : 'percentage',
+            value: Number(d?.loading_discount ?? 0),
+            quoteOption: String(d?.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote',
+          }))
+        : undefined;
+      const hazardRates = Array.isArray(data?.location_hazard_loadings?.location_hazard_rates)
+        ? data.location_hazard_loadings.location_hazard_rates.reduce((acc: any, r: any) => {
+            const txt = String(r?.risk_level || '').toLowerCase();
+            const key = txt.includes('very') ? 'veryHigh' : txt.includes('high') && !txt.includes('very') ? 'high' : txt.includes('moderate') ? 'moderate' : 'low';
+            acc[key] = Number(r?.loading_discount ?? 0);
+            return acc;
+          }, {} as any)
+        : {};
+      setRatingConfig(prev => ({
+        ...prev,
+        projectRisk: {
+          ...prev.projectRisk,
+          ...(mapDur ? { durationLoadings: mapDur } : {}),
+          ...(mapMaint ? { maintenancePeriodLoadings: mapMaint } : {}),
+          locationHazardLoadings: {
+            ...prev.projectRisk.locationHazardLoadings,
+            ...hazardRates,
+          },
+        },
+      }));
+    } catch (err) {
+      // ignore for now; user requested no shimmer/error banner changes
+    }
+  };
+
   // Mock product data
   const product = {
     id: productId,
@@ -224,14 +278,15 @@ const SingleProductConfig = () => {
   };
 
   // Initialize sub project types as individual entries
+  type SubProjectEntry = {
+    projectType: string;
+    subProjectType: string;
+    pricingType: 'percentage' | 'fixed';
+    baseRate: number;
+    quoteOption: 'quote' | 'no-quote';
+  };
   const initializeSubProjectEntries = () => {
-    const entries: Array<{
-      projectType: string;
-      subProjectType: string;
-      pricingType: string;
-      baseRate: number;
-      quoteOption: string;
-    }> = [];
+    const entries: SubProjectEntry[] = [];
     
     activeProjectTypes.forEach(type => {
       const subTypes = getSubProjectTypesByProjectType(type.id);
@@ -764,14 +819,10 @@ const SingleProductConfig = () => {
       setIsSavingTpl(false);
     }
   };
-
   // Load Base Rates when Pricing → Base Rates is active
   // (removed) Base Rates API integration
-
   // (removed) Base Rates save handler
-
   // (removed) Project Risk API integration
-
   // Clauses data - start empty
   const [clausesData, setClausesData] = useState([]);
   const [isLoadingClauses, setIsLoadingClauses] = useState(false);
@@ -1516,7 +1567,6 @@ const SingleProductConfig = () => {
       ),
     }));
   };
-
   const addNewClause = async () => {
     if (!newClause.code || !newClause.title) {
       toast({
@@ -2106,6 +2156,8 @@ const SingleProductConfig = () => {
                               setActivePricingTab(section.id);
                               if (section.id === 'base-rates') {
                                 await fetchBaseRatesMasters();
+                              } else if (section.id === 'project-risk') {
+                                await fetchProjectRiskFactors();
                               }
                             }}
                             className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${
