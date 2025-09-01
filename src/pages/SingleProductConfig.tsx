@@ -23,7 +23,9 @@ import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesBy
 import { getActiveCountries, getRegionsByCountry, getZonesByRegion } from "@/lib/location-data";
 import { ClausePricingCard } from "@/components/product-config/ClausePricingCard";
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest } from "@/lib/api/insurers";
+import TableSkeleton from "@/components/loaders/TableSkeleton";
+import { listMasterProjectTypes, listMasterSubProjectTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest } from "@/lib/api/insurers";
 import { getInsurerCompanyId } from "@/lib/auth";
 
 interface VariableOption {
@@ -116,6 +118,91 @@ const SingleProductConfig = () => {
   const activeProjectTypes = getActiveProjectTypes();
   const activeConstructionTypes = getActiveConstructionTypes();
   const activeCountries = getActiveCountries();
+
+  // Masters fetched from API for Base Rates
+  const [projectTypesMasters, setProjectTypesMasters] = useState<SimpleMasterItem[] | null>(null);
+  const [subProjectTypesMasters, setSubProjectTypesMasters] = useState<SubProjectTypeItem[] | null>(null);
+  const [isLoadingBaseRatesMasters, setIsLoadingBaseRatesMasters] = useState(false);
+  const [baseRatesMastersError, setBaseRatesMastersError] = useState<string | null>(null);
+  // Always fetch on demand (Pricing tab or Base Rates click)
+  const fetchBaseRatesMasters = async (): Promise<void> => {
+    setIsLoadingBaseRatesMasters(true);
+    setBaseRatesMastersError(null);
+    try { console.debug('[BaseRates] Loading masters...'); } catch {}
+    try { toast({ title: 'Loading...', description: 'Fetching Project Types and Sub Project Types' }); } catch {}
+    try {
+      const projects = await listMasterProjectTypes();
+      setProjectTypesMasters(projects);
+      const subs = await listMasterSubProjectTypes();
+      setSubProjectTypesMasters(subs);
+      // Map sub projects under their parent project type (slugged value)
+      const projectSlugById = new Map<number, string>();
+      const projectSlugs: string[] = [];
+      projects.forEach((p) => {
+        const slug = (p.label || String(p.id)).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        projectSlugById.set(p.id, slug);
+        projectSlugs.push(slug);
+      });
+      // Keep shimmer running; fetch insurer base rates and map values onto the metadata
+      const insurerId = getInsurerCompanyId();
+      const pid = product?.id || '1';
+      let mappedEntries = subs.map((s) => ({
+        projectType: projectSlugById.get(s.projectTypeId) || String(s.projectTypeId),
+        subProjectType: s.label,
+        pricingType: 'percentage' as const,
+        baseRate: 0,
+        quoteOption: 'quote' as const,
+      }));
+      try {
+        if (insurerId && pid) {
+          const baseRates = await getBaseRates(insurerId, String(pid));
+          const byProject = new Map<string, Array<{ name: string; currency: 'AED' | '%'; base_rate: number; pricing_type: string; quote_option: string }>>();
+          (baseRates || []).forEach((item) => {
+            const slug = (item.project_type || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            byProject.set(slug, Array.isArray(item.sub_projects) ? item.sub_projects : []);
+          });
+          mappedEntries = mappedEntries.map((e) => {
+            const list = byProject.get(e.projectType) || [];
+            const match = list.find(sp => (sp.name || '').toLowerCase() === e.subProjectType.toLowerCase());
+            if (!match) return e;
+            // Append values into UI without overwriting metadata structure
+            const normalizedPricing = String(match.pricing_type || '').toUpperCase() === 'FIXED_AMOUNT' ? 'fixed' : 'percentage';
+            const normalizedQuote = String(match.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote';
+            return {
+              ...e,
+              pricingType: normalizedPricing as 'fixed' | 'percentage',
+              baseRate: Number(match.base_rate || 0),
+              // currency informs display; UI already shows % vs AED based on pricingType
+              quoteOption: normalizedQuote as 'quote' | 'no-quote',
+            };
+          });
+        }
+      } catch (err: any) {
+        const status = err?.status;
+        const msg = status === 400 ? 'Bad request while loading base rates.'
+          : status === 401 ? 'Unauthorized. Please log in again.'
+          : status === 403 ? 'Forbidden. You do not have access.'
+          : status >= 500 ? 'Server error while loading base rates.'
+          : 'Failed to load base rates.';
+        setBaseRatesMastersError(msg);
+      }
+      setRatingConfig((prev) => ({ ...prev, subProjectEntries: mappedEntries }));
+      setSelectedProjectTypes(new Set(projectSlugs));
+      try { console.debug('[BaseRates] Loaded', { projects: projects?.length, subs: subs?.length }); } catch {}
+      try { toast({ title: 'Loaded', description: `Project Types: ${(projects||[]).length}, Sub Types: ${(subs||[]).length}` }); } catch {}
+    } catch (err: any) {
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading project types.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading masters.'
+        : 'Failed to load masters.';
+      setBaseRatesMastersError(msg);
+      try { toast({ title: 'Failed to load', description: msg, variant: 'destructive' }); } catch {}
+    } finally {
+      setIsLoadingBaseRatesMasters(false);
+    }
+  };
 
   // Mock product data
   const product = {
@@ -945,17 +1032,17 @@ const SingleProductConfig = () => {
     setHasUnsavedChanges(true);
   };
 
-  const handleTabChange = (newTab: string) => {
+  const handleTabChange = async (newTab: string) => {
     setActiveTab(newTab);
+    if (newTab === 'pricing') {
+      setActivePricingTab('base-rates');
+      await fetchBaseRatesMasters();
+    }
   };
 
   const handleBackNavigation = () => {
     navigate(`${basePath}/product-config`);
   };
-
-
-
-  // (reverted) Base Rates API wiring removed
 
   // Helper function to get the next order number
   const getNextOrder = (items: any[]) => {
@@ -2015,7 +2102,12 @@ const SingleProductConfig = () => {
                         ].map((section) => (
                           <button
                             key={section.id}
-                            onClick={() => setActivePricingTab(section.id)}
+                            onClick={async () => {
+                              setActivePricingTab(section.id);
+                              if (section.id === 'base-rates') {
+                                await fetchBaseRatesMasters();
+                              }
+                            }}
                             className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${
                               activePricingTab === section.id
                                 ? 'bg-primary text-primary-foreground shadow-md'
@@ -2051,13 +2143,34 @@ const SingleProductConfig = () => {
                             </div>
                           </CardHeader>
                           <CardContent>
-                            <SubProjectBaseRates
-                              projectTypes={activeProjectTypes}
-                              subProjectEntries={ratingConfig.subProjectEntries}
-                              selectedProjectTypes={selectedProjectTypes}
-                              onSubProjectEntryChange={updateSubProjectEntry}
-                              onProjectTypeToggle={toggleProjectType}
-                            />
+                            {isLoadingBaseRatesMasters && (
+                              <div className="overflow-x-auto">
+                                <Table>
+                                  <TableBody>
+                                    <TableSkeleton rowCount={6} colCount={4} />
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            )}
+                            {!isLoadingBaseRatesMasters && baseRatesMastersError && (
+                              <div className="rounded-md border border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 mb-4">
+                                {baseRatesMastersError}
+                              </div>
+                            )}
+                            {!isLoadingBaseRatesMasters && !baseRatesMastersError && (
+                              <SubProjectBaseRates
+                                projectTypes={(projectTypesMasters || activeProjectTypes).map((pt: any) => ({
+                                  id: pt.id,
+                                  value: pt.value ?? pt.label?.toLowerCase?.().replace(/[^a-z0-9]+/g, '-') ?? String(pt.id),
+                                  label: pt.label,
+                                  baseRate: 0,
+                                }))}
+                                subProjectEntries={ratingConfig.subProjectEntries}
+                                selectedProjectTypes={selectedProjectTypes}
+                                onSubProjectEntryChange={updateSubProjectEntry}
+                                onProjectTypeToggle={toggleProjectType}
+                              />
+                            )}
                           </CardContent>
                         </Card>
                       )}
