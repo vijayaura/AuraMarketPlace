@@ -28,6 +28,7 @@ import { listMasterProjectTypes, listMasterSubProjectTypes, type SimpleMasterIte
 import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest } from "@/lib/api/insurers";
 import { getInsurerCompanyId } from "@/lib/auth";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
+import QuoteFormat from "./SingleProductConfig/components/QuoteFormat";
 import CEWsConfiguration from "./SingleProductConfig/components/CEWsConfiguration";
 
 interface VariableOption {
