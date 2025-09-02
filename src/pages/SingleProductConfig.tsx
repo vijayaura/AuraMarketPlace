@@ -27,6 +27,8 @@ import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
 import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest } from "@/lib/api/insurers";
 import { getInsurerCompanyId } from "@/lib/auth";
+import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
+import CEWsConfiguration from "./SingleProductConfig/components/CEWsConfiguration";
 
 interface VariableOption {
   id: number;
@@ -279,10 +281,10 @@ const SingleProductConfig = () => {
 
   // Initialize sub project types as individual entries
   type SubProjectEntry = {
-    projectType: string;
-    subProjectType: string;
+      projectType: string;
+      subProjectType: string;
     pricingType: 'percentage' | 'fixed';
-    baseRate: number;
+      baseRate: number;
     quoteOption: 'quote' | 'no-quote';
   };
   const initializeSubProjectEntries = () => {
@@ -319,6 +321,7 @@ const SingleProductConfig = () => {
   const [selectedClause, setSelectedClause] = useState<any>(null);
   const [isAddClauseDialogOpen, setIsAddClauseDialogOpen] = useState(false);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  const [previewWording, setPreviewWording] = useState<PolicyWording | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [isConfirmSaveDialogOpen, setIsConfirmSaveDialogOpen] = useState(false);
@@ -664,10 +667,10 @@ const SingleProductConfig = () => {
             showFooter: data.show_footer === 1,
             showDisclaimer: data.show_general_disclaimer === 1,
             showRegulatoryInfo: data.show_regulatory_info === 1,
-            generalDisclaimer: data.general_disclaimer_text || '',
-            regulatoryText: data.regulatory_info_text || '',
-            footerBgColor: data.footer_bg_color || '#ffffff',
-            footerTextColor: data.footer_text_color || '#000000',
+            generalDisclaimer: data.general_disclaimer_text || prev.footer.generalDisclaimer,
+            regulatoryText: data.regulatory_info_text || prev.footer.regulatoryText,
+            footerBgColor: data.footer_bg_color || prev.footer.footerBgColor,
+            footerTextColor: data.footer_text_color || prev.footer.footerTextColor,
           },
         }));
         hasLoadedQuoteFormatRef.current = true;
@@ -762,7 +765,6 @@ const SingleProductConfig = () => {
   const tplApiRef = useRef(false);
   const hasLoadedTplRef = useRef(false);
   const [isSavingTpl, setIsSavingTpl] = useState(false);
-
   // Pricing tab local state only (API integrations removed on request)
 
   const saveTplExtensions = async () => {
@@ -1058,8 +1060,44 @@ const SingleProductConfig = () => {
 
   const openEditDialog = (wording: any) => {
     setEditingWording(wording);
-    setWordingUploadTitle(wording.name);
+    setWordingUploadTitle(wording.document_title || wording.name || "");
+    setWordingUploadActive(Number(wording.is_active) === 1 || wording.is_active === true);
+    setWordingUploadFile(null);
     setIsWordingUploadDialogOpen(true);
+  };
+
+  const handleSavePolicyWording = async (): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    if (!insurerId || !product.id) return;
+    try {
+      setIsUploadingWording(true);
+      if (editingWording) {
+        const params: any = {
+          document_title: wordingUploadTitle,
+          is_active: String(!!wordingUploadActive),
+        };
+        if (wordingUploadFile instanceof File) params.document = wordingUploadFile;
+        const wordingId = (editingWording.id || editingWording.wording_id || editingWording.wordingId) as string;
+        await updatePolicyWording(insurerId, product.id as string, wordingId, params);
+      } else {
+        if (!(wordingUploadFile instanceof File)) return;
+        await uploadPolicyWording(insurerId, product.id as string, {
+          product_id: String(product.id),
+          document_title: wordingUploadTitle,
+          is_active: String(!!wordingUploadActive),
+          document: wordingUploadFile as File,
+        });
+      }
+      const wordingsData = await getPolicyWordings(insurerId, product.id as string);
+      setPolicyWordings(wordingsData.wordings || []);
+      setIsWordingUploadDialogOpen(false);
+      setEditingWording(null);
+      setWordingUploadTitle("");
+      setWordingUploadFile(null);
+      setWordingUploadActive(true);
+    } finally {
+      setIsUploadingWording(false);
+    }
   };
 
   const saveQuoteDetailsConfig = async () => {
@@ -1557,8 +1595,6 @@ const SingleProductConfig = () => {
       },
     }));
   };
-
-
   const updateClausePricing = (id: number, updates: any) => {
     setRatingConfig(prev => ({
       ...prev,
@@ -1779,333 +1815,20 @@ const SingleProductConfig = () => {
 
             {/* Quote Configurator Tab */}
             <TabsContent value="quote-config" className="space-y-6">
-              
-              {/* Quote Details Configuration */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Quote Details Configuration</CardTitle>
-                      <CardDescription>Configure quotation numbering, dates, and validity</CardDescription>
-                    </div>
-                    <Button 
-                      type="button"
-                      onClick={() => {
-                        console.log('[QuoteConfig] Save button clicked');
-                        setConfirmDialog({
-                          isOpen: true,
-                          title: 'Save Quote Configuration',
-                          description: 'Are you sure you want to save the quote configuration? This will overwrite previously saved settings.',
-                          action: async () => {
-                            console.log('[QuoteConfig] Confirm Save clicked');
-                            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                            await saveQuoteDetailsConfig();
-                          }
-                        });
-                      }}
-                      size="sm"
-                      disabled={isLoadingQuoteConfig || isSavingQuoteConfig}
-                      className={(isLoadingQuoteConfig || isSavingQuoteConfig) ? 'opacity-50 cursor-not-allowed' : ''}
-                    >
-                      {isSavingQuoteConfig ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-4 h-4 mr-2" />
-                          Save Quote Config
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="validity-days">Validity Period (Days)</Label>
-                      {isLoadingQuoteConfig ? (
-                        <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                      ) : (
-                        <Input 
-                          id="validity-days" 
-                          name="validity_days" 
-                          type="number" 
-                          autoComplete="off"
-                          value={quoteConfig.details.validityDays}
-                          onChange={(e) => updateQuoteConfig('details', 'validityDays', e.target.value)}
-                        />
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="backdate-window">Backdate Window (Days)</Label>
-                      {isLoadingQuoteConfig ? (
-                        <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                      ) : (
-                        <Input 
-                          id="backdate-window" 
-                          name="backdate_days" 
-                          type="number" 
-                          autoComplete="off"
-                          value={quoteConfig.details.backdateWindow}
-                          onChange={(e) => updateQuoteConfig('details', 'backdateWindow', e.target.value)}
-                        />
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Geographic Coverage Section */}
-                  <div className="border-t pt-6">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <MapPin className="w-5 h-5" />
-                      Geographic Coverage
-                    </h3>
-                    
-
-                    {metadataError && (
-                      <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2 mb-4">
-                        {metadataError}
-                      </div>
-                    )}
-                    {quoteConfigError && (
-                      <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2 mb-4">
-                        {quoteConfigError}
-                      </div>
-                    )}
-                    
-                    {/* Selection Count Indicator */}
-                    {!isLoadingMetadata && !isLoadingQuoteConfig && insurerMetadata && quoteConfig.details.countries && quoteConfig.details.countries.length > 0 && (
-                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="text-xs text-blue-600">
-                          <span className="font-medium">Selected:</span> {quoteConfig.details.countries.length} country(ies)
-                          {quoteConfig.details.regions && quoteConfig.details.regions.length > 0 && (
-                            <span>, {quoteConfig.details.regions.length} region(s)</span>
-                          )}
-                          {quoteConfig.details.zones && quoteConfig.details.zones.length > 0 && (
-                            <span>, {quoteConfig.details.zones.length} zone(s)</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Quote Config Loading Indicator */}
-                    {isLoadingQuoteConfig && (
-                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center gap-2 text-xs text-blue-600">
-                          <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>
-                          <span>Loading saved configuration...</span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="space-y-6">
-                      {/* Loading Skeleton for Geographic Coverage */}
-                      {isLoadingMetadata && (
-                        <div className="space-y-6">
-                          {/* Countries Skeleton */}
-                          <div className="space-y-3">
-                            <Label className="text-sm font-medium">Operating Countries</Label>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg">
-                              {[1, 2, 3, 4, 5, 6].map((i) => (
-                                <div key={i} className="flex items-center space-x-2">
-                                  <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
-                                  <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          {/* Regions Skeleton */}
-                          <div className="space-y-3">
-                            <Label className="text-sm font-medium">Operating Regions</Label>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg">
-                              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                                <div key={i} className="flex items-start space-x-2">
-                                  <div className="w-4 h-4 bg-gray-200 rounded animate-pulse mt-1"></div>
-                                  <div className="flex flex-col space-y-1">
-                                    <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
-                                    <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          {/* Zones Skeleton */}
-                          <div className="space-y-3">
-                            <Label className="text-sm font-medium">Operating Zones</Label>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg">
-                              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                                <div key={i} className="flex items-start space-x-2">
-                                  <div className="w-4 h-4 bg-gray-200 rounded animate-pulse mt-1"></div>
-                                  <div className="flex flex-col space-y-1">
-                                    <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
-                                    <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Countries */}
-                      {!isLoadingMetadata && (
-                        <div className="space-y-3">
-                          <Label className="text-sm font-medium">Operating Countries</Label>
-                          {insurerMetadata ? (
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg">
-                              {insurerMetadata.operating_countries.map((countryName) => (
-                                <div key={countryName} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`country-${countryName}`}
-                                    checked={quoteConfig.details.countries?.includes(countryName)}
-                                    onCheckedChange={(checked) => {
-                                      const currentValue = quoteConfig.details.countries || [];
-                                      if (checked) {
-                                        const newValue = [...currentValue, countryName];
-                                        updateQuoteConfig('details', 'countries', newValue);
-                                        // Clear regions and zones when adding a country
-                                        updateQuoteConfig('details', 'regions', []);
-                                        updateQuoteConfig('details', 'zones', []);
-                                      } else {
-                                        const newValue = currentValue.filter((name) => name !== countryName);
-                                        updateQuoteConfig('details', 'countries', newValue);
-                                        // Clear regions and zones when removing a country
-                                        updateQuoteConfig('details', 'regions', []);
-                                        updateQuoteConfig('details', 'zones', []);
-                                      }
-                                    }}
-                                    disabled={isLoadingQuoteConfig}
-                                  />
-                                  <label
-                                    htmlFor={`country-${countryName}`}
-                                    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                                      isLoadingQuoteConfig ? 'opacity-50' : ''
-                                    }`}
-                                  >
-                                    {countryName}
-                                  </label>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-sm text-muted-foreground p-4 border rounded-lg">
-                              No countries data available
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Regions - Only show if countries are selected */}
-                      {!isLoadingMetadata && insurerMetadata && quoteConfig.details.countries && quoteConfig.details.countries.length > 0 && (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <Label className="text-sm font-medium">Operating Regions</Label>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <span>•</span>
-                              <span>Available for selected countries</span>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg max-h-48 overflow-y-auto bg-muted/20">
-                            {getAvailableRegions().map((region, index) => (
-                              <div key={index} className="flex items-start space-x-2">
-                                                                  <Checkbox
-                                    id={`region-${index}`}
-                                    checked={quoteConfig.details.regions?.includes(region.name)}
-                                    onCheckedChange={(checked) => {
-                                      const currentValue = quoteConfig.details.regions || [];
-                                      let newValue: string[];
-                                      if (checked) {
-                                        newValue = [...currentValue, region.name];
-                                        updateQuoteConfig('details', 'regions', newValue);
-                                        // Clear zones when adding a region
-                                        updateQuoteConfig('details', 'zones', []);
-                                      } else {
-                                        newValue = currentValue.filter((name) => name !== region.name);
-                                        updateQuoteConfig('details', 'regions', newValue);
-                                        // Clear zones when removing a region
-                                        updateQuoteConfig('details', 'zones', []);
-                                      }
-                                    }}
-                                    className="mt-1"
-                                    disabled={isLoadingQuoteConfig}
-                                  />
-                                <div className="flex flex-col">
-                                  <label
-                                    htmlFor={`region-${index}`}
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                  >
-                                    {region.name}
-                                  </label>
-                                  <span className="text-xs text-muted-foreground mt-1">
-                                    {region.country}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                            {getAvailableRegions().length === 0 && (
-                              <div className="col-span-full text-sm text-muted-foreground p-2 text-center">
-                                No regions available for selected countries
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Zones - Only show if regions are selected */}
-                      {!isLoadingMetadata && insurerMetadata && quoteConfig.details.regions && quoteConfig.details.regions.length > 0 && (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <Label className="text-sm font-medium">Operating Zones</Label>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <span>•</span>
-                              <span>Available for selected regions</span>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg max-h-48 overflow-y-auto bg-muted/20">
-                            {getAvailableZones().map((zone, index) => (
-                              <div key={index} className="flex items-start space-x-2">
-                                                                  <Checkbox
-                                    id={`zone-${index}`}
-                                    checked={quoteConfig.details.zones?.includes(zone.name)}
-                                    onCheckedChange={(checked) => {
-                                      const currentValue = quoteConfig.details.zones || [];
-                                      if (checked) {
-                                        updateQuoteConfig('details', 'zones', [...currentValue, zone.name]);
-                                      } else {
-                                        updateQuoteConfig('details', 'zones', currentValue.filter((name) => name !== zone.name));
-                                      }
-                                    }}
-                                    className="mt-1"
-                                    disabled={isLoadingQuoteConfig}
-                                  />
-                                <div className="flex flex-col">
-                                  <label
-                                    htmlFor={`zone-${index}`}
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                  >
-                                    {zone.name}
-                                  </label>
-                                  <span className="text-xs text-muted-foreground mt-1">
-                                    {zone.region}, {zone.country}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                            {getAvailableZones().length === 0 && (
-                              <div className="col-span-full text-sm text-muted-foreground p-2 text-center">
-                                No zones available for selected regions
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <QuoteConfigurator
+                isLoadingQuoteConfig={isLoadingQuoteConfig}
+                isSavingQuoteConfig={isSavingQuoteConfig}
+                onSave={saveQuoteDetailsConfig}
+                setConfirmDialog={setConfirmDialog}
+                quoteConfig={quoteConfig}
+                updateQuoteConfig={updateQuoteConfig}
+                isLoadingMetadata={isLoadingMetadata}
+                insurerMetadata={insurerMetadata as any}
+                metadataError={metadataError}
+                quoteConfigError={quoteConfigError}
+                getAvailableRegions={getAvailableRegions}
+                getAvailableZones={getAvailableZones}
+              />
             </TabsContent>
             {/* Pricing Configurator Tab */}
             <TabsContent value="pricing" className="space-y-6">
@@ -2260,18 +1983,18 @@ const SingleProductConfig = () => {
                               </div>
                             )}
                             {!isLoadingBaseRatesMasters && !baseRatesMastersError && (
-                              <SubProjectBaseRates
+                            <SubProjectBaseRates
                                 projectTypes={(projectTypesMasters || activeProjectTypes).map((pt: any) => ({
                                   id: pt.id,
                                   value: pt.value ?? pt.label?.toLowerCase?.().replace(/[^a-z0-9]+/g, '-') ?? String(pt.id),
                                   label: pt.label,
                                   baseRate: 0,
                                 }))}
-                                subProjectEntries={ratingConfig.subProjectEntries}
-                                selectedProjectTypes={selectedProjectTypes}
-                                onSubProjectEntryChange={updateSubProjectEntry}
-                                onProjectTypeToggle={toggleProjectType}
-                              />
+                              subProjectEntries={ratingConfig.subProjectEntries}
+                              selectedProjectTypes={selectedProjectTypes}
+                              onSubProjectEntryChange={updateSubProjectEntry}
+                              onProjectTypeToggle={toggleProjectType}
+                            />
                             )}
                           </CardContent>
                         </Card>
@@ -2415,7 +2138,7 @@ const SingleProductConfig = () => {
                                         onClick={addMaintenancePeriodLoading}
                                       >
                                         Add Row
-                                      </Button>
+                                       </Button>
                                      </div>
                                    </CardHeader>
                                    <CardContent>
@@ -2514,9 +2237,9 @@ const SingleProductConfig = () => {
                                 <Card className="border border-border bg-card">
                                   <CardHeader className="pb-3">
                                     <div className="flex items-center justify-between">
-                                      <div>
-                                        <CardTitle className="text-sm">Location Hazard Loadings/Discounts</CardTitle>
-                                      </div>
+                                                                          <div>
+                                      <CardTitle className="text-sm">Location Hazard Loadings/Discounts</CardTitle>
+                                    </div>
                                     </div>
                                   </CardHeader>
                                   <CardContent className="space-y-6">
@@ -3328,19 +3051,19 @@ const SingleProductConfig = () => {
 
                                 <Card className="border border-border bg-card">
                                   <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                                    <div>
-                                      <CardTitle className="text-sm">Subcontractor Number Based Configuration</CardTitle>
-                                      <p className="text-xs text-muted-foreground">Number of subcontractors</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={() => addContractorRiskEntry('subcontractorNumbers')}
-                                      >
-                                        Add Row
-                                      </Button>
-                                    </div>
+                                                                      <div>
+                                    <CardTitle className="text-sm">Subcontractor Number Based Configuration</CardTitle>
+                                    <p className="text-xs text-muted-foreground">Number of subcontractors</p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => addContractorRiskEntry('subcontractorNumbers')}
+                                    >
+                                      Add Row
+                                    </Button>
+                                  </div>
                                   </CardHeader>
                                   <CardContent>
                                     <Table>
@@ -3435,8 +3158,8 @@ const SingleProductConfig = () => {
                            <CardHeader>
                              <div className="flex items-center justify-between">
                                <div>
-                                 <CardTitle>Cover Requirements Configuration</CardTitle>
-                                 <CardDescription>Configure loading/discount rates based on cover requirement values from proposal form</CardDescription>
+                             <CardTitle>Cover Requirements Configuration</CardTitle>
+                             <CardDescription>Configure loading/discount rates based on cover requirement values from proposal form</CardDescription>
                                </div>
                                <Button onClick={saveConfiguration} size="sm">
                                  <Save className="w-4 h-4 mr-1" />
@@ -3923,8 +3646,8 @@ const SingleProductConfig = () => {
                           <CardHeader>
                             <div className="flex items-center justify-between">
                               <div>
-                                <CardTitle>Policy Limits & Deductibles</CardTitle>
-                                <CardDescription>Configure policy limits and deductible adjustments</CardDescription>
+                            <CardTitle>Policy Limits & Deductibles</CardTitle>
+                            <CardDescription>Configure policy limits and deductible adjustments</CardDescription>
                               </div>
                               <Button onClick={saveConfiguration} size="sm">
                                 <Save className="w-4 h-4 mr-1" />
@@ -5140,195 +4863,16 @@ const SingleProductConfig = () => {
 
             {/* CEWs Configuration Tab */}
             <TabsContent value="cews" className="space-y-6">
-              {tplError && (
-                <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
-                  {tplError}
-                </div>
-              )}
-              {isLoadingTpl && (
-                <div className="space-y-4">
-                  <div className="p-4 border rounded-md">
-                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse mb-3" />
-                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                  <div className="p-4 border rounded-md">
-                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse mb-3" />
-                    <div className="h-24 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                </div>
-              )}
-
-              {!isLoadingTpl && (
-                <>
-              {/* TPL limit & Extensions Section */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>TPL limit & Extensions</CardTitle>
-                      <CardDescription>
-                        Configure Third Party Liability limit and related extensions
-                      </CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={() => {
-                          const newExtension = {
-                            id: Date.now(),
-                            title: "",
-                            description: "",
-                            tplLimitValue: "",
-                            pricingType: "percentage" as "percentage" | "fixed",
-                            loadingDiscount: 0
-                          };
-                          setTplExtensions([...tplExtensions, newExtension]);
-                        }}
-                        size="sm"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Extension
-                      </Button>
-                      <Button
-                        size="sm"
-                        disabled={isSavingTpl}
-                        onClick={saveTplExtensions}
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        {isSavingTpl ? 'Saving…' : 'Save Extensions'}
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* TPL Limit Input */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="tpl-limit">Default TPL Limit (AED)</Label>
-                      <Input
-                        id="tpl-limit"
-                        value={tplLimit}
-                        onChange={(e) => setTplLimit(e.target.value)}
-                        placeholder="Enter TPL limit amount"
-                      />
-                    </div>
-                  </div>
-
-                  {/* TPL Limit Extensions Table */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium">TPL Limit Extensions</h4>
-                      {/* Buttons moved to CardHeader; this right-side group is removed */}
-                    </div>
-                    
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>TPL Limit Value (AED)</TableHead>
-                          <TableHead>Pricing Type</TableHead>
-                          <TableHead>Loading/Discount</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {tplExtensions.map((extension) => (
-                          <TableRow key={extension.id}>
-                            <TableCell>
-                              <Input
-                                value={extension.title}
-                                onChange={(e) => {
-                                  setTplExtensions(tplExtensions.map(ext =>
-                                    ext.id === extension.id ? { ...ext, title: e.target.value } : ext
-                                  ));
-                                }}
-                                placeholder="Enter title"
-                                className="w-full"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                value={extension.description}
-                                onChange={(e) => {
-                                  setTplExtensions(tplExtensions.map(ext =>
-                                    ext.id === extension.id ? { ...ext, description: e.target.value } : ext
-                                  ));
-                                }}
-                                placeholder="Enter description"
-                                className="w-full"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                value={extension.tplLimitValue}
-                                onChange={(e) => {
-                                  setTplExtensions(tplExtensions.map(ext =>
-                                    ext.id === extension.id ? { ...ext, tplLimitValue: e.target.value } : ext
-                                  ));
-                                }}
-                                placeholder="Enter limit value"
-                                className="w-full"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={extension.pricingType}
-                                onValueChange={(value: "percentage" | "fixed") => {
-                                  setTplExtensions(tplExtensions.map(ext =>
-                                    ext.id === extension.id ? { ...ext, pricingType: value } : ext
-                                  ));
-                                }}
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="percentage">Percentage</SelectItem>
-                                  <SelectItem value="fixed">Fixed Amount</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  type="number"
-                                  value={extension.loadingDiscount}
-                                  onChange={(e) => {
-                                    setTplExtensions(tplExtensions.map(ext =>
-                                      ext.id === extension.id ? { ...ext, loadingDiscount: parseFloat(e.target.value) || 0 } : ext
-                                    ));
-                                  }}
-                                  placeholder="0"
-                                  className="w-20"
-                                />
-                                <span className="text-sm text-muted-foreground">
-                                  {extension.pricingType === "percentage" ? "%" : "AED"}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setTplExtensions(tplExtensions.filter(ext => ext.id !== extension.id));
-                                }}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    
-                    
-                  </div>
-                </CardContent>
-              </Card>
-              </>
-              )}
+              <CEWsConfiguration
+                tplError={tplError}
+                isLoadingTpl={isLoadingTpl}
+                tplLimit={tplLimit}
+                setTplLimit={(v: string) => setTplLimit(v)}
+                tplExtensions={tplExtensions}
+                setTplExtensions={(v) => setTplExtensions(v as any)}
+                isSavingTpl={isSavingTpl}
+                saveTplExtensions={saveTplExtensions}
+              />
 
               {/* Clauses, Exclusions, and Warranties Section */}
               {isLoadingClauses ? (
@@ -5413,17 +4957,18 @@ const SingleProductConfig = () => {
                                )}
                              </TableCell>
                              <TableCell className="text-right">
-                               <Button 
-                                 variant="outline" 
-                                 size="sm"
-                                 onClick={() => {
+                               <div className="inline-flex gap-2">
+                                 <Button variant="outline" size="sm" onClick={() => { setPreviewWording(item); setIsPreviewDialogOpen(true); }}>
+                                   Preview
+                                 </Button>
+                                 <Button variant="outline" size="sm" onClick={() => {
                                    const firstOption = pricingItem?.variableOptions[0];
                                    setSelectedClause({...item, pricingType: firstOption?.type || "percentage", pricingValue: firstOption?.value || 0});
                                    setIsEditClauseDialogOpen(true);
-                                 }}
-                               >
+                                 }}>
                                  View/Edit
                                </Button>
+                               </div>
                              </TableCell>
                           </TableRow>
                         );
@@ -5723,267 +5268,146 @@ const SingleProductConfig = () => {
             </TabsContent>
             {/* Wording Configuration Tab */}
             <TabsContent value="wording" className="space-y-6">
-              
-              {/* Policy Wording Documents */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Policy Wording Documents</CardTitle>
-                      <CardDescription>Upload and manage policy wording documents</CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={openUploadDialog}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                         Upload New Document
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Error Banner */}
                   {policyWordingsError && (
                     <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
                       {policyWordingsError}
                     </div>
                   )}
                   
-                  {/* Loading Skeleton */}
-                  {isLoadingPolicyWordings && (
-                    <div className="space-y-3">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
-                            <div className="space-y-2">
-                              <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
-                              <div className="w-48 h-3 bg-gray-200 rounded animate-pulse"></div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
-                            <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
-                            <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
-                          </div>
+              {isLoadingPolicyWordings ? (
+                <div className="space-y-4">
+                  {[1,2].map(i => (
+                    <div key={i} className="p-4 border rounded-md">
+                      <div className="w-56 h-5 bg-gray-200 rounded animate-pulse mb-3" />
+                      <div className="h-10 bg-gray-200 rounded animate-pulse" />
                         </div>
                       ))}
-                    </div>
-                  )}
-                  
-                  {/* Policy Wordings List */}
-                  {!isLoadingPolicyWordings && !policyWordingsError && (
-                    <div>
-                      <h4 className="font-medium mb-4">Policy Wordings</h4>
-                      {policyWordings.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                          <p>No policy wordings found</p>
-                          <p className="text-sm">Upload your first policy wording document to get started</p>
                         </div>
                       ) : (
-                        <div className="space-y-3">
-                          {policyWordings.map((wording) => (
-                            <div key={wording.id} className="flex items-center justify-between p-3 border rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <FileText className="w-4 h-4 text-muted-foreground" />
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
                                 <div>
-                                  <p className="font-medium">{wording.document_title}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    Uploaded: {new Date(wording.upload_date).toLocaleDateString()} • Size: {wording.file_size_kb} KB
-                                  </p>
+                      <CardTitle>Policy Wordings</CardTitle>
+                      <CardDescription>Manage uploaded policy wording documents</CardDescription>
                                 </div>
+                    <div className="flex items-center gap-2">
+                      <Button onClick={openUploadDialog} className="gap-2">
+                        <Upload className="w-4 h-4" />
+                        Upload Wording
+                      </Button>
                               </div>
-                              <div className="flex items-center gap-3">
-                                {/* Active/Inactive toggles removed as requested */}
-                                <Button variant="outline" size="sm">
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Upload Date</TableHead>
+                        <TableHead>Size</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {policyWordings.map((w) => (
+                        <TableRow key={w.id}>
+                          <TableCell className="font-medium">{w.document_title}</TableCell>
+                          <TableCell>{w.upload_date}</TableCell>
+                          <TableCell>{w.file_size_kb} KB</TableCell>
+                          <TableCell>{Number(w.is_active) === 1 ? 'Active' : 'Inactive'}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => { setPreviewWording(w); setIsPreviewDialogOpen(true); }}>
+                                Preview
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => {
-                                  setEditingWording(wording);
-                                  setWordingUploadTitle(wording.document_title || "");
-                                  setWordingUploadActive(wording.is_active === 1);
-                                  setWordingUploadFile(null);
-                                  setUploadError(null);
-                                  setIsWordingUploadDialogOpen(true);
-                                }}>
-                                  <Edit className="w-4 h-4 mr-2" />
+                              <Button variant="outline" size="sm" onClick={() => openEditDialog(w)}>
                                   Edit
                                 </Button>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
+              )}
 
               {/* Upload/Edit Wording Dialog */}
               <Dialog open={isWordingUploadDialogOpen} onOpenChange={setIsWordingUploadDialogOpen}>
-                <DialogContent className="max-w-md">
+                <DialogContent className="sm:max-w-[525px]">
                   <DialogHeader>
-                    <DialogTitle>
-                      {editingWording ? "Edit Policy Wording" : "Upload Policy Wording"}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {editingWording
-                        ? "Update the title, active status, or replace the PDF document."
-                        : "Provide a title, mark active if needed, and select a PDF to upload."}
-                    </DialogDescription>
+                    <DialogTitle>{editingWording ? 'Edit Policy Wording' : 'Upload Policy Wording'}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
-                    {uploadError && (
-                      <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
-                        {uploadError}
-                      </div>
-                    )}
-                    <div>
-                      <Label htmlFor="wording-title">Title</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="wording-title">Document Title *</Label>
                       <Input
                         id="wording-title"
-                        name="document_title"
                         value={wordingUploadTitle}
                         onChange={(e) => setWordingUploadTitle(e.target.value)}
-                        placeholder="Enter document title"
+                        placeholder="e.g., Policy Wording v2.1"
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="wording-active" className="text-sm">Active</Label>
-                      <Switch id="wording-active" checked={wordingUploadActive} onCheckedChange={setWordingUploadActive} />
+                      <Input id="wording-file" type="file" accept="application/pdf" onChange={handleFileUpload} />
+                      {wordingUploadFile && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <FileText className="w-4 h-4" />
+                          <span>{wordingUploadFile.name}</span>
+                          <Button variant="ghost" size="sm" onClick={() => handleFileUpload({ target: { files: null } } as any)}>
+                            <X className="w-4 h-4" />
+                          </Button>
                     </div>
-                    <div>
-                      <Label htmlFor="wording-file">
-                        {editingWording ? "Upload New Document (Optional)" : "Select PDF Document"}
-                      </Label>
-                      <Input
-                        id="wording-file"
-                        name="document"
-                        type="file"
-                        accept=".pdf"
-                        onChange={handleFileUpload}
-                        className="mt-1"
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="wording-active"
+                        checked={!!wordingUploadActive}
+                        onCheckedChange={(checked) => setWordingUploadActive(!!checked)}
                       />
+                      <Label htmlFor="wording-active">Active</Label>
                     </div>
-                    {editingWording && (
-                      <p className="text-sm text-muted-foreground">
-                        Leave document field empty to keep the existing file and only update the title.
-                      </p>
-                    )}
                   </div>
-                  <div className="flex justify-end gap-2 mt-6">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setIsWordingUploadDialogOpen(false);
-                        setWordingUploadTitle("");
-                        setWordingUploadActive(true);
-                        setWordingUploadFile(null);
-                        setUploadError(null);
-                        setEditingWording(null);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        const insurerId = getInsurerCompanyId();
-                        if (!insurerId || !product.id) {
-                          setUploadError('Missing insurer or product id.');
-                          return;
-                        }
-
-                        if (editingWording) {
-                          if (!wordingUploadTitle.trim() && wordingUploadFile == null) {
-                            setUploadError('Please update the title or select a new PDF.');
-                            return;
-                          }
-                          setUploadError(null);
-                          try {
-                            setIsUploadingWording(true);
-                            const res = await updatePolicyWording(
-                              insurerId,
-                              product.id as string,
-                              editingWording.id,
-                              {
-                                document_title: wordingUploadTitle.trim() || undefined,
-                                is_active: String(!!wordingUploadActive),
-                                document: wordingUploadFile || undefined,
-                              }
-                            );
-                            toast({ title: 'Changes saved', description: res?.message || 'Update successful.' });
-                            const wordingsData = await getPolicyWordings(insurerId, product.id as string);
-                            setPolicyWordings(wordingsData.wordings);
-                            setIsWordingUploadDialogOpen(false);
-                            setWordingUploadTitle('');
-                            setWordingUploadActive(true);
-                            setWordingUploadFile(null);
-                            setEditingWording(null);
-                          } catch (err: any) {
-                            const status = err?.status as number | undefined;
-                            const message = err?.message as string | undefined;
-                            if (status === 400) setUploadError(message || 'Bad request while updating policy wording.');
-                            else if (status === 401) setUploadError('Unauthorized. Please log in again.');
-                            else if (status === 403) setUploadError("You don't have access to update policy wordings.");
-                            else if (status && status >= 500) setUploadError('Server error. Please try again later.');
-                            else setUploadError(message || 'Failed to update policy wording.');
-                          } finally {
-                            setIsUploadingWording(false);
-                          }
-                          return;
-                        }
-
-                        if (!wordingUploadTitle.trim()) return;
-                        if (!wordingUploadFile) {
-                          setUploadError('Please select a PDF document to upload.');
-                          return;
-                        }
-                        setUploadError(null);
-                        try {
-                          setIsUploadingWording(true);
-                          const res = await uploadPolicyWording(insurerId, product.id as string, {
-                            product_id: String(product.id),
-                            document_title: wordingUploadTitle.trim(),
-                            is_active: String(!!wordingUploadActive),
-                            document: wordingUploadFile,
-                          });
-                          toast({ title: 'Document uploaded', description: res?.message || 'Upload successful.' });
-                          const wordingsData = await getPolicyWordings(insurerId, product.id as string);
-                          setPolicyWordings(wordingsData.wordings);
-                          setIsWordingUploadDialogOpen(false);
-                          setWordingUploadTitle('');
-                          setWordingUploadActive(true);
-                          setWordingUploadFile(null);
-                        } catch (err: any) {
-                          const status = err?.status as number | undefined;
-                          const message = err?.message as string | undefined;
-                          if (status === 400) setUploadError(message || 'Bad request while uploading policy wording.');
-                          else if (status === 401) setUploadError('Unauthorized. Please log in again.');
-                          else if (status === 403) setUploadError("You don't have access to upload policy wordings.");
-                          else if (status && status >= 500) setUploadError('Server error. Please try again later.');
-                          else setUploadError(message || 'Failed to upload policy wording.');
-                        } finally {
-                          setIsUploadingWording(false);
-                        }
-                      }}
-                      disabled={!wordingUploadTitle.trim() || isUploadingWording}
-                    >
+                  <DialogFooter>
+                    <Button onClick={handleSavePolicyWording} disabled={!wordingUploadTitle || (!editingWording && !wordingUploadFile)}>
                       {isUploadingWording ? (
-                        <div className="w-4 h-4 mr-2 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                      ) : null}
-                      {editingWording ? "Save Changes" : "Upload"}
+                        <span className="inline-flex items-center gap-2">
+                          <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></span>
+                          Saving…
+                        </span>
+                      ) : (
+                        'Save Wording'
+                      )}
                     </Button>
-                  </div>
+                  </DialogFooter>
                 </DialogContent>
               </Dialog>
-
+              {/* Policy Wording Preview Dialog */}
+              <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Policy Wording Preview</DialogTitle>
+                  </DialogHeader>
+                  {previewWording && (
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between"><span className="text-muted-foreground">Title</span><span>{previewWording.document_title}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Upload Date</span><span>{previewWording.upload_date}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Size</span><span>{previewWording.file_size_kb} KB</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span>{Number(previewWording.is_active) === 1 ? 'Active' : 'Inactive'}</span></div>
+                      <div className="text-xs text-muted-foreground">Note: Inline PDF preview not available. Download from the management console if needed.</div>
+                  </div>
+                  )}
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsPreviewDialogOpen(false)}>Close</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
-
-            {/* Quote Format Tab */}
+            {/* Quote Format tab */}
             <TabsContent value="quote-format" className="space-y-6">
               {quoteFormatError && (
                 <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
