@@ -13,6 +13,9 @@ type ContractorRiskFactorsProps = {
   addContractorRiskEntry: (category: string) => void;
   updateContractorRiskEntry: (category: string, id: number, field: string, value: any) => void;
   removeContractorRiskEntry: (category: string, id: number) => void;
+  isLoading?: boolean;
+  error?: string | null;
+  isSaving?: boolean;
 };
 
 const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
@@ -21,6 +24,9 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
   addContractorRiskEntry,
   updateContractorRiskEntry,
   removeContractorRiskEntry,
+  isLoading = false,
+  error = null,
+  isSaving = false,
 }) => {
   return (
     <Card className="h-full">
@@ -30,13 +36,135 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
             <CardTitle>Contractor Risk Factors</CardTitle>
             <CardDescription>Configure risk adjustments based on contractor profile</CardDescription>
           </div>
-          <Button onClick={onSave} size="sm">
-            <Save className="w-4 h-4 mr-1" />
-            Save Contractor Risk Factors
+          <Button onClick={onSave} size="sm" disabled={isSaving}>
+            {isSaving ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+            ) : (
+              <Save className="w-4 h-4 mr-1" />
+            )}
+            {isSaving ? 'Saving...' : 'Save Contractor Risk Factors'}
           </Button>
         </div>
       </CardHeader>
       <CardContent className="p-6">
+        {isLoading && (
+          <div className="space-y-6">
+            {/* Experience Loadings Skeleton */}
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="w-48 h-5 bg-gray-200 rounded animate-pulse" />
+                    <div className="w-32 h-4 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="w-20 h-8 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-6 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
+                    ))}
+                  </div>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="grid grid-cols-6 gap-4">
+                      {Array.from({ length: 6 }).map((_, j) => (
+                        <div key={j} className="h-10 bg-gray-200 rounded animate-pulse" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Claims Based Loading Skeleton */}
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3">
+                <div className="w-56 h-5 bg-gray-200 rounded animate-pulse" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="w-48 h-4 bg-gray-200 rounded animate-pulse" />
+                      <div className="w-20 h-8 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-6 gap-4">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
+                        ))}
+                      </div>
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="grid grid-cols-6 gap-4">
+                          {Array.from({ length: 6 }).map((_, j) => (
+                            <div key={j} className="h-10 bg-gray-200 rounded animate-pulse" />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="w-40 h-4 bg-gray-200 rounded animate-pulse" />
+                      <div className="w-20 h-8 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-6 gap-4">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
+                        ))}
+                      </div>
+                      {Array.from({ length: 2 }).map((_, i) => (
+                        <div key={i} className="grid grid-cols-6 gap-4">
+                          {Array.from({ length: 6 }).map((_, j) => (
+                            <div key={j} className="h-10 bg-gray-200 rounded animate-pulse" />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Contractor Number Based Skeleton */}
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="w-64 h-5 bg-gray-200 rounded animate-pulse" />
+                    <div className="w-40 h-4 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="w-20 h-8 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-6 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
+                    ))}
+                  </div>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="grid grid-cols-6 gap-4">
+                      {Array.from({ length: 6 }).map((_, j) => (
+                        <div key={j} className="h-10 bg-gray-200 rounded animate-pulse" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+        {!isLoading && error && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 mb-4">
+            {error}
+          </div>
+        )}
+        {!isLoading && !error && (
         <div className="space-y-6">
           {/* Experience Loadings/Discounts */}
           <Card className="border border-border bg-card">
@@ -548,6 +676,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
             </CardContent>
           </Card>
         </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -1709,3 +1709,68 @@ export async function getContractorRiskFactors(
   );
 }
 
+// Contractor Risk Factors save interfaces
+export interface ContractorRiskFactorsRequest {
+  insurer_id?: number;
+  contractor_risk_factors: {
+    experience_loadings: Array<{
+      from_years: number;
+      to_years: number;
+      pricing_type: string;
+      loading_discount: number;
+      quote_option: string;
+    }>;
+    claims_based_loadings: Array<{
+      from_claims: number;
+      to_claims: number;
+      pricing_type: string;
+      loading_discount: number;
+      quote_option: string;
+    }>;
+    claim_amount_categories?: Array<{
+      from_amount: number;
+      to_amount: number;
+      pricing_type: string;
+      loading_discount: number;
+      currency: string;
+      quote_option: string;
+    }>;
+    contractor_number_based?: Array<{
+      from_contractors: number;
+      to_contractors: number;
+      pricing_type: string;
+      loading_discount: number;
+      quote_option: string;
+    }>;
+    subcontractor_number_based?: Array<{
+      from_subcontractors: number;
+      to_subcontractors: number;
+      pricing_type: string;
+      loading_discount: number;
+      quote_option: string;
+    }>;
+  };
+}
+
+export async function createContractorRiskFactors(
+  insurerId: number | string,
+  productId: number | string,
+  body: ContractorRiskFactorsRequest
+): Promise<ContractorRiskFactorsResponse> {
+  return apiPost<ContractorRiskFactorsResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/contractor-risk-factors`,
+    body
+  );
+}
+
+export async function updateContractorRiskFactors(
+  insurerId: number | string,
+  productId: number | string,
+  body: ContractorRiskFactorsRequest
+): Promise<ContractorRiskFactorsResponse> {
+  return apiPatch<ContractorRiskFactorsResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/contractor-risk-factors`,
+    body
+  );
+}
+

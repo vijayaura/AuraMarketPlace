@@ -50,6 +50,7 @@ type PricingConfiguratorProps = {
   updateLimits: (key: string, value: number) => void;
   // Base Rates save handler
   handleSaveBaseRates: () => Promise<void>;
+  handleSaveProjectRiskFactors: () => Promise<void>;
 };
 
 const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
@@ -87,6 +88,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   updateCoverRequirement,
   updateLimits,
   handleSaveBaseRates,
+  handleSaveProjectRiskFactors,
 }) => {
   return (
     <Card>
@@ -166,7 +168,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                 projectTypesMasters={projectTypesMasters}
                 activeProjectTypes={activeProjectTypes}
                 ratingConfig={ratingConfig}
-                selectedProjectTypes={(Array.isArray(selectedProjectTypes) ? selectedProjectTypes : Array.from(selectedProjectTypes as Set<string>))}
+                selectedProjectTypes={Array.isArray(selectedProjectTypes) ? new Set(selectedProjectTypes) : (selectedProjectTypes as Set<string>)}
                 onSubProjectEntryChange={updateSubProjectEntry}
                 onProjectTypeToggle={toggleProjectType}
                 onSave={handleSaveBaseRates}
@@ -176,7 +178,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
             {activePricingTab === "project-risk" && (
               <ProjectRiskFactors
                 ratingConfig={ratingConfig}
-                onSave={saveConfiguration}
+                onSave={handleSaveProjectRiskFactors}
                 addDurationLoading={addDurationLoading}
                 updateDurationLoading={updateDurationLoading}
                 removeDurationLoading={removeDurationLoading}

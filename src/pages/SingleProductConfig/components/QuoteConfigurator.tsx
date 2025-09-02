@@ -12,12 +12,6 @@ export type QuoteConfiguratorProps = {
   isLoadingQuoteConfig: boolean;
   isSavingQuoteConfig: boolean;
   onSave: () => Promise<void> | void;
-  setConfirmDialog: React.Dispatch<React.SetStateAction<{
-    isOpen: boolean;
-    title: string;
-    description: string;
-    action: () => Promise<void> | void;
-  }>>;
   quoteConfig: any;
   updateQuoteConfig: (section: string, field: string, value: any) => void;
   isLoadingMetadata: boolean;
@@ -32,7 +26,6 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
   isLoadingQuoteConfig,
   isSavingQuoteConfig,
   onSave,
-  setConfirmDialog,
   quoteConfig,
   updateQuoteConfig,
   isLoadingMetadata,
@@ -52,20 +45,19 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
           </div>
           <Button
             type="button"
-            onClick={() => {
-              setConfirmDialog({
-                isOpen: true,
-                title: 'Save Quote Configuration',
-                description: 'Are you sure you want to save the quote configuration? This will overwrite previously saved settings.',
-                action: async () => {
-                  setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                  await onSave();
-                },
-              });
+            onClick={async () => {
+              console.log('🔵 Quote Config save button clicked');
+              console.log('🔵 isSavingQuoteConfig:', isSavingQuoteConfig);
+              console.log('🔵 onSave function:', onSave);
+              try {
+                await onSave();
+                console.log('🟢 onSave completed successfully');
+              } catch (error) {
+                console.log('🔴 Error in onSave:', error);
+              }
             }}
             size="sm"
-            disabled={isLoadingQuoteConfig || isSavingQuoteConfig}
-            className={(isLoadingQuoteConfig || isSavingQuoteConfig) ? 'opacity-50 cursor-not-allowed' : ''}
+            disabled={isSavingQuoteConfig}
          >
             {isSavingQuoteConfig ? (
               <>
@@ -82,42 +74,99 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="validity-days">Validity Period (Days)</Label>
-            {isLoadingQuoteConfig ? (
-              <div className="flex items-center h-10">
-                <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+        {isLoadingQuoteConfig ? (
+          <div className="space-y-6">
+            {/* Form Fields Skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
+                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
               </div>
-            ) : (
-              <Input
-                id="validity-days"
-                name="validity_days"
-                type="number"
-                autoComplete="off"
-                value={quoteConfig.details.validityDays}
-                onChange={(e) => updateQuoteConfig('details', 'validityDays', e.target.value)}
-              />
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="backdate-window">Backdate Window (Days)</Label>
-            {isLoadingQuoteConfig ? (
-              <div className="flex items-center h-10">
-                <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-36"></div>
+                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
               </div>
-            ) : (
-              <Input
-                id="backdate-window"
-                name="backdate_days"
-                type="number"
-                autoComplete="off"
-                value={quoteConfig.details.backdateWindow}
-                onChange={(e) => updateQuoteConfig('details', 'backdateWindow', e.target.value)}
-              />
-            )}
+            </div>
+
+            {/* Geographic Coverage Skeleton */}
+            <div className="border-t pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-6 bg-gray-200 rounded animate-pulse w-40"></div>
+              </div>
+
+              {/* Countries Section Skeleton */}
+              <div className="space-y-4">
+                <div className="h-5 bg-gray-200 rounded animate-pulse w-24"></div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="flex items-center space-x-2">
+                      <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Regions Section Skeleton */}
+              <div className="space-y-4 mt-6">
+                <div className="h-5 bg-gray-200 rounded animate-pulse w-20"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center space-x-2">
+                      <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="space-y-1 flex-1">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                        <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Zones Section Skeleton */}
+              <div className="space-y-4 mt-6">
+                <div className="h-5 bg-gray-200 rounded animate-pulse w-16"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center space-x-2">
+                      <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="space-y-1 flex-1">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                        <div className="h-3 bg-gray-200 rounded animate-pulse w-24"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="validity-days">Validity Period (Days)</Label>
+                <Input
+                  id="validity-days"
+                  name="validity_days"
+                  type="number"
+                  autoComplete="off"
+                  value={quoteConfig.details.validityDays}
+                  onChange={(e) => updateQuoteConfig('details', 'validityDays', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="backdate-window">Backdate Window (Days)</Label>
+                <Input
+                  id="backdate-window"
+                  name="backdate_days"
+                  type="number"
+                  autoComplete="off"
+                  value={quoteConfig.details.backdateWindow}
+                  onChange={(e) => updateQuoteConfig('details', 'backdateWindow', e.target.value)}
+                />
+              </div>
+            </div>
 
         <div className="border-t pt-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -304,6 +353,8 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
             )}
           </div>
         </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

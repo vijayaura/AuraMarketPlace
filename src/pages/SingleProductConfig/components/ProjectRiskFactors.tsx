@@ -20,6 +20,9 @@ type ProjectRiskFactorsProps = {
   removeMaintenancePeriodLoading: (id: any) => void;
   updateProjectRiskFactor: (section: string, key: string, value: any) => void;
   SoilTypeMultiSelect: React.ComponentType<SoilTypeMultiSelectProps>;
+  isLoading?: boolean;
+  error?: string | null;
+  isSaving?: boolean;
 };
 
 const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
@@ -33,6 +36,9 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
   removeMaintenancePeriodLoading,
   updateProjectRiskFactor,
   SoilTypeMultiSelect,
+  isLoading = false,
+  error = null,
+  isSaving = false,
 }) => {
   return (
     <Card className="h-full">
@@ -42,13 +48,127 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
             <CardTitle>Project Risk Factors</CardTitle>
             <CardDescription>Configure risk adjustments based on project characteristics</CardDescription>
           </div>
-          <Button onClick={onSave} size="sm">
-            <Save className="w-4 h-4 mr-1" />
-            Save Project Risk Factors
+          <Button onClick={onSave} size="sm" disabled={isSaving}>
+            {isSaving ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+            ) : (
+              <Save className="w-4 h-4 mr-1" />
+            )}
+            {isSaving ? 'Saving...' : 'Save Project Risk Factors'}
           </Button>
         </div>
       </CardHeader>
       <CardContent className="p-6">
+        {isLoading && (
+          <div className="space-y-6">
+            {/* Project Duration Loadings Skeleton */}
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="w-64 h-5 bg-gray-200 rounded animate-pulse" />
+                    <div className="w-80 h-4 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="w-20 h-8 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-6 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
+                    ))}
+                  </div>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="grid grid-cols-6 gap-4">
+                      {Array.from({ length: 6 }).map((_, j) => (
+                        <div key={j} className="h-10 bg-gray-200 rounded animate-pulse" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Maintenance Period Loadings Skeleton */}
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="w-72 h-5 bg-gray-200 rounded animate-pulse" />
+                    <div className="w-84 h-4 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="w-20 h-8 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-6 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
+                    ))}
+                  </div>
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="grid grid-cols-6 gap-4">
+                      {Array.from({ length: 6 }).map((_, j) => (
+                        <div key={j} className="h-10 bg-gray-200 rounded animate-pulse" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Location Hazard Loadings Skeleton */}
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3">
+                <div className="w-64 h-5 bg-gray-200 rounded animate-pulse" />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-3">
+                  <div className="w-32 h-4 bg-gray-200 rounded animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-5 gap-4">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
+                      ))}
+                    </div>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="grid grid-cols-5 gap-4">
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <div key={j} className="h-8 bg-gray-200 rounded animate-pulse" />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="w-40 h-4 bg-gray-200 rounded animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-4 gap-4">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
+                      ))}
+                    </div>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="grid grid-cols-4 gap-4">
+                        {Array.from({ length: 4 }).map((_, j) => (
+                          <div key={j} className="h-10 bg-gray-200 rounded animate-pulse" />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+        {!isLoading && error && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 mb-4">
+            {error}
+          </div>
+        )}
+        {!isLoading && !error && (
         <div className="space-y-6">
           {/* Project Duration Loadings/Discounts */}
           <Card className="border border-border bg-card">
@@ -486,6 +606,7 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
             </CardContent>
           </Card>
         </div>
+        )}
       </CardContent>
     </Card>
   );

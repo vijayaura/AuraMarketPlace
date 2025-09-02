@@ -25,8 +25,9 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, saveQuoteConfig, updateQuoteConfig, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type SaveQuoteConfigRequest } from "@/lib/api/insurers";
 import { getInsurerCompanyId } from "@/lib/auth";
+import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
 import QuoteFormat from "./SingleProductConfig/components/QuoteFormat";
 import CEWsConfiguration from "./SingleProductConfig/components/CEWsConfiguration";
@@ -38,7 +39,6 @@ import ContractorRiskFactors from "./SingleProductConfig/components/ContractorRi
 import CoverageOptionsExtensions from "./SingleProductConfig/components/CoverageOptionsExtensions";
 import PolicyLimitsDeductibles from "./SingleProductConfig/components/PolicyLimitsDeductibles";
 import MasterDataTabs from "./SingleProductConfig/components/MasterDataTabs";
-import PricingConfigurator from "./SingleProductConfig/components/PricingConfigurator";
 
 interface VariableOption {
   id: number;
@@ -136,6 +136,19 @@ const SingleProductConfig = () => {
   const [subProjectTypesMasters, setSubProjectTypesMasters] = useState<SubProjectTypeItem[] | null>(null);
   const [isLoadingBaseRatesMasters, setIsLoadingBaseRatesMasters] = useState(false);
   const [baseRatesMastersError, setBaseRatesMastersError] = useState<string | null>(null);
+  const [isSavingBaseRates, setIsSavingBaseRates] = useState(false);
+  
+  // Project Risk Factors loading state
+  const [isLoadingProjectRiskFactors, setIsLoadingProjectRiskFactors] = useState(false);
+  const [projectRiskFactorsError, setProjectRiskFactorsError] = useState<string | null>(null);
+  const [hasProjectRiskFactorsData, setHasProjectRiskFactorsData] = useState(false);
+  const [isSavingProjectRiskFactors, setIsSavingProjectRiskFactors] = useState(false);
+  
+  // Contractor Risk Factors loading state
+  const [isLoadingContractorRiskFactors, setIsLoadingContractorRiskFactors] = useState(false);
+  const [contractorRiskFactorsError, setContractorRiskFactorsError] = useState<string | null>(null);
+  const [hasContractorRiskFactorsData, setHasContractorRiskFactorsData] = useState(false);
+  const [isSavingContractorRiskFactors, setIsSavingContractorRiskFactors] = useState(false);
   // Always fetch on demand (Pricing tab or Base Rates click)
   const fetchBaseRatesMasters = async (): Promise<void> => {
     setIsLoadingBaseRatesMasters(true);
@@ -218,6 +231,8 @@ const SingleProductConfig = () => {
 
   // Fire GET on Project Risk Factors click and map to UI state
   const fetchProjectRiskFactors = async (): Promise<void> => {
+    setIsLoadingProjectRiskFactors(true);
+    setProjectRiskFactorsError(null);
     try {
       const insurerId = getInsurerCompanyId();
       const pid = product?.id || '1';
@@ -265,8 +280,301 @@ const SingleProductConfig = () => {
           },
         },
       }));
-    } catch (err) {
-      // ignore for now; user requested no shimmer/error banner changes
+
+      // Set flag to indicate we have data from GET API
+      const hasData = Array.isArray(data.project_duration_loadings) || 
+                     Array.isArray(data.maintenance_period_loadings) || 
+                     (data?.location_hazard_loadings?.location_hazard_rates && Array.isArray(data.location_hazard_loadings.location_hazard_rates));
+      setHasProjectRiskFactorsData(hasData);
+    } catch (err: any) {
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading project risk factors.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading project risk factors.'
+        : 'Failed to load project risk factors.';
+      setProjectRiskFactorsError(msg);
+    } finally {
+      setIsLoadingProjectRiskFactors(false);
+    }
+  };
+
+  // Project Risk Factors save handler
+  const handleSaveProjectRiskFactors = async () => {
+    const insurerId = getInsurerCompanyId();
+    const pid = product?.id || '1';
+    if (!insurerId || !pid) return;
+    
+    setIsSavingProjectRiskFactors(true);
+    try {
+      // Map UI state to API request format
+      const body: ProjectRiskFactorsRequest = {
+        project_risk_factors: {
+          project_duration_loadings: ratingConfig.projectRisk.durationLoadings.map((item: any) => ({
+            from_months: Number(item.from || 0),
+            to_months: item.to === 999 ? null : Number(item.to || 0),
+            pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
+            loading_discount: Number(item.value || 0),
+            quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
+          })),
+          maintenance_period_loadings: ratingConfig.projectRisk.maintenancePeriodLoadings.map((item: any) => ({
+            from_months: Number(item.from || 0),
+            to_months: item.to === 999 ? null : Number(item.to || 0),
+            pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
+            loading_discount: Number(item.value || 0),
+            quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
+          })),
+          location_hazard_loadings: {
+            risk_definition: {
+              factors: [
+                {
+                  factor: "Near water body",
+                  low_risk: "No",
+                  moderate_risk: "Yes", 
+                  high_risk: "Yes",
+                  very_high_risk: "Yes"
+                },
+                {
+                  factor: "Flood-prone zone",
+                  low_risk: "No",
+                  moderate_risk: "No",
+                  high_risk: "Yes", 
+                  very_high_risk: "Yes"
+                },
+                {
+                  factor: "City center",
+                  low_risk: "Yes",
+                  moderate_risk: "No",
+                  high_risk: "Yes",
+                  very_high_risk: "Yes"
+                },
+                {
+                  factor: "Soil type",
+                  low_risk: "1 selected",
+                  moderate_risk: "1 selected",
+                  high_risk: "2 selected",
+                  very_high_risk: "2 selected"
+                }
+              ]
+            },
+            location_hazard_rates: [
+              {
+                risk_level: "Low Risk",
+                pricing_type: "PERCENTAGE",
+                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings.low || 0),
+                quote_option: "AUTO_QUOTE"
+              },
+              {
+                risk_level: "Moderate Risk", 
+                pricing_type: "PERCENTAGE",
+                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings.moderate || 0),
+                quote_option: "AUTO_QUOTE"
+              },
+              {
+                risk_level: "High Risk",
+                pricing_type: "PERCENTAGE", 
+                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings.high || 0),
+                quote_option: "AUTO_QUOTE"
+              },
+              {
+                risk_level: "Very High Risk",
+                pricing_type: "PERCENTAGE",
+                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings.veryHigh || 0),
+                quote_option: "AUTO_QUOTE"
+              }
+            ]
+          }
+        }
+      };
+
+      // Use POST if no data from GET API, PATCH if data exists
+      const resp = hasProjectRiskFactorsData
+        ? await updateProjectRiskFactors(insurerId, String(pid), body)
+        : await createProjectRiskFactors(insurerId, String(pid), body);
+      
+      toast({ title: 'Saved', description: resp?.message || 'Project risk factors saved successfully.' });
+    } catch (err: any) {
+      const status = err?.status;
+      const msg = status === 400 ? 'Invalid data while saving project risk factors.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving project risk factors.'
+        : (err?.message || 'Failed to save project risk factors.');
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      setIsSavingProjectRiskFactors(false);
+    }
+  };
+
+  // Fire GET on Contractor Risk Factors click and map to UI state
+  const fetchContractorRiskFactors = async (): Promise<void> => {
+    setIsLoadingContractorRiskFactors(true);
+    setContractorRiskFactorsError(null);
+    try {
+      const insurerId = getInsurerCompanyId();
+      const pid = product?.id || '1';
+      if (!insurerId || !pid) return;
+      const resp = await getContractorRiskFactors(insurerId, String(pid));
+      const data: any = resp || {};
+      
+      // Map API response to UI state
+      const mapExperience = Array.isArray(data.experience_loadings)
+        ? data.experience_loadings.map((item: any, idx: number) => ({
+            id: idx + 1,
+            from: Number(item?.from_years ?? 0),
+            to: item?.to_years === 999 ? 999 : Number(item.to_years ?? 0),
+            pricingType: String(item?.pricing_type || '').toUpperCase() === 'FIXED_AMOUNT' ? 'fixed' : 'percentage',
+            loadingDiscount: Number(item?.loading_discount ?? 0),
+            quoteOption: String(item?.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote',
+          }))
+        : ratingConfig.contractorRisk.experienceDiscounts;
+
+      const mapClaimFreq = Array.isArray(data.claims_based_loadings)
+        ? data.claims_based_loadings.map((item: any, idx: number) => ({
+            id: idx + 1,
+            from: Number(item?.from_claims ?? 0),
+            to: Number(item?.to_claims ?? 0),
+            pricingType: String(item?.pricing_type || '').toUpperCase() === 'FIXED_AMOUNT' ? 'fixed' : 'percentage',
+            loadingDiscount: Number(item?.loading_discount ?? 0),
+            quoteOption: String(item?.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote',
+          }))
+        : ratingConfig.contractorRisk.claimFrequency;
+
+      const mapClaimAmount = Array.isArray(data.claim_amount_categories)
+        ? data.claim_amount_categories.map((item: any, idx: number) => ({
+            id: idx + 1,
+            from: Number(item?.from_amount ?? 0),
+            to: Number(item?.to_amount ?? 0),
+            pricingType: String(item?.pricing_type || '').toUpperCase() === 'FIXED_AMOUNT' ? 'fixed' : 'percentage',
+            loadingDiscount: Number(item?.loading_discount ?? 0),
+            quoteOption: String(item?.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote',
+          }))
+        : ratingConfig.contractorRisk.claimAmountCategories;
+
+      const mapContractorNumbers = Array.isArray(data.contractor_number_based)
+        ? data.contractor_number_based.map((item: any, idx: number) => ({
+            id: idx + 1,
+            from: Number(item?.from_contractors ?? 0),
+            to: Number(item?.to_contractors ?? 0),
+            pricingType: String(item?.pricing_type || '').toUpperCase() === 'FIXED_AMOUNT' ? 'fixed' : 'percentage',
+            loadingDiscount: Number(item?.loading_discount ?? 0),
+            quoteOption: String(item?.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote',
+          }))
+        : ratingConfig.contractorRisk.contractorNumbers;
+
+      const mapSubcontractorNumbers = Array.isArray(data.subcontractor_number_based)
+        ? data.subcontractor_number_based.map((item: any, idx: number) => ({
+            id: idx + 1,
+            from: Number(item?.from_subcontractors ?? 0),
+            to: Number(item?.to_subcontractors ?? 0),
+            pricingType: String(item?.pricing_type || '').toUpperCase() === 'FIXED_AMOUNT' ? 'fixed' : 'percentage',
+            loadingDiscount: Number(item?.loading_discount ?? 0),
+            quoteOption: String(item?.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote',
+          }))
+        : ratingConfig.contractorRisk.subcontractorNumbers;
+
+      // Update UI state with mapped data
+      setRatingConfig(prev => ({
+        ...prev,
+        contractorRisk: {
+          ...prev.contractorRisk,
+          experienceDiscounts: mapExperience,
+          claimFrequency: mapClaimFreq,
+          claimAmountCategories: mapClaimAmount,
+          contractorNumbers: mapContractorNumbers,
+          subcontractorNumbers: mapSubcontractorNumbers,
+        },
+      }));
+
+      // Set flag to indicate we have data from GET API
+      const hasData = Array.isArray(data.experience_loadings) || Array.isArray(data.claims_based_loadings) || 
+                     Array.isArray(data.claim_amount_categories) || Array.isArray(data.contractor_number_based) || 
+                     Array.isArray(data.subcontractor_number_based);
+      setHasContractorRiskFactorsData(hasData);
+    } catch (err: any) {
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading contractor risk factors.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading contractor risk factors.'
+        : 'Failed to load contractor risk factors.';
+      setContractorRiskFactorsError(msg);
+    } finally {
+      setIsLoadingContractorRiskFactors(false);
+    }
+  };
+
+  // Contractor Risk Factors save handler
+  const handleSaveContractorRiskFactors = async () => {
+    const insurerId = getInsurerCompanyId();
+    const pid = product?.id || '1';
+    if (!insurerId || !pid) return;
+    
+    setIsSavingContractorRiskFactors(true);
+    try {
+      // Map UI state to API request format
+      const body: ContractorRiskFactorsRequest = {
+        insurer_id: Number(insurerId),
+        contractor_risk_factors: {
+          experience_loadings: ratingConfig.contractorRisk.experienceDiscounts.map((item: any) => ({
+            from_years: Number(item.from || 0),
+            to_years: item.to === 999 ? 999 : Number(item.to || 0),
+            pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
+            loading_discount: Number(item.loadingDiscount || 0),
+            quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
+          })),
+          claims_based_loadings: ratingConfig.contractorRisk.claimFrequency.map((item: any) => ({
+            from_claims: Number(item.from || 0),
+            to_claims: Number(item.to || 0),
+            pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
+            loading_discount: Number(item.loadingDiscount || 0),
+            quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
+          })),
+        }
+      };
+
+      // Include optional fields only for POST (first time save)
+      if (!hasContractorRiskFactorsData) {
+        body.contractor_risk_factors.claim_amount_categories = ratingConfig.contractorRisk.claimAmountCategories.map((item: any) => ({
+          from_amount: Number(item.from || 0),
+          to_amount: Number(item.to || 0),
+          pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
+          loading_discount: Number(item.loadingDiscount || 0),
+          currency: 'AED',
+          quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
+        }));
+        body.contractor_risk_factors.contractor_number_based = ratingConfig.contractorRisk.contractorNumbers.map((item: any) => ({
+          from_contractors: Number(item.from || 0),
+          to_contractors: Number(item.to || 0),
+          pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
+          loading_discount: Number(item.loadingDiscount || 0),
+          quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
+        }));
+        body.contractor_risk_factors.subcontractor_number_based = ratingConfig.contractorRisk.subcontractorNumbers.map((item: any) => ({
+          from_subcontractors: Number(item.from || 0),
+          to_subcontractors: Number(item.to || 0),
+          pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
+          loading_discount: Number(item.loadingDiscount || 0),
+          quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
+        }));
+      }
+
+      // Use POST if no data from GET API, PATCH if data exists
+      const resp = hasContractorRiskFactorsData
+        ? await updateContractorRiskFactors(insurerId, String(pid), body)
+        : await createContractorRiskFactors(insurerId, String(pid), body);
+      
+      toast({ title: 'Saved', description: resp?.message || 'Contractor risk factors saved successfully.' });
+    } catch (err: any) {
+      const status = err?.status;
+      const msg = status === 400 ? 'Invalid data while saving contractor risk factors.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving contractor risk factors.'
+        : (err?.message || 'Failed to save contractor risk factors.');
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      setIsSavingContractorRiskFactors(false);
     }
   };
 
@@ -362,6 +670,7 @@ const SingleProductConfig = () => {
   const [isLoadingQuoteConfig, setIsLoadingQuoteConfig] = useState(false);
   const [quoteConfigError, setQuoteConfigError] = useState<string | null>(null);
   const [isSavingQuoteConfig, setIsSavingQuoteConfig] = useState(false);
+  const [hasQuoteConfigData, setHasQuoteConfigData] = useState(false);
   
   // Policy Wordings state
   const [policyWordings, setPolicyWordings] = useState<PolicyWording[]>([]);
@@ -457,6 +766,9 @@ const SingleProductConfig = () => {
                 zones: configData.operating_zones || [],
               }
             }));
+
+            // Set flag to indicate we have existing data from GET API
+            setHasQuoteConfigData(Boolean(configData && (configData.validity_days || configData.backdate_days || configData.operating_countries?.length)));
           }
         } catch (err: any) {
           const status = err?.status as number | undefined;
@@ -1110,9 +1422,125 @@ const SingleProductConfig = () => {
     }
   };
 
+  // Base Rates save handler
+  const handleSaveBaseRates = async () => {
+    const insurerId = getInsurerCompanyId();
+    const pid = product?.id || '1';
+    if (!insurerId || !pid) return;
+    
+    setIsSavingBaseRates(true);
+    try {
+      setBaseRatesMastersError(null);
+      const byProject = new Map<string, { projectLabel: string; items: { name: string; pricing_type: 'PERCENTAGE' | 'FIXED_AMOUNT'; base_rate: number; currency: '%' | 'AED'; quote_option: 'AUTO_QUOTE' | 'NO_QUOTE' | 'QUOTE_AND_REFER' }[] }>();
+      const labelBySlug = new Map<string, string>();
+      (projectTypesMasters || []).forEach(p => labelBySlug.set(p.label.toLowerCase().replace(/[^a-z0-9]+/g, '-'), p.label));
+      ratingConfig.subProjectEntries.forEach(e => {
+        const slug = e.projectType;
+        const projectLabel = labelBySlug.get(slug) || slug;
+        if (!byProject.has(slug)) byProject.set(slug, { projectLabel, items: [] });
+        const pricing_type = (String(e.pricingType).toLowerCase() === 'fixed') ? 'FIXED_AMOUNT' : 'PERCENTAGE';
+        const currency = pricing_type === 'FIXED_AMOUNT' ? 'AED' : '%';
+        const quote_option = (String(e.quoteOption).toLowerCase() === 'no-quote') ? 'NO_QUOTE' : 'AUTO_QUOTE';
+        byProject.get(slug)!.items.push({
+          name: e.subProjectType,
+          pricing_type,
+          base_rate: Number(e.baseRate || 0),
+          currency,
+          quote_option,
+        });
+      });
+      const body = {
+        base_rates: Array.from(byProject.values()).map(group => ({
+          project_type: group.projectLabel,
+          sub_projects: group.items,
+        }))
+      };
+      const hasExisting = Boolean(projectTypesMasters && subProjectTypesMasters && ratingConfig.subProjectEntries.some(e => Number(e.baseRate) !== 0));
+      const resp = hasExisting
+        ? await updateBaseRates(insurerId, String(pid), body)
+        : await saveBaseRates(insurerId, String(pid), body);
+      toast({ title: 'Saved', description: resp?.message || 'Base rates saved.' });
+    } catch (err: any) {
+      const status = err?.status;
+      const msg = status === 400 ? 'Invalid data while saving base rates.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving base rates.'
+        : (err?.message || 'Failed to save base rates.');
+      setBaseRatesMastersError(msg);
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      setIsSavingBaseRates(false);
+    }
+  };
+
   const saveQuoteDetailsConfig = async () => {
-    // Removed per request: no API call for quote config save
-    toast({ title: 'Disabled', description: 'Quote Config save API is disabled for now.' });
+    console.log('🟡 saveQuoteDetailsConfig function called');
+    const insurerId = getInsurerCompanyId();
+    const pid = product?.id || '1';
+    console.log('🟡 insurerId:', insurerId, 'pid:', pid);
+    
+    if (!insurerId || !pid) {
+      console.log('🔴 Early return: missing insurerId or pid');
+      return;
+    }
+
+    console.log('🟡 Setting isSavingQuoteConfig to true');
+    setIsSavingQuoteConfig(true);
+    try {
+      // Map UI state to API request format
+      const body: SaveQuoteConfigRequest = {
+        product_id: Number(pid),
+        validity_days: Number(quoteConfig.details.validityDays || 30),
+        backdate_days: Number(quoteConfig.details.backdateWindow || 0),
+        operating_countries: quoteConfig.details.countries || [],
+        operating_regions: quoteConfig.details.regions || [],
+        operating_zones: quoteConfig.details.zones || [],
+        insurer_id: Number(insurerId),
+      };
+
+      // Use POST if no existing data, PATCH if data exists
+      console.log('🟡 hasQuoteConfigData:', hasQuoteConfigData);
+      console.log('🟡 Request body:', JSON.stringify(body, null, 2));
+      console.log('🟡 About to call API...');
+      console.log('🟡 API Base URL:', api.defaults.baseURL);
+      console.log('🟡 saveQuoteConfig function:', typeof saveQuoteConfig);
+      console.log('🟡 updateQuoteConfig function:', typeof updateQuoteConfig);
+      
+      // Log the exact API call being made
+      if (hasQuoteConfigData) {
+        console.log('🟡 Calling PATCH updateQuoteConfig with:', {
+          insurerId: String(insurerId),
+          productId: String(pid),
+          url: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(pid))}/quote-config`
+        });
+      } else {
+        console.log('🟡 Calling POST saveQuoteConfig with:', {
+          insurerId: String(insurerId),
+          url: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(body.product_id))}/quote-config`
+        });
+      }
+      
+      const resp = hasQuoteConfigData
+        ? await updateQuoteConfig(String(insurerId), String(pid), body)
+        : await saveQuoteConfig(String(insurerId), body);
+
+      console.log('🟢 API Response:', resp);
+      toast({ title: 'Saved', description: (resp as any)?.message || 'Quote configuration saved successfully.' });
+      setHasQuoteConfigData(true); // Mark as having data after successful save
+    } catch (err: any) {
+      console.log('🔴 Error in saveQuoteDetailsConfig:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Invalid data while saving quote configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving quote configuration.'
+        : (err?.message || 'Failed to save quote configuration.');
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      console.log('🟡 Finally block - setting isSavingQuoteConfig to false');
+      setIsSavingQuoteConfig(false);
+    }
   };
 
   // Backward-compatible alias for existing onClick handlers
@@ -1829,7 +2257,6 @@ const SingleProductConfig = () => {
                 isLoadingQuoteConfig={isLoadingQuoteConfig}
                 isSavingQuoteConfig={isSavingQuoteConfig}
                 onSave={saveQuoteDetailsConfig}
-                setConfirmDialog={setConfirmDialog}
                 quoteConfig={quoteConfig}
                 updateQuoteConfig={updateQuoteConfig}
                 isLoadingMetadata={isLoadingMetadata}
@@ -1842,47 +2269,180 @@ const SingleProductConfig = () => {
             </TabsContent>
             {/* Pricing Configurator Tab */}
             <TabsContent value="pricing" className="space-y-6">
-              <PricingConfigurator
-                activePricingTab={activePricingTab}
-                setActivePricingTab={setActivePricingTab}
-                activeProjectTypes={activeProjectTypes}
-                ratingConfig={ratingConfig}
-                activeConstructionTypes={activeConstructionTypes}
-                activeCountries={activeCountries}
-                fetchBaseRatesMasters={fetchBaseRatesMasters}
-                fetchProjectRiskFactors={fetchProjectRiskFactors}
-                saveConfiguration={saveConfiguration}
-                markAsChanged={markAsChanged}
-                setRatingConfig={setRatingConfig}
-                isLoadingBaseRatesMasters={isLoadingBaseRatesMasters}
-                baseRatesMastersError={baseRatesMastersError}
-                projectTypesMasters={projectTypesMasters}
-                selectedProjectTypes={selectedProjectTypes}
-                updateSubProjectEntry={updateSubProjectEntry}
-                toggleProjectType={toggleProjectType}
-                addDurationLoading={addDurationLoading}
-                updateDurationLoading={updateDurationLoading}
-                removeDurationLoading={removeDurationLoading}
-                addMaintenancePeriodLoading={addMaintenancePeriodLoading}
-                updateMaintenancePeriodLoading={updateMaintenancePeriodLoading}
-                removeMaintenancePeriodLoading={removeMaintenancePeriodLoading}
-                updateProjectRiskFactor={updateProjectRiskFactor}
-                SoilTypeMultiSelect={SoilTypeMultiSelect}
-                addContractorRiskEntry={addContractorRiskEntry}
-                updateContractorRiskEntry={updateContractorRiskEntry}
-                removeContractorRiskEntry={removeContractorRiskEntry}
-                addCoverRequirementEntry={addCoverRequirementEntry}
-                updateCoverRequirementEntry={updateCoverRequirementEntry}
-                removeCoverRequirementEntry={removeCoverRequirementEntry}
-                updateCoverRequirement={updateCoverRequirement}
-                updateLimits={updateLimits}
-                handleSaveBaseRates={async () => {
-                  const insurerId = getInsurerCompanyId();
-                  const pid = product?.id || '1';
-                  if (!insurerId || !pid) return;
-                  // Base rates save logic will be handled by BaseRates component
-                }}
-              />
+              {/* Algorithm Overview */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calculator className="w-5 h-5" />
+                        Pricing Configurator
+                      </CardTitle>
+                      <CardDescription>
+                        Configure rating algorithms and pricing factors
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-6 h-[calc(100vh-16rem)] overflow-scroll custom-scrollbars">
+                    {/* Sidebar Navigation */}
+                    <div className="w-80 bg-muted/30 rounded-lg p-4 overflow-y-scroll custom-scrollbars">
+                      <h3 className="font-semibold text-foreground mb-4">Pricing Configuration</h3>
+                      <div className="space-y-2">
+                        {[
+                          { id: "base-rates", label: "Base Rates", icon: DollarSign, count: activeProjectTypes.length },
+                          { id: "project-risk", label: "Project Risk Factors", icon: TrendingUp, count: 4 },
+                          { id: "contractor-risk", label: "Contractor Risk Factors", icon: Shield, count: 3 },
+                          { id: "coverage-options", label: "Coverage Options & Extensions", icon: Shield, count: 2 },
+                          { id: "limits-deductibles", label: "Policy Limits & Deductibles", icon: Calculator, count: 2 },
+                          { id: "clause-pricing", label: "Clause Pricing Configuration", icon: FileText, count: ratingConfig.clausesPricing.length },
+                          { id: "construction-types", label: "Construction Types", icon: DollarSign, count: activeConstructionTypes.length },
+                          { id: "countries", label: "Countries", icon: MapPin, count: activeCountries.length },
+                          { id: "regions", label: "Regions", icon: MapPin, count: 0 },
+                          { id: "zones", label: "Zones", icon: MapPin, count: 0 },
+                          { id: "role-types", label: "Role Types", icon: Shield, count: 5 },
+                          { id: "contract-types", label: "Contract Types", icon: FileText, count: 4 },
+                          { id: "soil-types", label: "Soil Types", icon: TrendingUp, count: 6 },
+                          { id: "subcontractor-types", label: "Subcontractor Types", icon: Shield, count: 8 },
+                          { id: "consultant-roles", label: "Consultant Roles", icon: Shield, count: 7 },
+                          { id: "security-types", label: "Security Types", icon: Shield, count: 5 },
+                          { id: "area-types", label: "Area Types", icon: MapPin, count: 6 },
+                          { id: "fee-types", label: "Fee Types", icon: Percent, count: ratingConfig.feeTypes?.length || 0 },
+                        ].map((section) => (
+                          <button
+                            key={section.id}
+                            onClick={async () => {
+                              setActivePricingTab(section.id);
+                              if (section.id === 'base-rates') {
+                                await fetchBaseRatesMasters();
+                              } else if (section.id === 'project-risk') {
+                                await fetchProjectRiskFactors();
+                              } else if (section.id === 'contractor-risk') {
+                                await fetchContractorRiskFactors();
+                              }
+                            }}
+                            className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${
+                              activePricingTab === section.id
+                                ? 'bg-primary text-primary-foreground shadow-md'
+                                : 'hover:bg-muted/50 text-foreground'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <section.icon className="w-4 h-4" />
+                              <span className="font-medium text-sm">{section.label}</span>
+                            </div>
+                            <Badge variant={activePricingTab === section.id ? "secondary" : "outline"} className="text-xs">
+                              {section.count}
+                            </Badge>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="flex-1 overflow-scroll custom-scrollbars">
+                      {activePricingTab === "base-rates" && (
+                        <BaseRates
+                          isLoading={isLoadingBaseRatesMasters}
+                          error={baseRatesMastersError}
+                          projectTypesMasters={projectTypesMasters}
+                          activeProjectTypes={activeProjectTypes}
+                          ratingConfig={ratingConfig}
+                              selectedProjectTypes={selectedProjectTypes}
+                              onSubProjectEntryChange={updateSubProjectEntry}
+                              onProjectTypeToggle={toggleProjectType}
+                          onSave={handleSaveBaseRates}
+                          isSaving={isSavingBaseRates}
+                            />
+                      )}
+
+                      {activePricingTab === "project-risk" && (
+                        <ProjectRiskFactors
+                          ratingConfig={ratingConfig}
+                          onSave={handleSaveProjectRiskFactors}
+                          addDurationLoading={addDurationLoading}
+                          updateDurationLoading={updateDurationLoading}
+                          removeDurationLoading={removeDurationLoading}
+                          addMaintenancePeriodLoading={addMaintenancePeriodLoading}
+                          updateMaintenancePeriodLoading={updateMaintenancePeriodLoading}
+                          removeMaintenancePeriodLoading={removeMaintenancePeriodLoading}
+                          updateProjectRiskFactor={updateProjectRiskFactor}
+                          SoilTypeMultiSelect={SoilTypeMultiSelect}
+                          isLoading={isLoadingProjectRiskFactors}
+                          error={projectRiskFactorsError}
+                          isSaving={isSavingProjectRiskFactors}
+                        />
+                       )}
+                      {activePricingTab === "contractor-risk" && (
+                        <ContractorRiskFactors
+                          ratingConfig={ratingConfig}
+                          onSave={handleSaveContractorRiskFactors}
+                          addContractorRiskEntry={addContractorRiskEntry}
+                          updateContractorRiskEntry={updateContractorRiskEntry}
+                          removeContractorRiskEntry={removeContractorRiskEntry}
+                          isLoading={isLoadingContractorRiskFactors}
+                          error={contractorRiskFactorsError}
+                          isSaving={isSavingContractorRiskFactors}
+                        />
+                        )}
+                       {activePricingTab === "coverage-options" && (
+                         <CoverageOptionsExtensions
+                           ratingConfig={ratingConfig}
+                           onSave={saveConfiguration}
+                           addCoverRequirementEntry={addCoverRequirementEntry}
+                           updateCoverRequirementEntry={updateCoverRequirementEntry}
+                           removeCoverRequirementEntry={removeCoverRequirementEntry}
+                           updateCoverRequirement={updateCoverRequirement}
+                         />
+                        )}
+                      {activePricingTab === "limits-deductibles" && (
+                        <PolicyLimitsDeductibles
+                          ratingConfig={ratingConfig}
+                          onSave={saveConfiguration}
+                          updateLimits={updateLimits}
+                          addCoverRequirementEntry={addCoverRequirementEntry}
+                          updateCoverRequirementEntry={updateCoverRequirementEntry}
+                          removeCoverRequirementEntry={removeCoverRequirementEntry}
+                        />
+                      )}
+                      
+
+
+
+
+
+
+
+                                             {/* Master Data Tabs */}
+                                             {(activePricingTab === "clause-pricing" || 
+                         activePricingTab === "construction-types" || 
+                         activePricingTab === "countries" || 
+                         activePricingTab === "regions" || 
+                         activePricingTab === "zones" || 
+                         activePricingTab === "role-types" || 
+                         activePricingTab === "contract-types" || 
+                         activePricingTab === "soil-types" || 
+                         activePricingTab === "subcontractor-types" || 
+                         activePricingTab === "consultant-roles" || 
+                         activePricingTab === "security-types" || 
+                         activePricingTab === "area-types" || 
+                         activePricingTab === "fee-types") && (
+                         <MasterDataTabs
+                           activePricingTab={activePricingTab}
+                           activeConstructionTypes={activeConstructionTypes}
+                           activeCountries={activeCountries}
+                           ratingConfig={ratingConfig}
+                           onSave={saveConfiguration}
+                           markAsChanged={markAsChanged}
+                           setRatingConfig={setRatingConfig}
+                         />
+                        )}
+                     </div>
+                   </div>
+                 </CardContent>
+               </Card>
+
             </TabsContent>
 
             {/* CEWs Configuration Tab */}
@@ -2423,7 +2983,7 @@ const SingleProductConfig = () => {
                       <div className="flex justify-between"><span className="text-muted-foreground">Size</span><span>{previewWording.file_size_kb} KB</span></div>
                       <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span>{Number(previewWording.is_active) === 1 ? 'Active' : 'Inactive'}</span></div>
                       <div className="text-xs text-muted-foreground">Note: Inline PDF preview not available. Download from the management console if needed.</div>
-                    </div>
+                  </div>
                   )}
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsPreviewDialogOpen(false)}>Close</Button>

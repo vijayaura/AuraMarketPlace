@@ -432,3 +432,4 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
 };
 
 export default MasterDataTabs;
+
