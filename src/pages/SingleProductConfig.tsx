@@ -30,6 +30,7 @@ import { getInsurerCompanyId } from "@/lib/auth";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
 import QuoteFormat from "./SingleProductConfig/components/QuoteFormat";
 import CEWsConfiguration from "./SingleProductConfig/components/CEWsConfiguration";
+import WordingConfigurations from "./SingleProductConfig/components/WordingConfigurations";
 
 interface VariableOption {
   id: number;
@@ -5400,7 +5401,7 @@ const SingleProductConfig = () => {
                       <div className="flex justify-between"><span className="text-muted-foreground">Size</span><span>{previewWording.file_size_kb} KB</span></div>
                       <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span>{Number(previewWording.is_active) === 1 ? 'Active' : 'Inactive'}</span></div>
                       <div className="text-xs text-muted-foreground">Note: Inline PDF preview not available. Download from the management console if needed.</div>
-                  </div>
+                    </div>
                   )}
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsPreviewDialogOpen(false)}>Close</Button>
