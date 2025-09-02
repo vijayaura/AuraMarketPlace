@@ -18,6 +18,7 @@ type PricingConfiguratorProps = {
   activeCountries: any[];
   fetchBaseRatesMasters: () => Promise<void>;
   fetchProjectRiskFactors: () => Promise<void>;
+  fetchCoverageOptions: () => Promise<void>;
   saveConfiguration: () => void;
   markAsChanged: () => void;
   setRatingConfig: (updater: (prev: any) => any) => void;
@@ -62,6 +63,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   activeCountries,
   fetchBaseRatesMasters,
   fetchProjectRiskFactors,
+  fetchCoverageOptions,
   saveConfiguration,
   markAsChanged,
   setRatingConfig,
@@ -139,6 +141,8 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                       await fetchBaseRatesMasters();
                     } else if (section.id === 'project-risk') {
                       await fetchProjectRiskFactors();
+                    } else if (section.id === 'coverage-options') {
+                      await fetchCoverageOptions();
                     }
                   }}
                   className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${

@@ -45,17 +45,7 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
           </div>
           <Button
             type="button"
-            onClick={async () => {
-              console.log('🔵 Quote Config save button clicked');
-              console.log('🔵 isSavingQuoteConfig:', isSavingQuoteConfig);
-              console.log('🔵 onSave function:', onSave);
-              try {
-                await onSave();
-                console.log('🟢 onSave completed successfully');
-              } catch (error) {
-                console.log('🔴 Error in onSave:', error);
-              }
-            }}
+            onClick={onSave}
             size="sm"
             disabled={isSavingQuoteConfig}
          >

@@ -1774,3 +1774,32 @@ export async function updateContractorRiskFactors(
   );
 }
 
+// Coverage Options & Extensions API
+export interface CoverageOptionLoading {
+  currency: string;
+  to_amount: number;
+  from_amount: number;
+  pricing_type: 'PERCENTAGE' | 'AMOUNT';
+  quote_option: 'AUTO_QUOTE' | 'MANUAL_QUOTE';
+  loading_discount: number;
+}
+
+export interface CrossLiabilityCover {
+  cover_option: string;
+  pricing_type: 'PERCENTAGE' | 'AMOUNT';
+  quote_option: 'AUTO_QUOTE' | 'MANUAL_QUOTE';
+  loading_discount: number;
+}
+
+export interface CoverageOptionsResponse {
+  sum_insured_loadings: CoverageOptionLoading[];
+  cross_liability_cover: CrossLiabilityCover[];
+  project_value_loadings: CoverageOptionLoading[];
+  contract_works_loadings: CoverageOptionLoading[];
+  plant_equipment_loadings: CoverageOptionLoading[];
+}
+
+export async function getCoverageOptions(insurerId: number | string, productId: number | string): Promise<CoverageOptionsResponse> {
+  return apiGet<CoverageOptionsResponse>(`/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/coverage-options`);
+}
+

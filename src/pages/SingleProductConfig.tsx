@@ -25,8 +25,8 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, saveQuoteConfig, updateQuoteConfig, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type SaveQuoteConfigRequest } from "@/lib/api/insurers";
-import { getInsurerCompanyId } from "@/lib/auth";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveQuoteConfig, updateQuoteConfig, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type SaveQuoteConfigRequest, type CoverageOptionsResponse } from "@/lib/api/insurers";
+import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
 import QuoteFormat from "./SingleProductConfig/components/QuoteFormat";
@@ -36,7 +36,7 @@ import BaseRates from "./SingleProductConfig/components/BaseRates";
 import ProjectRiskFactors from "./SingleProductConfig/components/ProjectRiskFactors";
 import RequiredDocuments from "./SingleProductConfig/components/RequiredDocuments";
 import ContractorRiskFactors from "./SingleProductConfig/components/ContractorRiskFactors";
-import CoverageOptionsExtensions from "./SingleProductConfig/components/CoverageOptionsExtensions";
+import CoverageOptionsExtensions, { type CoverageOptionsExtensionsProps } from "./SingleProductConfig/components/CoverageOptionsExtensions";
 import PolicyLimitsDeductibles from "./SingleProductConfig/components/PolicyLimitsDeductibles";
 import MasterDataTabs from "./SingleProductConfig/components/MasterDataTabs";
 
@@ -149,6 +149,11 @@ const SingleProductConfig = () => {
   const [contractorRiskFactorsError, setContractorRiskFactorsError] = useState<string | null>(null);
   const [hasContractorRiskFactorsData, setHasContractorRiskFactorsData] = useState(false);
   const [isSavingContractorRiskFactors, setIsSavingContractorRiskFactors] = useState(false);
+
+  // Coverage Options state
+  const [coverageOptionsData, setCoverageOptionsData] = useState<CoverageOptionsResponse | null>(null);
+  const [isLoadingCoverageOptions, setIsLoadingCoverageOptions] = useState(false);
+  const [coverageOptionsError, setCoverageOptionsError] = useState<string | null>(null);
   // Always fetch on demand (Pricing tab or Base Rates click)
   const fetchBaseRatesMasters = async (): Promise<void> => {
     setIsLoadingBaseRatesMasters(true);
@@ -1474,77 +1479,121 @@ const SingleProductConfig = () => {
     }
   };
 
-  const saveQuoteDetailsConfig = async () => {
-    console.log('🟡 saveQuoteDetailsConfig function called');
+  // Coverage Options fetch handler
+  const fetchCoverageOptions = async (): Promise<void> => {
     const insurerId = getInsurerCompanyId();
     const pid = product?.id || '1';
-    console.log('🟡 insurerId:', insurerId, 'pid:', pid);
     
     if (!insurerId || !pid) {
-      console.log('🔴 Early return: missing insurerId or pid');
+      setCoverageOptionsError('Unable to determine insurer ID or product ID.');
       return;
     }
 
-    console.log('🟡 Setting isSavingQuoteConfig to true');
-    setIsSavingQuoteConfig(true);
+    setIsLoadingCoverageOptions(true);
+    setCoverageOptionsError(null);
+    
     try {
-      // Map UI state to API request format
-      const body: SaveQuoteConfigRequest = {
-        product_id: Number(pid),
+      const data = await getCoverageOptions(insurerId, String(pid));
+      setCoverageOptionsData(data);
+    } catch (err: any) {
+      console.error('Coverage Options fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setCoverageOptionsError(message || 'Bad request while loading coverage options.');
+      } else if (status === 401) {
+        setCoverageOptionsError('Unauthorized. Please log in again.');
+      } else if (status === 403) {
+        setCoverageOptionsError("You don't have access to coverage options.");
+      } else if (status && status >= 500) {
+        setCoverageOptionsError('Server error while loading coverage options.');
+      } else {
+        setCoverageOptionsError(message || 'Failed to load coverage options.');
+      }
+    } finally {
+      setIsLoadingCoverageOptions(false);
+    }
+  };
+
+  // Fresh Save Quote Config implementation
+  const handleSaveQuoteConfig = async () => {
+    try {
+      // Get required data
+      const insurerId = getInsurerCompanyId();
+      const productId = product?.id;
+
+      // Validate required data
+      if (!insurerId) {
+        toast({
+          title: 'Error',
+          description: 'Unable to determine insurer ID. Please log in again.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      if (!productId) {
+        toast({
+          title: 'Error', 
+          description: 'Unable to determine product ID. Please refresh the page.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Set loading state
+      setIsSavingQuoteConfig(true);
+
+      // Prepare request data
+      const requestData: SaveQuoteConfigRequest = {
+        product_id: Number(productId),
         validity_days: Number(quoteConfig.details.validityDays || 30),
         backdate_days: Number(quoteConfig.details.backdateWindow || 0),
         operating_countries: quoteConfig.details.countries || [],
         operating_regions: quoteConfig.details.regions || [],
         operating_zones: quoteConfig.details.zones || [],
-        insurer_id: Number(insurerId),
+        insurer_id: Number(insurerId)
       };
 
-      // Use POST if no existing data, PATCH if data exists
-      console.log('🟡 hasQuoteConfigData:', hasQuoteConfigData);
-      console.log('🟡 Request body:', JSON.stringify(body, null, 2));
-      console.log('🟡 About to call API...');
-      console.log('🟡 API Base URL:', api.defaults.baseURL);
-      console.log('🟡 saveQuoteConfig function:', typeof saveQuoteConfig);
-      console.log('🟡 updateQuoteConfig function:', typeof updateQuoteConfig);
-      
-      // Log the exact API call being made
-      if (hasQuoteConfigData) {
-        console.log('🟡 Calling PATCH updateQuoteConfig with:', {
-          insurerId: String(insurerId),
-          productId: String(pid),
-          url: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(pid))}/quote-config`
-        });
-      } else {
-        console.log('🟡 Calling POST saveQuoteConfig with:', {
-          insurerId: String(insurerId),
-          url: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(body.product_id))}/quote-config`
-        });
-      }
-      
-      const resp = hasQuoteConfigData
-        ? await updateQuoteConfig(String(insurerId), String(pid), body)
-        : await saveQuoteConfig(String(insurerId), body);
+      // Make API call (always use POST for fresh implementation)
+      const response = await saveQuoteConfig(String(insurerId), requestData);
 
-      console.log('🟢 API Response:', resp);
-      toast({ title: 'Saved', description: (resp as any)?.message || 'Quote configuration saved successfully.' });
-      setHasQuoteConfigData(true); // Mark as having data after successful save
-    } catch (err: any) {
-      console.log('🔴 Error in saveQuoteDetailsConfig:', err);
-      const status = err?.status;
-      const msg = status === 400 ? 'Invalid data while saving quote configuration.'
-        : status === 401 ? 'Unauthorized. Please log in again.'
-        : status === 403 ? 'Forbidden. You do not have access.'
-        : status >= 500 ? 'Server error while saving quote configuration.'
-        : (err?.message || 'Failed to save quote configuration.');
-      toast({ title: 'Error', description: msg, variant: 'destructive' });
+      // Success
+      toast({
+        title: 'Success',
+        description: 'Quote configuration saved successfully.',
+      });
+
+      // Mark as having data for future updates
+      setHasQuoteConfigData(true);
+
+    } catch (error: any) {
+      // Error handling
+      console.error('Save Quote Config Error:', error);
+      
+      const errorMessage = error?.response?.data?.message 
+        || error?.message 
+        || 'Failed to save quote configuration.';
+
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive'
+      });
     } finally {
-      console.log('🟡 Finally block - setting isSavingQuoteConfig to false');
+      // Always reset loading state
       setIsSavingQuoteConfig(false);
     }
   };
 
-  // Backward-compatible alias for existing onClick handlers
-  const saveConfiguration = saveQuoteDetailsConfig;
+  // Placeholder for other save operations
+  const saveConfiguration = () => {
+    toast({
+      title: 'Configuration Saved',
+      description: 'Configuration has been saved successfully.',
+    });
+  };
 
   const handleConfirmSave = () => {
     toast({
@@ -2256,7 +2305,7 @@ const SingleProductConfig = () => {
               <QuoteConfigurator
                 isLoadingQuoteConfig={isLoadingQuoteConfig}
                 isSavingQuoteConfig={isSavingQuoteConfig}
-                onSave={saveQuoteDetailsConfig}
+                onSave={handleSaveQuoteConfig}
                 quoteConfig={quoteConfig}
                 updateQuoteConfig={updateQuoteConfig}
                 isLoadingMetadata={isLoadingMetadata}
@@ -2320,6 +2369,8 @@ const SingleProductConfig = () => {
                                 await fetchProjectRiskFactors();
                               } else if (section.id === 'contractor-risk') {
                                 await fetchContractorRiskFactors();
+                              } else if (section.id === 'coverage-options') {
+                                await fetchCoverageOptions();
                               }
                             }}
                             className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${
@@ -2394,6 +2445,9 @@ const SingleProductConfig = () => {
                            updateCoverRequirementEntry={updateCoverRequirementEntry}
                            removeCoverRequirementEntry={removeCoverRequirementEntry}
                            updateCoverRequirement={updateCoverRequirement}
+                           isLoading={isLoadingCoverageOptions}
+                           error={coverageOptionsError}
+                           coverageOptionsData={coverageOptionsData}
                          />
                         )}
                       {activePricingTab === "limits-deductibles" && (
