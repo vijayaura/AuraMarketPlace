@@ -48,13 +48,13 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
             <CardTitle>Project Risk Factors</CardTitle>
             <CardDescription>Configure risk adjustments based on project characteristics</CardDescription>
           </div>
-          <Button onClick={onSave} size="sm" disabled={isSaving}>
-            {isSaving ? (
+          <Button onClick={onSave} size="sm" disabled={isLoading || isSaving}>
+            {isLoading || isSaving ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
             ) : (
               <Save className="w-4 h-4 mr-1" />
             )}
-            {isSaving ? 'Saving...' : 'Save Project Risk Factors'}
+            {isLoading ? 'Loading...' : isSaving ? 'Saving...' : 'Save Project Risk Factors'}
           </Button>
         </div>
       </CardHeader>

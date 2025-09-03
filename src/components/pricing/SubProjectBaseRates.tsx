@@ -69,14 +69,16 @@ export const SubProjectBaseRates = ({
   const allowedProjectValues = new Set(projectTypes.map(pt => pt.value));
   const filteredEntries = subProjectEntries.filter(e => allowedProjectValues.has(e.projectType));
 
-  // Group sub project entries by project type
-  const groupedEntries = filteredEntries.reduce((groups, entry, index) => {
-    if (!groups[entry.projectType]) {
-      groups[entry.projectType] = [];
-    }
-    groups[entry.projectType].push({ ...entry, originalIndex: index });
-    return groups;
-  }, {} as Record<string, Array<SubProjectEntry & { originalIndex: number }>>);
+  // Create a flat list with original indices preserved
+  const flatEntries = filteredEntries.map((entry, index) => {
+    const projectTypeInfo = projectTypes.find(pt => pt.value === entry.projectType);
+    return {
+      ...entry,
+      originalIndex: index,
+      projectTypeLabel: projectTypeInfo?.label || entry.projectType,
+      isSelected: selectedProjectTypes?.has(entry.projectType) || false,
+    };
+  });
 
   return (
     <Card>
@@ -96,109 +98,80 @@ export const SubProjectBaseRates = ({
             </Badge>
           </div>
         </div>
-        
       </CardHeader>
       
       <CardContent>
-        <div className="space-y-8">
-          {Object.entries(groupedEntries).map(([projectType, entries]) => {
-            const projectTypeInfo = projectTypes.find(pt => pt.value === projectType);
-            const isSelected = selectedProjectTypes?.has(projectType) || false;
-            
-            return (
-              <div key={projectType} className="border rounded-lg overflow-hidden bg-card">
-                <div className="bg-muted/30 px-6 py-4 border-b">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => onProjectTypeToggle(projectType)}
-                      className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                    />
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary">
-                      {getProjectTypeIcon(projectType)}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/10">
+                <TableHead className="font-medium text-muted-foreground w-[22%] px-3">Project Type</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[28%] px-3">Sub Project Type</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[18%] px-2">Pricing Type</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[16%] px-2">Base Rate</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[16%] px-2">Quote Option</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {flatEntries.map((entry) => (
+                <TableRow key={entry.originalIndex} className="hover:bg-muted/5">
+                  <TableCell className="font-medium py-4 px-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center w-6 h-6 rounded bg-primary/10 text-primary">
+                        {getProjectTypeIcon(entry.projectType)}
+                      </div>
+                      <span className="text-sm font-medium">{entry.projectTypeLabel}</span>
                     </div>
-                    <h4 className="font-semibold text-base">
-                      {projectTypeInfo?.label || projectType}
-                    </h4>
-                    <Badge variant="secondary" className="ml-auto">
-                      {entries.length} Sub Types
-                    </Badge>
-                  </div>
-                </div>
-                
-                {isSelected && (
-                  <div className="bg-card">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/10">
-                          <TableHead className="font-medium text-muted-foreground px-6">Sub Project Type</TableHead>
-                          <TableHead className="font-medium text-muted-foreground px-4">Pricing Type</TableHead>
-                          <TableHead className="font-medium text-muted-foreground px-4">Base Rate</TableHead>
-                          <TableHead className="font-medium text-muted-foreground px-6">Quote Option</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {entries.map((entry) => (
-                          <TableRow key={entry.originalIndex} className="hover:bg-muted/5">
-                            <TableCell className="font-medium py-4 px-6">
-                              <div className="flex items-center gap-2">
-                                <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                                {entry.subProjectType}
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-4 px-4">
-                              <Select
-                                value={entry.pricingType}
-                                onValueChange={(value) => onSubProjectEntryChange(entry.originalIndex, 'pricingType', value)}
-                              >
-                                <SelectTrigger className="w-36">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="z-50 bg-popover border border-border shadow-md">
-                                  <SelectItem value="percentage">Percentage (%)</SelectItem>
-                                  <SelectItem value="fixed">Fixed Amount</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell className="py-4 px-4">
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  value={entry.baseRate}
-                                  onChange={(e) => onSubProjectEntryChange(entry.originalIndex, 'baseRate', parseFloat(e.target.value) || 0)}
-                                  className="w-24 font-mono"
-                                  placeholder="0.00"
-                                />
-                                <span className="text-sm text-muted-foreground font-medium">
-                                  {entry.pricingType === 'fixed' ? 'AED' : '%'}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-4 px-6">
-                              <Select
-                                value={entry.quoteOption}
-                                onValueChange={(value) => onSubProjectEntryChange(entry.originalIndex, 'quoteOption', value)}
-                              >
-                                <SelectTrigger className="w-40">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="z-50 bg-popover border border-border shadow-md">
-                                  <SelectItem value="quote">Auto Quote</SelectItem>
-                                  <SelectItem value="no-quote">No Quote</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  </TableCell>
+                  <TableCell className="font-medium py-4 px-3">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                      <span>{entry.subProjectType}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-4 px-2">
+                    <Select
+                      value={entry.pricingType}
+                      onValueChange={(value) => onSubProjectEntryChange(entry.originalIndex, 'pricingType', value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-popover border border-border shadow-md">
+                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                        <SelectItem value="fixed">Fixed Amount</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="py-4 px-2">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={entry.baseRate}
+                      onChange={(e) => onSubProjectEntryChange(entry.originalIndex, 'baseRate', parseFloat(e.target.value) || 0)}
+                      className="w-full font-mono"
+                      placeholder="0.00"
+                    />
+                  </TableCell>
+                  <TableCell className="py-4 px-2">
+                    <Select
+                      value={entry.quoteOption}
+                      onValueChange={(value) => onSubProjectEntryChange(entry.originalIndex, 'quoteOption', value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-popover border border-border shadow-md">
+                        <SelectItem value="quote">Auto Quote</SelectItem>
+                        <SelectItem value="no-quote">No Quote</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>

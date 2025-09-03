@@ -39,10 +39,16 @@ type PricingConfiguratorProps = {
   removeMaintenancePeriodLoading: (id: any) => void;
   updateProjectRiskFactor: (section: string, key: string, value: any) => void;
   SoilTypeMultiSelect: React.ComponentType<any>;
+  isLoadingProjectRiskFactors: boolean;
+  isSavingProjectRiskFactors: boolean;
+  projectRiskFactorsError: string | null;
   // Contractor Risk Factors props
   addContractorRiskEntry: (category: string) => void;
   updateContractorRiskEntry: (category: string, id: number, field: string, value: any) => void;
   removeContractorRiskEntry: (category: string, id: number) => void;
+  isLoadingContractorRiskFactors: boolean;
+  isSavingContractorRiskFactors: boolean;
+  contractorRiskFactorsError: string | null;
   // Coverage Options props
   addCoverRequirementEntry: (category: string) => void;
   updateCoverRequirementEntry: (category: string, id: number, field: string, value: any) => void;
@@ -61,6 +67,7 @@ type PricingConfiguratorProps = {
   handleSavePolicyLimits: () => Promise<void>;
   // Base Rates save handler
   handleSaveBaseRates: () => Promise<void>;
+  isSavingBaseRates: boolean;
   handleSaveProjectRiskFactors: () => Promise<void>;
 };
 
@@ -92,9 +99,15 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   removeMaintenancePeriodLoading,
   updateProjectRiskFactor,
   SoilTypeMultiSelect,
+  isLoadingProjectRiskFactors,
+  isSavingProjectRiskFactors,
+  projectRiskFactorsError,
   addContractorRiskEntry,
   updateContractorRiskEntry,
   removeContractorRiskEntry,
+  isLoadingContractorRiskFactors,
+  isSavingContractorRiskFactors,
+  contractorRiskFactorsError,
   addCoverRequirementEntry,
   updateCoverRequirementEntry,
   removeCoverRequirementEntry,
@@ -110,6 +123,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   policyLimitsData,
   handleSavePolicyLimits,
   handleSaveBaseRates,
+  isSavingBaseRates,
   handleSaveProjectRiskFactors,
 }) => {
   return (
@@ -198,6 +212,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                 onSubProjectEntryChange={updateSubProjectEntry}
                 onProjectTypeToggle={toggleProjectType}
                 onSave={handleSaveBaseRates}
+                isSaving={isSavingBaseRates}
               />
             )}
 
@@ -213,6 +228,9 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                 removeMaintenancePeriodLoading={removeMaintenancePeriodLoading}
                 updateProjectRiskFactor={updateProjectRiskFactor}
                 SoilTypeMultiSelect={SoilTypeMultiSelect}
+                isLoading={isLoadingProjectRiskFactors}
+                isSaving={isSavingProjectRiskFactors}
+                error={projectRiskFactorsError}
               />
             )}
 
@@ -223,6 +241,9 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                 addContractorRiskEntry={addContractorRiskEntry}
                 updateContractorRiskEntry={updateContractorRiskEntry}
                 removeContractorRiskEntry={removeContractorRiskEntry}
+                isLoading={isLoadingContractorRiskFactors}
+                isSaving={isSavingContractorRiskFactors}
+                error={contractorRiskFactorsError}
               />
             )}
 
