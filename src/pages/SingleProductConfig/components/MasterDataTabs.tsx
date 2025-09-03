@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Save, Plus, Trash2 } from "lucide-react";
+import { Save, Plus, Trash2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import TableSkeleton from "@/components/loaders/TableSkeleton";
 
 type MasterDataTabsProps = {
   activePricingTab: string;
@@ -15,6 +18,14 @@ type MasterDataTabsProps = {
   onSave: () => void;
   markAsChanged: () => void;
   setRatingConfig: (updater: (prev: any) => any) => void;
+  isLoadingClauseMetadata: boolean;
+  clauseMetadataError: string | null;
+  clauseMetadata: any[];
+  isLoadingClausePricing: boolean;
+  clausePricingError: string | null;
+  clausePricingData: any;
+  isSavingClausePricing: boolean;
+  handleSaveClausePricing: () => void;
 };
 
 const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
@@ -25,8 +36,77 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
   onSave,
   markAsChanged,
   setRatingConfig,
+  isLoadingClauseMetadata,
+  clauseMetadataError,
+  clauseMetadata,
+  isLoadingClausePricing,
+  clausePricingError,
+  clausePricingData,
+  isSavingClausePricing,
+  handleSaveClausePricing,
 }) => {
   if (activePricingTab === "clause-pricing") {
+    const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
+    const [clauseRows, setClauseRows] = useState<{[key: number]: any[]}>({});
+    const [activeToggles, setActiveToggles] = useState<{[key: number]: boolean}>({});
+
+    const toggleClause = (clauseId: number) => {
+      const newExpanded = new Set(expandedClauses);
+      if (newExpanded.has(clauseId)) {
+        newExpanded.delete(clauseId);
+      } else {
+        newExpanded.add(clauseId);
+        // Initialize with one default row if not exists
+        if (!clauseRows[clauseId]) {
+          setClauseRows(prev => ({
+            ...prev,
+            [clauseId]: [{ id: 1, label: "Standard Rate", limits: "All Coverage", type: "percentage", value: 2 }]
+          }));
+        }
+      }
+      setExpandedClauses(newExpanded);
+    };
+
+    const addRow = (clauseId: number) => {
+      const currentRows = clauseRows[clauseId] || [];
+      const newRow = {
+        id: Date.now(),
+        label: "",
+        limits: "",
+        type: "percentage",
+        value: 0
+      };
+      setClauseRows(prev => ({
+        ...prev,
+        [clauseId]: [...currentRows, newRow]
+      }));
+    };
+
+    const removeRow = (clauseId: number, rowId: number) => {
+      setClauseRows(prev => ({
+        ...prev,
+        [clauseId]: prev[clauseId]?.filter(row => row.id !== rowId) || []
+      }));
+    };
+
+    const getRowCount = (clauseId: number) => {
+      return clauseRows[clauseId]?.length || 1;
+    };
+
+    const handleToggleChange = (clauseId: number, checked: boolean) => {
+      setActiveToggles(prev => ({
+        ...prev,
+        [clauseId]: checked
+      }));
+    };
+
+    const isClauseActive = (clause: any) => {
+      // Use state if available, otherwise fall back to API data
+      return activeToggles[clause.id] !== undefined 
+        ? activeToggles[clause.id] 
+        : clause.is_active === 1;
+    };
+
     return (
       <Card className="h-full">
         <CardHeader>
@@ -35,31 +115,198 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
               <CardTitle>Clause Pricing Configuration</CardTitle>
               <CardDescription>Configure pricing for specific policy clauses</CardDescription>
             </div>
-            <Button onClick={onSave} size="sm">
-              <Save className="w-4 h-4 mr-1" />
-              Save
+            <Button onClick={handleSaveClausePricing} size="sm" disabled={isLoadingClauseMetadata || isLoadingClausePricing || isSavingClausePricing}>
+              {isLoadingClauseMetadata || isLoadingClausePricing || isSavingClausePricing ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+              ) : (
+                <Save className="w-4 h-4 mr-1" />
+              )}
+              {isLoadingClauseMetadata || isLoadingClausePricing ? 'Loading...' : isSavingClausePricing ? 'Saving...' : 'Save Clause Pricing'}
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <div className="grid gap-6">
-            {ratingConfig.clausesPricing.map((clause: any) => (
-              <div key={clause.id} className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 className="font-medium">{clause.name}</h4>
-                    <p className="text-sm text-muted-foreground">Code: {clause.code}</p>
-                  </div>
-                  <Badge variant={clause.enabled ? "default" : "secondary"}>
-                    {clause.enabled ? "Enabled" : "Disabled"}
-                  </Badge>
+        <CardContent className="space-y-4">
+          {(clauseMetadataError || clausePricingError) && (
+            <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive mb-6">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm">{clauseMetadataError || clausePricingError}</span>
+            </div>
+          )}
+
+          {isLoadingClauseMetadata || isLoadingClausePricing ? (
+            <div className="space-y-4">
+              <TableSkeleton />
+              <TableSkeleton />
+              <TableSkeleton />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {clauseMetadata && clauseMetadata.length > 0 ? (
+                clauseMetadata.map((clause: any) => {
+                  const rowCount = getRowCount(clause.id);
+                  const currentRows = clauseRows[clause.id] || [{ id: 1, label: "Standard Rate", limits: "All Coverage", type: "percentage", value: 2 }];
+                  const isActive = isClauseActive(clause);
+                  
+                  return (
+                    <Card key={clause.id} className={`border border-border transition-all duration-200 ${
+                      isActive ? 'bg-card' : 'bg-muted/50 opacity-60'
+                    }`}>
+                      {/* Parent Clause Card */}
+                      <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge 
+                                variant={
+                                  clause.clause_type === 'CLAUSE' ? "default" : 
+                                  clause.clause_type === 'EXCLUSION' ? "destructive" : 
+                                  "secondary"
+                                } 
+                                className="text-xs"
+                              >
+                                {clause.clause_type}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">{clause.clause_code}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-base font-semibold">{clause.title}</CardTitle>
+                              <Badge variant={clause.show_type === 'MANDATORY' ? "default" : "outline"} className="text-xs">
+                                {clause.show_type}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Select defaultValue="percentage" disabled={!isActive}>
+                            <SelectTrigger className="w-20">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="percentage">%</SelectItem>
+                              <SelectItem value="fixed">AED</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          <Input 
+                            type="number" 
+                            defaultValue={clause.pricing_value || "2.5"} 
+                            className="w-24 text-center"
+                            placeholder="0.00"
+                            disabled={!isActive}
+                          />
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => addRow(clause.id)}
+                            disabled={!isActive}
+                          >
+                            Add Row
+                          </Button>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Switch 
+                              id={`clause-${clause.id}`} 
+                              checked={isActive}
+                              onCheckedChange={(checked) => handleToggleChange(clause.id, checked)}
+                            />
+                            <Label htmlFor={`clause-${clause.id}`} className="text-xs text-muted-foreground">
+                              {isActive ? 'Active' : 'Inactive'}
+                            </Label>
+                          </div>
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleClause(clause.id)}
+                            className="p-1 h-8 w-8"
+                            disabled={!isActive}
+                          >
+                            {expandedClauses.has(clause.id) ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </CardHeader>
+
+                      {/* Expanded Child Rows */}
+                      {expandedClauses.has(clause.id) && isActive && (
+                        <CardContent className="p-4">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-1/4">Label</TableHead>
+                                <TableHead className="w-1/3">Limits</TableHead>
+                                <TableHead className="w-1/6">Type</TableHead>
+                                <TableHead className="w-1/6">Value</TableHead>
+                                <TableHead className="w-20">Action</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {currentRows.map((row: any) => (
+                                <TableRow key={row.id}>
+                                  <TableCell>
+                                    <Input 
+                                      defaultValue={row.label} 
+                                      className="w-full"
+                                      placeholder="Label"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input 
+                                      defaultValue={row.limits} 
+                                      className="w-full"
+                                      placeholder="Limits"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Select defaultValue={row.type}>
+                                      <SelectTrigger className="w-full">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="percentage">%</SelectItem>
+                                        <SelectItem value="fixed">AED</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input 
+                                      type="number" 
+                                      defaultValue={row.value} 
+                                      className="w-full text-center"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      onClick={() => removeRow(clause.id, row.id)}
+                                      className="text-destructive hover:text-destructive"
+                                    >
+                                      Remove
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No clause metadata available</p>
+                  <p className="text-sm mt-2">Click on the tab to load clause data</p>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {clause.variableOptions.length} option{clause.variableOptions.length !== 1 ? 's' : ''} configured
-                </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     );

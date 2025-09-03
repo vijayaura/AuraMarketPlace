@@ -7,6 +7,7 @@ import ProjectRiskFactors from "./ProjectRiskFactors";
 import ContractorRiskFactors from "./ContractorRiskFactors";
 import CoverageOptionsExtensions from "./CoverageOptionsExtensions";
 import PolicyLimitsDeductibles from "./PolicyLimitsDeductibles";
+
 import MasterDataTabs from "./MasterDataTabs";
 
 type PricingConfiguratorProps = {
@@ -20,6 +21,7 @@ type PricingConfiguratorProps = {
   fetchProjectRiskFactors: () => Promise<void>;
   fetchCoverageOptions: () => Promise<void>;
   fetchPolicyLimits: () => Promise<void>;
+  fetchClauseMetadata: () => Promise<void>;
   saveConfiguration: () => void;
   markAsChanged: () => void;
   setRatingConfig: (updater: (prev: any) => any) => void;
@@ -49,6 +51,15 @@ type PricingConfiguratorProps = {
   isLoadingContractorRiskFactors: boolean;
   isSavingContractorRiskFactors: boolean;
   contractorRiskFactorsError: string | null;
+  // Clause Pricing props
+  isLoadingClauseMetadata: boolean;
+  clauseMetadataError: string | null;
+  clauseMetadata: any[];
+  isLoadingClausePricing: boolean;
+  clausePricingError: string | null;
+  clausePricingData: any;
+  isSavingClausePricing: boolean;
+  handleSaveClausePricing: () => void;
   // Coverage Options props
   addCoverRequirementEntry: (category: string) => void;
   updateCoverRequirementEntry: (category: string, id: number, field: string, value: any) => void;
@@ -82,6 +93,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   fetchProjectRiskFactors,
   fetchCoverageOptions,
   fetchPolicyLimits,
+  fetchClauseMetadata,
   saveConfiguration,
   markAsChanged,
   setRatingConfig,
@@ -108,6 +120,14 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   isLoadingContractorRiskFactors,
   isSavingContractorRiskFactors,
   contractorRiskFactorsError,
+  isLoadingClauseMetadata,
+  clauseMetadataError,
+  clauseMetadata,
+  isLoadingClausePricing,
+  clausePricingError,
+  clausePricingData,
+  isSavingClausePricing,
+  handleSaveClausePricing,
   addCoverRequirementEntry,
   updateCoverRequirementEntry,
   removeCoverRequirementEntry,
@@ -179,6 +199,8 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                       await fetchCoverageOptions();
                     } else if (section.id === 'limits-deductibles') {
                       await fetchPolicyLimits();
+                    } else if (section.id === 'clause-pricing') {
+                      await fetchClauseMetadata();
                     }
                   }}
                   className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${
@@ -291,15 +313,23 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
               activePricingTab === "security-types" || 
               activePricingTab === "area-types" || 
               activePricingTab === "fee-types") && (
-              <MasterDataTabs
-                activePricingTab={activePricingTab}
-                activeConstructionTypes={activeConstructionTypes}
-                activeCountries={activeCountries}
-                ratingConfig={ratingConfig}
-                onSave={saveConfiguration}
-                markAsChanged={markAsChanged}
-                setRatingConfig={setRatingConfig}
-              />
+                              <MasterDataTabs
+                  activePricingTab={activePricingTab}
+                  activeConstructionTypes={activeConstructionTypes}
+                  activeCountries={activeCountries}
+                  ratingConfig={ratingConfig}
+                  onSave={saveConfiguration}
+                  markAsChanged={markAsChanged}
+                  setRatingConfig={setRatingConfig}
+                  isLoadingClauseMetadata={isLoadingClauseMetadata}
+                  clauseMetadataError={clauseMetadataError}
+                  clauseMetadata={clauseMetadata}
+                  isLoadingClausePricing={isLoadingClausePricing}
+                  clausePricingError={clausePricingError}
+                  clausePricingData={clausePricingData}
+                  isSavingClausePricing={isSavingClausePricing}
+                  handleSaveClausePricing={handleSaveClausePricing}
+                />
             )}
           </div>
         </div>

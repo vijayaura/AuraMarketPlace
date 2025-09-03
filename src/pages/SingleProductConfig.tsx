@@ -25,7 +25,7 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, saveQuoteConfig, updateQuoteConfig, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type SaveQuoteConfigRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, saveQuoteConfig, updateQuoteConfig, getClausePricing, saveClausePricing, updateClausePricing, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type SaveQuoteConfigRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
@@ -38,6 +38,7 @@ import RequiredDocuments from "./SingleProductConfig/components/RequiredDocument
 import ContractorRiskFactors from "./SingleProductConfig/components/ContractorRiskFactors";
 import CoverageOptionsExtensions, { CoverageOptionsExtensionsProps } from "./SingleProductConfig/components/CoverageOptionsExtensions";
 import PolicyLimitsDeductibles, { type PolicyLimitsDeductiblesProps } from "./SingleProductConfig/components/PolicyLimitsDeductibles";
+
 import MasterDataTabs from "./SingleProductConfig/components/MasterDataTabs";
 
 interface VariableOption {
@@ -149,6 +150,17 @@ const SingleProductConfig = () => {
   const [contractorRiskFactorsError, setContractorRiskFactorsError] = useState<string | null>(null);
   const [hasContractorRiskFactorsData, setHasContractorRiskFactorsData] = useState(false);
   const [isSavingContractorRiskFactors, setIsSavingContractorRiskFactors] = useState(false);
+
+  // Clause Metadata state
+  const [isLoadingClauseMetadata, setIsLoadingClauseMetadata] = useState(false);
+  const [clauseMetadataError, setClauseMetadataError] = useState<string | null>(null);
+  const [clauseMetadata, setClauseMetadata] = useState<any[]>([]);
+
+  // Clause Pricing state
+  const [isLoadingClausePricing, setIsLoadingClausePricing] = useState(false);
+  const [clausePricingError, setClausePricingError] = useState<string | null>(null);
+  const [clausePricingData, setClausePricingData] = useState<GetClausePricingResponse | null>(null);
+  const [isSavingClausePricing, setIsSavingClausePricing] = useState(false);
 
   // Coverage Options state
   const [coverageOptionsData, setCoverageOptionsData] = useState<CoverageOptionsResponse | null>(null);
@@ -1676,6 +1688,158 @@ const SingleProductConfig = () => {
     }
   };
 
+  // Clause Metadata fetch handler
+  const fetchClauseMetadata = async (): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      setClauseMetadataError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    setIsLoadingClauseMetadata(true);
+    setClauseMetadataError(null);
+    
+    try {
+      const data = await getCewsClauses(insurerId, String(productId));
+      setClauseMetadata(data.clauses || []);
+      console.log('✅ Clause metadata loaded:', data);
+    } catch (err: any) {
+      console.error('Clause metadata fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setClauseMetadataError(message || 'Bad request while loading clause metadata.');
+      } else if (status === 401) {
+        setClauseMetadataError('Unauthorized access to clause metadata.');
+      } else if (status === 403) {
+        setClauseMetadataError('Forbidden access to clause metadata.');
+      } else if (status === 500) {
+        setClauseMetadataError('Server error while loading clause metadata.');
+      } else {
+        setClauseMetadataError(message || 'Failed to load clause metadata.');
+      }
+    } finally {
+      setIsLoadingClauseMetadata(false);
+    }
+  };
+
+  // Clause Pricing fetch handler
+  const fetchClausePricing = async (): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      setClausePricingError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    setIsLoadingClausePricing(true);
+    setClausePricingError(null);
+    
+    try {
+      const data = await getClausePricing(insurerId, String(productId));
+      setClausePricingData(data);
+      console.log('✅ Clause pricing data loaded:', data);
+    } catch (err: any) {
+      console.error('Clause pricing fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setClausePricingError(message || 'Bad request while loading clause pricing.');
+      } else if (status === 401) {
+        setClausePricingError('Unauthorized access to clause pricing.');
+      } else if (status === 403) {
+        setClausePricingError('Forbidden access to clause pricing.');
+      } else if (status === 500) {
+        setClausePricingError('Server error while loading clause pricing.');
+      } else {
+        setClausePricingError(message || 'Failed to load clause pricing.');
+      }
+    } finally {
+      setIsLoadingClausePricing(false);
+    }
+  };
+
+  // Save Clause Pricing handler with POST/PATCH logic
+  const handleSaveClausePricing = async (): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      toast({ 
+        title: 'Error', 
+        description: 'Missing insurer ID or product ID', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    setIsSavingClausePricing(true);
+    
+    try {
+      // Collect clause pricing data from UI state (this will be implemented in MasterDataTabs)
+      const clausePricingPayload: SaveClausePricingRequest = {
+        clause_pricing: [] // This will be populated from the UI state
+      };
+
+      let response;
+      
+      // Check if we have existing data (GET was successful)
+      if (clausePricingData && clausePricingData.clause_pricing && clausePricingData.clause_pricing.length > 0) {
+        console.log('📝 Updating existing clause pricing data...');
+        const updatePayload: UpdateClausePricingRequest = {
+          clause_pricing: clausePricingPayload.clause_pricing
+        };
+        
+        const patchResponse = await updateClausePricing(insurerId, String(productId), updatePayload);
+        response = (patchResponse as any).data || patchResponse;
+        
+        toast({
+          title: 'Success',
+          description: 'Clause pricing configuration updated successfully',
+        });
+      } else {
+        console.log('📝 Creating new clause pricing data...');
+        const postResponse = await saveClausePricing(insurerId, String(productId), clausePricingPayload);
+        response = postResponse.clause_pricing || postResponse;
+        
+        toast({
+          title: 'Success', 
+          description: 'Clause pricing configuration saved successfully',
+        });
+      }
+
+      // Update local state with response
+      if (response) {
+        setClausePricingData({ clause_pricing: Array.isArray(response) ? response : response.clause_pricing || [] });
+        console.log('✅ Clause pricing saved successfully:', response);
+      }
+
+    } catch (err: any) {
+      console.error('Save Clause Pricing error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        toast({ title: 'Error', description: message || 'Bad request while saving clause pricing.', variant: 'destructive' });
+      } else if (status === 401) {
+        toast({ title: 'Error', description: 'Unauthorized access.', variant: 'destructive' });
+      } else if (status === 403) {
+        toast({ title: 'Error', description: 'Forbidden access.', variant: 'destructive' });
+      } else if (status === 500) {
+        toast({ title: 'Error', description: 'Server error while saving clause pricing.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Error', description: message || 'Failed to save clause pricing.', variant: 'destructive' });
+      }
+    } finally {
+      setIsSavingClausePricing(false);
+    }
+  };
+
   // Save Policy Limits handler with POST/PATCH logic
   const handleSavePolicyLimits = async (): Promise<void> => {
     const insurerId = getInsurerCompanyId();
@@ -2591,14 +2755,7 @@ const SingleProductConfig = () => {
       },
     }));
   };
-  const updateClausePricing = (id: number, updates: any) => {
-    setRatingConfig(prev => ({
-      ...prev,
-      clausesPricing: prev.clausesPricing.map(clause =>
-        clause.id === id ? { ...clause, ...updates } : clause
-      ),
-    }));
-  };
+
   const addNewClause = async () => {
     if (!newClause.code || !newClause.title) {
       toast({
@@ -2880,9 +3037,12 @@ const SingleProductConfig = () => {
                                 await fetchContractorRiskFactors();
                               } else if (section.id === 'coverage-options') {
                                 await fetchCoverageOptions();
-                              } else if (section.id === 'limits-deductibles') {
-                                await fetchPolicyLimits();
-                              }
+                                                          } else if (section.id === 'limits-deductibles') {
+                              await fetchPolicyLimits();
+                            } else if (section.id === 'clause-pricing') {
+                              await fetchClauseMetadata();
+                              await fetchClausePricing();
+                            }
                             }}
                             className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${
                               activePricingTab === section.id
@@ -2976,6 +3136,8 @@ const SingleProductConfig = () => {
                           policyLimitsData={policyLimitsData}
                         />
                       )}
+
+
                       
 
 
@@ -3006,6 +3168,14 @@ const SingleProductConfig = () => {
                            onSave={saveConfiguration}
                            markAsChanged={markAsChanged}
                            setRatingConfig={setRatingConfig}
+                           isLoadingClauseMetadata={isLoadingClauseMetadata}
+                           clauseMetadataError={clauseMetadataError}
+                           clauseMetadata={clauseMetadata}
+                           isLoadingClausePricing={isLoadingClausePricing}
+                           clausePricingError={clausePricingError}
+                           clausePricingData={clausePricingData}
+                           isSavingClausePricing={isSavingClausePricing}
+                           handleSaveClausePricing={handleSaveClausePricing}
                          />
                         )}
                      </div>

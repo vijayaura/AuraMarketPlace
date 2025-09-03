@@ -1607,6 +1607,79 @@ export async function updateCewsClause(
   );
 }
 
+// Clause Pricing Configuration
+export interface ClausePricingVariableOption {
+  id?: number;
+  label: string;
+  limits: string;
+  pricing_type: 'percentage' | 'fixed';
+  value: number;
+}
+
+export interface ClausePricingItem {
+  clause_id: number;
+  is_active: boolean;
+  pricing_type: 'percentage' | 'fixed';
+  pricing_value: number;
+  variable_options: ClausePricingVariableOption[];
+}
+
+export interface GetClausePricingResponse {
+  clause_pricing: ClausePricingItem[];
+}
+
+export async function getClausePricing(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetClausePricingResponse> {
+  const ts = Date.now();
+  return apiGet<GetClausePricingResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/clauses?t=${ts}`
+  );
+}
+
+export interface SaveClausePricingRequest {
+  clause_pricing: ClausePricingItem[];
+}
+
+export interface SaveClausePricingResponse {
+  message: string;
+  clause_pricing: ClausePricingItem[];
+}
+
+export async function saveClausePricing(
+  insurerId: number | string,
+  productId: number | string,
+  body: SaveClausePricingRequest
+): Promise<SaveClausePricingResponse> {
+  return apiPost<SaveClausePricingResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/clause-pricing`,
+    body
+  );
+}
+
+export interface UpdateClausePricingRequest {
+  clause_pricing: ClausePricingItem[];
+}
+
+export interface UpdateClausePricingResponse {
+  message: string;
+  data: {
+    clause_pricing: ClausePricingItem[];
+  };
+}
+
+export async function updateClausePricing(
+  insurerId: number | string,
+  productId: number | string,
+  body: UpdateClausePricingRequest
+): Promise<UpdateClausePricingResponse> {
+  return apiPatch<UpdateClausePricingResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/clause-pricing`,
+    body
+  );
+}
+
 
 // Project Risk Factors
 export type RiskPricingEnum = 'PERCENTAGE' | 'FIXED_AMOUNT';

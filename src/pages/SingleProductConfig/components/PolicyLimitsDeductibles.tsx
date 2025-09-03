@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,9 +33,12 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
   error,
   policyLimitsData,
 }) => {
+  const hasMappedData = useRef(false);
+
   // Map API data to UI fields when data is received
   useEffect(() => {
-    if (false && policyLimitsData && ratingConfig) {
+    if (policyLimitsData && ratingConfig && !hasMappedData.current) {
+      hasMappedData.current = true;
 
       
       // Map policy limits to ratingConfig.limits
@@ -112,6 +115,13 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
 
     }
   }, [policyLimitsData, ratingConfig, updateLimits, addCoverRequirementEntry, updateCoverRequirementEntry]);
+
+  // Reset mapping flag when new data arrives
+  useEffect(() => {
+    if (policyLimitsData) {
+      hasMappedData.current = false;
+    }
+  }, [policyLimitsData]);
 
   return (
     <Card className="h-full">
