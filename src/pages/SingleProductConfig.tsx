@@ -25,7 +25,7 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, listMasterConstructionTypes, listMasterRoleTypes, listMasterContractTypes, listMasterSoilTypes, listMasterSubcontractorTypes, listMasterConsultantRoles, listMasterSecurityTypes, listMasterAreaTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
@@ -207,6 +207,30 @@ const SingleProductConfig = () => {
   const [zonesData, setZonesData] = useState<string[]>([]);
   const [isLoadingZones, setIsLoadingZones] = useState(false);
   const [zonesError, setZonesError] = useState<string | null>(null);
+
+  // Construction Types Configuration state
+  const [constructionTypesConfigData, setConstructionTypesConfigData] = useState<ConstructionTypeConfigItem[]>([]);
+  const [isLoadingConstructionTypesConfig, setIsLoadingConstructionTypesConfig] = useState(false);
+  const [constructionTypesConfigError, setConstructionTypesConfigError] = useState<string | null>(null);
+  const [isSavingConstructionTypesConfig, setIsSavingConstructionTypesConfig] = useState(false);
+
+  // Countries Configuration state
+  const [countriesConfigData, setCountriesConfigData] = useState<CountryConfigItem[]>([]);
+  const [isLoadingCountriesConfig, setIsLoadingCountriesConfig] = useState(false);
+  const [countriesConfigError, setCountriesConfigError] = useState<string | null>(null);
+  const [isSavingCountriesConfig, setIsSavingCountriesConfig] = useState(false);
+
+  // Regions Configuration state
+  const [regionsConfigData, setRegionsConfigData] = useState<RegionConfigItem[]>([]);
+  const [isLoadingRegionsConfig, setIsLoadingRegionsConfig] = useState(false);
+  const [regionsConfigError, setRegionsConfigError] = useState<string | null>(null);
+  const [isSavingRegionsConfig, setIsSavingRegionsConfig] = useState(false);
+
+  // Zones Configuration state
+  const [zonesConfigData, setZonesConfigData] = useState<ZoneConfigItem[]>([]);
+  const [isLoadingZonesConfig, setIsLoadingZonesConfig] = useState(false);
+  const [zonesConfigError, setZonesConfigError] = useState<string | null>(null);
+  const [isSavingZonesConfig, setIsSavingZonesConfig] = useState(false);
 
   // Coverage Options state
   const [coverageOptionsData, setCoverageOptionsData] = useState<CoverageOptionsResponse | null>(null);
@@ -511,36 +535,70 @@ const SingleProductConfig = () => {
           })),
           location_hazard_loadings: {
             risk_definition: {
-              factors: [
-                {
-                  factor: "Near water body",
-                  low_risk: "No",
-                  moderate_risk: "Yes", 
-                  high_risk: "Yes",
-                  very_high_risk: "Yes"
-                },
-                {
-                  factor: "Flood-prone zone",
-                  low_risk: "No",
-                  moderate_risk: "No",
-                  high_risk: "Yes", 
-                  very_high_risk: "Yes"
-                },
-                {
-                  factor: "City center",
-                  low_risk: "Yes",
-                  moderate_risk: "No",
-                  high_risk: "Yes",
-                  very_high_risk: "Yes"
-                },
-                {
-                  factor: "Soil type",
-                  low_risk: "1 selected",
-                  moderate_risk: "1 selected",
-                  high_risk: "2 selected",
-                  very_high_risk: "2 selected"
-                }
-              ]
+              factors: (() => {
+                const projectRisk = ratingConfig.projectRisk as any;
+                const riskDef = projectRisk?.riskDefinition || {};
+                
+                return [
+                  {
+                    factor: "Near water body",
+                    low_risk: riskDef?.nearWaterBody?.lowRisk || "no",
+                    moderate_risk: riskDef?.nearWaterBody?.moderateRisk || "no", 
+                    high_risk: riskDef?.nearWaterBody?.highRisk || "no",
+                    very_high_risk: riskDef?.nearWaterBody?.veryHighRisk || "no"
+                  },
+                  {
+                    factor: "Flood-prone zone",
+                    low_risk: riskDef?.floodProneZone?.lowRisk || "no",
+                    moderate_risk: riskDef?.floodProneZone?.moderateRisk || "no",
+                    high_risk: riskDef?.floodProneZone?.highRisk || "no", 
+                    very_high_risk: riskDef?.floodProneZone?.veryHighRisk || "no"
+                  },
+                  {
+                    factor: "City center",
+                    low_risk: riskDef?.cityCenter?.lowRisk || "no",
+                    moderate_risk: riskDef?.cityCenter?.moderateRisk || "no",
+                    high_risk: riskDef?.cityCenter?.highRisk || "no",
+                    very_high_risk: riskDef?.cityCenter?.veryHighRisk || "no"
+                  },
+                  {
+                    factor: "Soil type",
+                    low_risk: Array.isArray(riskDef?.soilType?.lowRisk) 
+                      ? riskDef.soilType.lowRisk.join(', ') 
+                      : "none",
+                    moderate_risk: Array.isArray(riskDef?.soilType?.moderateRisk) 
+                      ? riskDef.soilType.moderateRisk.join(', ') 
+                      : "none",
+                    high_risk: Array.isArray(riskDef?.soilType?.highRisk) 
+                      ? riskDef.soilType.highRisk.join(', ') 
+                      : "none",
+                    very_high_risk: Array.isArray(riskDef?.soilType?.veryHighRisk) 
+                      ? riskDef.soilType.veryHighRisk.join(', ') 
+                      : "none"
+                  },
+                  {
+                    factor: "Existing structure on site",
+                    low_risk: riskDef?.existingStructure?.lowRisk || "no",
+                    moderate_risk: riskDef?.existingStructure?.moderateRisk || "no",
+                    high_risk: riskDef?.existingStructure?.highRisk || "no",
+                    very_high_risk: riskDef?.existingStructure?.veryHighRisk || "no"
+                  },
+                  {
+                    factor: "Blasting/Deep excavation",
+                    low_risk: riskDef?.blastingExcavation?.lowRisk || "no",
+                    moderate_risk: riskDef?.blastingExcavation?.moderateRisk || "no",
+                    high_risk: riskDef?.blastingExcavation?.highRisk || "no",
+                    very_high_risk: riskDef?.blastingExcavation?.veryHighRisk || "no"
+                  },
+                  {
+                    factor: "Security arrangements",
+                    low_risk: riskDef?.securityArrangements?.lowRisk || "no",
+                    moderate_risk: riskDef?.securityArrangements?.moderateRisk || "no",
+                    high_risk: riskDef?.securityArrangements?.highRisk || "no",
+                    very_high_risk: riskDef?.securityArrangements?.veryHighRisk || "no"
+                  }
+                ];
+              })()
             },
             location_hazard_rates: [
               {
@@ -571,6 +629,10 @@ const SingleProductConfig = () => {
           }
         }
       };
+
+      // Debug: Log the request body to verify Risk Definition mapping
+      console.log('🔍 Project Risk Factors Request Body:', JSON.stringify(body, null, 2));
+      console.log('🔍 Risk Definition from state:', JSON.stringify((ratingConfig.projectRisk as any)?.riskDefinition, null, 2));
 
       // Use POST if no data from GET API, PATCH if data exists
       const resp = hasProjectRiskFactorsData
@@ -697,7 +759,7 @@ const SingleProductConfig = () => {
     
     setIsSavingContractorRiskFactors(true);
     try {
-      // Map UI state to API request format
+      // Map UI state to API request format - Always include ALL sections for both POST and PATCH
       const body: ContractorRiskFactorsRequest = {
         insurer_id: Number(insurerId),
         contractor_risk_factors: {
@@ -715,34 +777,33 @@ const SingleProductConfig = () => {
             loading_discount: Number(item.loadingDiscount || 0),
             quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
           })),
+          // Always include all sections to prevent deletion during PATCH
+          claim_amount_categories: ratingConfig.contractorRisk.claimAmountCategories.map((item: any) => ({
+            from_amount: Number(item.from || 0),
+            to_amount: Number(item.to || 0),
+            pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
+            loading_discount: Number(item.loadingDiscount || 0),
+            currency: 'AED',
+            quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
+          })),
+          contractor_number_based: ratingConfig.contractorRisk.contractorNumbers.map((item: any) => ({
+            from_contractors: Number(item.from || 0),
+            to_contractors: Number(item.to || 0),
+            pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
+            loading_discount: Number(item.loadingDiscount || 0),
+            quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
+          })),
+          subcontractor_number_based: ratingConfig.contractorRisk.subcontractorNumbers.map((item: any) => ({
+            from_subcontractors: Number(item.from || 0),
+            to_subcontractors: Number(item.to || 0),
+            pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
+            loading_discount: Number(item.loadingDiscount || 0),
+            quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
+          }))
         }
       };
 
-      // Include optional fields only for POST (first time save)
-      if (!hasContractorRiskFactorsData) {
-        body.contractor_risk_factors.claim_amount_categories = ratingConfig.contractorRisk.claimAmountCategories.map((item: any) => ({
-          from_amount: Number(item.from || 0),
-          to_amount: Number(item.to || 0),
-          pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
-          loading_discount: Number(item.loadingDiscount || 0),
-          currency: 'AED',
-          quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
-        }));
-        body.contractor_risk_factors.contractor_number_based = ratingConfig.contractorRisk.contractorNumbers.map((item: any) => ({
-          from_contractors: Number(item.from || 0),
-          to_contractors: Number(item.to || 0),
-          pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
-          loading_discount: Number(item.loadingDiscount || 0),
-          quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
-        }));
-        body.contractor_risk_factors.subcontractor_number_based = ratingConfig.contractorRisk.subcontractorNumbers.map((item: any) => ({
-          from_subcontractors: Number(item.from || 0),
-          to_subcontractors: Number(item.to || 0),
-          pricing_type: (item.pricingType === 'fixed' ? 'FIXED_AMOUNT' : 'PERCENTAGE'),
-          loading_discount: Number(item.loadingDiscount || 0),
-          quote_option: (item.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'),
-        }));
-      }
+      console.log('🔍 Contractor Risk Factors Request Body:', JSON.stringify(body, null, 2));
 
       // Use POST if no data from GET API, PATCH if data exists
       const resp = hasContractorRiskFactorsData
@@ -2583,8 +2644,665 @@ const SingleProductConfig = () => {
 
 
 
+  // Fetch Construction Types Configuration after metadata loads
+  const fetchConstructionTypesConfig = async (): Promise<void> => {
+    console.log('🚀 fetchConstructionTypesConfig called');
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    console.log('🔍 IDs check:', { insurerId, productId });
+    
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      setConstructionTypesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
 
+    console.log('✅ IDs validated, starting API call...');
+    setIsLoadingConstructionTypesConfig(true);
+    setConstructionTypesConfigError(null);
+    
+    try {
+      console.log('🔍 Fetching Construction Types Configuration...');
+      console.log('📡 API Call Parameters:', { insurerId, productId });
+      const response = await getConstructionTypesConfiguration(insurerId, String(productId));
+      
+      console.log('🔍 Full API Response:', response);
+      console.log('🔍 Response type:', typeof response);
+      console.log('🔍 Response keys:', Object.keys(response || {}));
+      console.log('🔍 Response items:', response.items);
+      console.log('🔍 Items length:', response.items?.length);
+      console.log('🔍 Raw response JSON:', JSON.stringify(response, null, 2));
+      
+      if (response.items?.length > 0) {
+        console.log('✅ Found items, setting state...');
+        setConstructionTypesConfigData(response.items);
+        console.log('✅ Construction Types Configuration loaded:', response.items);
+        console.log('✅ Setting state with data:', response.items);
+      } else {
+        console.log('❌ No items found or empty array');
+        console.log('❌ Condition check:', {
+          hasItems: !!response.items,
+          itemsLength: response.items?.length,
+          itemsArray: response.items
+        });
+        setConstructionTypesConfigData([]);
+        console.log('ℹ️ No existing Construction Types Configuration found');
+      }
+    } catch (err: any) {
+      console.error('❌ Error loading Construction Types Configuration:', err);
+      setConstructionTypesConfigError(err.message || 'Failed to load construction types configuration');
+      setConstructionTypesConfigData([]);
+    } finally {
+      setIsLoadingConstructionTypesConfig(false);
+    }
+  };
 
+  // Fetch Countries Configuration after metadata loads
+  const fetchCountriesConfig = async (): Promise<void> => {
+    console.log('🚀 fetchCountriesConfig called');
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    console.log('🔍 IDs check:', { insurerId, productId });
+    
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      setCountriesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated, starting API call...');
+    setIsLoadingCountriesConfig(true);
+    setCountriesConfigError(null);
+    
+    try {
+      console.log('🔍 Fetching Countries Configuration...');
+      console.log('📡 API Call Parameters:', { insurerId, productId });
+      const response = await getCountriesConfiguration(insurerId, String(productId));
+      
+      console.log('🔍 Full API Response:', response);
+      console.log('🔍 Response type:', typeof response);
+      console.log('🔍 Response keys:', Object.keys(response || {}));
+      console.log('🔍 Response items:', response.items);
+      console.log('🔍 Items length:', response.items?.length);
+      console.log('🔍 Raw response JSON:', JSON.stringify(response, null, 2));
+      
+      if (response.items?.length > 0) {
+        console.log('✅ Found items, setting state...');
+        setCountriesConfigData(response.items);
+        console.log('✅ Countries Configuration loaded:', response.items);
+        console.log('✅ Setting state with data:', response.items);
+      } else {
+        console.log('❌ No items found or empty array');
+        console.log('❌ Condition check:', {
+          hasItems: !!response.items,
+          itemsLength: response.items?.length,
+          itemsArray: response.items
+        });
+        setCountriesConfigData([]);
+        console.log('ℹ️ No existing Countries Configuration found');
+      }
+    } catch (err: any) {
+      console.error('❌ Error loading Countries Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading countries configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading countries configuration.'
+        : 'Failed to load countries configuration.';
+      setCountriesConfigError(msg);
+      setCountriesConfigData([]);
+    } finally {
+      setIsLoadingCountriesConfig(false);
+    }
+  };
+
+  // Fetch Regions Configuration after metadata loads
+  const fetchRegionsConfig = async (): Promise<void> => {
+    console.log('🚀 fetchRegionsConfig called');
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    console.log('🔍 IDs check:', { insurerId, productId });
+    
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      setRegionsConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated, starting API call...');
+    setIsLoadingRegionsConfig(true);
+    setRegionsConfigError(null);
+    
+    try {
+      console.log('🔍 Fetching Regions Configuration...');
+      console.log('📡 API Call Parameters:', { insurerId, productId });
+      const response = await getRegionsConfiguration(insurerId, String(productId));
+      
+      console.log('🔍 Full API Response:', response);
+      console.log('🔍 Response type:', typeof response);
+      console.log('🔍 Response keys:', Object.keys(response || {}));
+      console.log('🔍 Response items:', response.items);
+      console.log('🔍 Items length:', response.items?.length);
+      console.log('🔍 Raw response JSON:', JSON.stringify(response, null, 2));
+      
+      if (response.items?.length > 0) {
+        console.log('✅ Found items, setting state...');
+        setRegionsConfigData(response.items);
+        console.log('✅ Regions Configuration loaded:', response.items);
+        console.log('✅ Setting state with data:', response.items);
+      } else {
+        console.log('❌ No items found or empty array');
+        console.log('❌ Condition check:', {
+          hasItems: !!response.items,
+          itemsLength: response.items?.length,
+          itemsArray: response.items
+        });
+        setRegionsConfigData([]);
+        console.log('ℹ️ No existing Regions Configuration found');
+      }
+    } catch (err: any) {
+      console.error('❌ Error loading Regions Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading regions configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading regions configuration.'
+        : 'Failed to load regions configuration.';
+      setRegionsConfigError(msg);
+      setRegionsConfigData([]);
+    } finally {
+      setIsLoadingRegionsConfig(false);
+    }
+  };
+
+  // Fetch Zones Configuration after metadata loads
+  const fetchZonesConfig = async (): Promise<void> => {
+    console.log('🚀 fetchZonesConfig called');
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    console.log('🔍 IDs check:', { insurerId, productId });
+    
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      setZonesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated, starting API call...');
+    setIsLoadingZonesConfig(true);
+    setZonesConfigError(null);
+    
+    try {
+      console.log('🔍 Fetching Zones Configuration...');
+      console.log('📡 API Call Parameters:', { insurerId, productId });
+      const response = await getZonesConfiguration(insurerId, String(productId));
+      
+      console.log('🔍 Full API Response:', response);
+      console.log('🔍 Response type:', typeof response);
+      console.log('🔍 Response keys:', Object.keys(response || {}));
+      console.log('🔍 Response items:', response.items);
+      console.log('🔍 Items length:', response.items?.length);
+      console.log('🔍 Raw response JSON:', JSON.stringify(response, null, 2));
+      
+      if (response.items?.length > 0) {
+        console.log('✅ Found items, setting state...');
+        setZonesConfigData(response.items);
+        console.log('✅ Zones Configuration loaded:', response.items);
+        console.log('✅ Setting state with data:', response.items);
+      } else {
+        console.log('❌ No items found or empty array');
+        console.log('❌ Condition check:', {
+          hasItems: !!response.items,
+          itemsLength: response.items?.length,
+          itemsArray: response.items
+        });
+        setZonesConfigData([]);
+        console.log('ℹ️ No existing Zones Configuration found');
+      }
+    } catch (err: any) {
+      console.error('❌ Error loading Zones Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading zones configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading zones configuration.'
+        : 'Failed to load zones configuration.';
+      setZonesConfigError(msg);
+      setZonesConfigData([]);
+    } finally {
+      setIsLoadingZonesConfig(false);
+    }
+  };
+
+  // Save Zones Configuration handler with GET-then-POST/PATCH logic
+  const handleSaveZonesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
+    console.log('🎯 === SAVE ZONES CONFIGURATION STARTED ===');
+    console.log('🔍 Form data received:', formData);
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      toast({
+        title: "Error",
+        description: "Unable to determine insurer ID or product ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('✅ IDs validated:', { insurerId, productId });
+    setIsSavingZonesConfig(true);
+
+    try {
+      // Build request payload from form data
+      const items = Object.entries(formData).map(([zoneName, zoneFormData], index) => {
+        console.log(`📝 Processing zone "${zoneName}":`, zoneFormData);
+        
+        const item = {
+          name: zoneName,
+          pricing_type: (zoneFormData.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE') as 'PERCENTAGE' | 'FIXED_RATE',
+          value: Number(zoneFormData.value || 0),
+          quote_option: (zoneFormData.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE') as 'AUTO_QUOTE' | 'NO_QUOTE',
+          display_order: index + 1,
+          is_active: true
+        };
+        
+        console.log(`✅ Mapped item for "${zoneName}":`, item);
+        return item;
+      });
+
+      const requestPayload: SaveZonesConfigRequest = {
+        zones_config: {
+          items
+        }
+      };
+
+      console.log('🔍 Final request payload:', JSON.stringify(requestPayload, null, 2));
+
+      // Determine if this is a POST or PATCH based on existing data
+      const hasExistingData = zonesConfigData && zonesConfigData.length > 0;
+      console.log('🔍 Has existing data?', hasExistingData);
+      console.log('🔍 Existing data:', zonesConfigData);
+
+      let response: SaveZonesConfigResponse;
+      
+      if (hasExistingData) {
+        console.log('🔄 Calling PATCH API (update existing)...');
+        response = await updateZonesConfiguration(insurerId, String(productId), requestPayload);
+        console.log('✅ PATCH Response:', response);
+        
+        toast({
+          title: "Success",
+          description: "Zones configuration updated successfully!",
+          variant: "default",
+        });
+      } else {
+        console.log('🆕 Calling POST API (create new)...');
+        response = await createZonesConfiguration(insurerId, String(productId), requestPayload);
+        console.log('✅ POST Response:', response);
+        
+        toast({
+          title: "Success", 
+          description: "Zones configuration created successfully!",
+          variant: "default",
+        });
+      }
+
+      // Update state with response data
+      if (response.data?.items) {
+        console.log('🔄 Updating zones config data with response...');
+        setZonesConfigData(response.data.items);
+        console.log('✅ State updated with:', response.data.items);
+      }
+
+    } catch (err: any) {
+      console.error('❌ Error saving Zones Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while saving zones configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving zones configuration.'
+        : 'Failed to save zones configuration.';
+      
+      toast({
+        title: "Error",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingZonesConfig(false);
+      console.log('🎯 === SAVE ZONES CONFIGURATION COMPLETED ===');
+    }
+  };
+
+  // Save Regions Configuration handler with GET-then-POST/PATCH logic
+  const handleSaveRegionsConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
+    console.log('🎯 === SAVE REGIONS CONFIGURATION STARTED ===');
+    console.log('🔍 Form data received:', formData);
+    
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      toast({
+        title: 'Error',
+        description: 'Unable to determine insurer ID or product ID.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsSavingRegionsConfig(true);
+    
+    try {
+      // Build request payload from form data
+      const items: SaveRegionsConfigRequest['regions_config']['items'] = [];
+      
+      // Get the regions metadata to know which regions to include
+      console.log('🔍 Building payload from form data and regions metadata...');
+      console.log('🔍 Regions data:', regionsData);
+      console.log('🔍 Form data:', formData);
+      
+      regionsData.forEach((regionName: string, index: number) => {
+        const regionFormData = formData[regionName];
+        console.log(`🔍 Processing region "${regionName}":`, regionFormData);
+        
+        if (regionFormData) {
+          const item = {
+            name: regionName,
+            pricing_type: (regionFormData.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE') as 'PERCENTAGE' | 'FIXED_RATE',
+            value: Number(regionFormData.value || 0),
+            quote_option: (regionFormData.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE') as 'AUTO_QUOTE' | 'NO_QUOTE',
+            display_order: index + 1,
+            is_active: true
+          };
+          
+          items.push(item);
+          console.log(`✅ Added item for "${regionName}":`, item);
+        } else {
+          console.log(`⚠️ No form data found for "${regionName}", using defaults`);
+          // Add default values for regions without form data
+          const item = {
+            name: regionName,
+            pricing_type: 'PERCENTAGE' as const,
+            value: 1,
+            quote_option: 'AUTO_QUOTE' as const,
+            display_order: index + 1,
+            is_active: true
+          };
+          
+          items.push(item);
+        }
+      });
+
+      const requestPayload: SaveRegionsConfigRequest = {
+        regions_config: {
+          items: items
+        }
+      };
+
+      console.log('🔍 Request payload:', requestPayload);
+      
+      // Determine if we should POST or PATCH based on existing data
+      const hasExistingData = regionsConfigData && regionsConfigData.length > 0;
+      console.log('🔍 Has existing data:', hasExistingData);
+      
+      let response: SaveRegionsConfigResponse;
+      if (hasExistingData) {
+        console.log('📡 Calling PATCH API...');
+        response = await updateRegionsConfiguration(insurerId, String(productId), requestPayload);
+      } else {
+        console.log('📡 Calling POST API...');
+        response = await createRegionsConfiguration(insurerId, String(productId), requestPayload);
+      }
+
+      console.log('✅ API Response:', response);
+      
+      // Update the config data with the response
+      if (response.data?.items) {
+        setRegionsConfigData(response.data.items);
+      }
+
+      toast({
+        title: 'Success',
+        description: response.message || 'Regions configuration saved successfully.'
+      });
+
+      console.log('🎯 === SAVE REGIONS CONFIGURATION COMPLETED ===');
+    } catch (err: any) {
+      console.error('❌ Error saving Regions Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Invalid data while saving regions configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving regions configuration.'
+        : (err?.message || 'Failed to save regions configuration.');
+      
+      toast({
+        title: 'Error',
+        description: msg,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSavingRegionsConfig(false);
+    }
+  };
+
+  // Save Countries Configuration handler with GET-then-POST/PATCH logic
+  const handleSaveCountriesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
+    console.log('🎯 === SAVE COUNTRIES CONFIGURATION STARTED ===');
+    console.log('🔍 Form data received:', formData);
+    
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      toast({
+        title: 'Error',
+        description: 'Unable to determine insurer ID or product ID.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsSavingCountriesConfig(true);
+    
+    try {
+      // Build request payload from form data
+      const items: SaveCountriesConfigRequest['countries_config']['items'] = [];
+      
+      // Get the countries metadata to know which countries to include
+      console.log('🔍 Building payload from form data and countries metadata...');
+      console.log('🔍 Countries data:', countriesData);
+      console.log('🔍 Form data:', formData);
+      
+      countriesData.forEach((countryName: string) => {
+        const countryFormData = formData[countryName];
+        console.log(`🔍 Processing country "${countryName}":`, countryFormData);
+        
+        if (countryFormData) {
+          // Check if this country uses 'name' field (like Kuwait) or 'country' field
+          const isKuwait = countryName === 'Kuwait';
+          
+          const item: any = {
+            pricing_type: countryFormData.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE',
+            value: Number(countryFormData.value || 0),
+            quote_option: countryFormData.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE'
+          };
+          
+          // Add the appropriate field based on country
+          if (isKuwait) {
+            item.name = countryName;
+          } else {
+            item.country = countryName;
+          }
+          
+          items.push(item);
+          console.log(`✅ Added item for "${countryName}":`, item);
+        } else {
+          console.log(`⚠️ No form data found for "${countryName}", using defaults`);
+          // Add default values for countries without form data
+          const isKuwait = countryName === 'Kuwait';
+          const item: any = {
+            pricing_type: 'PERCENTAGE',
+            value: 1,
+            quote_option: 'AUTO_QUOTE'
+          };
+          
+          if (isKuwait) {
+            item.name = countryName;
+          } else {
+            item.country = countryName;
+          }
+          
+          items.push(item);
+        }
+      });
+
+      const requestPayload: SaveCountriesConfigRequest = {
+        countries_config: {
+          items: items
+        }
+      };
+
+      console.log('🔍 Request payload:', requestPayload);
+      
+      // Determine if we should POST or PATCH based on existing data
+      const hasExistingData = countriesConfigData && countriesConfigData.length > 0;
+      console.log('🔍 Has existing data:', hasExistingData);
+      
+      let response: SaveCountriesConfigResponse;
+      if (hasExistingData) {
+        console.log('📡 Calling PATCH API...');
+        response = await updateCountriesConfiguration(insurerId, String(productId), requestPayload);
+      } else {
+        console.log('📡 Calling POST API...');
+        response = await createCountriesConfiguration(insurerId, String(productId), requestPayload);
+      }
+
+      console.log('✅ API Response:', response);
+      
+      // Update the config data with the response
+      if (response.data?.items) {
+        setCountriesConfigData(response.data.items);
+      }
+
+      toast({
+        title: 'Success',
+        description: response.message || 'Countries configuration saved successfully.'
+      });
+
+      console.log('🎯 === SAVE COUNTRIES CONFIGURATION COMPLETED ===');
+    } catch (err: any) {
+      console.error('❌ Error saving Countries Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Invalid data while saving countries configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving countries configuration.'
+        : (err?.message || 'Failed to save countries configuration.');
+      
+      toast({
+        title: 'Error',
+        description: msg,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSavingCountriesConfig(false);
+    }
+  };
+
+  // Save Construction Types Configuration handler with GET-then-POST/PATCH logic
+  const handleSaveConstructionTypesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
+    console.log('🎯 === SAVE CONSTRUCTION TYPES CONFIGURATION STARTED ===');
+    console.log('🔍 Form data received:', formData);
+    
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      toast({
+        title: "Error",
+        description: "Unable to determine insurer ID or product ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingConstructionTypesConfig(true);
+    
+    try {
+      // Build the request payload from form data
+      const items: ConstructionTypeConfigItem[] = [];
+      let displayOrder = 1;
+      
+      // Convert form data to API format
+      Object.entries(formData).forEach(([name, data]: [string, any]) => {
+        if (data && typeof data === 'object') {
+          items.push({
+            name: name,
+            pricing_type: data.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE',
+            value: parseFloat(data.value) || 0,
+            quote_option: data.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE',
+            display_order: displayOrder++,
+            is_active: true
+          });
+        }
+      });
+      
+      const requestPayload: SaveConstructionTypesConfigRequest = {
+        construction_types_config: {
+          items: items
+        }
+      };
+      
+      console.log('🔍 Request payload:', requestPayload);
+      
+      // Determine if we should POST or PATCH based on existing data
+      const hasExistingData = constructionTypesConfigData && constructionTypesConfigData.length > 0;
+      console.log('🔍 Has existing data:', hasExistingData);
+      
+      let response: SaveConstructionTypesConfigResponse;
+      
+      if (hasExistingData) {
+        console.log('🔄 Updating existing configuration (PATCH)...');
+        response = await updateConstructionTypesConfiguration(insurerId, String(productId), requestPayload);
+      } else {
+        console.log('🆕 Creating new configuration (POST)...');
+        response = await createConstructionTypesConfiguration(insurerId, String(productId), requestPayload);
+      }
+      
+      console.log('✅ Save successful:', response);
+      
+      // Update local state with the response
+      if (response.data?.items) {
+        setConstructionTypesConfigData(response.data.items);
+      }
+      
+      toast({
+        title: "Success",
+        description: response.message || "Construction types configuration saved successfully.",
+      });
+      
+    } catch (err: any) {
+      console.error('❌ Save failed:', err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to save construction types configuration.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingConstructionTypesConfig(false);
+    }
+  };
 
   // Save Quote Coverage handler with POST/PATCH logic and strict validation
   const handleSaveQuoteCoverage = async (): Promise<void> => {
@@ -2930,18 +3648,56 @@ const SingleProductConfig = () => {
     }));
   };
 
-  const updateProjectRiskFactor = (category: string, key: string, value: number) => {
+  const updateProjectRiskFactor = (category: string, key: string, value: any) => {
     markAsChanged();
-    setRatingConfig(prev => ({
-      ...prev,
-      projectRisk: {
-        ...prev.projectRisk,
-        [category]: {
-          ...prev.projectRisk[category as keyof typeof prev.projectRisk],
-          [key]: value,
-        },
-      },
-    }));
+    
+    // Helper function to set nested object property using dot notation
+    const setNestedProperty = (obj: any, path: string, value: any) => {
+      const keys = path.split('.');
+      const lastKey = keys.pop()!;
+      const target = keys.reduce((current, key) => {
+        if (!current[key] || typeof current[key] !== 'object') {
+          current[key] = {};
+        }
+        return current[key];
+      }, obj);
+      target[lastKey] = value;
+      return obj;
+    };
+    
+    setRatingConfig(prev => {
+      const newConfig = { ...prev };
+      
+      if (category === 'riskDefinition') {
+        // Handle nested risk definition updates
+        const projectRisk = newConfig.projectRisk as any;
+        if (!projectRisk.riskDefinition) {
+          projectRisk.riskDefinition = {};
+        }
+        const updatedRiskDefinition = { ...projectRisk.riskDefinition };
+        setNestedProperty(updatedRiskDefinition, key, value);
+        
+        return {
+          ...newConfig,
+          projectRisk: {
+            ...newConfig.projectRisk,
+            riskDefinition: updatedRiskDefinition,
+          },
+        };
+      } else {
+        // Handle regular category updates (existing functionality)
+        return {
+          ...newConfig,
+          projectRisk: {
+            ...newConfig.projectRisk,
+            [category]: {
+              ...newConfig.projectRisk[category as keyof typeof newConfig.projectRisk],
+              [key]: value,
+            },
+          },
+        };
+      }
+    });
   };
 
   // Helper functions for duration and maintenance period loadings
@@ -3534,7 +4290,11 @@ const SingleProductConfig = () => {
                                 await fetchClauseMetadata();
                                 await fetchClausePricing();
                               } else if (section.id === 'construction-types') {
+                                console.log('🎯 Construction Types tab clicked - starting fetch sequence...');
                                 await fetchConstructionTypes();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchConstructionTypesConfig();
+                                console.log('🎯 Config fetch completed');
                               } else if (section.id === 'role-types') {
                                 await fetchRoleTypes();
                               } else if (section.id === 'contract-types') {
@@ -3550,11 +4310,23 @@ const SingleProductConfig = () => {
                               } else if (section.id === 'area-types') {
                                 await fetchAreaTypes();
                               } else if (section.id === 'countries') {
+                                console.log('🎯 Countries tab clicked - starting fetch sequence...');
                                 await fetchCountries();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchCountriesConfig();
+                                console.log('🎯 Config fetch completed');
                               } else if (section.id === 'regions') {
+                                console.log('🎯 Regions tab clicked - starting fetch sequence...');
                                 await fetchRegions();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchRegionsConfig();
+                                console.log('🎯 Config fetch completed');
                               } else if (section.id === 'zones') {
+                                console.log('🎯 Zones tab clicked - starting fetch sequence...');
                                 await fetchZones();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchZonesConfig();
+                                console.log('🎯 Config fetch completed');
                               }
                             }}
                             className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${
@@ -3722,6 +4494,26 @@ const SingleProductConfig = () => {
                            zonesData={zonesData}
                            isLoadingZones={isLoadingZones}
                            zonesError={zonesError}
+                           constructionTypesConfigData={constructionTypesConfigData}
+                           isLoadingConstructionTypesConfig={isLoadingConstructionTypesConfig}
+                           constructionTypesConfigError={constructionTypesConfigError}
+                           isSavingConstructionTypesConfig={isSavingConstructionTypesConfig}
+                           handleSaveConstructionTypesConfiguration={handleSaveConstructionTypesConfiguration}
+                           countriesConfigData={countriesConfigData}
+                           isLoadingCountriesConfig={isLoadingCountriesConfig}
+                           countriesConfigError={countriesConfigError}
+                           isSavingCountriesConfig={isSavingCountriesConfig}
+                           handleSaveCountriesConfiguration={handleSaveCountriesConfiguration}
+                           regionsConfigData={regionsConfigData}
+                           isLoadingRegionsConfig={isLoadingRegionsConfig}
+                           regionsConfigError={regionsConfigError}
+                           isSavingRegionsConfig={isSavingRegionsConfig}
+                           handleSaveRegionsConfiguration={handleSaveRegionsConfiguration}
+                           zonesConfigData={zonesConfigData}
+                           isLoadingZonesConfig={isLoadingZonesConfig}
+                           zonesConfigError={zonesConfigError}
+                           isSavingZonesConfig={isSavingZonesConfig}
+                           handleSaveZonesConfiguration={handleSaveZonesConfiguration}
                          />
                         )}
                      </div>

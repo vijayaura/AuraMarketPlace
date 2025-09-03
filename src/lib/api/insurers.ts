@@ -2164,5 +2164,594 @@ export async function updateQuoteCoverage(
   }
 }
 
+// ===== CONSTRUCTION TYPES CONFIGURATION API =====
+
+export interface ConstructionTypeConfigItem {
+  name: string;
+  pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+  value: number;
+  quote_option: 'AUTO_QUOTE' | 'MANUAL_QUOTE' | 'NO_QUOTE';
+  display_order: number;
+  is_active: boolean;
+}
+
+export interface GetConstructionTypesConfigResponse {
+  items: ConstructionTypeConfigItem[];
+}
+
+export interface SaveConstructionTypesConfigRequest {
+  construction_types_config: {
+    items: ConstructionTypeConfigItem[];
+  };
+}
+
+export interface SaveConstructionTypesConfigResponse {
+  message: string;
+  data: {
+    items: ConstructionTypeConfigItem[];
+  };
+}
+
+// Countries Configuration
+export interface CountryConfigItem {
+  value: number;
+  country?: string;
+  name?: string; // Some items use 'name' instead of 'country'
+  pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+  quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+}
+
+export interface GetCountriesConfigResponse {
+  items: CountryConfigItem[];
+}
+
+export interface SaveCountriesConfigRequest {
+  countries_config: {
+    items: {
+      country?: string;
+      name?: string;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      value: number;
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+    }[];
+  };
+}
+
+export interface SaveCountriesConfigResponse {
+  message: string;
+  data: {
+    items: CountryConfigItem[];
+  };
+}
+
+// Regions Configuration
+export interface RegionConfigItem {
+  name: string;
+  value: number;
+  is_active: boolean;
+  pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+  quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+  display_order: number;
+}
+
+export interface GetRegionsConfigResponse {
+  items: RegionConfigItem[];
+}
+
+export interface SaveRegionsConfigRequest {
+  regions_config: {
+    items: {
+      name: string;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      value: number;
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+      is_active: boolean;
+    }[];
+  };
+}
+
+export interface SaveRegionsConfigResponse {
+  message: string;
+  data: {
+    items: RegionConfigItem[];
+  };
+}
+
+// Zones Configuration
+export interface ZoneConfigItem {
+  name: string;
+  value: number;
+  is_active: boolean;
+  pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+  quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+  display_order: number;
+}
+
+export interface GetZonesConfigResponse {
+  items: ZoneConfigItem[];
+}
+
+export interface SaveZonesConfigRequest {
+  zones_config: {
+    items: {
+      name: string;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      value: number;
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+      is_active: boolean;
+    }[];
+  };
+}
+
+export interface SaveZonesConfigResponse {
+  message: string;
+  data: {
+    items: {
+      name: string;
+      value: number;
+      is_active: boolean;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+    }[];
+  };
+}
+
+// GET - Fetch zones configuration for insurer
+export async function getZonesConfiguration(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetZonesConfigResponse> {
+  console.log('🔍 GET Zones Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/zones`,
+    insurerId,
+    productId
+  });
+  
+  try {
+    const response = await apiGet<GetZonesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/zones`
+    );
+    
+    console.log('✅ Zones Configuration Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Zones Configuration Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while fetching zones configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to zones configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while fetching zones configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to fetch zones configuration.');
+    }
+  }
+}
+
+// POST - Create zones configuration for insurer
+export async function createZonesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveZonesConfigRequest
+): Promise<SaveZonesConfigResponse> {
+  console.log('🔍 POST Zones Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/zones`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPost<SaveZonesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/zones`,
+      data
+    );
+    
+    console.log('✅ Zones Configuration POST Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Zones Configuration POST Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while creating zones configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to create zones configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while creating zones configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to create zones configuration.');
+    }
+  }
+}
+
+// PATCH - Update zones configuration for insurer
+export async function updateZonesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveZonesConfigRequest
+): Promise<SaveZonesConfigResponse> {
+  console.log('🔍 PATCH Zones Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/zones`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPatch<SaveZonesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/zones`,
+      data
+    );
+    
+    console.log('✅ Zones Configuration PATCH Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Zones Configuration PATCH Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while updating zones configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to update zones configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while updating zones configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to update zones configuration.');
+    }
+  }
+}
+
+// GET - Fetch regions configuration for insurer
+export async function getRegionsConfiguration(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetRegionsConfigResponse> {
+  console.log('🔍 GET Regions Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/regions`,
+    insurerId,
+    productId
+  });
+  
+  try {
+    const response = await apiGet<GetRegionsConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/regions`
+    );
+    
+    console.log('✅ Regions Configuration Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Regions Configuration Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while fetching regions configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to regions configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while fetching regions configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to fetch regions configuration.');
+    }
+  }
+}
+
+// POST - Create regions configuration for insurer
+export async function createRegionsConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  body: SaveRegionsConfigRequest
+): Promise<SaveRegionsConfigResponse> {
+  console.log('🔍 POST Regions Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/regions`,
+    insurerId,
+    productId,
+    body
+  });
+  
+  try {
+    const response = await apiPost<SaveRegionsConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/regions`,
+      body
+    );
+    
+    console.log('✅ Regions Configuration POST Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Regions Configuration POST Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Invalid data while creating regions configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to create regions configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while creating regions configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to create regions configuration.');
+    }
+  }
+}
+
+// PATCH - Update regions configuration for insurer
+export async function updateRegionsConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  body: SaveRegionsConfigRequest
+): Promise<SaveRegionsConfigResponse> {
+  console.log('🔍 PATCH Regions Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/regions`,
+    insurerId,
+    productId,
+    body
+  });
+  
+  try {
+    const response = await apiPatch<SaveRegionsConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/regions`,
+      body
+    );
+    
+    console.log('✅ Regions Configuration PATCH Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Regions Configuration PATCH Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Invalid data while updating regions configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to update regions configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while updating regions configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to update regions configuration.');
+    }
+  }
+}
+
+// GET - Fetch countries configuration for insurer
+export async function getCountriesConfiguration(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetCountriesConfigResponse> {
+  console.log('🔍 GET Countries Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/countries`,
+    insurerId,
+    productId
+  });
+  
+  try {
+    const response = await apiGet<GetCountriesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/countries`
+    );
+    
+    console.log('✅ Countries Configuration Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Countries Configuration Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while fetching countries configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to countries configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while fetching countries configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to fetch countries configuration.');
+    }
+  }
+}
+
+// POST - Create countries configuration for insurer
+export async function createCountriesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  body: SaveCountriesConfigRequest
+): Promise<SaveCountriesConfigResponse> {
+  console.log('🔍 POST Countries Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/countries`,
+    insurerId,
+    productId,
+    body
+  });
+  
+  try {
+    const response = await apiPost<SaveCountriesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/countries`,
+      body
+    );
+    
+    console.log('✅ Countries Configuration POST Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Countries Configuration POST Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Invalid data while creating countries configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to create countries configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while creating countries configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to create countries configuration.');
+    }
+  }
+}
+
+// PATCH - Update countries configuration for insurer
+export async function updateCountriesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  body: SaveCountriesConfigRequest
+): Promise<SaveCountriesConfigResponse> {
+  console.log('🔍 PATCH Countries Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/countries`,
+    insurerId,
+    productId,
+    body
+  });
+  
+  try {
+    const response = await apiPatch<SaveCountriesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/countries`,
+      body
+    );
+    
+    console.log('✅ Countries Configuration PATCH Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Countries Configuration PATCH Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Invalid data while updating countries configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to update countries configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while updating countries configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to update countries configuration.');
+    }
+  }
+}
+
+// GET - Fetch construction types configuration for insurer
+export async function getConstructionTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetConstructionTypesConfigResponse> {
+  console.log('🔍 GET Construction Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/construction-types`,
+    insurerId,
+    productId
+  });
+  
+  try {
+    const response = await apiGet<GetConstructionTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/construction-types`
+    );
+    console.log('✅ GET Construction Types Configuration Success:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ GET Construction Types Configuration Failed:', error);
+    
+    // Handle specific error codes
+    const status = error?.response?.status;
+    if (status === 400) {
+      throw new Error('Invalid request for construction types configuration');
+    } else if (status === 401) {
+      throw new Error('Authentication required to fetch construction types configuration');
+    } else if (status === 403) {
+      throw new Error('You do not have permission to view construction types configuration');
+    } else if (status === 500) {
+      throw new Error('Server error occurred while fetching construction types configuration');
+    }
+    
+    throw new Error(error?.response?.data?.message || error?.message || 'Failed to fetch construction types configuration');
+  }
+}
+
+// POST - Create construction types configuration for insurer
+export async function createConstructionTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  configData: SaveConstructionTypesConfigRequest
+): Promise<SaveConstructionTypesConfigResponse> {
+  console.log('🔍 POST Construction Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/construction-types`,
+    insurerId,
+    productId,
+    configData
+  });
+  
+  try {
+    const response = await apiPost<SaveConstructionTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/construction-types`,
+      configData
+    );
+    console.log('✅ POST Construction Types Configuration Success:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ POST Construction Types Configuration Failed:', error);
+    
+    const status = error?.response?.status;
+    if (status === 400) {
+      throw new Error('Invalid construction types configuration data');
+    } else if (status === 401) {
+      throw new Error('Authentication required to create construction types configuration');
+    } else if (status === 403) {
+      throw new Error('You do not have permission to create construction types configuration');
+    } else if (status === 500) {
+      throw new Error('Server error occurred while creating construction types configuration');
+    }
+    
+    throw new Error(error?.response?.data?.message || error?.message || 'Failed to create construction types configuration');
+  }
+}
+
+// PATCH - Update construction types configuration for insurer
+export async function updateConstructionTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  configData: SaveConstructionTypesConfigRequest
+): Promise<SaveConstructionTypesConfigResponse> {
+  console.log('🔍 PATCH Construction Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/construction-types`,
+    insurerId,
+    productId,
+    configData
+  });
+  
+  try {
+    const response = await apiPatch<SaveConstructionTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/construction-types`,
+      configData
+    );
+    console.log('✅ PATCH Construction Types Configuration Success:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ PATCH Construction Types Configuration Failed:', error);
+    
+    const status = error?.response?.status;
+    if (status === 400) {
+      throw new Error('Invalid construction types configuration data');
+    } else if (status === 401) {
+      throw new Error('Authentication required to update construction types configuration');
+    } else if (status === 403) {
+      throw new Error('You do not have permission to update construction types configuration');
+    } else if (status === 500) {
+      throw new Error('Server error occurred while updating construction types configuration');
+    }
+    
+    throw new Error(error?.response?.data?.message || error?.message || 'Failed to update construction types configuration');
+  }
+}
+
 
 

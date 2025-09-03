@@ -387,7 +387,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                     <TableRow>
                       <TableCell className="font-medium text-xs">Near water body</TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.nearWaterBody?.lowRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.nearWaterBody?.lowRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'nearWaterBody.lowRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -398,7 +401,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.nearWaterBody?.moderateRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.nearWaterBody?.moderateRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'nearWaterBody.moderateRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -409,7 +415,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.nearWaterBody?.highRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.nearWaterBody?.highRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'nearWaterBody.highRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -420,7 +429,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.nearWaterBody?.veryHighRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.nearWaterBody?.veryHighRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'nearWaterBody.veryHighRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -434,7 +446,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                     <TableRow>
                       <TableCell className="font-medium text-xs">Flood-prone zone</TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.floodProneZone?.lowRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.floodProneZone?.lowRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'floodProneZone.lowRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -445,7 +460,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.floodProneZone?.moderateRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.floodProneZone?.moderateRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'floodProneZone.moderateRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -456,7 +474,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.floodProneZone?.highRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.floodProneZone?.highRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'floodProneZone.highRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -467,7 +488,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.floodProneZone?.veryHighRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.floodProneZone?.veryHighRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'floodProneZone.veryHighRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -481,7 +505,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                     <TableRow>
                       <TableCell className="font-medium text-xs">City center</TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.cityCenter?.lowRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.cityCenter?.lowRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'cityCenter.lowRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -492,7 +519,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.cityCenter?.moderateRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.cityCenter?.moderateRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'cityCenter.moderateRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -503,7 +533,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.cityCenter?.highRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.cityCenter?.highRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'cityCenter.highRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -514,7 +547,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.cityCenter?.veryHighRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.cityCenter?.veryHighRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'cityCenter.veryHighRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -528,22 +564,37 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                     <TableRow>
                       <TableCell className="font-medium text-xs">Soil type</TableCell>
                       <TableCell>
-                        <SoilTypeMultiSelect defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.lowRisk || []} />
+                        <SoilTypeMultiSelect 
+                          defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.lowRisk || []} 
+                          onValueChange={(values) => updateProjectRiskFactor('riskDefinition', 'soilType.lowRisk', values)}
+                        />
                       </TableCell>
                       <TableCell>
-                        <SoilTypeMultiSelect defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.moderateRisk || []} />
+                        <SoilTypeMultiSelect 
+                          defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.moderateRisk || []} 
+                          onValueChange={(values) => updateProjectRiskFactor('riskDefinition', 'soilType.moderateRisk', values)}
+                        />
                       </TableCell>
                       <TableCell>
-                        <SoilTypeMultiSelect defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.highRisk || []} />
+                        <SoilTypeMultiSelect 
+                          defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.highRisk || []} 
+                          onValueChange={(values) => updateProjectRiskFactor('riskDefinition', 'soilType.highRisk', values)}
+                        />
                       </TableCell>
                       <TableCell>
-                        <SoilTypeMultiSelect defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.veryHighRisk || []} />
+                        <SoilTypeMultiSelect 
+                          defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.veryHighRisk || []} 
+                          onValueChange={(values) => updateProjectRiskFactor('riskDefinition', 'soilType.veryHighRisk', values)}
+                        />
                       </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium text-xs">Existing structure on site</TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.existingStructure?.lowRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.existingStructure?.lowRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'existingStructure.lowRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -554,7 +605,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.existingStructure?.moderateRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.existingStructure?.moderateRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'existingStructure.moderateRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -565,7 +619,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.existingStructure?.highRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.existingStructure?.highRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'existingStructure.highRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -576,7 +633,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.existingStructure?.veryHighRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.existingStructure?.veryHighRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'existingStructure.veryHighRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -590,7 +650,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                     <TableRow>
                       <TableCell className="font-medium text-xs">Blasting/Deep excavation</TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.blastingExcavation?.lowRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.blastingExcavation?.lowRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'blastingExcavation.lowRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -601,7 +664,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.blastingExcavation?.moderateRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.blastingExcavation?.moderateRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'blastingExcavation.moderateRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -612,7 +678,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.blastingExcavation?.highRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.blastingExcavation?.highRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'blastingExcavation.highRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -623,7 +692,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.blastingExcavation?.veryHighRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.blastingExcavation?.veryHighRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'blastingExcavation.veryHighRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -637,7 +709,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                     <TableRow>
                       <TableCell className="font-medium text-xs">Security arrangements</TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.lowRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.lowRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'securityArrangements.lowRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -648,7 +723,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.moderateRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.moderateRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'securityArrangements.moderateRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -659,7 +737,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.highRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.highRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'securityArrangements.highRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -670,7 +751,10 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.veryHighRisk || "no"}>
+                        <Select 
+                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.veryHighRisk || "no"}
+                          onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'securityArrangements.veryHighRisk', value)}
+                        >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>

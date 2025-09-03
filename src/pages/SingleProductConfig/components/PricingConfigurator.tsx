@@ -114,6 +114,30 @@ type PricingConfiguratorProps = {
   zonesData: string[];
   isLoadingZones: boolean;
   zonesError: string | null;
+  // Construction Types Configuration props
+  constructionTypesConfigData: any[];
+  isLoadingConstructionTypesConfig: boolean;
+  constructionTypesConfigError: string | null;
+  isSavingConstructionTypesConfig: boolean;
+  handleSaveConstructionTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Countries Configuration props
+  countriesConfigData: any[];
+  isLoadingCountriesConfig: boolean;
+  countriesConfigError: string | null;
+  isSavingCountriesConfig: boolean;
+  handleSaveCountriesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Regions Configuration props
+  regionsConfigData: any[];
+  isLoadingRegionsConfig: boolean;
+  regionsConfigError: string | null;
+  isSavingRegionsConfig: boolean;
+  handleSaveRegionsConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Zones Configuration props
+  zonesConfigData: any[];
+  isLoadingZonesConfig: boolean;
+  zonesConfigError: string | null;
+  isSavingZonesConfig: boolean;
+  handleSaveZonesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
 };
 
 const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
@@ -213,6 +237,30 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   zonesData,
   isLoadingZones,
   zonesError,
+  // Construction Types Configuration props
+  constructionTypesConfigData,
+  isLoadingConstructionTypesConfig,
+  constructionTypesConfigError,
+  isSavingConstructionTypesConfig,
+  handleSaveConstructionTypesConfiguration,
+  // Countries Configuration props
+  countriesConfigData,
+  isLoadingCountriesConfig,
+  countriesConfigError,
+  isSavingCountriesConfig,
+  handleSaveCountriesConfiguration,
+  // Regions Configuration props
+  regionsConfigData,
+  isLoadingRegionsConfig,
+  regionsConfigError,
+  isSavingRegionsConfig,
+  handleSaveRegionsConfiguration,
+  // Zones Configuration props
+  zonesConfigData,
+  isLoadingZonesConfig,
+  zonesConfigError,
+  isSavingZonesConfig,
+  handleSaveZonesConfiguration,
 }) => {
   return (
     <Card>
@@ -430,6 +478,26 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                   zonesData={zonesData}
                   isLoadingZones={isLoadingZones}
                   zonesError={zonesError}
+                  constructionTypesConfigData={constructionTypesConfigData}
+                  isLoadingConstructionTypesConfig={isLoadingConstructionTypesConfig}
+                  constructionTypesConfigError={constructionTypesConfigError}
+                  isSavingConstructionTypesConfig={isSavingConstructionTypesConfig}
+                  handleSaveConstructionTypesConfiguration={handleSaveConstructionTypesConfiguration}
+                  countriesConfigData={countriesConfigData}
+                  isLoadingCountriesConfig={isLoadingCountriesConfig}
+                  countriesConfigError={countriesConfigError}
+                  isSavingCountriesConfig={isSavingCountriesConfig}
+                  handleSaveCountriesConfiguration={handleSaveCountriesConfiguration}
+                  regionsConfigData={regionsConfigData}
+                  isLoadingRegionsConfig={isLoadingRegionsConfig}
+                  regionsConfigError={regionsConfigError}
+                  isSavingRegionsConfig={isSavingRegionsConfig}
+                  handleSaveRegionsConfiguration={handleSaveRegionsConfiguration}
+                  zonesConfigData={zonesConfigData}
+                  isLoadingZonesConfig={isLoadingZonesConfig}
+                  zonesConfigError={zonesConfigError}
+                  isSavingZonesConfig={isSavingZonesConfig}
+                  handleSaveZonesConfiguration={handleSaveZonesConfiguration}
                 />
             )}
           </div>

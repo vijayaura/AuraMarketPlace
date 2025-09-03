@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 
-type MasterDataTabsProps = {
+export type MasterDataTabsProps = {
   activePricingTab: string;
   activeConstructionTypes: any[];
   activeCountries: any[];
@@ -61,6 +61,30 @@ type MasterDataTabsProps = {
   zonesData: string[];
   isLoadingZones: boolean;
   zonesError: string | null;
+  // Construction Types Configuration props
+  constructionTypesConfigData: any[];
+  isLoadingConstructionTypesConfig: boolean;
+  constructionTypesConfigError: string | null;
+  isSavingConstructionTypesConfig: boolean;
+  handleSaveConstructionTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Countries Configuration props
+  countriesConfigData: any[];
+  isLoadingCountriesConfig: boolean;
+  countriesConfigError: string | null;
+  isSavingCountriesConfig: boolean;
+  handleSaveCountriesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Regions Configuration props
+  regionsConfigData: any[];
+  isLoadingRegionsConfig: boolean;
+  regionsConfigError: string | null;
+  isSavingRegionsConfig: boolean;
+  handleSaveRegionsConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Zones Configuration props
+  zonesConfigData: any[];
+  isLoadingZonesConfig: boolean;
+  zonesConfigError: string | null;
+  isSavingZonesConfig: boolean;
+  handleSaveZonesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
 };
 
 const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
@@ -114,11 +138,171 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
   zonesData,
   isLoadingZones,
   zonesError,
+  // Construction Types Configuration props
+  constructionTypesConfigData,
+  isLoadingConstructionTypesConfig,
+  constructionTypesConfigError,
+  isSavingConstructionTypesConfig,
+  handleSaveConstructionTypesConfiguration,
+  // Countries Configuration props
+  countriesConfigData,
+  isLoadingCountriesConfig,
+  countriesConfigError,
+  isSavingCountriesConfig,
+  handleSaveCountriesConfiguration,
+  // Regions Configuration props
+  regionsConfigData,
+  isLoadingRegionsConfig,
+  regionsConfigError,
+  isSavingRegionsConfig,
+  handleSaveRegionsConfiguration,
+  // Zones Configuration props
+  zonesConfigData,
+  isLoadingZonesConfig,
+  zonesConfigError,
+  isSavingZonesConfig,
+  handleSaveZonesConfiguration,
 }) => {
+  // Simple state for Construction Types form values - direct approach
+  const [constructionTypesFormData, setConstructionTypesFormData] = useState<{[key: string]: any}>({});
+  
+  // Simple state for Countries form values - direct approach
+  const [countriesFormData, setCountriesFormData] = useState<{[key: string]: any}>({});
+  
+  // Simple state for Regions form values - direct approach
+  const [regionsFormData, setRegionsFormData] = useState<{[key: string]: any}>({});
+  
+  // Simple state for Zones form values - direct approach
+  const [zonesFormData, setZonesFormData] = useState<{[key: string]: any}>({});
+
+  // Clause Pricing state - moved to top level to avoid conditional hooks
+  const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
+  const [clauseRows, setClauseRows] = useState<{[key: number]: any[]}>({});
+  const [activeToggles, setActiveToggles] = useState<{[key: number]: boolean}>({});
+
+  // Simple effect to populate form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Construction Types Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!constructionTypesConfigData,
+      configDataLength: constructionTypesConfigData?.length,
+      configData: constructionTypesConfigData
+    });
+
+    if (activePricingTab === "construction-types" && constructionTypesConfigData && constructionTypesConfigData.length > 0) {
+      console.log('✅ Populating Construction Types form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping
+      constructionTypesConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        formData[configItem.name] = {
+          pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+          value: String(configItem.value || 0),
+          quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+        };
+      });
+      
+      setConstructionTypesFormData(formData);
+      console.log('✅ Form data populated:', formData);
+    }
+  }, [activePricingTab, constructionTypesConfigData]);
+
+  // Simple effect to populate countries form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Countries Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!countriesConfigData,
+      configDataLength: countriesConfigData?.length,
+      configData: countriesConfigData
+    });
+
+    if (activePricingTab === "countries" && countriesConfigData && countriesConfigData.length > 0) {
+      console.log('✅ Populating Countries form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping - handle both 'country' and 'name' fields
+      countriesConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        const countryName = configItem.country || configItem.name;
+        if (countryName) {
+          formData[countryName] = {
+            pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+            value: String(configItem.value || 0),
+            quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+          };
+        }
+      });
+      
+      setCountriesFormData(formData);
+      console.log('✅ Countries form data populated:', formData);
+    }
+  }, [activePricingTab, countriesConfigData]);
+
+  // Simple effect to populate regions form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Regions Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!regionsConfigData,
+      configDataLength: regionsConfigData?.length,
+      configData: regionsConfigData
+    });
+
+    if (activePricingTab === "regions" && regionsConfigData && regionsConfigData.length > 0) {
+      console.log('✅ Populating Regions form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping using name field
+      regionsConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        const regionName = configItem.name;
+        if (regionName) {
+          formData[regionName] = {
+            pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+            value: String(configItem.value || 0),
+            quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+          };
+        }
+      });
+      
+      setRegionsFormData(formData);
+      console.log('✅ Regions form data populated:', formData);
+    }
+  }, [activePricingTab, regionsConfigData]);
+
+  // Simple effect to populate zones form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Zones Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!zonesConfigData,
+      configDataLength: zonesConfigData?.length,
+      configData: zonesConfigData
+    });
+
+    if (activePricingTab === "zones" && zonesConfigData && zonesConfigData.length > 0) {
+      console.log('✅ Populating Zones form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping using name field
+      zonesConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        const zoneName = configItem.name;
+        if (zoneName) {
+          formData[zoneName] = {
+            pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+            value: String(configItem.value || 0),
+            quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+          };
+        }
+      });
+      
+      setZonesFormData(formData);
+      console.log('✅ Zones form data populated:', formData);
+    }
+  }, [activePricingTab, zonesConfigData]);
+
+  // Clause Pricing functions
   if (activePricingTab === "clause-pricing") {
-    const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
-    const [clauseRows, setClauseRows] = useState<{[key: number]: any[]}>({});
-    const [activeToggles, setActiveToggles] = useState<{[key: number]: boolean}>({});
 
     const toggleClause = (clauseId: number) => {
       const newExpanded = new Set(expandedClauses);
@@ -543,8 +727,9 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
           title: "Construction Types", 
           description: "Configure pricing for different construction types", 
           data: constructionTypesData.map(item => item.label),
-          isLoading: isLoadingConstructionTypes,
-          error: constructionTypesError
+          isLoading: isLoadingConstructionTypes || isLoadingConstructionTypesConfig,
+          error: constructionTypesError || constructionTypesConfigError,
+          configData: constructionTypesConfigData
         };
       case "role-types":
         return { 
@@ -607,24 +792,27 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
           title: "Countries", 
           description: "Configure pricing for different countries", 
           data: countriesData,
-          isLoading: isLoadingCountries,
-          error: countriesError
+          isLoading: isLoadingCountries || isLoadingCountriesConfig,
+          error: countriesError || countriesConfigError,
+          configData: countriesConfigData
         };
       case "regions":
         return { 
           title: "Regions", 
           description: "Configure pricing for different regions", 
           data: regionsData,
-          isLoading: isLoadingRegions,
-          error: regionsError
+          isLoading: isLoadingRegions || isLoadingRegionsConfig,
+          error: regionsError || regionsConfigError,
+          configData: regionsConfigData
         };
       case "zones":
         return { 
           title: "Zones", 
           description: "Configure pricing for different zones", 
           data: zonesData,
-          isLoading: isLoadingZones,
-          error: zonesError
+          isLoading: isLoadingZones || isLoadingZonesConfig,
+          error: zonesError || zonesConfigError,
+          configData: zonesConfigData
         };
       default:
         return null;
@@ -642,9 +830,42 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
             <CardTitle>{config.title}</CardTitle>
             <CardDescription>{config.description}</CardDescription>
           </div>
-          <Button onClick={onSave} size="sm" disabled={config.isLoading}>
+          <Button 
+            onClick={
+              activePricingTab === "construction-types" 
+                ? () => handleSaveConstructionTypesConfiguration(constructionTypesFormData)
+                : activePricingTab === "countries"
+                ? () => handleSaveCountriesConfiguration(countriesFormData)
+                : activePricingTab === "regions"
+                ? () => handleSaveRegionsConfiguration(regionsFormData)
+                : activePricingTab === "zones"
+                ? () => handleSaveZonesConfiguration(zonesFormData)
+                : onSave
+            } 
+            size="sm" 
+            disabled={
+              activePricingTab === "construction-types" 
+                ? (config.isLoading || isSavingConstructionTypesConfig)
+                : activePricingTab === "countries"
+                ? (config.isLoading || isSavingCountriesConfig)
+                : activePricingTab === "regions"
+                ? (config.isLoading || isSavingRegionsConfig)
+                : activePricingTab === "zones"
+                ? (config.isLoading || isSavingZonesConfig)
+                : config.isLoading
+            }
+          >
             <Save className="w-4 h-4 mr-1" />
-            {config.isLoading ? 'Loading...' : 'Save'}
+            {activePricingTab === "construction-types" 
+              ? (isSavingConstructionTypesConfig ? 'Saving...' : 'Save')
+              : activePricingTab === "countries"
+              ? (isSavingCountriesConfig ? 'Saving...' : 'Save')
+              : activePricingTab === "regions"
+              ? (isSavingRegionsConfig ? 'Saving...' : 'Save')
+              : activePricingTab === "zones"
+              ? (isSavingZonesConfig ? 'Saving...' : 'Save')
+              : (config.isLoading ? 'Loading...' : 'Save')
+            }
           </Button>
         </div>
       </CardHeader>
@@ -661,7 +882,7 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
             <TableSkeleton />
           </div>
         ) : (
-          <Table>
+          <Table key={activePricingTab === "construction-types" ? `construction-${config.configData?.length || 0}` : activePricingTab}>
             <TableHeader>
               <TableRow>
                 <TableHead>{config.title.slice(0, -1)}</TableHead>
@@ -678,36 +899,164 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                config.data.map((item: string, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{item}</TableCell>
-                    <TableCell>
-                      <Select defaultValue="percentage">
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="percentage">Percentage</SelectItem>
-                          <SelectItem value="fixed">Fixed Rate</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Input type="number" defaultValue="0" className="w-24" />
-                    </TableCell>
-                    <TableCell>
-                      <Select defaultValue="quote">
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="quote">Auto Quote</SelectItem>
-                          <SelectItem value="no-quote">No Quote</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                  </TableRow>
-                ))
+                config.data.map((item: string, index: number) => {
+                  // Simple direct approach for Construction Types, Countries, Regions, and Zones
+                  const formData = activePricingTab === "construction-types" ? constructionTypesFormData[item] 
+                    : activePricingTab === "countries" ? countriesFormData[item] 
+                    : activePricingTab === "regions" ? regionsFormData[item]
+                    : activePricingTab === "zones" ? zonesFormData[item]
+                    : null;
+                  
+                  console.log(`🔍 Rendering row for "${item}":`, {
+                    formData,
+                    hasFormData: !!formData,
+                    allFormData: constructionTypesFormData
+                  });
+                  
+                  return (
+                    <TableRow key={`${item}-${index}`}>
+                      <TableCell className="font-medium">{item}</TableCell>
+                      <TableCell>
+                        <Select 
+                          value={formData?.pricingType || 'percentage'}
+                          onValueChange={(value) => {
+                            if (activePricingTab === "construction-types") {
+                              setConstructionTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            } else if (activePricingTab === "countries") {
+                              setCountriesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            } else if (activePricingTab === "regions") {
+                              setRegionsFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            } else if (activePricingTab === "zones") {
+                              setZonesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="percentage">Percentage</SelectItem>
+                            <SelectItem value="fixed">Fixed Rate</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Input 
+                          type="number" 
+                          value={formData?.value || '0'}
+                          onChange={(e) => {
+                            if (activePricingTab === "construction-types") {
+                              setConstructionTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
+                            } else if (activePricingTab === "countries") {
+                              setCountriesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
+                            } else if (activePricingTab === "regions") {
+                              setRegionsFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
+                            } else if (activePricingTab === "zones") {
+                              setZonesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
+                            }
+                          }}
+                          className="w-24" 
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Select 
+                          value={formData?.quoteOption || 'quote'}
+                          onValueChange={(value) => {
+                            if (activePricingTab === "construction-types") {
+                              setConstructionTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            } else if (activePricingTab === "countries") {
+                              setCountriesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            } else if (activePricingTab === "regions") {
+                              setRegionsFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            } else if (activePricingTab === "zones") {
+                              setZonesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="quote">Auto Quote</SelectItem>
+                            <SelectItem value="no-quote">No Quote</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
