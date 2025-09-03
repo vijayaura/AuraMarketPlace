@@ -1803,3 +1803,217 @@ export async function getCoverageOptions(insurerId: number | string, productId: 
   return apiGet<CoverageOptionsResponse>(`/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/coverage-options`);
 }
 
+// POST Coverage Options interfaces
+export interface SaveCoverageOptionsRequest {
+  coverage_options: {
+    sum_insured_loadings: CoverageOptionLoading[];
+    project_value_loadings: CoverageOptionLoading[];
+    contract_works_loadings: CoverageOptionLoading[];
+    plant_equipment_loadings: CoverageOptionLoading[];
+    cross_liability_cover: CrossLiabilityCover[];
+  };
+}
+
+export interface SaveCoverageOptionsResponse {
+  message: string;
+  coverage_options: {
+    sum_insured_loadings: CoverageOptionLoading[];
+    project_value_loadings: CoverageOptionLoading[];
+    contract_works_loadings: CoverageOptionLoading[];
+    plant_equipment_loadings: CoverageOptionLoading[];
+    cross_liability_cover: CrossLiabilityCover[];
+  };
+}
+
+export async function saveCoverageOptions(
+  insurerId: number | string, 
+  productId: number | string, 
+  data: SaveCoverageOptionsRequest
+): Promise<SaveCoverageOptionsResponse> {
+  return apiPost<SaveCoverageOptionsResponse>(`/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/coverage-options`, data);
+}
+
+// PATCH Coverage Options interfaces
+export interface UpdateCoverageOptionsRequest {
+  insurer_id: number;
+  coverage_options: {
+    sum_insured_loadings: Omit<CoverageOptionLoading, 'currency'>[];
+    project_value_loadings: Omit<CoverageOptionLoading, 'currency'>[];
+    contract_works_loadings?: Omit<CoverageOptionLoading, 'currency'>[];
+    plant_equipment_loadings?: Omit<CoverageOptionLoading, 'currency'>[];
+    cross_liability_cover?: CrossLiabilityCover[];
+  };
+}
+
+export interface UpdateCoverageOptionsResponse {
+  message: string;
+  data: {
+    sum_insured_loadings: CoverageOptionLoading[];
+    project_value_loadings: CoverageOptionLoading[];
+    contract_works_loadings?: CoverageOptionLoading[];
+    plant_equipment_loadings?: CoverageOptionLoading[];
+    cross_liability_cover?: CrossLiabilityCover[];
+  };
+}
+
+export async function updateCoverageOptions(
+  insurerId: number | string, 
+  productId: number | string, 
+  data: UpdateCoverageOptionsRequest
+): Promise<UpdateCoverageOptionsResponse> {
+  return apiPatch<UpdateCoverageOptionsResponse>(`/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/coverage-options`, data);
+}
+
+// Policy Limits & Deductibles interfaces
+export interface SubLimit {
+  title: string;
+  value: number;
+  description: string;
+  pricing_type: 'PERCENTAGE_OF_SUM_INSURED' | 'FIXED_AMOUNT' | 'PERCENTAGE_OF_LOSS';
+}
+
+export interface Deductible {
+  type: 'FIXED_AMOUNT' | 'PERCENTAGE_OF_LOSS' | 'PERCENTAGE_OF_SUM_INSURED';
+  value: number;
+  quote_option: 'AUTO_QUOTE' | 'MANUAL_QUOTE';
+  loading_discount: number;
+}
+
+export interface PolicyLimit {
+  value: number;
+  pricing_type: 'FIXED_AMOUNT' | 'PERCENTAGE';
+}
+
+export interface PolicyLimitsResponse {
+  sub_limits: SubLimit[];
+  deductibles: Deductible[];
+  policy_limits: {
+    maximum_cover: PolicyLimit;
+    minimum_premium: PolicyLimit;
+    base_broker_commission: PolicyLimit;
+    maximum_broker_commission: PolicyLimit;
+    minimum_broker_commission: PolicyLimit;
+  };
+}
+
+export async function getPolicyLimits(
+  insurerId: number | string, 
+  productId: number | string
+): Promise<PolicyLimitsResponse> {
+  return apiGet<PolicyLimitsResponse>(`/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/policy-limits`);
+}
+
+// POST Policy Limits interfaces
+export interface SavePolicyLimitItem {
+  pricing_type: 'FIXED_AMOUNT' | 'PERCENTAGE';
+  value: number;
+}
+
+export interface SaveSubLimit {
+  title: string;
+  description: string;
+  pricing_type: 'PERCENTAGE_OF_SUM_INSURED' | 'FIXED_AMOUNT' | 'PERCENTAGE_OF_LOSS';
+  value: number;
+}
+
+export interface SaveDeductible {
+  type: 'FIXED_AMOUNT' | 'PERCENTAGE_OF_LOSS' | 'PERCENTAGE_OF_SUM_INSURED';
+  value: number;
+  loading_discount: number;
+  quote_option: 'AUTO_QUOTE' | 'MANUAL_QUOTE';
+}
+
+export interface SavePolicyLimitsRequest {
+  policy_limits_and_deductible: {
+    policy_limits: {
+      minimum_premium: SavePolicyLimitItem;
+      maximum_cover: SavePolicyLimitItem;
+      base_broker_commission: SavePolicyLimitItem;
+      minimum_broker_commission: SavePolicyLimitItem;
+      maximum_broker_commission: SavePolicyLimitItem;
+    };
+    sub_limits: SaveSubLimit[];
+    deductibles: SaveDeductible[];
+  };
+}
+
+export interface SavePolicyLimitsResponse {
+  message: string;
+  policy_limits_and_deductible: {
+    policy_limits: {
+      minimum_premium: SavePolicyLimitItem;
+      maximum_cover: SavePolicyLimitItem;
+      base_broker_commission: SavePolicyLimitItem;
+      minimum_broker_commission: SavePolicyLimitItem;
+      maximum_broker_commission: SavePolicyLimitItem;
+    };
+    sub_limits: SaveSubLimit[];
+    deductibles: SaveDeductible[];
+  };
+}
+
+export async function savePolicyLimits(
+  insurerId: number | string, 
+  productId: number | string, 
+  data: SavePolicyLimitsRequest
+): Promise<SavePolicyLimitsResponse> {
+  return apiPost<SavePolicyLimitsResponse>(`/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/policy-limits`, data);
+}
+
+// PATCH Policy Limits interfaces
+export interface UpdatePolicyLimitItem {
+  pricing_type: 'FIXED_AMOUNT' | 'PERCENTAGE';
+  value: number;
+}
+
+export interface UpdateSubLimit {
+  title: string;
+  description: string;
+  pricing_type: 'PERCENTAGE_OF_SUM_INSURED' | 'FIXED_AMOUNT' | 'PERCENTAGE_OF_LOSS';
+  value: number;
+}
+
+export interface UpdateDeductible {
+  type: 'FIXED_AMOUNT' | 'PERCENTAGE_OF_LOSS' | 'PERCENTAGE_OF_SUM_INSURED';
+  value: number;
+  loading_discount: number;
+  quote_option: 'AUTO_QUOTE' | 'MANUAL_QUOTE';
+}
+
+export interface UpdatePolicyLimitsRequest {
+  policy_limits_and_deductible: {
+    policy_limits: {
+      minimum_premium: UpdatePolicyLimitItem;
+      maximum_cover: UpdatePolicyLimitItem;
+      base_broker_commission: UpdatePolicyLimitItem;
+      minimum_broker_commission: UpdatePolicyLimitItem;
+      maximum_broker_commission: UpdatePolicyLimitItem;
+    };
+    sub_limits: UpdateSubLimit[];
+    deductibles: UpdateDeductible[];
+  };
+}
+
+export interface UpdatePolicyLimitsResponse {
+  message: string;
+  data: {
+    policy_limits: {
+      minimum_premium: UpdatePolicyLimitItem;
+      maximum_cover: UpdatePolicyLimitItem;
+      base_broker_commission: UpdatePolicyLimitItem;
+      minimum_broker_commission: UpdatePolicyLimitItem;
+      maximum_broker_commission: UpdatePolicyLimitItem;
+    };
+    sub_limits: UpdateSubLimit[];
+    deductibles: UpdateDeductible[];
+  };
+}
+
+export async function updatePolicyLimits(
+  insurerId: number | string, 
+  productId: number | string, 
+  data: UpdatePolicyLimitsRequest
+): Promise<UpdatePolicyLimitsResponse> {
+  return apiPatch<UpdatePolicyLimitsResponse>(`/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/policy-limits`, data);
+}
+

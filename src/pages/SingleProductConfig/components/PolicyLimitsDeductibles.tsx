@@ -1,19 +1,25 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save } from "lucide-react";
+import { Save, AlertCircle } from "lucide-react";
+import TableSkeleton from "@/components/loaders/TableSkeleton";
+import { PolicyLimitsResponse } from "@/lib/api/insurers";
 
-type PolicyLimitsDeductiblesProps = {
+export interface PolicyLimitsDeductiblesProps {
   ratingConfig: any;
   onSave: () => void;
   updateLimits: (key: string, value: number) => void;
   addCoverRequirementEntry: (category: string) => void;
   updateCoverRequirementEntry: (category: string, id: number, field: string, value: any) => void;
   removeCoverRequirementEntry: (category: string, id: number) => void;
-};
+  isLoading: boolean;
+  isSaving: boolean;
+  error: string | null;
+  policyLimitsData: PolicyLimitsResponse | null;
+}
 
 const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
   ratingConfig,
@@ -22,7 +28,91 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
   addCoverRequirementEntry,
   updateCoverRequirementEntry,
   removeCoverRequirementEntry,
+  isLoading,
+  isSaving,
+  error,
+  policyLimitsData,
 }) => {
+  // Map API data to UI fields when data is received
+  useEffect(() => {
+    if (false && policyLimitsData && ratingConfig) {
+
+      
+      // Map policy limits to ratingConfig.limits
+      if (policyLimitsData.policy_limits) {
+        const limits = policyLimitsData.policy_limits;
+        
+        // Update policy limits
+        if (limits.maximum_cover) {
+          updateLimits('maximumCover', limits.maximum_cover.value);
+        }
+        if (limits.minimum_premium) {
+          updateLimits('minimumPremium', limits.minimum_premium.value);
+        }
+        if (limits.base_broker_commission) {
+          updateLimits('baseBrokerCommission', limits.base_broker_commission.value);
+        }
+        if (limits.maximum_broker_commission) {
+          updateLimits('maximumBrokerCommission', limits.maximum_broker_commission.value);
+        }
+        if (limits.minimum_broker_commission) {
+          updateLimits('minimumBrokerCommission', limits.minimum_broker_commission.value);
+        }
+      }
+
+      // Map sub limits to ratingConfig.coverRequirements.subLimits
+      if (policyLimitsData.sub_limits && Array.isArray(policyLimitsData.sub_limits)) {
+        // Clear existing sub limits and add new ones from API
+        policyLimitsData.sub_limits.forEach((subLimit, index) => {
+          // Add entry if it doesn't exist
+          if (!ratingConfig.coverRequirements?.subLimits?.[index]) {
+            addCoverRequirementEntry('subLimits');
+          }
+          
+          // Update the entry with API data
+          const entryId = ratingConfig.coverRequirements?.subLimits?.[index]?.id;
+          if (entryId) {
+            updateCoverRequirementEntry('subLimits', entryId, 'title', subLimit.title);
+            updateCoverRequirementEntry('subLimits', entryId, 'description', subLimit.description);
+            updateCoverRequirementEntry('subLimits', entryId, 'value', subLimit.value);
+            updateCoverRequirementEntry('subLimits', entryId, 'pricingType', 
+              subLimit.pricing_type === 'FIXED_AMOUNT' ? 'fixed' : 
+              subLimit.pricing_type === 'PERCENTAGE_OF_SUM_INSURED' ? 'percentage_sum_insured' :
+              subLimit.pricing_type === 'PERCENTAGE_OF_LOSS' ? 'percentage_loss' : 'fixed'
+            );
+          }
+        });
+      }
+
+      // Map deductibles to ratingConfig.coverRequirements.deductibles
+      if (policyLimitsData.deductibles && Array.isArray(policyLimitsData.deductibles)) {
+        policyLimitsData.deductibles.forEach((deductible, index) => {
+          // Add entry if it doesn't exist
+          if (!ratingConfig.coverRequirements?.deductibles?.[index]) {
+            addCoverRequirementEntry('deductibles');
+          }
+          
+          // Update the entry with API data
+          const entryId = ratingConfig.coverRequirements?.deductibles?.[index]?.id;
+          if (entryId) {
+            updateCoverRequirementEntry('deductibles', entryId, 'deductibleType', 
+              deductible.type === 'FIXED_AMOUNT' ? 'fixed' :
+              deductible.type === 'PERCENTAGE_OF_LOSS' ? 'percentage_loss' :
+              deductible.type === 'PERCENTAGE_OF_SUM_INSURED' ? 'percentage_sum_insured' : 'fixed'
+            );
+            updateCoverRequirementEntry('deductibles', entryId, 'value', deductible.value);
+            updateCoverRequirementEntry('deductibles', entryId, 'quoteOption', 
+              deductible.quote_option === 'AUTO_QUOTE' ? 'quote' : 'no-quote'
+            );
+            updateCoverRequirementEntry('deductibles', entryId, 'loadingDiscount', deductible.loading_discount);
+          }
+        });
+      }
+      
+
+    }
+  }, [policyLimitsData, ratingConfig, updateLimits, addCoverRequirementEntry, updateCoverRequirementEntry]);
+
   return (
     <Card className="h-full">
       <CardHeader>
@@ -31,14 +121,28 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
             <CardTitle>Policy Limits & Deductibles</CardTitle>
             <CardDescription>Configure policy limits and deductible adjustments</CardDescription>
           </div>
-          <Button onClick={onSave} size="sm">
+          <Button onClick={onSave} size="sm" disabled={isLoading || isSaving}>
             <Save className="w-4 h-4 mr-1" />
-            Save Limits & Deductibles
+            {isLoading ? 'Loading...' : isSaving ? 'Saving...' : 'Save Limits & Deductibles'}
           </Button>
         </div>
       </CardHeader>
       <CardContent className="p-6 overflow-x-auto">
-        <div className="space-y-6">
+        {error && (
+          <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive mb-6">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span className="text-sm">{error}</span>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="space-y-6">
+            <TableSkeleton />
+            <TableSkeleton />
+            <TableSkeleton />
+          </div>
+        ) : (
+          <div className="space-y-6">
           {/* Policy Limits */}
           <Card className="border border-border bg-card">
             <CardHeader className="pb-3">
@@ -50,9 +154,9 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Limit Type</TableHead>
-                    <TableHead>Pricing Type</TableHead>
-                    <TableHead>Value (AED)</TableHead>
+                    <TableHead className="w-1/3">Limit Type</TableHead>
+                    <TableHead className="w-1/3">Pricing Type</TableHead>
+                    <TableHead className="w-1/3">Value (AED)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -60,7 +164,7 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                     <TableCell className="font-medium">Minimum Premium</TableCell>
                     <TableCell>
                       <Select defaultValue="fixed">
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -72,9 +176,9 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                     <TableCell>
                       <Input
                         type="number"
-                        value={ratingConfig.limits.minimumPremium}
+                        value={ratingConfig.limits?.minimumPremium || 0}
                         onChange={(e) => updateLimits('minimumPremium', parseInt(e.target.value) || 0)}
-                        className="w-32"
+                        className="w-full"
                       />
                     </TableCell>
                   </TableRow>
@@ -82,7 +186,7 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                     <TableCell className="font-medium">Maximum Cover</TableCell>
                     <TableCell>
                       <Select defaultValue="fixed">
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -94,9 +198,9 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                     <TableCell>
                       <Input
                         type="number"
-                        value={ratingConfig.limits.maximumCover}
+                        value={ratingConfig.limits?.maximumCover || 0}
                         onChange={(e) => updateLimits('maximumCover', parseInt(e.target.value) || 0)}
-                        className="w-32"
+                        className="w-full"
                       />
                     </TableCell>
                   </TableRow>
@@ -104,7 +208,7 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                     <TableCell className="font-medium">Base Broker Commission</TableCell>
                     <TableCell>
                       <Select defaultValue="percentage">
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -116,9 +220,9 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                     <TableCell>
                       <Input
                         type="number"
-                        value={ratingConfig.limits.baseBrokerCommission}
+                        value={ratingConfig.limits?.baseBrokerCommission || 0}
                         onChange={(e) => updateLimits('baseBrokerCommission', parseInt(e.target.value) || 0)}
-                        className="w-32"
+                        className="w-full"
                       />
                     </TableCell>
                   </TableRow>
@@ -126,7 +230,7 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                     <TableCell className="font-medium">Minimum Broker Commission</TableCell>
                     <TableCell>
                       <Select defaultValue="percentage">
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -138,9 +242,9 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                     <TableCell>
                       <Input
                         type="number"
-                        value={ratingConfig.limits.minimumBrokerCommission}
+                        value={ratingConfig.limits?.minimumBrokerCommission || 0}
                         onChange={(e) => updateLimits('minimumBrokerCommission', parseInt(e.target.value) || 0)}
-                        className="w-32"
+                        className="w-full"
                       />
                     </TableCell>
                   </TableRow>
@@ -148,7 +252,7 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                     <TableCell className="font-medium">Maximum Broker Commission</TableCell>
                     <TableCell>
                       <Select defaultValue="percentage">
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -160,9 +264,9 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                     <TableCell>
                       <Input
                         type="number"
-                        value={ratingConfig.limits.maximumBrokerCommission}
+                        value={ratingConfig.limits?.maximumBrokerCommission || 0}
                         onChange={(e) => updateLimits('maximumBrokerCommission', parseInt(e.target.value) || 0)}
-                        className="w-32"
+                        className="w-full"
                       />
                     </TableCell>
                   </TableRow>
@@ -192,11 +296,11 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Pricing Type</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="w-1/4">Title</TableHead>
+                    <TableHead className="w-1/3">Description</TableHead>
+                    <TableHead className="w-1/5">Pricing Type</TableHead>
+                    <TableHead className="w-1/6">Value</TableHead>
+                    <TableHead className="w-16">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -207,7 +311,7 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                           type="text"
                           value={entry.title || ''}
                           onChange={(e) => updateCoverRequirementEntry('subLimits', entry.id, 'title', e.target.value)}
-                          className="w-40"
+                          className="w-full"
                           placeholder="Enter title"
                         />
                       </TableCell>
@@ -216,13 +320,13 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                           type="text"
                           value={entry.description || ''}
                           onChange={(e) => updateCoverRequirementEntry('subLimits', entry.id, 'description', e.target.value)}
-                          className="w-40"
+                          className="w-full"
                           placeholder="Enter description"
                         />
                       </TableCell>
                       <TableCell>
                         <Select 
-                          value={entry.pricingType} 
+                          value={entry.pricingType || 'fixed'} 
                           onValueChange={(value) => updateCoverRequirementEntry('subLimits', entry.id, 'pricingType', value)}
                         >
                           <SelectTrigger className="w-40">
@@ -240,7 +344,7 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                           step="0.01"
                           value={entry.value || 0}
                           onChange={(e) => updateCoverRequirementEntry('subLimits', entry.id, 'value', parseFloat(e.target.value) || 0)}
-                          className="w-32"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -287,11 +391,11 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Deductible Type</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Loading/Discount</TableHead>
-                    <TableHead>Quote Option</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="w-1/4">Deductible Type</TableHead>
+                    <TableHead className="w-1/5">Value</TableHead>
+                    <TableHead className="w-1/5">Loading/Discount</TableHead>
+                    <TableHead className="w-1/4">Quote Option</TableHead>
+                    <TableHead className="w-16">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -302,7 +406,7 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                           value={entry.deductibleType || 'fixed'} 
                           onValueChange={(value) => updateCoverRequirementEntry('deductibles', entry.id, 'deductibleType', value)}
                         >
-                          <SelectTrigger className="w-48">
+                          <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -318,7 +422,7 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                           step="0.01"
                           value={entry.value || 0}
                           onChange={(e) => updateCoverRequirementEntry('deductibles', entry.id, 'value', parseFloat(e.target.value) || 0)}
-                          className="w-32"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -327,15 +431,15 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                           step="0.01"
                           value={entry.loadingDiscount || 0}
                           onChange={(e) => updateCoverRequirementEntry('deductibles', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
-                          className="w-24"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
                         <Select 
-                          value={entry.quoteOption} 
+                          value={entry.quoteOption || 'quote'} 
                           onValueChange={(value) => updateCoverRequirementEntry('deductibles', entry.id, 'quoteOption', value)}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -366,7 +470,8 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
               </Table>
             </CardContent>
           </Card>
-        </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

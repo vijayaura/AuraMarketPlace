@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Save, AlertCircle } from "lucide-react";
 import { CoverageOptionsResponse } from "@/lib/api/insurers";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 
-export type CoverageOptionsExtensionsProps = {
+export interface CoverageOptionsExtensionsProps {
   ratingConfig: any;
   onSave: () => void;
   addCoverRequirementEntry: (category: string) => void;
@@ -16,9 +16,10 @@ export type CoverageOptionsExtensionsProps = {
   removeCoverRequirementEntry: (category: string, id: number) => void;
   updateCoverRequirement: (category: string, key: string, value: number) => void;
   isLoading: boolean;
+  isSaving: boolean;
   error: string | null;
   coverageOptionsData: CoverageOptionsResponse | null;
-};
+}
 
 const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
   ratingConfig,
@@ -28,12 +29,18 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
   removeCoverRequirementEntry,
   updateCoverRequirement,
   isLoading,
+  isSaving,
   error,
   coverageOptionsData,
 }) => {
-  // Auto-populate fields when API data is available
+  // Track if data has been mapped to prevent continuous overwrites
+  const hasBeenMapped = useRef(false);
+
+  // Auto-populate fields when API data is available (ONE-TIME MAPPING)
   useEffect(() => {
-    if (coverageOptionsData && ratingConfig) {
+    if (coverageOptionsData && ratingConfig && !hasBeenMapped.current) {
+      console.log('🔄 Mapping Coverage Options API data to UI fields (one-time)');
+      hasBeenMapped.current = true;
       // Map sum_insured_loadings to sumInsured entries
       if (coverageOptionsData.sum_insured_loadings && ratingConfig.coverRequirements?.sumInsured) {
         coverageOptionsData.sum_insured_loadings.forEach((apiEntry, index) => {
@@ -100,6 +107,14 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
     }
   }, [coverageOptionsData, ratingConfig, updateCoverRequirementEntry, updateCoverRequirement]);
 
+  // Reset mapping flag when new API data arrives
+  useEffect(() => {
+    if (coverageOptionsData) {
+      hasBeenMapped.current = false;
+    }
+  }, [coverageOptionsData]);
+
+
   return (
     <Card className="h-full">
       <CardHeader>
@@ -108,9 +123,9 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
             <CardTitle>Cover Requirements Configuration</CardTitle>
             <CardDescription>Configure loading/discount rates based on cover requirement values from proposal form</CardDescription>
           </div>
-          <Button onClick={onSave} size="sm" disabled={isLoading}>
+          <Button onClick={onSave} size="sm" disabled={isLoading || isSaving}>
             <Save className="w-4 h-4 mr-1" />
-            {isLoading ? 'Loading...' : 'Save Cover Requirements'}
+            {isLoading ? 'Loading...' : isSaving ? 'Saving...' : 'Save Cover Requirements'}
           </Button>
         </div>
       </CardHeader>
@@ -153,12 +168,12 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>From (AED)</TableHead>
-                      <TableHead>To (AED)</TableHead>
-                      <TableHead>Pricing Type</TableHead>
-                      <TableHead>Loading/Discount</TableHead>
-                      <TableHead>Quote Option</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="w-1/6">From (AED)</TableHead>
+                      <TableHead className="w-1/6">To (AED)</TableHead>
+                      <TableHead className="w-1/5">Pricing Type</TableHead>
+                      <TableHead className="w-1/5">Loading/Discount</TableHead>
+                      <TableHead className="w-1/5">Quote Option</TableHead>
+                      <TableHead className="w-16">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -167,25 +182,27 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                         <TableCell>
                           <Input
                             type="number"
-                            value={entry.from}
+                            value={entry.from || 0}
                             onChange={(e) => updateCoverRequirementEntry('sumInsured', entry.id, 'from', parseFloat(e.target.value) || 0)}
-                            className="w-32"
+                            className="w-full"
+                            placeholder="From amount"
                           />
                         </TableCell>
                         <TableCell>
                           <Input
                             type="number"
-                            value={entry.to}
+                            value={entry.to || 0}
                             onChange={(e) => updateCoverRequirementEntry('sumInsured', entry.id, 'to', parseFloat(e.target.value) || 0)}
-                            className="w-32"
+                            className="w-full"
+                            placeholder="To amount"
                           />
                         </TableCell>
                         <TableCell>
                           <Select 
-                            value={entry.pricingType} 
+                            value={entry.pricingType || 'percentage'} 
                             onValueChange={(value) => updateCoverRequirementEntry('sumInsured', entry.id, 'pricingType', value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -198,17 +215,18 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                           <Input
                             type="number"
                             step="0.01"
-                            value={entry.loadingDiscount}
+                            value={entry.loadingDiscount || 0}
                             onChange={(e) => updateCoverRequirementEntry('sumInsured', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
-                            className="w-24"
+                            className="w-full"
+                            placeholder="0.00"
                           />
                         </TableCell>
                         <TableCell>
                           <Select 
-                            value={entry.quoteOption} 
+                            value={entry.quoteOption || 'quote'} 
                             onValueChange={(value) => updateCoverRequirementEntry('sumInsured', entry.id, 'quoteOption', value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -255,12 +273,12 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>From (AED)</TableHead>
-                      <TableHead>To (AED)</TableHead>
-                      <TableHead>Pricing Type</TableHead>
-                      <TableHead>Loading/Discount</TableHead>
-                      <TableHead>Quote Option</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="w-1/6">From (AED)</TableHead>
+                      <TableHead className="w-1/6">To (AED)</TableHead>
+                      <TableHead className="w-1/5">Pricing Type</TableHead>
+                      <TableHead className="w-1/5">Loading/Discount</TableHead>
+                      <TableHead className="w-1/5">Quote Option</TableHead>
+                      <TableHead className="w-16">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -271,7 +289,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             type="number"
                             value={entry.from}
                             onChange={(e) => updateCoverRequirementEntry('projectValue', entry.id, 'from', parseFloat(e.target.value) || 0)}
-                            className="w-32"
+                            className="w-full"
                           />
                         </TableCell>
                         <TableCell>
@@ -279,7 +297,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             type="number"
                             value={entry.to}
                             onChange={(e) => updateCoverRequirementEntry('projectValue', entry.id, 'to', parseFloat(e.target.value) || 0)}
-                            className="w-32"
+                            className="w-full"
                           />
                         </TableCell>
                         <TableCell>
@@ -287,7 +305,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             value={entry.pricingType} 
                             onValueChange={(value) => updateCoverRequirementEntry('projectValue', entry.id, 'pricingType', value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -302,7 +320,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             step="0.01"
                             value={entry.loadingDiscount}
                             onChange={(e) => updateCoverRequirementEntry('projectValue', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
-                            className="w-24"
+                            className="w-full"
                           />
                         </TableCell>
                         <TableCell>
@@ -310,7 +328,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             value={entry.quoteOption} 
                             onValueChange={(value) => updateCoverRequirementEntry('projectValue', entry.id, 'quoteOption', value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -357,12 +375,12 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>From (AED)</TableHead>
-                      <TableHead>To (AED)</TableHead>
-                      <TableHead>Pricing Type</TableHead>
-                      <TableHead>Loading/Discount</TableHead>
-                      <TableHead>Quote Option</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="w-1/6">From (AED)</TableHead>
+                      <TableHead className="w-1/6">To (AED)</TableHead>
+                      <TableHead className="w-1/5">Pricing Type</TableHead>
+                      <TableHead className="w-1/5">Loading/Discount</TableHead>
+                      <TableHead className="w-1/5">Quote Option</TableHead>
+                      <TableHead className="w-16">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -373,7 +391,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             type="number"
                             value={entry.from}
                             onChange={(e) => updateCoverRequirementEntry('contractWorks', entry.id, 'from', parseFloat(e.target.value) || 0)}
-                            className="w-32"
+                            className="w-full"
                           />
                         </TableCell>
                         <TableCell>
@@ -381,7 +399,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             type="number"
                             value={entry.to}
                             onChange={(e) => updateCoverRequirementEntry('contractWorks', entry.id, 'to', parseFloat(e.target.value) || 0)}
-                            className="w-32"
+                            className="w-full"
                           />
                         </TableCell>
                         <TableCell>
@@ -389,7 +407,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             value={entry.pricingType} 
                             onValueChange={(value) => updateCoverRequirementEntry('contractWorks', entry.id, 'pricingType', value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -404,7 +422,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             step="0.01"
                             value={entry.loadingDiscount}
                             onChange={(e) => updateCoverRequirementEntry('contractWorks', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
-                            className="w-24"
+                            className="w-full"
                           />
                         </TableCell>
                         <TableCell>
@@ -412,7 +430,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             value={entry.quoteOption} 
                             onValueChange={(value) => updateCoverRequirementEntry('contractWorks', entry.id, 'quoteOption', value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -459,12 +477,12 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>From (AED)</TableHead>
-                      <TableHead>To (AED)</TableHead>
-                      <TableHead>Pricing Type</TableHead>
-                      <TableHead>Loading/Discount</TableHead>
-                      <TableHead>Quote Option</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="w-1/6">From (AED)</TableHead>
+                      <TableHead className="w-1/6">To (AED)</TableHead>
+                      <TableHead className="w-1/5">Pricing Type</TableHead>
+                      <TableHead className="w-1/5">Loading/Discount</TableHead>
+                      <TableHead className="w-1/5">Quote Option</TableHead>
+                      <TableHead className="w-16">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -475,7 +493,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             type="number"
                             value={entry.from}
                             onChange={(e) => updateCoverRequirementEntry('plantEquipment', entry.id, 'from', parseFloat(e.target.value) || 0)}
-                            className="w-32"
+                            className="w-full"
                           />
                         </TableCell>
                         <TableCell>
@@ -483,7 +501,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             type="number"
                             value={entry.to}
                             onChange={(e) => updateCoverRequirementEntry('plantEquipment', entry.id, 'to', parseFloat(e.target.value) || 0)}
-                            className="w-32"
+                            className="w-full"
                           />
                         </TableCell>
                         <TableCell>
@@ -491,7 +509,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             value={entry.pricingType} 
                             onValueChange={(value) => updateCoverRequirementEntry('plantEquipment', entry.id, 'pricingType', value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -506,7 +524,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             step="0.01"
                             value={entry.loadingDiscount}
                             onChange={(e) => updateCoverRequirementEntry('plantEquipment', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
-                            className="w-24"
+                            className="w-full"
                           />
                         </TableCell>
                         <TableCell>
@@ -514,7 +532,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             value={entry.quoteOption} 
                             onValueChange={(value) => updateCoverRequirementEntry('plantEquipment', entry.id, 'quoteOption', value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -554,10 +572,10 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Cover Option</TableHead>
-                      <TableHead>Pricing Type</TableHead>
-                      <TableHead>Loading/Discount</TableHead>
-                      <TableHead>Quote Option</TableHead>
+                      <TableHead className="w-1/4">Cover Option</TableHead>
+                      <TableHead className="w-1/4">Pricing Type</TableHead>
+                      <TableHead className="w-1/4">Loading/Discount</TableHead>
+                      <TableHead className="w-1/4">Quote Option</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -569,7 +587,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                         <TableCell className="font-medium">{option.label}</TableCell>
                         <TableCell>
                           <Select defaultValue="percentage">
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -584,12 +602,12 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             step="0.01"
                             value={ratingConfig.coverRequirements?.crossLiabilityCover?.[option.key as keyof typeof ratingConfig.coverRequirements.crossLiabilityCover] || 0}
                             onChange={(e) => updateCoverRequirement('crossLiabilityCover', option.key, parseFloat(e.target.value) || 0)}
-                            className="w-24"
+                            className="w-full"
                           />
                         </TableCell>
                         <TableCell>
                           <Select defaultValue="quote">
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

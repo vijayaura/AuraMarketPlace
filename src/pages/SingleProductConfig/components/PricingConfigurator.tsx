@@ -19,6 +19,7 @@ type PricingConfiguratorProps = {
   fetchBaseRatesMasters: () => Promise<void>;
   fetchProjectRiskFactors: () => Promise<void>;
   fetchCoverageOptions: () => Promise<void>;
+  fetchPolicyLimits: () => Promise<void>;
   saveConfiguration: () => void;
   markAsChanged: () => void;
   setRatingConfig: (updater: (prev: any) => any) => void;
@@ -47,8 +48,17 @@ type PricingConfiguratorProps = {
   updateCoverRequirementEntry: (category: string, id: number, field: string, value: any) => void;
   removeCoverRequirementEntry: (category: string, id: number) => void;
   updateCoverRequirement: (category: string, key: string, value: number) => void;
+  isLoadingCoverageOptions: boolean;
+  isSavingCoverageOptions: boolean;
+  coverageOptionsError: string | null;
+  coverageOptionsData: any;
   // Policy Limits props
   updateLimits: (key: string, value: number) => void;
+  isLoadingPolicyLimits: boolean;
+  isSavingPolicyLimits: boolean;
+  policyLimitsError: string | null;
+  policyLimitsData: any;
+  handleSavePolicyLimits: () => Promise<void>;
   // Base Rates save handler
   handleSaveBaseRates: () => Promise<void>;
   handleSaveProjectRiskFactors: () => Promise<void>;
@@ -64,6 +74,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   fetchBaseRatesMasters,
   fetchProjectRiskFactors,
   fetchCoverageOptions,
+  fetchPolicyLimits,
   saveConfiguration,
   markAsChanged,
   setRatingConfig,
@@ -88,7 +99,16 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   updateCoverRequirementEntry,
   removeCoverRequirementEntry,
   updateCoverRequirement,
+  isLoadingCoverageOptions,
+  isSavingCoverageOptions,
+  coverageOptionsError,
+  coverageOptionsData,
   updateLimits,
+  isLoadingPolicyLimits,
+  isSavingPolicyLimits,
+  policyLimitsError,
+  policyLimitsData,
+  handleSavePolicyLimits,
   handleSaveBaseRates,
   handleSaveProjectRiskFactors,
 }) => {
@@ -143,6 +163,8 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                       await fetchProjectRiskFactors();
                     } else if (section.id === 'coverage-options') {
                       await fetchCoverageOptions();
+                    } else if (section.id === 'limits-deductibles') {
+                      await fetchPolicyLimits();
                     }
                   }}
                   className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${
@@ -212,17 +234,25 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                 updateCoverRequirementEntry={updateCoverRequirementEntry}
                 removeCoverRequirementEntry={removeCoverRequirementEntry}
                 updateCoverRequirement={updateCoverRequirement}
+                isLoading={isLoadingCoverageOptions}
+                isSaving={isSavingCoverageOptions}
+                error={coverageOptionsError}
+                coverageOptionsData={coverageOptionsData}
               />
             )}
 
             {activePricingTab === "limits-deductibles" && (
               <PolicyLimitsDeductibles
                 ratingConfig={ratingConfig}
-                onSave={saveConfiguration}
+                onSave={handleSavePolicyLimits}
                 updateLimits={updateLimits}
                 addCoverRequirementEntry={addCoverRequirementEntry}
                 updateCoverRequirementEntry={updateCoverRequirementEntry}
                 removeCoverRequirementEntry={removeCoverRequirementEntry}
+                isLoading={isLoadingPolicyLimits}
+                isSaving={isSavingPolicyLimits}
+                error={policyLimitsError}
+                policyLimitsData={policyLimitsData}
               />
             )}
 

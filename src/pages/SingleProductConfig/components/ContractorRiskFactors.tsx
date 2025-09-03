@@ -187,12 +187,12 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>From</TableHead>
-                    <TableHead>To</TableHead>
-                    <TableHead>Pricing Type</TableHead>
-                    <TableHead>Loading/Discount</TableHead>
-                    <TableHead>Quote Option</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="w-1/6">From</TableHead>
+                    <TableHead className="w-1/6">To</TableHead>
+                    <TableHead className="w-1/5">Pricing Type</TableHead>
+                    <TableHead className="w-1/5">Loading/Discount</TableHead>
+                    <TableHead className="w-1/5">Quote Option</TableHead>
+                    <TableHead className="w-16">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -203,7 +203,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           type="number"
                           value={entry.from}
                           onChange={(e) => updateContractorRiskEntry('experienceDiscounts', entry.id, 'from', parseFloat(e.target.value) || 0)}
-                          className="w-20"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -211,7 +211,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           type="number"
                           value={entry.to}
                           onChange={(e) => updateContractorRiskEntry('experienceDiscounts', entry.id, 'to', parseFloat(e.target.value) || 0)}
-                          className="w-20"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -219,7 +219,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           value={entry.pricingType} 
                           onValueChange={(value) => updateContractorRiskEntry('experienceDiscounts', entry.id, 'pricingType', value)}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -234,7 +234,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           step="0.01"
                           value={entry.loadingDiscount}
                           onChange={(e) => updateContractorRiskEntry('experienceDiscounts', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
-                          className="w-24"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -242,7 +242,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           value={entry.quoteOption} 
                           onValueChange={(value) => updateContractorRiskEntry('experienceDiscounts', entry.id, 'quoteOption', value)}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -308,7 +308,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                               type="number"
                               value={entry.from}
                               onChange={(e) => updateContractorRiskEntry('claimFrequency', entry.id, 'from', parseFloat(e.target.value) || 0)}
-                              className="w-20"
+                              className="w-full"
                             />
                           </TableCell>
                           <TableCell>
@@ -316,7 +316,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                               type="number"
                               value={entry.to}
                               onChange={(e) => updateContractorRiskEntry('claimFrequency', entry.id, 'to', parseFloat(e.target.value) || 0)}
-                              className="w-20"
+                              className="w-full"
                             />
                           </TableCell>
                           <TableCell>
@@ -324,7 +324,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                               value={entry.pricingType} 
                               onValueChange={(value) => updateContractorRiskEntry('claimFrequency', entry.id, 'pricingType', value)}
                             >
-                              <SelectTrigger className="w-32">
+                              <SelectTrigger className="w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -339,7 +339,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                               step="0.01"
                               value={entry.loadingDiscount}
                               onChange={(e) => updateContractorRiskEntry('claimFrequency', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
-                              className="w-24"
+                              className="w-full"
                             />
                           </TableCell>
                           <TableCell>
@@ -347,7 +347,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                               value={entry.quoteOption} 
                               onValueChange={(value) => updateContractorRiskEntry('claimFrequency', entry.id, 'quoteOption', value)}
                             >
-                              <SelectTrigger className="w-32">
+                              <SelectTrigger className="w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -405,7 +405,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                               type="number"
                               value={entry.from}
                               onChange={(e) => updateContractorRiskEntry('claimAmountCategories', entry.id, 'from', parseFloat(e.target.value) || 0)}
-                              className="w-24"
+                              className="w-full"
                             />
                           </TableCell>
                           <TableCell>
@@ -413,7 +413,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                               type="number"
                               value={entry.to}
                               onChange={(e) => updateContractorRiskEntry('claimAmountCategories', entry.id, 'to', parseFloat(e.target.value) || 0)}
-                              className="w-24"
+                              className="w-full"
                             />
                           </TableCell>
                           <TableCell>
@@ -421,7 +421,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                               value={entry.pricingType} 
                               onValueChange={(value) => updateContractorRiskEntry('claimAmountCategories', entry.id, 'pricingType', value)}
                             >
-                              <SelectTrigger className="w-32">
+                              <SelectTrigger className="w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -436,7 +436,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                               step="0.01"
                               value={entry.loadingDiscount}
                               onChange={(e) => updateContractorRiskEntry('claimAmountCategories', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
-                              className="w-24"
+                              className="w-full"
                             />
                           </TableCell>
                           <TableCell>
@@ -444,7 +444,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                               value={entry.quoteOption} 
                               onValueChange={(value) => updateContractorRiskEntry('claimAmountCategories', entry.id, 'quoteOption', value)}
                             >
-                              <SelectTrigger className="w-32">
+                              <SelectTrigger className="w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -493,12 +493,12 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>From</TableHead>
-                    <TableHead>To</TableHead>
-                    <TableHead>Pricing Type</TableHead>
-                    <TableHead>Loading/Discount</TableHead>
-                    <TableHead>Quote Option</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="w-1/6">From</TableHead>
+                    <TableHead className="w-1/6">To</TableHead>
+                    <TableHead className="w-1/5">Pricing Type</TableHead>
+                    <TableHead className="w-1/5">Loading/Discount</TableHead>
+                    <TableHead className="w-1/5">Quote Option</TableHead>
+                    <TableHead className="w-16">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -509,7 +509,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           type="number"
                           value={entry.from}
                           onChange={(e) => updateContractorRiskEntry('contractorNumbers', entry.id, 'from', parseFloat(e.target.value) || 0)}
-                          className="w-20"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -517,7 +517,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           type="number"
                           value={entry.to}
                           onChange={(e) => updateContractorRiskEntry('contractorNumbers', entry.id, 'to', parseFloat(e.target.value) || 0)}
-                          className="w-20"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -525,7 +525,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           value={entry.pricingType} 
                           onValueChange={(value) => updateContractorRiskEntry('contractorNumbers', entry.id, 'pricingType', value)}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -540,7 +540,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           step="0.01"
                           value={entry.loadingDiscount}
                           onChange={(e) => updateContractorRiskEntry('contractorNumbers', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
-                          className="w-24"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -548,7 +548,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           value={entry.quoteOption} 
                           onValueChange={(value) => updateContractorRiskEntry('contractorNumbers', entry.id, 'quoteOption', value)}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -595,12 +595,12 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>From</TableHead>
-                    <TableHead>To</TableHead>
-                    <TableHead>Pricing Type</TableHead>
-                    <TableHead>Loading/Discount</TableHead>
-                    <TableHead>Quote Option</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="w-1/6">From</TableHead>
+                    <TableHead className="w-1/6">To</TableHead>
+                    <TableHead className="w-1/5">Pricing Type</TableHead>
+                    <TableHead className="w-1/5">Loading/Discount</TableHead>
+                    <TableHead className="w-1/5">Quote Option</TableHead>
+                    <TableHead className="w-16">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -611,7 +611,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           type="number"
                           value={entry.from}
                           onChange={(e) => updateContractorRiskEntry('subcontractorNumbers', entry.id, 'from', parseFloat(e.target.value) || 0)}
-                          className="w-20"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -619,7 +619,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           type="number"
                           value={entry.to}
                           onChange={(e) => updateContractorRiskEntry('subcontractorNumbers', entry.id, 'to', parseFloat(e.target.value) || 0)}
-                          className="w-20"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -627,7 +627,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           value={entry.pricingType} 
                           onValueChange={(value) => updateContractorRiskEntry('subcontractorNumbers', entry.id, 'pricingType', value)}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -642,7 +642,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           step="0.01"
                           value={entry.loadingDiscount}
                           onChange={(e) => updateContractorRiskEntry('subcontractorNumbers', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
-                          className="w-24"
+                          className="w-full"
                         />
                       </TableCell>
                       <TableCell>
@@ -650,7 +650,7 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
                           value={entry.quoteOption} 
                           onValueChange={(value) => updateContractorRiskEntry('subcontractorNumbers', entry.id, 'quoteOption', value)}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

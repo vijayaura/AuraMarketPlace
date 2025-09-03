@@ -25,7 +25,7 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveQuoteConfig, updateQuoteConfig, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type SaveQuoteConfigRequest, type CoverageOptionsResponse } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, saveQuoteConfig, updateQuoteConfig, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type SaveQuoteConfigRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
@@ -36,8 +36,8 @@ import BaseRates from "./SingleProductConfig/components/BaseRates";
 import ProjectRiskFactors from "./SingleProductConfig/components/ProjectRiskFactors";
 import RequiredDocuments from "./SingleProductConfig/components/RequiredDocuments";
 import ContractorRiskFactors from "./SingleProductConfig/components/ContractorRiskFactors";
-import CoverageOptionsExtensions, { type CoverageOptionsExtensionsProps } from "./SingleProductConfig/components/CoverageOptionsExtensions";
-import PolicyLimitsDeductibles from "./SingleProductConfig/components/PolicyLimitsDeductibles";
+import CoverageOptionsExtensions, { CoverageOptionsExtensionsProps } from "./SingleProductConfig/components/CoverageOptionsExtensions";
+import PolicyLimitsDeductibles, { type PolicyLimitsDeductiblesProps } from "./SingleProductConfig/components/PolicyLimitsDeductibles";
 import MasterDataTabs from "./SingleProductConfig/components/MasterDataTabs";
 
 interface VariableOption {
@@ -152,8 +152,15 @@ const SingleProductConfig = () => {
 
   // Coverage Options state
   const [coverageOptionsData, setCoverageOptionsData] = useState<CoverageOptionsResponse | null>(null);
+  const [isSavingCoverageOptions, setIsSavingCoverageOptions] = useState(false);
   const [isLoadingCoverageOptions, setIsLoadingCoverageOptions] = useState(false);
   const [coverageOptionsError, setCoverageOptionsError] = useState<string | null>(null);
+
+  // Policy Limits state
+  const [policyLimitsData, setPolicyLimitsData] = useState<PolicyLimitsResponse | null>(null);
+  const [isLoadingPolicyLimits, setIsLoadingPolicyLimits] = useState(false);
+  const [policyLimitsError, setPolicyLimitsError] = useState<string | null>(null);
+  const [isSavingPolicyLimits, setIsSavingPolicyLimits] = useState(false);
   // Always fetch on demand (Pricing tab or Base Rates click)
   const fetchBaseRatesMasters = async (): Promise<void> => {
     setIsLoadingBaseRatesMasters(true);
@@ -244,6 +251,10 @@ const SingleProductConfig = () => {
       if (!insurerId || !pid) return;
       const resp = await getProjectRiskFactors(insurerId, String(pid));
       const data: any = (resp && (resp as any).data != null) ? (resp as any).data : resp || {};
+      
+      console.log('📋 Project Risk Factors API response:', data);
+      console.log('📋 Risk definition data:', data?.location_hazard_loadings?.risk_definition);
+      
       // Map API -> UI (only fields currently bound in UI)
       const mapDur = Array.isArray(data.project_duration_loadings)
         ? data.project_duration_loadings.map((d: any, idx: number) => ({
@@ -273,6 +284,116 @@ const SingleProductConfig = () => {
             return acc;
           }, {} as any)
         : {};
+      
+      // Map risk definition factors from API to hardcoded UI fields
+      const riskDefinition = data?.location_hazard_loadings?.risk_definition;
+      const mappedRiskDefinition = {
+        nearWaterBody: {
+          lowRisk: 'no',
+          moderateRisk: 'no', 
+          highRisk: 'no',
+          veryHighRisk: 'no'
+        },
+        floodProneZone: {
+          lowRisk: 'no',
+          moderateRisk: 'no',
+          highRisk: 'no', 
+          veryHighRisk: 'no'
+        },
+        cityCenter: {
+          lowRisk: 'no',
+          moderateRisk: 'no',
+          highRisk: 'no',
+          veryHighRisk: 'no'
+        },
+        soilType: {
+          lowRisk: [],
+          moderateRisk: [],
+          highRisk: [],
+          veryHighRisk: []
+        },
+        existingStructure: {
+          lowRisk: 'no',
+          moderateRisk: 'no',
+          highRisk: 'no',
+          veryHighRisk: 'no'
+        },
+        blastingExcavation: {
+          lowRisk: 'no',
+          moderateRisk: 'no',
+          highRisk: 'no',
+          veryHighRisk: 'no'
+        },
+        securityArrangements: {
+          lowRisk: 'no',
+          moderateRisk: 'no',
+          highRisk: 'no',
+          veryHighRisk: 'no'
+        }
+      };
+      
+      // Map API factors to hardcoded fields
+      if (riskDefinition?.factors && Array.isArray(riskDefinition.factors)) {
+        riskDefinition.factors.forEach((factor: any) => {
+          const factorName = String(factor.factor || '').toLowerCase();
+          
+          if (factorName.includes('near water body') || factorName.includes('water body')) {
+            mappedRiskDefinition.nearWaterBody = {
+              lowRisk: String(factor.low_risk || 'no').toLowerCase(),
+              moderateRisk: String(factor.moderate_risk || 'no').toLowerCase(),
+              highRisk: String(factor.high_risk || 'no').toLowerCase(),
+              veryHighRisk: String(factor.very_high_risk || 'no').toLowerCase()
+            };
+          } else if (factorName.includes('flood-prone') || factorName.includes('flood prone')) {
+            mappedRiskDefinition.floodProneZone = {
+              lowRisk: String(factor.low_risk || 'no').toLowerCase(),
+              moderateRisk: String(factor.moderate_risk || 'no').toLowerCase(),
+              highRisk: String(factor.high_risk || 'no').toLowerCase(),
+              veryHighRisk: String(factor.very_high_risk || 'no').toLowerCase()
+            };
+          } else if (factorName.includes('city center') || factorName.includes('city centre')) {
+            mappedRiskDefinition.cityCenter = {
+              lowRisk: String(factor.low_risk || 'no').toLowerCase(),
+              moderateRisk: String(factor.moderate_risk || 'no').toLowerCase(),
+              highRisk: String(factor.high_risk || 'no').toLowerCase(),
+              veryHighRisk: String(factor.very_high_risk || 'no').toLowerCase()
+            };
+          } else if (factorName.includes('soil type') || factorName.includes('soil')) {
+            // For soil type, we might need to parse the values differently
+            // For now, keep as empty arrays - this might need adjustment based on API format
+            mappedRiskDefinition.soilType = {
+              lowRisk: [],
+              moderateRisk: [],
+              highRisk: [],
+              veryHighRisk: []
+            };
+          } else if (factorName.includes('existing structure') || factorName.includes('existing structure on site')) {
+            mappedRiskDefinition.existingStructure = {
+              lowRisk: String(factor.low_risk || 'no').toLowerCase(),
+              moderateRisk: String(factor.moderate_risk || 'no').toLowerCase(),
+              highRisk: String(factor.high_risk || 'no').toLowerCase(),
+              veryHighRisk: String(factor.very_high_risk || 'no').toLowerCase()
+            };
+          } else if (factorName.includes('blasting') || factorName.includes('deep excavation')) {
+            mappedRiskDefinition.blastingExcavation = {
+              lowRisk: String(factor.low_risk || 'no').toLowerCase(),
+              moderateRisk: String(factor.moderate_risk || 'no').toLowerCase(),
+              highRisk: String(factor.high_risk || 'no').toLowerCase(),
+              veryHighRisk: String(factor.very_high_risk || 'no').toLowerCase()
+            };
+          } else if (factorName.includes('security') || factorName.includes('security arrangements')) {
+            mappedRiskDefinition.securityArrangements = {
+              lowRisk: String(factor.low_risk || 'no').toLowerCase(),
+              moderateRisk: String(factor.moderate_risk || 'no').toLowerCase(),
+              highRisk: String(factor.high_risk || 'no').toLowerCase(),
+              veryHighRisk: String(factor.very_high_risk || 'no').toLowerCase()
+            };
+          }
+        });
+      }
+      
+      console.log('📋 Mapped risk definition:', mappedRiskDefinition);
+      
       setRatingConfig(prev => ({
         ...prev,
         projectRisk: {
@@ -283,6 +404,7 @@ const SingleProductConfig = () => {
             ...prev.projectRisk.locationHazardLoadings,
             ...hazardRates,
           },
+          riskDefinition: mappedRiskDefinition,
         },
       }));
 
@@ -1516,6 +1638,393 @@ const SingleProductConfig = () => {
     }
   };
 
+  // Policy Limits fetch handler
+  const fetchPolicyLimits = async (): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      setPolicyLimitsError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    setIsLoadingPolicyLimits(true);
+    setPolicyLimitsError(null);
+    
+    try {
+      const data = await getPolicyLimits(insurerId, String(productId));
+      setPolicyLimitsData(data);
+      console.log('✅ Policy Limits data loaded:', data);
+    } catch (err: any) {
+      console.error('Policy Limits fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setPolicyLimitsError(message || 'Bad request while loading policy limits.');
+      } else if (status === 401) {
+        setPolicyLimitsError('Unauthorized. Please log in again.');
+      } else if (status === 403) {
+        setPolicyLimitsError("You don't have access to policy limits.");
+      } else if (status && status >= 500) {
+        setPolicyLimitsError('Server error while loading policy limits.');
+      } else {
+        setPolicyLimitsError(message || 'Failed to load policy limits.');
+      }
+    } finally {
+      setIsLoadingPolicyLimits(false);
+    }
+  };
+
+  // Save Policy Limits handler with POST/PATCH logic
+  const handleSavePolicyLimits = async (): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      toast({ 
+        title: 'Error', 
+        description: 'Missing insurer ID or product ID', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    setIsSavingPolicyLimits(true);
+    
+    try {
+      // Check if we already have data from the GET API call
+      const hasExistingData = policyLimitsData !== null;
+      
+      if (hasExistingData) {
+        console.log('📝 Existing policy limits data found, using PATCH API');
+        
+        // Collect data from UI for PATCH (matches exact specification format)
+        const updateData: UpdatePolicyLimitsRequest = {
+          policy_limits_and_deductible: {
+            policy_limits: {
+              minimum_premium: {
+                pricing_type: 'FIXED_AMOUNT',
+                value: ratingConfig.limits?.minimumPremium || 0
+              },
+              maximum_cover: {
+                pricing_type: 'FIXED_AMOUNT',
+                value: ratingConfig.limits?.maximumCover || 0
+              },
+              base_broker_commission: {
+                pricing_type: 'PERCENTAGE',
+                value: ratingConfig.limits?.baseBrokerCommission || 0
+              },
+              minimum_broker_commission: {
+                pricing_type: 'PERCENTAGE',
+                value: ratingConfig.limits?.minimumBrokerCommission || 0
+              },
+              maximum_broker_commission: {
+                pricing_type: 'PERCENTAGE',
+                value: ratingConfig.limits?.maximumBrokerCommission || 0
+              }
+            },
+            sub_limits: ratingConfig.coverRequirements?.subLimits?.map((entry: any) => ({
+              title: entry.title || '',
+              description: entry.description || '',
+              pricing_type: (
+                entry.pricingType === 'fixed' ? 'FIXED_AMOUNT' :
+                entry.pricingType === 'percentage_sum_insured' ? 'PERCENTAGE_OF_SUM_INSURED' :
+                entry.pricingType === 'percentage_loss' ? 'PERCENTAGE_OF_LOSS' : 'FIXED_AMOUNT'
+              ) as 'PERCENTAGE_OF_SUM_INSURED' | 'FIXED_AMOUNT' | 'PERCENTAGE_OF_LOSS',
+              value: entry.value || 0
+            })) || [],
+            deductibles: ratingConfig.coverRequirements?.deductibles?.map((entry: any) => ({
+              type: (
+                entry.deductibleType === 'fixed' ? 'FIXED_AMOUNT' :
+                entry.deductibleType === 'percentage_loss' ? 'PERCENTAGE_OF_LOSS' :
+                entry.deductibleType === 'percentage_sum_insured' ? 'PERCENTAGE_OF_SUM_INSURED' : 'FIXED_AMOUNT'
+              ) as 'FIXED_AMOUNT' | 'PERCENTAGE_OF_LOSS' | 'PERCENTAGE_OF_SUM_INSURED',
+              value: entry.value || 0,
+              loading_discount: entry.loadingDiscount || 0,
+              quote_option: (entry.quoteOption === 'quote' ? 'AUTO_QUOTE' : 'MANUAL_QUOTE') as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+            })) || []
+          }
+        };
+
+        console.log('📤 Calling PATCH API with data:', updateData);
+        const patchResponse = await updatePolicyLimits(insurerId, String(productId), updateData);
+        console.log('📥 PATCH API response:', patchResponse);
+        
+        // Update local state with PATCH response (response.data format)
+        if (patchResponse?.data) {
+          const responseData = patchResponse.data;
+          setPolicyLimitsData({
+            policy_limits: responseData.policy_limits,
+            sub_limits: responseData.sub_limits || [],
+            deductibles: responseData.deductibles || []
+          });
+        }
+        
+      } else {
+        console.log('📝 No existing policy limits data, using POST API');
+        
+        // Collect data from UI for POST (with currency in nested objects)
+        const postData: SavePolicyLimitsRequest = {
+          policy_limits_and_deductible: {
+            policy_limits: {
+              minimum_premium: {
+                pricing_type: 'FIXED_AMOUNT',
+                value: ratingConfig.limits?.minimumPremium || 0
+              },
+              maximum_cover: {
+                pricing_type: 'FIXED_AMOUNT',
+                value: ratingConfig.limits?.maximumCover || 0
+              },
+              base_broker_commission: {
+                pricing_type: 'PERCENTAGE',
+                value: ratingConfig.limits?.baseBrokerCommission || 0
+              },
+              minimum_broker_commission: {
+                pricing_type: 'PERCENTAGE',
+                value: ratingConfig.limits?.minimumBrokerCommission || 0
+              },
+              maximum_broker_commission: {
+                pricing_type: 'PERCENTAGE',
+                value: ratingConfig.limits?.maximumBrokerCommission || 0
+              }
+            },
+            sub_limits: ratingConfig.coverRequirements?.subLimits?.map((entry: any) => ({
+              title: entry.title || '',
+              description: entry.description || '',
+              pricing_type: (
+                entry.pricingType === 'fixed' ? 'FIXED_AMOUNT' :
+                entry.pricingType === 'percentage_sum_insured' ? 'PERCENTAGE_OF_SUM_INSURED' :
+                entry.pricingType === 'percentage_loss' ? 'PERCENTAGE_OF_LOSS' : 'FIXED_AMOUNT'
+              ) as 'PERCENTAGE_OF_SUM_INSURED' | 'FIXED_AMOUNT' | 'PERCENTAGE_OF_LOSS',
+              value: entry.value || 0
+            })) || [],
+            deductibles: ratingConfig.coverRequirements?.deductibles?.map((entry: any) => ({
+              type: (
+                entry.deductibleType === 'fixed' ? 'FIXED_AMOUNT' :
+                entry.deductibleType === 'percentage_loss' ? 'PERCENTAGE_OF_LOSS' :
+                entry.deductibleType === 'percentage_sum_insured' ? 'PERCENTAGE_OF_SUM_INSURED' : 'FIXED_AMOUNT'
+              ) as 'FIXED_AMOUNT' | 'PERCENTAGE_OF_LOSS' | 'PERCENTAGE_OF_SUM_INSURED',
+              value: entry.value || 0,
+              loading_discount: entry.loadingDiscount || 0,
+              quote_option: (entry.quoteOption === 'quote' ? 'AUTO_QUOTE' : 'MANUAL_QUOTE') as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+            })) || []
+          }
+        };
+
+        console.log('📤 Calling POST API with data:', postData);
+        const postResponse = await savePolicyLimits(insurerId, String(productId), postData);
+        console.log('📥 POST API response:', postResponse);
+        
+        // Update local state with POST response
+        if (postResponse?.policy_limits_and_deductible) {
+          const responseData = postResponse.policy_limits_and_deductible;
+          setPolicyLimitsData({
+            policy_limits: responseData.policy_limits,
+            sub_limits: responseData.sub_limits || [],
+            deductibles: responseData.deductibles || []
+          });
+        }
+      }
+      
+      toast({ 
+        title: 'Success', 
+        description: 'Policy limits and deductibles saved successfully!', 
+        variant: 'default' 
+      });
+      
+    } catch (error: any) {
+      console.error('Save Policy Limits error:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        status: error?.status,
+        response: error?.response,
+        stack: error?.stack
+      });
+      
+      const status = error?.status;
+      const message = status === 400 ? 'Invalid data while saving policy limits.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving policy limits.'
+        : (error?.message || 'Failed to save policy limits.');
+      
+      toast({ 
+        title: 'Error', 
+        description: message, 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsSavingPolicyLimits(false);
+    }
+  };
+
+  // Save Coverage Options handler with GET-then-POST/PATCH logic
+  const handleSaveCoverageOptions = async (): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      toast({ 
+        title: 'Error', 
+        description: 'Missing insurer ID or product ID', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    setIsSavingCoverageOptions(true);
+    
+    try {
+      // Check if data already exists by trying to fetch first
+      let hasExistingData = false;
+      let existingData = null;
+      
+      try {
+        existingData = await getCoverageOptions(insurerId, String(productId));
+        hasExistingData = true;
+        console.log('✅ Existing coverage options found, will use PATCH');
+      } catch (error: any) {
+        // If 404 or no data, proceed with POST
+        hasExistingData = false;
+        console.log('📝 No existing coverage options found, will use POST');
+      }
+
+      // Helper function to map UI data to API format
+      const mapUIDataToAPI = () => {
+        const sumInsuredLoadings = ratingConfig.coverRequirements?.sumInsured?.map(entry => ({
+          from_amount: entry.from || 0,
+          to_amount: entry.to || 0,
+          pricing_type: (entry.pricingType?.toUpperCase() || 'PERCENTAGE') as 'PERCENTAGE' | 'AMOUNT',
+          loading_discount: entry.loadingDiscount || 0,
+          quote_option: (entry.quoteOption === 'quote' ? 'AUTO_QUOTE' : 'MANUAL_QUOTE') as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+        })) || [];
+
+        const projectValueLoadings = ratingConfig.coverRequirements?.projectValue?.map(entry => ({
+          from_amount: entry.from || 0,
+          to_amount: entry.to || 0,
+          pricing_type: (entry.pricingType?.toUpperCase() || 'PERCENTAGE') as 'PERCENTAGE' | 'AMOUNT',
+          loading_discount: entry.loadingDiscount || 0,
+          quote_option: (entry.quoteOption === 'quote' ? 'AUTO_QUOTE' : 'MANUAL_QUOTE') as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+        })) || [];
+
+        const contractWorksLoadings = ratingConfig.coverRequirements?.contractWorks?.map(entry => ({
+          from_amount: entry.from || 0,
+          to_amount: entry.to || 0,
+          pricing_type: (entry.pricingType?.toUpperCase() || 'PERCENTAGE') as 'PERCENTAGE' | 'AMOUNT',
+          loading_discount: entry.loadingDiscount || 0,
+          quote_option: (entry.quoteOption === 'quote' ? 'AUTO_QUOTE' : 'MANUAL_QUOTE') as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+        })) || [];
+
+        const plantEquipmentLoadings = ratingConfig.coverRequirements?.plantEquipment?.map(entry => ({
+          from_amount: entry.from || 0,
+          to_amount: entry.to || 0,
+          pricing_type: (entry.pricingType?.toUpperCase() || 'PERCENTAGE') as 'PERCENTAGE' | 'AMOUNT',
+          loading_discount: entry.loadingDiscount || 0,
+          quote_option: (entry.quoteOption === 'quote' ? 'AUTO_QUOTE' : 'MANUAL_QUOTE') as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+        })) || [];
+
+        const crossLiabilityCover = [
+          {
+            cover_option: 'Yes (Included)',
+            pricing_type: 'PERCENTAGE' as 'PERCENTAGE' | 'AMOUNT',
+            loading_discount: ratingConfig.coverRequirements?.crossLiabilityCover?.yes || 0,
+            quote_option: 'AUTO_QUOTE' as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+          },
+          {
+            cover_option: 'No (Not Included)',
+            pricing_type: 'PERCENTAGE' as 'PERCENTAGE' | 'AMOUNT',
+            loading_discount: ratingConfig.coverRequirements?.crossLiabilityCover?.no || 0,
+            quote_option: 'AUTO_QUOTE' as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+          }
+        ];
+
+        return {
+          sumInsuredLoadings,
+          projectValueLoadings,
+          contractWorksLoadings,
+          plantEquipmentLoadings,
+          crossLiabilityCover
+        };
+      };
+
+      const mappedData = mapUIDataToAPI();
+
+      if (hasExistingData) {
+        // Use PATCH to update existing data
+        const updateData: UpdateCoverageOptionsRequest = {
+        insurer_id: Number(insurerId),
+          coverage_options: {
+            sum_insured_loadings: mappedData.sumInsuredLoadings,
+            project_value_loadings: mappedData.projectValueLoadings,
+            contract_works_loadings: mappedData.contractWorksLoadings,
+            plant_equipment_loadings: mappedData.plantEquipmentLoadings,
+            cross_liability_cover: mappedData.crossLiabilityCover
+          }
+        };
+
+        console.log('🔄 Calling PATCH API with data:', updateData);
+        const response = await updateCoverageOptions(insurerId, String(productId), updateData);
+        
+        toast({ 
+          title: 'Success', 
+          description: 'Coverage options updated successfully!', 
+          variant: 'default' 
+        });
+        
+        // Update local state with response data
+        setCoverageOptionsData({
+          sum_insured_loadings: response.data.sum_insured_loadings,
+          project_value_loadings: response.data.project_value_loadings,
+          contract_works_loadings: response.data.contract_works_loadings || [],
+          plant_equipment_loadings: response.data.plant_equipment_loadings || [],
+          cross_liability_cover: response.data.cross_liability_cover || []
+        });
+        
+      } else {
+        // Use POST to create new data
+        const createData: SaveCoverageOptionsRequest = {
+          coverage_options: {
+            sum_insured_loadings: mappedData.sumInsuredLoadings.map(item => ({ ...item, currency: 'AED' })),
+            project_value_loadings: mappedData.projectValueLoadings.map(item => ({ ...item, currency: 'AED' })),
+            contract_works_loadings: mappedData.contractWorksLoadings.map(item => ({ ...item, currency: 'AED' })),
+            plant_equipment_loadings: mappedData.plantEquipmentLoadings.map(item => ({ ...item, currency: 'AED' })),
+            cross_liability_cover: mappedData.crossLiabilityCover
+          }
+        };
+
+        console.log('➕ Calling POST API with data:', createData);
+        const response = await saveCoverageOptions(insurerId, String(productId), createData);
+        
+        toast({ 
+          title: 'Success', 
+          description: 'Coverage options created successfully!', 
+          variant: 'default' 
+        });
+        
+        // Update local state with response
+        setCoverageOptionsData(response.coverage_options);
+      }
+      
+    } catch (error: any) {
+      console.error('Save Coverage Options error:', error);
+      const status = error?.status;
+      const message = status === 400 ? 'Invalid data while saving coverage options.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving coverage options.'
+        : (error?.message || 'Failed to save coverage options.');
+      
+      toast({ 
+        title: 'Error', 
+        description: message, 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsSavingCoverageOptions(false);
+    }
+  };
+
   // Fresh Save Quote Config implementation
   const handleSaveQuoteConfig = async () => {
     try {
@@ -2371,6 +2880,8 @@ const SingleProductConfig = () => {
                                 await fetchContractorRiskFactors();
                               } else if (section.id === 'coverage-options') {
                                 await fetchCoverageOptions();
+                              } else if (section.id === 'limits-deductibles') {
+                                await fetchPolicyLimits();
                               }
                             }}
                             className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${
@@ -2440,12 +2951,13 @@ const SingleProductConfig = () => {
                        {activePricingTab === "coverage-options" && (
                          <CoverageOptionsExtensions
                            ratingConfig={ratingConfig}
-                           onSave={saveConfiguration}
+                           onSave={handleSaveCoverageOptions}
                            addCoverRequirementEntry={addCoverRequirementEntry}
                            updateCoverRequirementEntry={updateCoverRequirementEntry}
                            removeCoverRequirementEntry={removeCoverRequirementEntry}
                            updateCoverRequirement={updateCoverRequirement}
                            isLoading={isLoadingCoverageOptions}
+                           isSaving={isSavingCoverageOptions}
                            error={coverageOptionsError}
                            coverageOptionsData={coverageOptionsData}
                          />
@@ -2453,11 +2965,15 @@ const SingleProductConfig = () => {
                       {activePricingTab === "limits-deductibles" && (
                         <PolicyLimitsDeductibles
                           ratingConfig={ratingConfig}
-                          onSave={saveConfiguration}
+                          onSave={handleSavePolicyLimits}
                           updateLimits={updateLimits}
                           addCoverRequirementEntry={addCoverRequirementEntry}
                           updateCoverRequirementEntry={updateCoverRequirementEntry}
                           removeCoverRequirementEntry={removeCoverRequirementEntry}
+                          isLoading={isLoadingPolicyLimits}
+                          isSaving={isSavingPolicyLimits}
+                          error={policyLimitsError}
+                          policyLimitsData={policyLimitsData}
                         />
                       )}
                       
