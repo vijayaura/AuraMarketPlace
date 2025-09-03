@@ -80,6 +80,40 @@ type PricingConfiguratorProps = {
   handleSaveBaseRates: () => Promise<void>;
   isSavingBaseRates: boolean;
   handleSaveProjectRiskFactors: () => Promise<void>;
+  // Master Data props
+  constructionTypesData: any[];
+  isLoadingConstructionTypes: boolean;
+  constructionTypesError: string | null;
+  roleTypesData: any[];
+  isLoadingRoleTypes: boolean;
+  roleTypesError: string | null;
+  contractTypesData: any[];
+  isLoadingContractTypes: boolean;
+  contractTypesError: string | null;
+  soilTypesData: any[];
+  isLoadingSoilTypes: boolean;
+  soilTypesError: string | null;
+  subcontractorTypesData: any[];
+  isLoadingSubcontractorTypes: boolean;
+  subcontractorTypesError: string | null;
+  consultantRolesData: any[];
+  isLoadingConsultantRoles: boolean;
+  consultantRolesError: string | null;
+  securityTypesData: any[];
+  isLoadingSecurityTypes: boolean;
+  securityTypesError: string | null;
+  areaTypesData: any[];
+  isLoadingAreaTypes: boolean;
+  areaTypesError: string | null;
+  countriesData: string[];
+  isLoadingCountries: boolean;
+  countriesError: string | null;
+  regionsData: string[];
+  isLoadingRegions: boolean;
+  regionsError: string | null;
+  zonesData: string[];
+  isLoadingZones: boolean;
+  zonesError: string | null;
 };
 
 const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
@@ -145,6 +179,40 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   handleSaveBaseRates,
   isSavingBaseRates,
   handleSaveProjectRiskFactors,
+  // Master Data props
+  constructionTypesData,
+  isLoadingConstructionTypes,
+  constructionTypesError,
+  roleTypesData,
+  isLoadingRoleTypes,
+  roleTypesError,
+  contractTypesData,
+  isLoadingContractTypes,
+  contractTypesError,
+  soilTypesData,
+  isLoadingSoilTypes,
+  soilTypesError,
+  subcontractorTypesData,
+  isLoadingSubcontractorTypes,
+  subcontractorTypesError,
+  consultantRolesData,
+  isLoadingConsultantRoles,
+  consultantRolesError,
+  securityTypesData,
+  isLoadingSecurityTypes,
+  securityTypesError,
+  areaTypesData,
+  isLoadingAreaTypes,
+  areaTypesError,
+  countriesData,
+  isLoadingCountries,
+  countriesError,
+  regionsData,
+  isLoadingRegions,
+  regionsError,
+  zonesData,
+  isLoadingZones,
+  zonesError,
 }) => {
   return (
     <Card>
@@ -329,6 +397,39 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                   clausePricingData={clausePricingData}
                   isSavingClausePricing={isSavingClausePricing}
                   handleSaveClausePricing={handleSaveClausePricing}
+                  constructionTypesData={constructionTypesData}
+                  isLoadingConstructionTypes={isLoadingConstructionTypes}
+                  constructionTypesError={constructionTypesError}
+                  roleTypesData={roleTypesData}
+                  isLoadingRoleTypes={isLoadingRoleTypes}
+                  roleTypesError={roleTypesError}
+                  contractTypesData={contractTypesData}
+                  isLoadingContractTypes={isLoadingContractTypes}
+                  contractTypesError={contractTypesError}
+                  soilTypesData={soilTypesData}
+                  isLoadingSoilTypes={isLoadingSoilTypes}
+                  soilTypesError={soilTypesError}
+                  subcontractorTypesData={subcontractorTypesData}
+                  isLoadingSubcontractorTypes={isLoadingSubcontractorTypes}
+                  subcontractorTypesError={subcontractorTypesError}
+                  consultantRolesData={consultantRolesData}
+                  isLoadingConsultantRoles={isLoadingConsultantRoles}
+                  consultantRolesError={consultantRolesError}
+                  securityTypesData={securityTypesData}
+                  isLoadingSecurityTypes={isLoadingSecurityTypes}
+                  securityTypesError={securityTypesError}
+                  areaTypesData={areaTypesData}
+                  isLoadingAreaTypes={isLoadingAreaTypes}
+                  areaTypesError={areaTypesError}
+                  countriesData={countriesData}
+                  isLoadingCountries={isLoadingCountries}
+                  countriesError={countriesError}
+                  regionsData={regionsData}
+                  isLoadingRegions={isLoadingRegions}
+                  regionsError={regionsError}
+                  zonesData={zonesData}
+                  isLoadingZones={isLoadingZones}
+                  zonesError={zonesError}
                 />
             )}
           </div>

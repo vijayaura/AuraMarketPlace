@@ -26,6 +26,41 @@ type MasterDataTabsProps = {
   clausePricingData: any;
   isSavingClausePricing: boolean;
   handleSaveClausePricing: () => void;
+  // Master Data props
+  constructionTypesData: any[];
+  isLoadingConstructionTypes: boolean;
+  constructionTypesError: string | null;
+  roleTypesData: any[];
+  isLoadingRoleTypes: boolean;
+  roleTypesError: string | null;
+  contractTypesData: any[];
+  isLoadingContractTypes: boolean;
+  contractTypesError: string | null;
+  soilTypesData: any[];
+  isLoadingSoilTypes: boolean;
+  soilTypesError: string | null;
+  subcontractorTypesData: any[];
+  isLoadingSubcontractorTypes: boolean;
+  subcontractorTypesError: string | null;
+  consultantRolesData: any[];
+  isLoadingConsultantRoles: boolean;
+  consultantRolesError: string | null;
+  securityTypesData: any[];
+  isLoadingSecurityTypes: boolean;
+  securityTypesError: string | null;
+  areaTypesData: any[];
+  isLoadingAreaTypes: boolean;
+  areaTypesError: string | null;
+  // Quote Config Location Data props
+  countriesData: string[];
+  isLoadingCountries: boolean;
+  countriesError: string | null;
+  regionsData: string[];
+  isLoadingRegions: boolean;
+  regionsError: string | null;
+  zonesData: string[];
+  isLoadingZones: boolean;
+  zonesError: string | null;
 };
 
 const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
@@ -44,6 +79,41 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
   clausePricingData,
   isSavingClausePricing,
   handleSaveClausePricing,
+  // Master Data props
+  constructionTypesData,
+  isLoadingConstructionTypes,
+  constructionTypesError,
+  roleTypesData,
+  isLoadingRoleTypes,
+  roleTypesError,
+  contractTypesData,
+  isLoadingContractTypes,
+  contractTypesError,
+  soilTypesData,
+  isLoadingSoilTypes,
+  soilTypesError,
+  subcontractorTypesData,
+  isLoadingSubcontractorTypes,
+  subcontractorTypesError,
+  consultantRolesData,
+  isLoadingConsultantRoles,
+  consultantRolesError,
+  securityTypesData,
+  isLoadingSecurityTypes,
+  securityTypesError,
+  areaTypesData,
+  isLoadingAreaTypes,
+  areaTypesError,
+  // Quote Config Location Data props
+  countriesData,
+  isLoadingCountries,
+  countriesError,
+  regionsData,
+  isLoadingRegions,
+  regionsError,
+  zonesData,
+  isLoadingZones,
+  zonesError,
 }) => {
   if (activePricingTab === "clause-pricing") {
     const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
@@ -312,131 +382,9 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
     );
   }
 
-  if (activePricingTab === "construction-types") {
-    return (
-      <Card className="h-full">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Construction Types</CardTitle>
-              <CardDescription>Configure pricing for different construction types</CardDescription>
-            </div>
-            <Button onClick={onSave} size="sm">
-              <Save className="w-4 h-4 mr-1" />
-              Save Construction Types
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Construction Type</TableHead>
-                <TableHead>Pricing Type</TableHead>
-                <TableHead>Loading/Discount</TableHead>
-                <TableHead>Quote Options</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {activeConstructionTypes.map((type) => (
-                <TableRow key={type.id}>
-                  <TableCell className="font-medium">{type.label}</TableCell>
-                  <TableCell>
-                    <Select defaultValue="percentage">
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="percentage">Percentage</SelectItem>
-                        <SelectItem value="fixed">Fixed Rate</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Input type="number" defaultValue="0" className="w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Select defaultValue="quote">
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="quote">Auto Quote</SelectItem>
-                        <SelectItem value="no-quote">No Quote</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    );
-  }
 
-  if (activePricingTab === "countries") {
-    return (
-      <Card className="h-full">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Countries</CardTitle>
-              <CardDescription>Configure pricing for different countries</CardDescription>
-            </div>
-            <Button onClick={onSave} size="sm">
-              <Save className="w-4 h-4 mr-1" />
-              Save
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Country</TableHead>
-                <TableHead>Pricing Type</TableHead>
-                <TableHead>Loading/Discount</TableHead>
-                <TableHead>Quote Options</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {activeCountries.map((country) => (
-                <TableRow key={country.id}>
-                  <TableCell className="font-medium">{country.label}</TableCell>
-                  <TableCell>
-                    <Select defaultValue="percentage">
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="percentage">Percentage</SelectItem>
-                        <SelectItem value="fixed">Fixed Rate</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Input type="number" defaultValue="0" className="w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Select defaultValue="quote">
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="quote">Auto Quote</SelectItem>
-                        <SelectItem value="no-quote">No Quote</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    );
-  }
+
+
 
   if (activePricingTab === "fee-types") {
     return (
@@ -590,24 +538,94 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
   // Generic master data table for other tabs
   const getMasterDataConfig = () => {
     switch (activePricingTab) {
-      case "regions":
-        return { title: "Regions", description: "Configure pricing for different regions", data: [] };
-      case "zones":
-        return { title: "Zones", description: "Configure pricing for different zones", data: [] };
+      case "construction-types":
+        return { 
+          title: "Construction Types", 
+          description: "Configure pricing for different construction types", 
+          data: constructionTypesData.map(item => item.label),
+          isLoading: isLoadingConstructionTypes,
+          error: constructionTypesError
+        };
       case "role-types":
-        return { title: "Role Types", description: "Configure pricing for different role types", data: ['Project Manager', 'Site Engineer', 'Safety Officer', 'Quality Controller', 'Surveyor'] };
+        return { 
+          title: "Role Types", 
+          description: "Configure pricing for different role types", 
+          data: roleTypesData.map(item => item.label),
+          isLoading: isLoadingRoleTypes,
+          error: roleTypesError
+        };
       case "contract-types":
-        return { title: "Contract Types", description: "Configure pricing for different contract types", data: ['Fixed Price', 'Cost Plus', 'Time & Materials', 'Design Build'] };
+        return { 
+          title: "Contract Types", 
+          description: "Configure pricing for different contract types", 
+          data: contractTypesData.map(item => item.label),
+          isLoading: isLoadingContractTypes,
+          error: contractTypesError
+        };
       case "soil-types":
-        return { title: "Soil Types", description: "Configure pricing for different soil types", data: ['Clay', 'Sand', 'Rock', 'Mixed', 'Soft Soil', 'Hard Soil'] };
+        return { 
+          title: "Soil Types", 
+          description: "Configure pricing for different soil types", 
+          data: soilTypesData.map(item => item.label),
+          isLoading: isLoadingSoilTypes,
+          error: soilTypesError
+        };
       case "subcontractor-types":
-        return { title: "Subcontractor Types", description: "Configure pricing for different subcontractor types", data: ['Electrical', 'Plumbing', 'HVAC', 'Painting', 'Flooring', 'Roofing', 'Landscaping', 'Security'] };
+        return { 
+          title: "Subcontractor Types", 
+          description: "Configure pricing for different subcontractor types", 
+          data: subcontractorTypesData.map(item => item.label),
+          isLoading: isLoadingSubcontractorTypes,
+          error: subcontractorTypesError
+        };
       case "consultant-roles":
-        return { title: "Consultant Roles", description: "Configure pricing for different consultant roles", data: ['Architect', 'Structural Engineer', 'MEP Engineer', 'Geotechnical', 'Environmental', 'Planning', 'Quantity Surveyor'] };
+        return { 
+          title: "Consultant Roles", 
+          description: "Configure pricing for different consultant roles", 
+          data: consultantRolesData.map(item => item.label),
+          isLoading: isLoadingConsultantRoles,
+          error: consultantRolesError
+        };
       case "security-types":
-        return { title: "Security Types", description: "Configure pricing for different security types", data: ['Basic Security', 'Enhanced Security', 'CCTV Monitoring', 'Access Control', 'Alarm Systems'] };
+        return { 
+          title: "Security Types", 
+          description: "Configure pricing for different security types", 
+          data: securityTypesData.map(item => item.label),
+          isLoading: isLoadingSecurityTypes,
+          error: securityTypesError
+        };
       case "area-types":
-        return { title: "Area Types", description: "Configure pricing for different area types", data: ['Urban', 'Suburban', 'Rural', 'Industrial', 'Coastal', 'Desert'] };
+        return { 
+          title: "Area Types", 
+          description: "Configure pricing for different area types", 
+          data: areaTypesData.map(item => item.label),
+          isLoading: isLoadingAreaTypes,
+          error: areaTypesError
+        };
+      case "countries":
+        return { 
+          title: "Countries", 
+          description: "Configure pricing for different countries", 
+          data: countriesData,
+          isLoading: isLoadingCountries,
+          error: countriesError
+        };
+      case "regions":
+        return { 
+          title: "Regions", 
+          description: "Configure pricing for different regions", 
+          data: regionsData,
+          isLoading: isLoadingRegions,
+          error: regionsError
+        };
+      case "zones":
+        return { 
+          title: "Zones", 
+          description: "Configure pricing for different zones", 
+          data: zonesData,
+          isLoading: isLoadingZones,
+          error: zonesError
+        };
       default:
         return null;
     }
@@ -624,55 +642,76 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
             <CardTitle>{config.title}</CardTitle>
             <CardDescription>{config.description}</CardDescription>
           </div>
-          <Button onClick={onSave} size="sm">
+          <Button onClick={onSave} size="sm" disabled={config.isLoading}>
             <Save className="w-4 h-4 mr-1" />
-            Save
+            {config.isLoading ? 'Loading...' : 'Save'}
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{config.title.slice(0, -1)}</TableHead>
-              <TableHead>Pricing Type</TableHead>
-              <TableHead>Loading/Discount</TableHead>
-              <TableHead>Quote Options</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {config.data.map((item: string, index: number) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{item}</TableCell>
-                <TableCell>
-                  <Select defaultValue="percentage">
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percentage">Percentage</SelectItem>
-                      <SelectItem value="fixed">Fixed Rate</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Input type="number" defaultValue="0" className="w-24" />
-                </TableCell>
-                <TableCell>
-                  <Select defaultValue="quote">
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="quote">Auto Quote</SelectItem>
-                      <SelectItem value="no-quote">No Quote</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
+        {config.error && (
+          <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive mb-6">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span className="text-sm">{config.error}</span>
+          </div>
+        )}
+
+        {config.isLoading ? (
+          <div className="space-y-4">
+            <TableSkeleton />
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{config.title.slice(0, -1)}</TableHead>
+                <TableHead>Pricing Type</TableHead>
+                <TableHead>Loading/Discount</TableHead>
+                <TableHead>Quote Options</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {config.data.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                    No {config.title.toLowerCase()} available
+                  </TableCell>
+                </TableRow>
+              ) : (
+                config.data.map((item: string, index: number) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{item}</TableCell>
+                    <TableCell>
+                      <Select defaultValue="percentage">
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percentage">Percentage</SelectItem>
+                          <SelectItem value="fixed">Fixed Rate</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input type="number" defaultValue="0" className="w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Select defaultValue="quote">
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="quote">Auto Quote</SelectItem>
+                          <SelectItem value="no-quote">No Quote</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
     </Card>
   );

@@ -24,8 +24,8 @@ import { getActiveCountries, getRegionsByCountry, getZonesByRegion } from "@/lib
 import { ClausePricingCard } from "@/components/product-config/ClausePricingCard";
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
-import { listMasterProjectTypes, listMasterSubProjectTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, saveQuoteConfig, updateQuoteConfig, getClausePricing, saveClausePricing, updateClausePricing, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type SaveQuoteConfigRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest } from "@/lib/api/insurers";
+import { listMasterProjectTypes, listMasterSubProjectTypes, listMasterConstructionTypes, listMasterRoleTypes, listMasterContractTypes, listMasterSoilTypes, listMasterSubcontractorTypes, listMasterConsultantRoles, listMasterSecurityTypes, listMasterAreaTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
@@ -161,6 +161,52 @@ const SingleProductConfig = () => {
   const [clausePricingError, setClausePricingError] = useState<string | null>(null);
   const [clausePricingData, setClausePricingData] = useState<GetClausePricingResponse | null>(null);
   const [isSavingClausePricing, setIsSavingClausePricing] = useState(false);
+
+  // Master Data states
+  const [constructionTypesData, setConstructionTypesData] = useState<SimpleMasterItem[]>([]);
+  const [isLoadingConstructionTypes, setIsLoadingConstructionTypes] = useState(false);
+  const [constructionTypesError, setConstructionTypesError] = useState<string | null>(null);
+
+  const [roleTypesData, setRoleTypesData] = useState<SimpleMasterItem[]>([]);
+  const [isLoadingRoleTypes, setIsLoadingRoleTypes] = useState(false);
+  const [roleTypesError, setRoleTypesError] = useState<string | null>(null);
+
+  const [contractTypesData, setContractTypesData] = useState<SimpleMasterItem[]>([]);
+  const [isLoadingContractTypes, setIsLoadingContractTypes] = useState(false);
+  const [contractTypesError, setContractTypesError] = useState<string | null>(null);
+
+  const [soilTypesData, setSoilTypesData] = useState<SimpleMasterItem[]>([]);
+  const [isLoadingSoilTypes, setIsLoadingSoilTypes] = useState(false);
+  const [soilTypesError, setSoilTypesError] = useState<string | null>(null);
+
+  const [subcontractorTypesData, setSubcontractorTypesData] = useState<SimpleMasterItem[]>([]);
+  const [isLoadingSubcontractorTypes, setIsLoadingSubcontractorTypes] = useState(false);
+  const [subcontractorTypesError, setSubcontractorTypesError] = useState<string | null>(null);
+
+  const [consultantRolesData, setConsultantRolesData] = useState<SimpleMasterItem[]>([]);
+  const [isLoadingConsultantRoles, setIsLoadingConsultantRoles] = useState(false);
+  const [consultantRolesError, setConsultantRolesError] = useState<string | null>(null);
+
+  const [securityTypesData, setSecurityTypesData] = useState<SimpleMasterItem[]>([]);
+  const [isLoadingSecurityTypes, setIsLoadingSecurityTypes] = useState(false);
+  const [securityTypesError, setSecurityTypesError] = useState<string | null>(null);
+
+  const [areaTypesData, setAreaTypesData] = useState<SimpleMasterItem[]>([]);
+  const [isLoadingAreaTypes, setIsLoadingAreaTypes] = useState(false);
+  const [areaTypesError, setAreaTypesError] = useState<string | null>(null);
+
+  // Quote Config Location Data states (Countries, Regions, Zones)
+  const [countriesData, setCountriesData] = useState<string[]>([]);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
+  const [countriesError, setCountriesError] = useState<string | null>(null);
+
+  const [regionsData, setRegionsData] = useState<string[]>([]);
+  const [isLoadingRegions, setIsLoadingRegions] = useState(false);
+  const [regionsError, setRegionsError] = useState<string | null>(null);
+
+  const [zonesData, setZonesData] = useState<string[]>([]);
+  const [isLoadingZones, setIsLoadingZones] = useState(false);
+  const [zonesError, setZonesError] = useState<string | null>(null);
 
   // Coverage Options state
   const [coverageOptionsData, setCoverageOptionsData] = useState<CoverageOptionsResponse | null>(null);
@@ -1764,6 +1810,351 @@ const SingleProductConfig = () => {
     }
   };
 
+  // Master Data fetch handlers
+  const fetchConstructionTypes = async (): Promise<void> => {
+    setIsLoadingConstructionTypes(true);
+    setConstructionTypesError(null);
+    
+    try {
+      const data = await listMasterConstructionTypes();
+      setConstructionTypesData(data);
+      console.log('✅ Construction Types data loaded:', data);
+    } catch (err: any) {
+      console.error('Construction Types fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setConstructionTypesError(message || 'Bad request while loading construction types.');
+      } else if (status === 401) {
+        setConstructionTypesError('Unauthorized access to construction types.');
+      } else if (status === 403) {
+        setConstructionTypesError('Forbidden access to construction types.');
+      } else if (status === 500) {
+        setConstructionTypesError('Server error while loading construction types.');
+      } else {
+        setConstructionTypesError(message || 'Failed to load construction types.');
+      }
+    } finally {
+      setIsLoadingConstructionTypes(false);
+    }
+  };
+
+  const fetchRoleTypes = async (): Promise<void> => {
+    setIsLoadingRoleTypes(true);
+    setRoleTypesError(null);
+    
+    try {
+      const data = await listMasterRoleTypes();
+      setRoleTypesData(data);
+      console.log('✅ Role Types data loaded:', data);
+    } catch (err: any) {
+      console.error('Role Types fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setRoleTypesError(message || 'Bad request while loading role types.');
+      } else if (status === 401) {
+        setRoleTypesError('Unauthorized access to role types.');
+      } else if (status === 403) {
+        setRoleTypesError('Forbidden access to role types.');
+      } else if (status === 500) {
+        setRoleTypesError('Server error while loading role types.');
+      } else {
+        setRoleTypesError(message || 'Failed to load role types.');
+      }
+    } finally {
+      setIsLoadingRoleTypes(false);
+    }
+  };
+
+  const fetchContractTypes = async (): Promise<void> => {
+    setIsLoadingContractTypes(true);
+    setContractTypesError(null);
+    
+    try {
+      const data = await listMasterContractTypes();
+      setContractTypesData(data);
+      console.log('✅ Contract Types data loaded:', data);
+    } catch (err: any) {
+      console.error('Contract Types fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setContractTypesError(message || 'Bad request while loading contract types.');
+      } else if (status === 401) {
+        setContractTypesError('Unauthorized access to contract types.');
+      } else if (status === 403) {
+        setContractTypesError('Forbidden access to contract types.');
+      } else if (status === 500) {
+        setContractTypesError('Server error while loading contract types.');
+      } else {
+        setContractTypesError(message || 'Failed to load contract types.');
+      }
+    } finally {
+      setIsLoadingContractTypes(false);
+    }
+  };
+
+  const fetchSoilTypes = async (): Promise<void> => {
+    setIsLoadingSoilTypes(true);
+    setSoilTypesError(null);
+    
+    try {
+      const data = await listMasterSoilTypes();
+      setSoilTypesData(data);
+      console.log('✅ Soil Types data loaded:', data);
+    } catch (err: any) {
+      console.error('Soil Types fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setSoilTypesError(message || 'Bad request while loading soil types.');
+      } else if (status === 401) {
+        setSoilTypesError('Unauthorized access to soil types.');
+      } else if (status === 403) {
+        setSoilTypesError('Forbidden access to soil types.');
+      } else if (status === 500) {
+        setSoilTypesError('Server error while loading soil types.');
+      } else {
+        setSoilTypesError(message || 'Failed to load soil types.');
+      }
+    } finally {
+      setIsLoadingSoilTypes(false);
+    }
+  };
+
+  const fetchSubcontractorTypes = async (): Promise<void> => {
+    setIsLoadingSubcontractorTypes(true);
+    setSubcontractorTypesError(null);
+    
+    try {
+      const data = await listMasterSubcontractorTypes();
+      setSubcontractorTypesData(data);
+      console.log('✅ Subcontractor Types data loaded:', data);
+    } catch (err: any) {
+      console.error('Subcontractor Types fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setSubcontractorTypesError(message || 'Bad request while loading subcontractor types.');
+      } else if (status === 401) {
+        setSubcontractorTypesError('Unauthorized access to subcontractor types.');
+      } else if (status === 403) {
+        setSubcontractorTypesError('Forbidden access to subcontractor types.');
+      } else if (status === 500) {
+        setSubcontractorTypesError('Server error while loading subcontractor types.');
+      } else {
+        setSubcontractorTypesError(message || 'Failed to load subcontractor types.');
+      }
+    } finally {
+      setIsLoadingSubcontractorTypes(false);
+    }
+  };
+
+  const fetchConsultantRoles = async (): Promise<void> => {
+    setIsLoadingConsultantRoles(true);
+    setConsultantRolesError(null);
+    
+    try {
+      const data = await listMasterConsultantRoles();
+      setConsultantRolesData(data);
+      console.log('✅ Consultant Roles data loaded:', data);
+    } catch (err: any) {
+      console.error('Consultant Roles fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setConsultantRolesError(message || 'Bad request while loading consultant roles.');
+      } else if (status === 401) {
+        setConsultantRolesError('Unauthorized access to consultant roles.');
+      } else if (status === 403) {
+        setConsultantRolesError('Forbidden access to consultant roles.');
+      } else if (status === 500) {
+        setConsultantRolesError('Server error while loading consultant roles.');
+      } else {
+        setConsultantRolesError(message || 'Failed to load consultant roles.');
+      }
+    } finally {
+      setIsLoadingConsultantRoles(false);
+    }
+  };
+
+  const fetchSecurityTypes = async (): Promise<void> => {
+    setIsLoadingSecurityTypes(true);
+    setSecurityTypesError(null);
+    
+    try {
+      const data = await listMasterSecurityTypes();
+      setSecurityTypesData(data);
+      console.log('✅ Security Types data loaded:', data);
+    } catch (err: any) {
+      console.error('Security Types fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setSecurityTypesError(message || 'Bad request while loading security types.');
+      } else if (status === 401) {
+        setSecurityTypesError('Unauthorized access to security types.');
+      } else if (status === 403) {
+        setSecurityTypesError('Forbidden access to security types.');
+      } else if (status === 500) {
+        setSecurityTypesError('Server error while loading security types.');
+      } else {
+        setSecurityTypesError(message || 'Failed to load security types.');
+      }
+    } finally {
+      setIsLoadingSecurityTypes(false);
+    }
+  };
+
+  const fetchAreaTypes = async (): Promise<void> => {
+    setIsLoadingAreaTypes(true);
+    setAreaTypesError(null);
+    
+    try {
+      const data = await listMasterAreaTypes();
+      setAreaTypesData(data);
+      console.log('✅ Area Types data loaded:', data);
+    } catch (err: any) {
+      console.error('Area Types fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setAreaTypesError(message || 'Bad request while loading area types.');
+      } else if (status === 401) {
+        setAreaTypesError('Unauthorized access to area types.');
+      } else if (status === 403) {
+        setAreaTypesError('Forbidden access to area types.');
+      } else if (status === 500) {
+        setAreaTypesError('Server error while loading area types.');
+      } else {
+        setAreaTypesError(message || 'Failed to load area types.');
+      }
+    } finally {
+      setIsLoadingAreaTypes(false);
+    }
+  };
+
+  // Quote Config Location Data fetch handlers
+  const fetchCountries = async (): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      setCountriesError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    setIsLoadingCountries(true);
+    setCountriesError(null);
+    
+    try {
+      const data = await getQuoteConfigForUI(insurerId, String(productId));
+      setCountriesData(data.operating_countries || []);
+      console.log('✅ Countries data loaded:', data.operating_countries);
+    } catch (err: any) {
+      console.error('Countries fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setCountriesError(message || 'Bad request while loading countries.');
+      } else if (status === 401) {
+        setCountriesError('Unauthorized access to countries.');
+      } else if (status === 403) {
+        setCountriesError('Forbidden access to countries.');
+      } else if (status === 500) {
+        setCountriesError('Server error while loading countries.');
+      } else {
+        setCountriesError(message || 'Failed to load countries.');
+      }
+    } finally {
+      setIsLoadingCountries(false);
+    }
+  };
+
+  const fetchRegions = async (): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      setRegionsError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    setIsLoadingRegions(true);
+    setRegionsError(null);
+    
+    try {
+      const data = await getQuoteConfigForUI(insurerId, String(productId));
+      setRegionsData(data.operating_regions || []);
+      console.log('✅ Regions data loaded:', data.operating_regions);
+    } catch (err: any) {
+      console.error('Regions fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setRegionsError(message || 'Bad request while loading regions.');
+      } else if (status === 401) {
+        setRegionsError('Unauthorized access to regions.');
+      } else if (status === 403) {
+        setRegionsError('Forbidden access to regions.');
+      } else if (status === 500) {
+        setRegionsError('Server error while loading regions.');
+      } else {
+        setRegionsError(message || 'Failed to load regions.');
+      }
+    } finally {
+      setIsLoadingRegions(false);
+    }
+  };
+
+  const fetchZones = async (): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      setZonesError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    setIsLoadingZones(true);
+    setZonesError(null);
+    
+    try {
+      const data = await getQuoteConfigForUI(insurerId, String(productId));
+      setZonesData(data.operating_zones || []);
+      console.log('✅ Zones data loaded:', data.operating_zones);
+    } catch (err: any) {
+      console.error('Zones fetch error:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      if (status === 400) {
+        setZonesError(message || 'Bad request while loading zones.');
+      } else if (status === 401) {
+        setZonesError('Unauthorized access to zones.');
+      } else if (status === 403) {
+        setZonesError('Forbidden access to zones.');
+      } else if (status === 500) {
+        setZonesError('Server error while loading zones.');
+      } else {
+        setZonesError(message || 'Failed to load zones.');
+      }
+    } finally {
+      setIsLoadingZones(false);
+    }
+  };
+
   // Save Clause Pricing handler with POST/PATCH logic
   const handleSaveClausePricing = async (): Promise<void> => {
     const insurerId = getInsurerCompanyId();
@@ -2189,15 +2580,25 @@ const SingleProductConfig = () => {
     }
   };
 
-  // Fresh Save Quote Config implementation
-  const handleSaveQuoteConfig = async () => {
+
+
+
+
+
+
+  // Save Quote Coverage handler with POST/PATCH logic and strict validation
+  const handleSaveQuoteCoverage = async (): Promise<void> => {
+    console.log('🎯 === SAVE QUOTE COVERAGE STARTED ===');
+    
     try {
-      // Get required data
+      // Step 1: Validate required data
       const insurerId = getInsurerCompanyId();
       const productId = product?.id;
 
-      // Validate required data
+      console.log('🔍 Validation Check:', { insurerId, productId });
+
       if (!insurerId) {
+        console.error('❌ Missing insurer ID');
         toast({
           title: 'Error',
           description: 'Unable to determine insurer ID. Please log in again.',
@@ -2207,6 +2608,7 @@ const SingleProductConfig = () => {
       }
 
       if (!productId) {
+        console.error('❌ Missing product ID');
         toast({
           title: 'Error', 
           description: 'Unable to determine product ID. Please refresh the page.',
@@ -2215,48 +2617,137 @@ const SingleProductConfig = () => {
         return;
       }
 
-      // Set loading state
+      // Step 2: Set loading state
+      console.log('⏳ Setting loading state to TRUE...');
       setIsSavingQuoteConfig(true);
 
-      // Prepare request data
-      const requestData: SaveQuoteConfigRequest = {
-        product_id: Number(productId),
-        validity_days: Number(quoteConfig.details.validityDays || 30),
-        backdate_days: Number(quoteConfig.details.backdateWindow || 0),
-        operating_countries: quoteConfig.details.countries || [],
-        operating_regions: quoteConfig.details.regions || [],
-        operating_zones: quoteConfig.details.zones || [],
-        insurer_id: Number(insurerId)
-      };
+      // Step 3: Extract form values and checkbox selections from UI state
+      console.log('📋 Extracting form values and checkbox selections...');
+      console.log('🔍 Current quoteConfig.details:', quoteConfig.details);
+      
+      const validityDays = Number(quoteConfig.details.validityDays || 30);
+      const backdateDays = Number(quoteConfig.details.backdateWindow || 0);
+      
+      const selectedCountries = Array.isArray(quoteConfig.details.countries) ? quoteConfig.details.countries : [];
+      const selectedRegions = Array.isArray(quoteConfig.details.regions) ? quoteConfig.details.regions : [];
+      const selectedZones = Array.isArray(quoteConfig.details.zones) ? quoteConfig.details.zones : [];
 
-      // Make API call (always use POST for fresh implementation)
-      const response = await saveQuoteConfig(String(insurerId), requestData);
-
-      // Success
-      toast({
-        title: 'Success',
-        description: 'Quote configuration saved successfully.',
+      console.log('🔍 Raw Form Values:', {
+        validityDays,
+        backdateDays,
+        selectedCountries,
+        selectedRegions,
+        selectedZones
       });
 
-      // Mark as having data for future updates
+      // Step 4: Clean and validate checkbox data
+      const cleanCountries = selectedCountries.filter(country => 
+        typeof country === 'string' && country.trim().length > 0
+      );
+      const cleanRegions = selectedRegions.filter(region => 
+        typeof region === 'string' && region.trim().length > 0
+      );
+      const cleanZones = selectedZones.filter(zone => 
+        typeof zone === 'string' && zone.trim().length > 0
+      );
+
+      console.log('🧹 Cleaned Checkbox Data:', {
+        cleanCountries,
+        cleanRegions,
+        cleanZones
+      });
+
+      // Step 5: STRICT CROSS-CONTAMINATION CHECKS
+      console.log('🔒 Performing cross-contamination validation...');
+      
+      // Check if any regions are in countries array
+      const regionsInCountries = cleanCountries.filter(country => cleanRegions.includes(country));
+      
+      // Check if any zones are in countries array
+      const zonesInCountries = cleanCountries.filter(country => cleanZones.includes(country));
+      
+      // Check if any zones are in regions array
+      const zonesInRegions = cleanRegions.filter(region => cleanZones.includes(region));
+
+      if (regionsInCountries.length > 0) {
+        console.error('❌ CROSS-CONTAMINATION DETECTED: Regions found in countries array:', regionsInCountries);
+        toast({
+          title: 'Validation Error',
+          description: `Cross-contamination detected: ${regionsInCountries.join(', ')} should not be in countries. Please check your selections.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      if (zonesInCountries.length > 0) {
+        console.error('❌ CROSS-CONTAMINATION DETECTED: Zones found in countries array:', zonesInCountries);
+        toast({
+          title: 'Validation Error',
+          description: `Cross-contamination detected: ${zonesInCountries.join(', ')} should not be in countries. Please check your selections.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      if (zonesInRegions.length > 0) {
+        console.error('❌ CROSS-CONTAMINATION DETECTED: Zones found in regions array:', zonesInRegions);
+        toast({
+          title: 'Validation Error',
+          description: `Cross-contamination detected: ${zonesInRegions.join(', ')} should not be in regions. Please check your selections.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      console.log('✅ Cross-contamination validation passed');
+
+      // Step 6: Build API request payload exactly as specified
+      const requestPayload: SaveQuoteCoverageRequest = {
+        product_id: Number(productId),
+        validity_days: validityDays,
+        backdate_days: backdateDays,
+        operating_countries: cleanCountries,
+        operating_regions: cleanRegions,
+        operating_zones: cleanZones
+      };
+
+      console.log('📦 Final API Request Payload:', requestPayload);
+
+      // Step 7: Determine POST vs PATCH based on existing data
+      let apiResponse;
+      if (hasQuoteConfigData) {
+        console.log('🔄 Existing data detected - Using PATCH API...');
+        apiResponse = await updateQuoteCoverage(String(insurerId), String(productId), requestPayload);
+        console.log('✅ PATCH API Response:', apiResponse);
+      } else {
+        console.log('🚀 No existing data - Using POST API...');
+        apiResponse = await saveQuoteCoverage(String(insurerId), String(productId), requestPayload);
+        console.log('✅ POST API Response:', apiResponse);
+      }
+
+      // Step 8: Success handling
+      toast({
+        title: 'Success',
+        description: hasQuoteConfigData ? 'Quote coverage updated successfully!' : 'Quote coverage saved successfully!',
+      });
+
+      // Mark as having data for future PATCH calls
       setHasQuoteConfigData(true);
 
     } catch (error: any) {
-      // Error handling
-      console.error('Save Quote Config Error:', error);
+      // Step 9: Error handling with specific error messages
+      console.error('❌ Save Quote Coverage Error:', error);
       
-      const errorMessage = error?.response?.data?.message 
-        || error?.message 
-        || 'Failed to save quote configuration.';
-
       toast({
-        title: 'Error',
-        description: errorMessage,
+        title: 'Save Failed',
+        description: error.message || 'Failed to save quote coverage configuration.',
         variant: 'destructive'
       });
     } finally {
-      // Always reset loading state
+      // Step 10: Always reset loading state
+      console.log('⏳ Setting loading state to FALSE...');
       setIsSavingQuoteConfig(false);
+      console.log('🎯 === SAVE QUOTE COVERAGE COMPLETED ===');
     }
   };
 
@@ -2942,7 +3433,7 @@ const SingleProductConfig = () => {
             <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="quote-config" className="flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                Quote Configurator
+                Quote Coverage
               </TabsTrigger>
               <TabsTrigger value="pricing" className="flex items-center gap-2">
                 <Calculator className="w-4 h-4" />
@@ -2966,12 +3457,12 @@ const SingleProductConfig = () => {
               </TabsTrigger>
             </TabsList>
 
-            {/* Quote Configurator Tab */}
+            {/* Quote Coverage Tab */}
             <TabsContent value="quote-config" className="space-y-6">
               <QuoteConfigurator
                 isLoadingQuoteConfig={isLoadingQuoteConfig}
                 isSavingQuoteConfig={isSavingQuoteConfig}
-                onSave={handleSaveQuoteConfig}
+                onSave={handleSaveQuoteCoverage}
                 quoteConfig={quoteConfig}
                 updateQuoteConfig={updateQuoteConfig}
                 isLoadingMetadata={isLoadingMetadata}
@@ -3037,12 +3528,34 @@ const SingleProductConfig = () => {
                                 await fetchContractorRiskFactors();
                               } else if (section.id === 'coverage-options') {
                                 await fetchCoverageOptions();
-                                                          } else if (section.id === 'limits-deductibles') {
-                              await fetchPolicyLimits();
-                            } else if (section.id === 'clause-pricing') {
-                              await fetchClauseMetadata();
-                              await fetchClausePricing();
-                            }
+                              } else if (section.id === 'limits-deductibles') {
+                                await fetchPolicyLimits();
+                              } else if (section.id === 'clause-pricing') {
+                                await fetchClauseMetadata();
+                                await fetchClausePricing();
+                              } else if (section.id === 'construction-types') {
+                                await fetchConstructionTypes();
+                              } else if (section.id === 'role-types') {
+                                await fetchRoleTypes();
+                              } else if (section.id === 'contract-types') {
+                                await fetchContractTypes();
+                              } else if (section.id === 'soil-types') {
+                                await fetchSoilTypes();
+                              } else if (section.id === 'subcontractor-types') {
+                                await fetchSubcontractorTypes();
+                              } else if (section.id === 'consultant-roles') {
+                                await fetchConsultantRoles();
+                              } else if (section.id === 'security-types') {
+                                await fetchSecurityTypes();
+                              } else if (section.id === 'area-types') {
+                                await fetchAreaTypes();
+                              } else if (section.id === 'countries') {
+                                await fetchCountries();
+                              } else if (section.id === 'regions') {
+                                await fetchRegions();
+                              } else if (section.id === 'zones') {
+                                await fetchZones();
+                              }
                             }}
                             className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between ${
                               activePricingTab === section.id
@@ -3176,6 +3689,39 @@ const SingleProductConfig = () => {
                            clausePricingData={clausePricingData}
                            isSavingClausePricing={isSavingClausePricing}
                            handleSaveClausePricing={handleSaveClausePricing}
+                           constructionTypesData={constructionTypesData}
+                           isLoadingConstructionTypes={isLoadingConstructionTypes}
+                           constructionTypesError={constructionTypesError}
+                           roleTypesData={roleTypesData}
+                           isLoadingRoleTypes={isLoadingRoleTypes}
+                           roleTypesError={roleTypesError}
+                           contractTypesData={contractTypesData}
+                           isLoadingContractTypes={isLoadingContractTypes}
+                           contractTypesError={contractTypesError}
+                           soilTypesData={soilTypesData}
+                           isLoadingSoilTypes={isLoadingSoilTypes}
+                           soilTypesError={soilTypesError}
+                           subcontractorTypesData={subcontractorTypesData}
+                           isLoadingSubcontractorTypes={isLoadingSubcontractorTypes}
+                           subcontractorTypesError={subcontractorTypesError}
+                           consultantRolesData={consultantRolesData}
+                           isLoadingConsultantRoles={isLoadingConsultantRoles}
+                           consultantRolesError={consultantRolesError}
+                           securityTypesData={securityTypesData}
+                           isLoadingSecurityTypes={isLoadingSecurityTypes}
+                           securityTypesError={securityTypesError}
+                           areaTypesData={areaTypesData}
+                           isLoadingAreaTypes={isLoadingAreaTypes}
+                           areaTypesError={areaTypesError}
+                           countriesData={countriesData}
+                           isLoadingCountries={isLoadingCountries}
+                           countriesError={countriesError}
+                           regionsData={regionsData}
+                           isLoadingRegions={isLoadingRegions}
+                           regionsError={regionsError}
+                           zonesData={zonesData}
+                           isLoadingZones={isLoadingZones}
+                           zonesError={zonesError}
                          />
                         )}
                      </div>

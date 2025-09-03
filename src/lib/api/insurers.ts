@@ -235,38 +235,7 @@ export async function getInsurerMetadata(insurerId: number | string): Promise<In
   return await apiGet<InsurerMetadata>(`/insurers/${encodeURIComponent(String(insurerId))}`);
 }
 
-// Save Quote Config
-export interface SaveQuoteConfigRequest {
-  id?: number;
-  product_id: number;
-  validity_days: number;
-  backdate_days: number;
-  operating_countries: string[];
-  operating_regions: string[];
-  operating_zones: string[];
-  created_at?: string;
-  updated_at?: string;
-  insurer_id?: number;
-}
 
-export interface SaveQuoteConfigResponse { message?: string }
-
-export async function saveQuoteConfig(insurerId: number | string, body: SaveQuoteConfigRequest): Promise<SaveQuoteConfigResponse> {
-  return apiPost<SaveQuoteConfigResponse>(`/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(body.product_id))}/quote-config`, body);
-}
-
-export type UpdateQuoteConfigRequest = SaveQuoteConfigRequest;
-
-export async function updateQuoteConfig(
-  insurerId: number | string,
-  productId: number | string,
-  body: UpdateQuoteConfigRequest
-): Promise<SaveQuoteConfigResponse> {
-  return apiPatch<SaveQuoteConfigResponse>(
-    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/quote-config`,
-    body
-  );
-}
 
 // Get saved Quote Config
 export interface GetQuoteConfigResponse {
@@ -2089,4 +2058,111 @@ export async function updatePolicyLimits(
 ): Promise<UpdatePolicyLimitsResponse> {
   return apiPatch<UpdatePolicyLimitsResponse>(`/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/policy-limits`, data);
 }
+
+// ===== QUOTE COVERAGE API FUNCTIONS =====
+
+export interface SaveQuoteCoverageRequest {
+  product_id: number;
+  validity_days: number;
+  backdate_days: number;
+  operating_countries: string[];
+  operating_regions: string[];
+  operating_zones: string[];
+}
+
+export interface SaveQuoteCoverageResponse {
+  message: string;
+}
+
+export interface UpdateQuoteCoverageResponse {
+  message: string;
+  data: {
+    id: number;
+    product_id: number;
+    validity_days: number;
+    backdate_days: number;
+    operating_countries: string[];
+    operating_regions: string[];
+    operating_zones: string[];
+    created_at: string;
+    updated_at: string;
+    insurer_id: number;
+  };
+}
+
+// POST - Create new quote coverage configuration
+export async function saveQuoteCoverage(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveQuoteCoverageRequest
+): Promise<SaveQuoteCoverageResponse> {
+  console.log('🚀 POST Quote Coverage API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/quote-config`,
+    payload: data
+  });
+  
+  try {
+    const response = await apiPost<SaveQuoteCoverageResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/quote-config`, 
+      data
+    );
+    console.log('✅ POST Quote Coverage Success:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ POST Quote Coverage Failed:', error);
+    
+    // Handle specific error codes
+    const status = error?.response?.status;
+    if (status === 400) {
+      throw new Error('Invalid quote coverage data provided');
+    } else if (status === 401) {
+      throw new Error('Authentication required to save quote coverage');
+    } else if (status === 403) {
+      throw new Error('You do not have permission to save quote coverage');
+    } else if (status === 500) {
+      throw new Error('Server error occurred while saving quote coverage');
+    }
+    
+    throw new Error(error?.response?.data?.message || error?.message || 'Failed to save quote coverage');
+  }
+}
+
+// PATCH - Update existing quote coverage configuration
+export async function updateQuoteCoverage(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveQuoteCoverageRequest
+): Promise<UpdateQuoteCoverageResponse> {
+  console.log('🔄 PATCH Quote Coverage API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/quote-config`,
+    payload: data
+  });
+  
+  try {
+    const response = await apiPatch<UpdateQuoteCoverageResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/quote-config`, 
+      data
+    );
+    console.log('✅ PATCH Quote Coverage Success:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ PATCH Quote Coverage Failed:', error);
+    
+    // Handle specific error codes
+    const status = error?.response?.status;
+    if (status === 400) {
+      throw new Error('Invalid quote coverage data provided');
+    } else if (status === 401) {
+      throw new Error('Authentication required to update quote coverage');
+    } else if (status === 403) {
+      throw new Error('You do not have permission to update quote coverage');
+    } else if (status === 500) {
+      throw new Error('Server error occurred while updating quote coverage');
+    }
+    
+    throw new Error(error?.response?.data?.message || error?.message || 'Failed to update quote coverage');
+  }
+}
+
+
 

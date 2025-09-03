@@ -40,8 +40,8 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Quote Details Configuration</CardTitle>
-            <CardDescription>Configure quotation numbering, dates, and validity</CardDescription>
+            <CardTitle>Quote Coverage Configuration</CardTitle>
+            <CardDescription>Configure quotation coverage, validity, and operating regions</CardDescription>
           </div>
           <Button
             type="button"
@@ -57,7 +57,7 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Save Quote Config
+                Save Quote Coverage
               </>
             )}
           </Button>
