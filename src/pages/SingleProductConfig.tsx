@@ -5317,6 +5317,7 @@ const SingleProductConfig = () => {
   const showPreview = async () => {
     const insurerId = getInsurerCompanyId();
     if (!insurerId || !product.id) return;
+    
     try {
       setPreviewError(null);
       setIsPreviewLoading(true);
@@ -5380,7 +5381,7 @@ const SingleProductConfig = () => {
           footerTextColor: data.footer_text_color || prev.footer.footerTextColor,
         },
       }));
-    setIsPreviewDialogOpen(true);
+      setIsPreviewDialogOpen(true);
     } catch (err: any) {
       const status = err?.status as number | undefined;
       const message = err?.message as string | undefined;
