@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Building, MapPin, Calendar, DollarSign, Shield, FileText, Plus, Trash2 } from "lucide-react";
+import { Building, MapPin, Calendar, DollarSign, Shield, FileText, Plus, Trash2, Car, Umbrella } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LocationSearch } from "./LocationSearch";
 import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesByProjectType } from "@/lib/masters-data";
@@ -336,7 +336,7 @@ export const ProposalForm = () => {
   }, {
     id: "coverage",
     label: "Cover Requirements",
-    icon: Shield
+    icon: Umbrella
   }];
   return <section className="pt-6 pb-20 bg-background min-h-screen">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

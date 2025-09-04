@@ -25,7 +25,7 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, listMasterConstructionTypes, listMasterRoleTypes, listMasterContractTypes, listMasterSoilTypes, listMasterSubcontractorTypes, listMasterConsultantRoles, listMasterSecurityTypes, listMasterAreaTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, updateRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getAreaTypesConfiguration, createAreaTypesConfiguration, updateAreaTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type GetAreaTypesResponse, type SaveAreaTypesRequest, type SaveAreaTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
@@ -268,6 +268,12 @@ const SingleProductConfig = () => {
   const [isLoadingSecurityTypesConfig, setIsLoadingSecurityTypesConfig] = useState(false);
   const [securityTypesConfigError, setSecurityTypesConfigError] = useState<string | null>(null);
   const [isSavingSecurityTypesConfig, setIsSavingSecurityTypesConfig] = useState(false);
+
+  // Area Types Configuration state
+  const [areaTypesConfigData, setAreaTypesConfigData] = useState<any[]>([]);
+  const [isLoadingAreaTypesConfig, setIsLoadingAreaTypesConfig] = useState(false);
+  const [areaTypesConfigError, setAreaTypesConfigError] = useState<string | null>(null);
+  const [isSavingAreaTypesConfig, setIsSavingAreaTypesConfig] = useState(false);
 
   // Fee Types Configuration state
   const [feeTypesConfigData, setFeeTypesConfigData] = useState<FeeTypeConfigItem[]>([]);
@@ -1069,7 +1075,6 @@ const SingleProductConfig = () => {
   const [isLoadingQuoteFormat, setIsLoadingQuoteFormat] = useState(false);
   const [quoteFormatError, setQuoteFormatError] = useState<string | null>(null);
   const quoteFormatApiRef = useRef(false);
-  const hasLoadedQuoteFormatRef = useRef(false);
   const [quoteFormatId, setQuoteFormatId] = useState<number | null>(null);
   const [quoteLogoFile, setQuoteLogoFile] = useState<File | null>(null);
   const [isSavingQuoteFormat, setIsSavingQuoteFormat] = useState(false);
@@ -1341,16 +1346,26 @@ const SingleProductConfig = () => {
   // Load Quote Format when Quote Format tab is active
   useEffect(() => {
     const loadQuoteFormat = async () => {
+      console.log('🎯 Quote Format useEffect triggered:', { activeTab, productId: product.id });
       if (activeTab !== 'quote-format') return;
-      if (quoteFormatApiRef.current) return;
-      if (hasLoadedQuoteFormatRef.current) return;
+      if (quoteFormatApiRef.current) {
+        console.log('⚠️ Quote Format API already in progress, skipping...');
+        return;
+      }
+      
+      console.log('🚀 Starting Quote Format API call...');
       quoteFormatApiRef.current = true;
       setIsLoadingQuoteFormat(true);
       setQuoteFormatError(null);
       try {
         const insurerId = getInsurerCompanyId();
-        if (!insurerId || !product.id) return;
+        if (!insurerId || !product.id) {
+          console.log('❌ Missing insurerId or productId:', { insurerId, productId: product.id });
+          return;
+        }
+        console.log('📡 Calling getQuoteFormat API...', { insurerId, productId: product.id });
         const data: QuoteFormatResponse = await getQuoteFormat(insurerId, product.id as string);
+        console.log('✅ Quote Format API response:', data);
         // Map API -> UI state
         setQuoteFormatId(data?.id ?? null);
         setQuoteConfig(prev => ({
@@ -1414,8 +1429,9 @@ const SingleProductConfig = () => {
             footerTextColor: data.footer_text_color || prev.footer.footerTextColor,
           },
         }));
-        hasLoadedQuoteFormatRef.current = true;
+        console.log('✅ Quote Format data mapped to UI state successfully');
       } catch (err: any) {
+        console.error('❌ Quote Format API error:', err);
         const status = err?.status as number | undefined;
         const message = err?.message as string | undefined;
         if (status === 400) setQuoteFormatError(message || 'Bad request while loading quote format.');
@@ -1424,6 +1440,7 @@ const SingleProductConfig = () => {
         else if (status && status >= 500) setQuoteFormatError('Server error. Please try again later.');
         else setQuoteFormatError(message || 'Failed to load quote format.');
       } finally {
+        console.log('🏁 Quote Format API call completed');
         setIsLoadingQuoteFormat(false);
         quoteFormatApiRef.current = false;
       }
@@ -1805,6 +1822,52 @@ const SingleProductConfig = () => {
     setWordingUploadActive(Number(wording.is_active) === 1 || wording.is_active === true);
     setWordingUploadFile(null);
     setIsWordingUploadDialogOpen(true);
+  };
+
+  const handleToggleWordingActive = async (wording: PolicyWording, isActive: boolean): Promise<void> => {
+    const insurerId = getInsurerCompanyId();
+    if (!insurerId || !product.id) return;
+    
+    try {
+      console.log('Toggling wording active state:', { wording: wording.id, isActive });
+      
+      await updatePolicyWording(insurerId, product.id as string, wording.id, {
+        is_active: String(isActive)
+      });
+      
+      // Update the local state to reflect the change
+      setPolicyWordings(prev => 
+        prev.map(w => 
+          w.id === wording.id 
+            ? { ...w, is_active: isActive ? 1 : 0 }
+            : w
+        )
+      );
+      
+      toast({
+        title: "Success",
+        description: `Policy wording ${isActive ? 'activated' : 'deactivated'} successfully!`,
+        variant: "default",
+      });
+      
+    } catch (err: any) {
+      console.error('Error toggling wording active state:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      let errorMessage = 'Failed to update policy wording status.';
+      if (status === 400) errorMessage = 'Bad request. Please check the data.';
+      else if (status === 401) errorMessage = 'Unauthorized. Please log in again.';
+      else if (status === 403) errorMessage = 'Forbidden. You do not have permission.';
+      else if (status && status >= 500) errorMessage = 'Server error. Please try again later.';
+      else if (message) errorMessage = message;
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSavePolicyWording = async (): Promise<void> => {
@@ -3874,6 +3937,131 @@ const SingleProductConfig = () => {
     }
   };
 
+  // Fetch Area Types Configuration
+  const fetchAreaTypesConfig = async (): Promise<void> => {
+    console.log('🎯 === FETCH AREA TYPES CONFIGURATION STARTED ===');
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs for area types config:', { insurerId, productId });
+      setAreaTypesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated for area types config:', { insurerId, productId });
+    setIsLoadingAreaTypesConfig(true);
+    setAreaTypesConfigError(null);
+
+    try {
+      console.log('🔍 Calling getAreaTypesConfiguration API...');
+      const response = await getAreaTypesConfiguration(insurerId, String(productId));
+      console.log('✅ Area Types Configuration API Response:', response);
+
+      if (response?.items && Array.isArray(response.items)) {
+        console.log('📝 Setting area types config data:', response.items);
+        setAreaTypesConfigData(response.items);
+        console.log('✅ Area types config data set successfully');
+      } else {
+        console.warn('⚠️ No area types items in response:', response);
+        setAreaTypesConfigData([]);
+      }
+
+    } catch (err: any) {
+      console.error('❌ Error fetching Area Types Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading area types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading area types configuration.'
+        : 'Failed to load area types configuration.';
+      setAreaTypesConfigError(msg);
+      setAreaTypesConfigData([]);
+    } finally {
+      setIsLoadingAreaTypesConfig(false);
+    }
+  };
+
+  // Save Area Types Configuration handler
+  const handleSaveAreaTypesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
+    console.log('🎯 === SAVE AREA TYPES CONFIGURATION STARTED ===');
+    console.log('🔍 Form data received:', formData);
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      toast({
+        title: "Error",
+        description: "Unable to determine insurer ID or product ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingAreaTypesConfig(true);
+    
+    try {
+      // Transform form data to API format
+      const items = Object.keys(formData).map((areaTypeName, index) => {
+        const areaTypeData = formData[areaTypeName];
+        return {
+          name: areaTypeName,
+          pricing_type: (areaTypeData?.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE') as 'FIXED_RATE' | 'PERCENTAGE',
+          value: Number(areaTypeData?.value || 0),
+          quote_option: (areaTypeData?.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE') as 'NO_QUOTE' | 'AUTO_QUOTE',
+          display_order: index + 1,
+          is_active: true
+        };
+      });
+
+      const requestPayload: SaveAreaTypesRequest = {
+        area_types_config: { items }
+      };
+
+      console.log('🔍 Request payload:', requestPayload);
+
+      // Determine whether to use POST or PATCH based on existing data
+      const hasExistingData = areaTypesConfigData && areaTypesConfigData.length > 0;
+      console.log('🔍 Has existing data:', hasExistingData);
+      console.log('🔍 Using API method:', hasExistingData ? 'PATCH' : 'POST');
+
+      let response: SaveAreaTypesResponse;
+      
+      if (hasExistingData) {
+        // Use PATCH for existing data
+        response = await updateAreaTypesConfiguration(insurerId, String(productId), requestPayload);
+      } else {
+        // Use POST for new data
+        response = await createAreaTypesConfiguration(insurerId, String(productId), requestPayload);
+      }
+
+      console.log('✅ API Response:', response);
+      
+      // Refresh the configuration data
+      await fetchAreaTypesConfig();
+      
+      toast({
+        title: "Success",
+        description: response?.message || "Area types configuration saved successfully.",
+      });
+
+      console.log('🎯 === SAVE AREA TYPES CONFIGURATION SUCCESS ===');
+
+    } catch (err: any) {
+      console.error('❌ Error saving area types configuration:', err);
+      toast({
+        title: "Error",
+        description: err?.message || 'Failed to save area types configuration.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingAreaTypesConfig(false);
+    }
+  };
+
   // Save Subcontractor Types Configuration handler with GET-then-POST/PATCH logic
   const handleSaveSubcontractorTypesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
     console.log('🎯 === SAVE SUBCONTRACTOR TYPES CONFIGURATION STARTED ===');
@@ -4487,6 +4675,7 @@ const SingleProductConfig = () => {
   };
 
   const handleTabChange = async (newTab: string) => {
+    console.log('🔄 Tab change triggered:', { from: activeTab, to: newTab });
     setActiveTab(newTab);
     if (newTab === 'pricing') {
       setActivePricingTab('base-rates');
@@ -4519,17 +4708,68 @@ const SingleProductConfig = () => {
   };
 
   // Handle editing document
-  const handleEditDocument = () => {
-    if (editingDocument) {
-      const updatedDocs = requiredDocuments.map(d => 
-        d.id === editingDocument.id ? editingDocument : d
-      );
-      setRequiredDocuments(updatedDocs);
+  const handleEditDocument = async () => {
+    if (!editingDocument) return;
+    
+    const insurerId = getInsurerCompanyId();
+    if (!insurerId || !product.id) return;
+    
+    try {
+      console.log('🚀 Updating required document:', editingDocument);
+      setIsLoadingRequiredDocs(true);
+      setRequiredDocsError(null);
+      
+      // Call the UPDATE API with correct format
+      const response = await updateRequiredDocument(insurerId, editingDocument.id, {
+        display_label: editingDocument.label,
+        description: editingDocument.description || '',
+        is_required: !!editingDocument.required,
+        status: editingDocument.active ? 'active' : 'inactive',
+      });
+      
+      console.log('✅ Document updated successfully:', response);
+      
+      // Refresh the documents list from the server
+      const resp = await getRequiredDocuments(insurerId, product.id as string);
+      const list = Array.isArray(resp?.documents) ? resp.documents : [];
+      const mapped = list.map(d => ({
+        id: d.id,
+        label: d.display_label,
+        description: d.description || '',
+        required: !!d.is_required,
+        active: (d.status || '').toLowerCase() === 'active',
+        order: d.display_order,
+        template: d.template_file_url ? { name: d.template_file_url.split('/').pop() || 'template.pdf', size: '—', url: d.template_file_url } : null,
+      }));
+      setRequiredDocuments(mapped as any);
+      
       setEditingDocument(null);
       toast({
         title: "Document Updated",
-        description: `"${editingDocument.label}" has been updated.`,
+        description: response.message || `"${editingDocument.label}" has been updated successfully!`,
+        variant: "default",
       });
+      
+    } catch (err: any) {
+      console.error('❌ Error updating required document:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      let errorMessage = 'Failed to update required document.';
+      if (status === 400) errorMessage = message || 'Bad request. Please check the data.';
+      else if (status === 401) errorMessage = 'Unauthorized. Please log in again.';
+      else if (status === 403) errorMessage = 'Forbidden. You do not have permission.';
+      else if (status && status >= 500) errorMessage = 'Server error. Please try again later.';
+      else if (message) errorMessage = message;
+      
+      setRequiredDocsError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingRequiredDocs(false);
     }
   };
 
@@ -5328,7 +5568,11 @@ const SingleProductConfig = () => {
                                 await fetchSecurityTypesConfig();
                                 console.log('🎯 Config fetch completed');
                               } else if (section.id === 'area-types') {
+                                console.log('🎯 Area Types tab clicked - starting fetch sequence...');
                                 await fetchAreaTypes();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchAreaTypesConfig();
+                                console.log('🎯 Config fetch completed');
                               } else if (section.id === 'fee-types') {
                                 console.log('🎯 Fee Types tab clicked - starting fetch sequence...');
                                 await fetchFeeTypesConfig();
@@ -5574,6 +5818,11 @@ const SingleProductConfig = () => {
                            securityTypesConfigError={securityTypesConfigError}
                            isSavingSecurityTypesConfig={isSavingSecurityTypesConfig}
                            handleSaveSecurityTypesConfiguration={handleSaveSecurityTypesConfiguration}
+                           areaTypesConfigData={areaTypesConfigData}
+                           isLoadingAreaTypesConfig={isLoadingAreaTypesConfig}
+                           areaTypesConfigError={areaTypesConfigError}
+                           isSavingAreaTypesConfig={isSavingAreaTypesConfig}
+                           handleSaveAreaTypesConfiguration={handleSaveAreaTypesConfiguration}
                          />
                         )}
                      </div>
@@ -5641,15 +5890,18 @@ const SingleProductConfig = () => {
                         {clausesError}
                       </div>
                     )}
-                  <Table>
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-[1400px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Clause Code</TableHead>
-                        <TableHead>Title / Purpose</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Show</TableHead>
-                        <TableHead>Pricing</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="w-[120px]">Clause Code</TableHead>
+                        <TableHead className="w-[220px]">Title / Purpose</TableHead>
+                        <TableHead className="w-[240px]">Purpose Description</TableHead>
+                        <TableHead className="w-[100px]">Type</TableHead>
+                        <TableHead className="w-[100px]">Show</TableHead>
+                        <TableHead className="w-[120px]">Pricing Type</TableHead>
+                        <TableHead className="w-[100px]">Value</TableHead>
+                        <TableHead className="w-[200px] text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -5657,38 +5909,60 @@ const SingleProductConfig = () => {
                         const pricingItem = ratingConfig.clausesPricing.find(p => p.code === item.code);
                         return (
                           <TableRow key={index}>
-                            <TableCell className="font-medium">{item.code}</TableCell>
-                            <TableCell>{item.title}</TableCell>
-                            <TableCell>
+                            <TableCell className="font-medium w-[120px]">{item.code}</TableCell>
+                            <TableCell className="w-[220px]">{item.title}</TableCell>
+                            <TableCell className="w-[240px]">
+                              <span className="text-sm text-muted-foreground">
+                                {item.description || item.purpose || "No description available"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="w-[100px]">
                               <Badge variant={item.type === "Clause" ? "default" : item.type === "Exclusion" ? "destructive" : "secondary"}>
                                 {item.type}
                               </Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="w-[100px]">
                               <Badge variant={item.show === "Mandatory" ? "default" : "outline"}>
                                 {item.show}
                               </Badge>
                             </TableCell>
-                             <TableCell>
-                               {pricingItem ? (
-                                 <span className="text-sm">
-                                   {pricingItem.variableOptions.length} option{pricingItem.variableOptions.length !== 1 ? 's' : ''}
-                                 </span>
+                             <TableCell className="w-[120px]">
+                               {pricingItem && pricingItem.variableOptions.length > 0 ? (
+                                 <Badge variant="outline">
+                                   {pricingItem.variableOptions[0].type === "percentage" ? "Percentage" : "Fixed Amount"}
+                                 </Badge>
                                ) : (
-                                 <span className="text-sm text-muted-foreground">Not configured</span>
+                                 <span className="text-sm text-muted-foreground">Not set</span>
                                )}
                              </TableCell>
-                             <TableCell className="text-right">
-                               <div className="inline-flex gap-2">
-                                 <Button variant="outline" size="sm" onClick={() => { setPreviewWording(item); setIsPreviewDialogOpen(true); }}>
-                                   Preview
-                                 </Button>
+                             <TableCell className="w-[100px]">
+                               {pricingItem && pricingItem.variableOptions.length > 0 ? (
+                                 <div className="flex items-center gap-1">
+                                   <span className="text-sm font-medium">
+                                     {pricingItem.variableOptions[0].value}
+                                   </span>
+                                   <span className="text-xs text-muted-foreground">
+                                     {pricingItem.variableOptions[0].type === "percentage" ? "%" : "AED"}
+                                   </span>
+                                 </div>
+                               ) : (
+                                 <span className="text-sm text-muted-foreground">-</span>
+                               )}
+                             </TableCell>
+                             <TableCell className="w-[200px] text-right">
+                               <div className="inline-flex gap-3">
                                  <Button variant="outline" size="sm" onClick={() => {
                                    const firstOption = pricingItem?.variableOptions[0];
                                    setSelectedClause({...item, pricingType: firstOption?.type || "percentage", pricingValue: firstOption?.value || 0});
                                    setIsEditClauseDialogOpen(true);
                                  }}>
                                  View/Edit
+                               </Button>
+                                 <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => {
+                                   // Add delete functionality here
+                                   console.log('Delete clause:', item);
+                                 }}>
+                                 Delete
                                </Button>
                                </div>
                              </TableCell>
@@ -5697,6 +5971,7 @@ const SingleProductConfig = () => {
                       })}
                     </TableBody>
                   </Table>
+                  </div>
                 </CardContent>
               </Card>
               )}
@@ -5990,144 +6265,25 @@ const SingleProductConfig = () => {
             </TabsContent>
             {/* Wording Configuration Tab */}
             <TabsContent value="wording" className="space-y-6">
-                  {policyWordingsError && (
-                    <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
-                      {policyWordingsError}
-                    </div>
-                  )}
-                  
-              {isLoadingPolicyWordings ? (
-                <div className="space-y-4">
-                  {[1,2].map(i => (
-                    <div key={i} className="p-4 border rounded-md">
-                      <div className="w-56 h-5 bg-gray-200 rounded animate-pulse mb-3" />
-                      <div className="h-10 bg-gray-200 rounded animate-pulse" />
-                        </div>
-                      ))}
-                        </div>
-                      ) : (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                                <div>
-                      <CardTitle>Policy Wordings</CardTitle>
-                      <CardDescription>Manage uploaded policy wording documents</CardDescription>
-                                </div>
-                    <div className="flex items-center gap-2">
-                      <Button onClick={openUploadDialog} className="gap-2">
-                        <Upload className="w-4 h-4" />
-                        Upload Wording
-                      </Button>
-                              </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Upload Date</TableHead>
-                        <TableHead>Size</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {policyWordings.map((w) => (
-                        <TableRow key={w.id}>
-                          <TableCell className="font-medium">{w.document_title}</TableCell>
-                          <TableCell>{w.upload_date}</TableCell>
-                          <TableCell>{w.file_size_kb} KB</TableCell>
-                          <TableCell>{Number(w.is_active) === 1 ? 'Active' : 'Inactive'}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="inline-flex gap-2">
-                              <Button variant="outline" size="sm" onClick={() => { setPreviewWording(w); setIsPreviewDialogOpen(true); }}>
-                                Preview
-                                </Button>
-                              <Button variant="outline" size="sm" onClick={() => openEditDialog(w)}>
-                                  Edit
-                                </Button>
-                              </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-              )}
-
-              {/* Upload/Edit Wording Dialog */}
-              <Dialog open={isWordingUploadDialogOpen} onOpenChange={setIsWordingUploadDialogOpen}>
-                <DialogContent className="sm:max-w-[525px]">
-                  <DialogHeader>
-                    <DialogTitle>{editingWording ? 'Edit Policy Wording' : 'Upload Policy Wording'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="wording-title">Document Title *</Label>
-                      <Input
-                        id="wording-title"
-                        value={wordingUploadTitle}
-                        onChange={(e) => setWordingUploadTitle(e.target.value)}
-                        placeholder="e.g., Policy Wording v2.1"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input id="wording-file" type="file" accept="application/pdf" onChange={handleFileUpload} />
-                      {wordingUploadFile && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <FileText className="w-4 h-4" />
-                          <span>{wordingUploadFile.name}</span>
-                          <Button variant="ghost" size="sm" onClick={() => handleFileUpload({ target: { files: null } } as any)}>
-                            <X className="w-4 h-4" />
-                          </Button>
-                    </div>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="wording-active"
-                        checked={!!wordingUploadActive}
-                        onCheckedChange={(checked) => setWordingUploadActive(!!checked)}
-                      />
-                      <Label htmlFor="wording-active">Active</Label>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleSavePolicyWording} disabled={!wordingUploadTitle || (!editingWording && !wordingUploadFile)}>
-                      {isUploadingWording ? (
-                        <span className="inline-flex items-center gap-2">
-                          <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></span>
-                          Saving…
-                        </span>
-                      ) : (
-                        'Save Wording'
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              {/* Policy Wording Preview Dialog */}
-              <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Policy Wording Preview</DialogTitle>
-                  </DialogHeader>
-                  {previewWording && (
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between"><span className="text-muted-foreground">Title</span><span>{previewWording.document_title}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Upload Date</span><span>{previewWording.upload_date}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Size</span><span>{previewWording.file_size_kb} KB</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span>{Number(previewWording.is_active) === 1 ? 'Active' : 'Inactive'}</span></div>
-                      <div className="text-xs text-muted-foreground">Note: Inline PDF preview not available. Download from the management console if needed.</div>
-                  </div>
-                  )}
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsPreviewDialogOpen(false)}>Close</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <WordingConfigurations
+                policyWordingsError={policyWordingsError}
+                isLoadingPolicyWordings={isLoadingPolicyWordings}
+                openUploadDialog={openUploadDialog}
+                policyWordings={policyWordings}
+                openEditDialog={openEditDialog}
+                isWordingUploadDialogOpen={isWordingUploadDialogOpen}
+                setIsWordingUploadDialogOpen={setIsWordingUploadDialogOpen}
+                editingWording={editingWording}
+                wordingUploadTitle={wordingUploadTitle}
+                setWordingUploadTitle={setWordingUploadTitle}
+                handleFileUpload={handleFileUpload}
+                wordingUploadFile={wordingUploadFile}
+                wordingUploadActive={wordingUploadActive}
+                setWordingUploadActive={setWordingUploadActive}
+                handleSavePolicyWording={handleSavePolicyWording}
+                isUploadingWording={isUploadingWording}
+                handleToggleWordingActive={handleToggleWordingActive}
+              />
             </TabsContent>
             {/* Quote Format tab */}
             <TabsContent value="quote-format" className="space-y-6">

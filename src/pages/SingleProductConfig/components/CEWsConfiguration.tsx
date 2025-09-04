@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Plus, Save } from "lucide-react";
 
 export type TplExtension = {
   id: number;
@@ -215,7 +215,7 @@ const CEWsConfiguration: React.FC<CEWsConfigurationProps> = ({
                           }}
                           className="text-destructive hover:text-destructive"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          Remove
                         </Button>
                       </TableCell>
                     </TableRow>

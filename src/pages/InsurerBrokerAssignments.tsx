@@ -14,7 +14,7 @@ import { ArrowLeft, Calculator, Download, Upload, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { getInsurerCompanyId } from "@/lib/auth";
-import { getInsurerBrokerAssignments, toggleBrokerStatus, getBrokerAssignedProducts, type BrokerAssignment, type BrokerProductAssignment } from "@/lib/api/insurers";
+import { getInsurerBrokerAssignments, toggleBrokerStatus, getBrokerAssignedProducts, updateBrokerProductAssignments, type BrokerAssignment, type BrokerProductAssignment } from "@/lib/api/insurers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TableSkeleton } from "@/components/loaders/TableSkeleton";
 const InsurerBrokerAssignments = () => {
@@ -70,6 +70,7 @@ const InsurerBrokerAssignments = () => {
   const [productsLoading, setProductsLoading] = useState<boolean>(false);
   const [productsError, setProductsError] = useState<string | null>(null);
   const [brokerProducts, setBrokerProducts] = useState<Record<number, BrokerProductAssignment[]>>({});
+  const [savingAssignments, setSavingAssignments] = useState<boolean>(false);
 
   // State for confirmation dialog
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -168,6 +169,75 @@ const InsurerBrokerAssignments = () => {
         });
       }
     );
+  };
+
+  // Save product assignments for a broker
+  const saveProductAssignments = async (brokerId: number) => {
+    if (!selectedBroker || selectedBroker !== brokerId) return;
+    
+    const insurerId = getInsurerCompanyId();
+    if (!insurerId) {
+      toast({
+        title: "Error",
+        description: "Missing insurer ID. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('🚀 Saving product assignments for broker:', brokerId);
+      setSavingAssignments(true);
+      setProductsError(null);
+
+      // Get assigned product IDs from the current state
+      const assignedProductIds = (brokerProducts[brokerId] || [])
+        .filter(product => product.assigned)
+        .map(product => product.productId);
+
+      console.log('📦 Assigned product IDs:', assignedProductIds);
+
+      // Call the PUT API
+      const response = await updateBrokerProductAssignments(insurerId, brokerId, {
+        assigned_product_ids: assignedProductIds
+      });
+
+      console.log('✅ Product assignments saved successfully:', response);
+
+      // Update the broker's product count in the main table
+      setBrokersData(prev => prev.map(broker => 
+        broker.id === brokerId 
+          ? { ...broker, productsAssigned: response.assigned_product_ids.length }
+          : broker
+      ));
+
+      toast({
+        title: "Assignments Saved",
+        description: response.message || "Product assignments have been saved successfully!",
+        variant: "default",
+      });
+
+    } catch (err: any) {
+      console.error('❌ Error saving product assignments:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      let errorMessage = 'Failed to save product assignments.';
+      if (status === 400) errorMessage = message || 'Bad request. Please check the data.';
+      else if (status === 401) errorMessage = 'Unauthorized. Please log in again.';
+      else if (status === 403) errorMessage = 'Forbidden. You do not have permission.';
+      else if (status && status >= 500) errorMessage = 'Server error. Please try again later.';
+      else if (message) errorMessage = message;
+      
+      setProductsError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingAssignments(false);
+    }
   };
   return <div className="min-h-screen bg-background flex flex-col">
       <div className="border-b bg-card">
@@ -306,11 +376,15 @@ const InsurerBrokerAssignments = () => {
                               </div>
                               <DialogFooter>
                                 <DialogClose asChild>
-                                  <Button variant="outline">Cancel</Button>
+                                  <Button variant="outline" disabled={savingAssignments}>Cancel</Button>
                                 </DialogClose>
-                                <DialogClose asChild>
-                                  <Button className="bg-primary hover:bg-primary/90">Save</Button>
-                                </DialogClose>
+                                <Button 
+                                  className="bg-primary hover:bg-primary/90" 
+                                  onClick={() => saveProductAssignments(broker.id)}
+                                  disabled={savingAssignments}
+                                >
+                                  {savingAssignments ? "Saving..." : "Save"}
+                                </Button>
                               </DialogFooter>
                             </DialogContent>
                           </Dialog>

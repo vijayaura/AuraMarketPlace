@@ -121,6 +121,13 @@ export type MasterDataTabsProps = {
   securityTypesConfigError: string | null;
   isSavingSecurityTypesConfig: boolean;
   handleSaveSecurityTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+
+  // Area Types Configuration props
+  areaTypesConfigData: any[];
+  isLoadingAreaTypesConfig: boolean;
+  areaTypesConfigError: string | null;
+  isSavingAreaTypesConfig: boolean;
+  handleSaveAreaTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
 };
 
 const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
@@ -234,6 +241,13 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
   securityTypesConfigError,
   isSavingSecurityTypesConfig,
   handleSaveSecurityTypesConfiguration,
+
+  // Area Types Configuration props
+  areaTypesConfigData,
+  isLoadingAreaTypesConfig,
+  areaTypesConfigError,
+  isSavingAreaTypesConfig,
+  handleSaveAreaTypesConfiguration,
 }) => {
   // Simple state for Construction Types form values - direct approach
   const [constructionTypesFormData, setConstructionTypesFormData] = useState<{[key: string]: any}>({});
@@ -264,6 +278,9 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
 
   // Simple state for Security Types form values - direct approach
   const [securityTypesFormData, setSecurityTypesFormData] = useState<{[key: string]: any}>({});
+
+  // Simple state for Area Types form values - direct approach
+  const [areaTypesFormData, setAreaTypesFormData] = useState<{[key: string]: any}>({});
 
   // Clause Pricing state - moved to top level to avoid conditional hooks
   const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
@@ -576,6 +593,37 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
       console.log('✅ Security Types form data populated:', formData);
     }
   }, [activePricingTab, securityTypesConfigData]);
+
+  // Simple effect to populate area types form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Area Types Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!areaTypesConfigData,
+      configDataLength: areaTypesConfigData?.length,
+      configData: areaTypesConfigData
+    });
+
+    if (activePricingTab === "area-types" && areaTypesConfigData && areaTypesConfigData.length > 0) {
+      console.log('✅ Populating Area Types form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping using name field
+      areaTypesConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        const areaTypeName = configItem.name;
+        if (areaTypeName) {
+          formData[areaTypeName] = {
+            pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+            value: String(configItem.value || 0),
+            quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+          };
+        }
+      });
+      
+      setAreaTypesFormData(formData);
+      console.log('✅ Area Types form data populated:', formData);
+    }
+  }, [activePricingTab, areaTypesConfigData]);
 
   // Clause Pricing functions
   if (activePricingTab === "clause-pricing") {
@@ -925,8 +973,9 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
           title: "Area Types", 
           description: "Configure pricing for different area types", 
           data: areaTypesData.map(item => item.label),
-          isLoading: isLoadingAreaTypes,
-          error: areaTypesError
+          isLoading: isLoadingAreaTypes || isLoadingAreaTypesConfig,
+          error: areaTypesError || areaTypesConfigError,
+          configData: areaTypesConfigData
         };
       case "countries":
         return { 
@@ -1027,6 +1076,8 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                 ? () => handleSaveSubcontractorTypesConfiguration(subcontractorTypesFormData)
                 : activePricingTab === "security-types"
                 ? () => handleSaveSecurityTypesConfiguration(securityTypesFormData)
+                : activePricingTab === "area-types"
+                ? () => handleSaveAreaTypesConfiguration(areaTypesFormData)
                 : onSave
             } 
             size="sm" 
@@ -1049,6 +1100,8 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                 ? (config.isLoading || isSavingSubcontractorTypesConfig)
                 : activePricingTab === "security-types"
                 ? (config.isLoading || isSavingSecurityTypesConfig)
+                : activePricingTab === "area-types"
+                ? (config.isLoading || isSavingAreaTypesConfig)
                 : config.isLoading
             }
           >
@@ -1071,6 +1124,8 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
               ? (isSavingSubcontractorTypesConfig ? 'Saving...' : 'Save')
               : activePricingTab === "security-types"
               ? (isSavingSecurityTypesConfig ? 'Saving...' : 'Save')
+              : activePricingTab === "area-types"
+              ? (isSavingAreaTypesConfig ? 'Saving...' : 'Save')
               : (config.isLoading ? 'Loading...' : 'Save')
             }
           </Button>
@@ -1128,6 +1183,7 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                     : activePricingTab === "subcontractor-types" ? subcontractorTypesFormData[item]
                     : activePricingTab === "consultant-roles" ? consultantRolesFormData[item]
                     : activePricingTab === "security-types" ? securityTypesFormData[item]
+                    : activePricingTab === "area-types" ? areaTypesFormData[item]
                     : null;
                   
                   console.log(`🔍 Rendering row for "${item}":`, {
@@ -1217,6 +1273,14 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                               }));
                             } else if (activePricingTab === "security-types") {
                               setSecurityTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            } else if (activePricingTab === "area-types") {
+                              setAreaTypesFormData(prev => ({
                                 ...prev,
                                 [item]: { 
                                   ...prev[item], 
@@ -1320,6 +1384,14 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                                   value: e.target.value
                                 }
                               }));
+                            } else if (activePricingTab === "area-types") {
+                              setAreaTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
                             }
                           }}
                           className="w-24" 
@@ -1403,6 +1475,14 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                               }));
                             } else if (activePricingTab === "security-types") {
                               setSecurityTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            } else if (activePricingTab === "area-types") {
+                              setAreaTypesFormData(prev => ({
                                 ...prev,
                                 [item]: { 
                                   ...prev[item], 

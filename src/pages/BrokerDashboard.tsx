@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Plus, FileText, Calendar, DollarSign, Building2, Shield, Download, Search, Filter, Eye, AlertTriangle } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { QUOTE_STATUSES, getQuoteStatusLabel, getQuoteStatusColor, filterActiveQuotes } from "@/lib/quote-status";
@@ -259,31 +259,42 @@ export default function BrokerDashboard() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [quotesData, setQuotesData] = useState<BrokerDashboardQuotesResponse | null>(null);
 
+  // Fetch dashboard data function
+  const fetchDashboardData = async () => {
+    try {
+      console.log('🚀 Fetching broker dashboard data...');
+      setIsLoading(true);
+      setLoadError(null);
+      const data = await getBrokerDashboardQuotes();
+      console.log('✅ Broker dashboard data fetched successfully:', data);
+      setQuotesData(data);
+    } catch (err: any) {
+      console.error('❌ Error fetching broker dashboard data:', err);
+      const status = err?.status;
+      const friendly =
+        status === 400 ? 'Invalid request while loading quotes.' :
+        status === 401 ? 'Session expired. Please log in again.' :
+        status === 403 ? 'You are not authorized to view this dashboard.' :
+        status === 500 ? 'Server error while fetching quotes.' :
+        (err?.message || 'Failed to load quotes.');
+      setLoadError(friendly);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch dashboard data when component mounts (since default tab is "quotes")
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setIsLoading(true);
-        setLoadError(null);
-        const data = await getBrokerDashboardQuotes();
-        if (!mounted) return;
-        setQuotesData(data);
-      } catch (err: any) {
-        if (!mounted) return;
-        const status = err?.status;
-        const friendly =
-          status === 400 ? 'Invalid request while loading quotes.' :
-          status === 401 ? 'Session expired. Please log in again.' :
-          status === 403 ? 'You are not authorized to view this dashboard.' :
-          status === 500 ? 'Server error while fetching quotes.' :
-          (err?.message || 'Failed to load quotes.');
-        setLoadError(friendly);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
+    fetchDashboardData();
   }, []);
+
+  // Fetch dashboard data when quotes tab is selected
+  useEffect(() => {
+    if (activeTab === "quotes") {
+      console.log('📊 Quote Requests tab clicked - fetching broker dashboard data...');
+      fetchDashboardData();
+    }
+  }, [activeTab]);
 
   // Filter active quotes
   const recentQuotes = (quotesData?.recentQuotes || []).map(q => ({
@@ -417,6 +428,14 @@ export default function BrokerDashboard() {
           </Button>
         </div>
 
+        {/* Error Banner */}
+        {loadError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTitle>Failed to load dashboard data</AlertTitle>
+            <AlertDescription>{loadError}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -426,7 +445,13 @@ export default function BrokerDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{mockQuotes.length}</div>
+              {isLoading ? (
+                <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <div className="text-2xl font-bold text-foreground">
+                  {quotesData?.totalQuotes !== undefined ? quotesData.totalQuotes : mockQuotes.length}
+                </div>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -436,7 +461,13 @@ export default function BrokerDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{activeQuotes.length}</div>
+              {isLoading ? (
+                <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <div className="text-2xl font-bold text-foreground">
+                  {quotesData?.totalActiveQuotes !== undefined ? quotesData.totalActiveQuotes : activeQuotes.length}
+                </div>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -446,7 +477,13 @@ export default function BrokerDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{mockPolicies.length}</div>
+              {isLoading ? (
+                <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <div className="text-2xl font-bold text-foreground">
+                  {quotesData?.totalPolicies !== undefined ? quotesData.totalPolicies : mockPolicies.length}
+                </div>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -456,7 +493,13 @@ export default function BrokerDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">AED {Number(quotesData?.totalPremiumValue || 0).toLocaleString()}</div>
+              {isLoading ? (
+                <div className="w-20 h-8 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <div className="text-2xl font-bold text-foreground">
+                  AED {Number(quotesData?.totalPremiumValue || 0).toLocaleString()}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

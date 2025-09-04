@@ -176,6 +176,13 @@ type PricingConfiguratorProps = {
   isSavingSecurityTypesConfig: boolean;
   handleSaveSecurityTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
   
+  // Area Types Configuration props
+  areaTypesConfigData: any[];
+  isLoadingAreaTypesConfig: boolean;
+  areaTypesConfigError: string | null;
+  isSavingAreaTypesConfig: boolean;
+  handleSaveAreaTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  
   // Fee Types Configuration props
   feeTypesConfigData: any[];
   isLoadingFeeTypesConfig: boolean;
@@ -341,6 +348,13 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   securityTypesConfigError,
   isSavingSecurityTypesConfig,
   handleSaveSecurityTypesConfiguration,
+  
+  // Area Types Configuration props
+  areaTypesConfigData,
+  isLoadingAreaTypesConfig,
+  areaTypesConfigError,
+  isSavingAreaTypesConfig,
+  handleSaveAreaTypesConfiguration,
   
   // Fee Types Configuration props
   feeTypesConfigData,
@@ -622,6 +636,11 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                   securityTypesConfigError={securityTypesConfigError}
                   isSavingSecurityTypesConfig={isSavingSecurityTypesConfig}
                   handleSaveSecurityTypesConfiguration={handleSaveSecurityTypesConfiguration}
+                  areaTypesConfigData={areaTypesConfigData}
+                  isLoadingAreaTypesConfig={isLoadingAreaTypesConfig}
+                  areaTypesConfigError={areaTypesConfigError}
+                  isSavingAreaTypesConfig={isSavingAreaTypesConfig}
+                  handleSaveAreaTypesConfiguration={handleSaveAreaTypesConfiguration}
                 />
             )}
           </div>

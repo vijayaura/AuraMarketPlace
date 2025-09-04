@@ -1002,7 +1002,7 @@ export interface GetAreaTypesResponse {
   }>;
 }
 
-export async function getAreaTypes(
+export async function getAreaTypesConfiguration(
   insurerId: number | string,
   productId: number | string
 ): Promise<GetAreaTypesResponse> {
@@ -1012,7 +1012,7 @@ export async function getAreaTypes(
   );
 }
 
-export async function saveAreaTypes(
+export async function createAreaTypesConfiguration(
   insurerId: number | string,
   productId: number | string,
   body: SaveAreaTypesRequest
@@ -1023,7 +1023,7 @@ export async function saveAreaTypes(
   );
 }
 
-export async function updateAreaTypes(
+export async function updateAreaTypesConfiguration(
   insurerId: number | string,
   productId: number | string,
   body: SaveAreaTypesRequest
@@ -1392,6 +1392,94 @@ export async function createRequiredDocument(
     form,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
+}
+
+export interface UpdateRequiredDocumentParams {
+  display_label?: string;
+  description?: string;
+  is_required?: boolean;
+  status?: string; // 'active' | 'inactive'
+}
+
+export interface UpdateRequiredDocumentResponse {
+  message: string;
+  document: {
+    id: number;
+    product_id: number;
+    display_order: number;
+    display_label: string;
+    description: string;
+    is_required: number; // 0 or 1
+    template_file: string | null;
+    status: string; // 'ACTIVE' | 'INACTIVE'
+    created_at: string;
+    updated_at: string;
+    insurer_id: number;
+  };
+}
+
+export async function updateRequiredDocument(
+  insurerId: number | string,
+  documentId: number | string,
+  params: UpdateRequiredDocumentParams
+): Promise<UpdateRequiredDocumentResponse> {
+  return apiPatch<UpdateRequiredDocumentResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/required-documents/${encodeURIComponent(String(documentId))}`,
+    params
+  );
+}
+
+// Broker Product Assignments
+export interface UpdateBrokerProductAssignmentsParams {
+  assigned_product_ids: number[];
+}
+
+export interface UpdateBrokerProductAssignmentsResponse {
+  message: string;
+  insurer_id: number;
+  broker_id: number;
+  assigned_product_ids: number[];
+  skipped_product_ids: number[];
+}
+
+export async function updateBrokerProductAssignments(
+  insurerId: number | string,
+  brokerId: number | string,
+  params: UpdateBrokerProductAssignmentsParams
+): Promise<UpdateBrokerProductAssignmentsResponse> {
+  return apiPut<UpdateBrokerProductAssignmentsResponse>(
+    `/insurer/${encodeURIComponent(String(brokerId))}/products?insurer_id=${encodeURIComponent(String(insurerId))}`,
+    params
+  );
+}
+
+// Insurer Dashboard
+export interface DashboardQuoteRequest {
+  id: number;
+  quote_id: string;
+  broker_id: number;
+  insurer_id: number | null;
+  project_id: number;
+  base_premium: string;
+  total_premium: string;
+  status: string;
+  validity_date: string;
+  created_at: string;
+  updated_at: string;
+  project_name: string;
+  client_name: string;
+  broker_name: string;
+}
+
+export interface GetInsurerDashboardResponse {
+  totalQuotes: number;
+  totalPolicies: number;
+  totalValue: number;
+  quoteRequests: DashboardQuoteRequest[];
+}
+
+export async function getInsurerDashboard(): Promise<GetInsurerDashboardResponse> {
+  return apiGet<GetInsurerDashboardResponse>(`/insurer/dashboard/quotes`);
 }
 
 // CEWs (TPL limits and Extensions)

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import insurerLogo from "@/assets/insurer-logo.png";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,10 @@ import { QuoteStatusDot } from "@/components/QuoteStatusDot";
 import { Eye, ArrowLeft, Building2, Calendar, DollarSign, Shield, FileText, Download, LogOut, Settings2 } from "lucide-react";
 import { TableSearchFilter, FilterConfig } from "@/components/TableSearchFilter";
 import { useTableSearch } from "@/hooks/useTableSearch";
+import { useToast } from "@/hooks/use-toast";
+import { getInsurerDashboard, type GetInsurerDashboardResponse, type DashboardQuoteRequest } from "@/lib/api/insurers";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import TableSkeleton from "@/components/loaders/TableSkeleton";
 import * as XLSX from 'xlsx';
 
 // Mock data for quotes - expanded to 10+ entries
@@ -284,12 +288,66 @@ const getStatusBadge = (status: string) => {
 };
 const InsurerDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [quotes] = useState(mockQuotes);
   const [policies] = useState(mockPolicies);
   const [activeTab, setActiveTab] = useState("quotes");
   const [currentQuotePage, setCurrentQuotePage] = useState(1);
   const [currentPolicyPage, setCurrentPolicyPage] = useState(1);
   const itemsPerPage = 5;
+
+  // Dashboard API state
+  const [dashboardData, setDashboardData] = useState<GetInsurerDashboardResponse | null>(null);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState<boolean>(false);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      console.log('🚀 Fetching dashboard data...');
+      setIsLoadingDashboard(true);
+      setDashboardError(null);
+      
+      const response = await getInsurerDashboard();
+      console.log('✅ Dashboard data fetched successfully:', response);
+      
+      setDashboardData(response);
+      
+    } catch (err: any) {
+      console.error('❌ Error fetching dashboard data:', err);
+      const status = err?.status as number | undefined;
+      const message = err?.message as string | undefined;
+      
+      let errorMessage = 'Failed to load dashboard data.';
+      if (status === 400) errorMessage = message || 'Bad request while loading dashboard.';
+      else if (status === 401) errorMessage = 'Unauthorized. Please log in again.';
+      else if (status === 403) errorMessage = 'Forbidden. You do not have permission.';
+      else if (status && status >= 500) errorMessage = 'Server error. Please try again later.';
+      else if (message) errorMessage = message;
+      
+      setDashboardError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDashboard(false);
+    }
+  };
+
+  // Fetch dashboard data when component mounts (since default tab is "quotes")
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  // Fetch dashboard data when quotes tab is selected
+  useEffect(() => {
+    if (activeTab === "quotes") {
+      console.log('📊 Quote Requests tab clicked - fetching dashboard data...');
+      fetchDashboardData();
+    }
+  }, [activeTab]);
 
   // Filter active quotes (exclude converted policies)
   const activeQuotes = filterActiveQuotes(mockQuotes);
@@ -471,7 +529,8 @@ const InsurerDashboard = () => {
   });
 
   // Pagination logic for quotes
-  const totalQuotePages = Math.ceil(filteredQuotes.length / itemsPerPage);
+  const quotesDataSource = dashboardData?.quoteRequests || filteredQuotes;
+  const totalQuotePages = Math.ceil(quotesDataSource.length / itemsPerPage);
   const startQuoteIndex = (currentQuotePage - 1) * itemsPerPage;
   const endQuoteIndex = startQuoteIndex + itemsPerPage;
   const currentQuotes = filteredQuotes.slice(startQuoteIndex, endQuoteIndex);
@@ -525,31 +584,72 @@ const InsurerDashboard = () => {
           </div>
         </div>
 
+        {/* Error Banner */}
+        {dashboardError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTitle>Failed to load dashboard data</AlertTitle>
+            <AlertDescription>{dashboardError}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardContent className="p-6">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Quotes</p>
-                <p className="text-2xl font-bold text-foreground">{quotes.length}</p>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
+                  <FileText className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Quotes</p>
+                  {isLoadingDashboard ? (
+                    <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {dashboardData?.totalQuotes !== undefined ? dashboardData.totalQuotes : quotes.length}
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
             <CardContent className="p-6">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Policies</p>
-                <p className="text-2xl font-bold text-foreground">{policies.length}</p>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg">
+                  <Shield className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Policies</p>
+                  {isLoadingDashboard ? (
+                    <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {dashboardData?.totalPolicies !== undefined ? dashboardData.totalPolicies : policies.length}
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold text-foreground">AED 46.3M</p>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Value</p>
+                  {isLoadingDashboard ? (
+                    <div className="w-20 h-8 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {dashboardData?.totalValue !== undefined ? `AED ${(dashboardData.totalValue / 1000000).toFixed(1)}M` : "AED 46.3M"}
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -605,38 +705,79 @@ const InsurerDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                   {currentQuotes.map(quote => <tr key={quote.id} className="border-b hover:bg-muted/30 transition-colors">
-                       <td className="p-4">
-                         <p className="font-medium text-foreground">{quote.id}</p>
-                       </td>
-                       <td className="p-4">
-                         <div>
-                           <p className="font-medium text-foreground">{quote.customerName}</p>
-                           <p className="text-sm text-muted-foreground">{quote.companyName}</p>
-                         </div>
-                       </td>
-                       <td className="p-4">
-                         <p className="font-medium text-foreground">{quote.brokerName}</p>
-                       </td>
-                       <td className="p-4">
-                         <p className="font-medium text-foreground">{quote.projectType}</p>
-                       </td>
-                       <td className="p-4">
-                         <p className="font-medium text-foreground">{quote.projectValue}</p>
-                       </td>
-                       <td className="p-4">
-                         <p className="font-medium text-foreground">{quote.premium}</p>
-                       </td>
-                       <td className="p-4">
-                         <p className="text-sm text-foreground">{quote.submittedDate}</p>
-                       </td>
-                       <td className="p-4">
-                         <Button size="sm" variant="outline" onClick={() => navigate(`/insurer/quote/${quote.id}`)}>
-                           <Eye className="w-4 h-4 mr-1" />
-                           View Details
-                         </Button>
-                       </td>
-                     </tr>)}
+                  {isLoadingDashboard ? (
+                    <TableSkeleton rowCount={5} colCount={8} />
+                  ) : dashboardData?.quoteRequests && dashboardData.quoteRequests.length > 0 ? (
+                    dashboardData.quoteRequests.slice(startQuoteIndex, endQuoteIndex).map(quote => (
+                      <tr key={quote.id} className="border-b hover:bg-muted/30 transition-colors">
+                        <td className="p-4">
+                          <p className="font-medium text-foreground">{quote.quote_id}</p>
+                        </td>
+                        <td className="p-4">
+                          <div>
+                            <p className="font-medium text-foreground">{quote.client_name}</p>
+                            <p className="text-sm text-muted-foreground">{quote.project_name}</p>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-medium text-foreground">{quote.broker_name}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-medium text-foreground">Construction Project</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-medium text-foreground">AED {parseFloat(quote.base_premium).toLocaleString()}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-medium text-foreground">AED {parseFloat(quote.total_premium).toLocaleString()}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="text-sm text-foreground">{new Date(quote.created_at).toLocaleDateString()}</p>
+                        </td>
+                        <td className="p-4">
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/insurer/quote/${quote.id}`)}>
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Details
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    currentQuotes.map(quote => (
+                      <tr key={quote.id} className="border-b hover:bg-muted/30 transition-colors">
+                        <td className="p-4">
+                          <p className="font-medium text-foreground">{quote.id}</p>
+                        </td>
+                        <td className="p-4">
+                          <div>
+                            <p className="font-medium text-foreground">{quote.customerName}</p>
+                            <p className="text-sm text-muted-foreground">{quote.companyName}</p>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-medium text-foreground">{quote.brokerName}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-medium text-foreground">{quote.projectType}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-medium text-foreground">{quote.projectValue}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-medium text-foreground">{quote.premium}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="text-sm text-foreground">{quote.submittedDate}</p>
+                        </td>
+                        <td className="p-4">
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/insurer/quote/${quote.id}`)}>
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Details
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
                  </table>
                 </div>
