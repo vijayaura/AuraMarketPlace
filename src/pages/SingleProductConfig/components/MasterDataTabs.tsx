@@ -848,7 +848,7 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
         return { 
           title: "Consultant Roles", 
           description: "Configure pricing for different consultant roles", 
-          data: consultantRolesData,
+          data: consultantRolesData.map(item => item.label || item.name || String(item)),
           isLoading: isLoadingConsultantRoles || isLoadingConsultantRolesConfig,
           error: consultantRolesError || consultantRolesConfigError,
           configData: consultantRolesConfigData
