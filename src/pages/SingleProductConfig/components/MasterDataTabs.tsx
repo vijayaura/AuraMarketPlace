@@ -85,6 +85,35 @@ export type MasterDataTabsProps = {
   zonesConfigError: string | null;
   isSavingZonesConfig: boolean;
   handleSaveZonesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Contract Types Configuration props
+  contractTypesConfigData: any[];
+  isLoadingContractTypesConfig: boolean;
+  contractTypesConfigError: string | null;
+  isSavingContractTypesConfig: boolean;
+  handleSaveContractTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Role Types Configuration props
+  roleTypesConfigData: any[];
+  isLoadingRoleTypesConfig: boolean;
+  roleTypesConfigError: string | null;
+  isSavingRoleTypesConfig: boolean;
+  handleSaveRoleTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Soil Types Configuration props
+  soilTypesConfigData: any[];
+  isLoadingSoilTypesConfig: boolean;
+  soilTypesConfigError: string | null;
+  isSavingSoilTypesConfig: boolean;
+  handleSaveSoilTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Subcontractor Types Configuration props
+  subcontractorTypesConfigData: any[];
+  isLoadingSubcontractorTypesConfig: boolean;
+  subcontractorTypesConfigError: string | null;
+  isSavingSubcontractorTypesConfig: boolean;
+  handleSaveSubcontractorTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+
+  // Consultant Roles Configuration props
+  consultantRolesConfigData: any[];
+  isLoadingConsultantRolesConfig: boolean;
+  consultantRolesConfigError: string | null;
 };
 
 const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
@@ -162,6 +191,35 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
   zonesConfigError,
   isSavingZonesConfig,
   handleSaveZonesConfiguration,
+  // Contract Types Configuration props
+  contractTypesConfigData,
+  isLoadingContractTypesConfig,
+  contractTypesConfigError,
+  isSavingContractTypesConfig,
+  handleSaveContractTypesConfiguration,
+  // Role Types Configuration props
+  roleTypesConfigData,
+  isLoadingRoleTypesConfig,
+  roleTypesConfigError,
+  isSavingRoleTypesConfig,
+  handleSaveRoleTypesConfiguration,
+  // Soil Types Configuration props
+  soilTypesConfigData,
+  isLoadingSoilTypesConfig,
+  soilTypesConfigError,
+  isSavingSoilTypesConfig,
+  handleSaveSoilTypesConfiguration,
+  // Subcontractor Types Configuration props
+  subcontractorTypesConfigData,
+  isLoadingSubcontractorTypesConfig,
+  subcontractorTypesConfigError,
+  isSavingSubcontractorTypesConfig,
+  handleSaveSubcontractorTypesConfiguration,
+
+  // Consultant Roles Configuration props
+  consultantRolesConfigData,
+  isLoadingConsultantRolesConfig,
+  consultantRolesConfigError,
 }) => {
   // Simple state for Construction Types form values - direct approach
   const [constructionTypesFormData, setConstructionTypesFormData] = useState<{[key: string]: any}>({});
@@ -174,6 +232,21 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
   
   // Simple state for Zones form values - direct approach
   const [zonesFormData, setZonesFormData] = useState<{[key: string]: any}>({});
+  
+  // Simple state for Contract Types form values - direct approach
+  const [contractTypesFormData, setContractTypesFormData] = useState<{[key: string]: any}>({});
+  
+  // Simple state for Role Types form values - direct approach
+  const [roleTypesFormData, setRoleTypesFormData] = useState<{[key: string]: any}>({});
+  
+  // Simple state for Soil Types form values - direct approach
+  const [soilTypesFormData, setSoilTypesFormData] = useState<{[key: string]: any}>({});
+  
+  // Simple state for Subcontractor Types form values - direct approach
+  const [subcontractorTypesFormData, setSubcontractorTypesFormData] = useState<{[key: string]: any}>({});
+  
+  // Simple state for Consultant Roles form values - direct approach
+  const [consultantRolesFormData, setConsultantRolesFormData] = useState<{[key: string]: any}>({});
 
   // Clause Pricing state - moved to top level to avoid conditional hooks
   const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
@@ -300,6 +373,161 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
       console.log('✅ Zones form data populated:', formData);
     }
   }, [activePricingTab, zonesConfigData]);
+
+  // Simple effect to populate contract types form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Contract Types Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!contractTypesConfigData,
+      configDataLength: contractTypesConfigData?.length,
+      configData: contractTypesConfigData
+    });
+
+    if (activePricingTab === "contract-types" && contractTypesConfigData && contractTypesConfigData.length > 0) {
+      console.log('✅ Populating Contract Types form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping using name field
+      contractTypesConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        const contractTypeName = configItem.name;
+        if (contractTypeName) {
+          formData[contractTypeName] = {
+            pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+            value: String(configItem.value || 0),
+            quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+          };
+        }
+      });
+      
+      setContractTypesFormData(formData);
+      console.log('✅ Contract Types form data populated:', formData);
+    }
+  }, [activePricingTab, contractTypesConfigData]);
+
+  // Simple effect to populate role types form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Role Types Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!roleTypesConfigData,
+      configDataLength: roleTypesConfigData?.length,
+      configData: roleTypesConfigData
+    });
+
+    if (activePricingTab === "role-types" && roleTypesConfigData && roleTypesConfigData.length > 0) {
+      console.log('✅ Populating Role Types form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping using name field
+      roleTypesConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        const roleTypeName = configItem.name;
+        if (roleTypeName) {
+          formData[roleTypeName] = {
+            pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+            value: String(configItem.value || 0),
+            quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+          };
+        }
+      });
+      
+      setRoleTypesFormData(formData);
+      console.log('✅ Role Types form data populated:', formData);
+    }
+  }, [activePricingTab, roleTypesConfigData]);
+
+  // Simple effect to populate soil types form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Soil Types Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!soilTypesConfigData,
+      configDataLength: soilTypesConfigData?.length,
+      configData: soilTypesConfigData
+    });
+
+    if (activePricingTab === "soil-types" && soilTypesConfigData && soilTypesConfigData.length > 0) {
+      console.log('✅ Populating Soil Types form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping using name field
+      soilTypesConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        const soilTypeName = configItem.name;
+        if (soilTypeName) {
+          formData[soilTypeName] = {
+            pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+            value: String(configItem.value || 0),
+            quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+          };
+        }
+      });
+      
+      setSoilTypesFormData(formData);
+      console.log('✅ Soil Types form data populated:', formData);
+    }
+  }, [activePricingTab, soilTypesConfigData]);
+
+  // Simple effect to populate subcontractor types form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Subcontractor Types Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!subcontractorTypesConfigData,
+      configDataLength: subcontractorTypesConfigData?.length,
+      configData: subcontractorTypesConfigData
+    });
+
+    if (activePricingTab === "subcontractor-types" && subcontractorTypesConfigData && subcontractorTypesConfigData.length > 0) {
+      console.log('✅ Populating Subcontractor Types form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping using name field
+      subcontractorTypesConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        const subcontractorTypeName = configItem.name;
+        if (subcontractorTypeName) {
+          formData[subcontractorTypeName] = {
+            pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+            value: String(configItem.value || 0),
+            quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+          };
+        }
+      });
+      
+      setSubcontractorTypesFormData(formData);
+      console.log('✅ Subcontractor Types form data populated:', formData);
+    }
+  }, [activePricingTab, subcontractorTypesConfigData]);
+
+  // Simple effect to populate consultant roles form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Consultant Roles Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!consultantRolesConfigData,
+      configDataLength: consultantRolesConfigData?.length,
+      configData: consultantRolesConfigData
+    });
+
+    if (activePricingTab === "consultant-roles" && consultantRolesConfigData && consultantRolesConfigData.length > 0) {
+      console.log('✅ Populating Consultant Roles form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping using name field
+      consultantRolesConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        const consultantRoleName = configItem.name;
+        if (consultantRoleName) {
+          formData[consultantRoleName] = {
+            pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+            value: String(configItem.value || 0),
+            quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+          };
+        }
+      });
+      
+      setConsultantRolesFormData(formData);
+      console.log('✅ Consultant Roles form data populated:', formData);
+    }
+  }, [activePricingTab, consultantRolesConfigData]);
 
   // Clause Pricing functions
   if (activePricingTab === "clause-pricing") {
@@ -570,154 +798,7 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
 
 
 
-  if (activePricingTab === "fee-types") {
-    return (
-      <Card className="h-full">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Fee Types</CardTitle>
-              <CardDescription>Configure fees and taxes applicable to quotes (VAT, GST, etc.)</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={() => {
-                const newId = Math.max(...ratingConfig.feeTypes.map((f: any) => f.id), 0) + 1;
-                setRatingConfig((prev: any) => ({
-                  ...prev,
-                  feeTypes: [...prev.feeTypes, {
-                    id: newId,
-                    label: "New Fee",
-                    pricingType: "percentage",
-                    value: 0,
-                    active: true
-                  }]
-                }));
-                markAsChanged();
-              }}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Fee Type
-              </Button>
-              <Button onClick={onSave} size="sm">
-                <Save className="w-4 h-4 mr-1" />
-                Save Fee Types
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Label</TableHead>
-                <TableHead>Pricing Type</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ratingConfig.feeTypes.map((fee: any) => (
-                <TableRow key={fee.id}>
-                  <TableCell>
-                    <Input
-                      value={fee.label}
-                      onChange={(e) => {
-                        setRatingConfig((prev: any) => ({
-                          ...prev,
-                          feeTypes: prev.feeTypes.map((f: any) =>
-                            f.id === fee.id ? { ...f, label: e.target.value } : f
-                          )
-                        }));
-                        markAsChanged();
-                      }}
-                      className="w-full"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={fee.pricingType}
-                      onValueChange={(value: "percentage" | "fixed") => {
-                        setRatingConfig((prev: any) => ({
-                          ...prev,
-                          feeTypes: prev.feeTypes.map((f: any) =>
-                            f.id === fee.id ? { ...f, pricingType: value } : f
-                          )
-                        }));
-                        markAsChanged();
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="percentage">Percentage</SelectItem>
-                        <SelectItem value="fixed">Fixed Amount</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        step={fee.pricingType === "percentage" ? "0.01" : "1"}
-                        value={fee.value}
-                        onChange={(e) => {
-                          setRatingConfig((prev: any) => ({
-                            ...prev,
-                            feeTypes: prev.feeTypes.map((f: any) =>
-                              f.id === fee.id ? { ...f, value: parseFloat(e.target.value) || 0 } : f
-                            )
-                          }));
-                          markAsChanged();
-                        }}
-                        className="w-20"
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {fee.pricingType === "percentage" ? "%" : "AED"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant={fee.active ? "default" : "secondary"}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        setRatingConfig((prev: any) => ({
-                          ...prev,
-                          feeTypes: prev.feeTypes.map((f: any) =>
-                            f.id === fee.id ? { ...f, active: !f.active } : f
-                          )
-                        }));
-                        markAsChanged();
-                      }}
-                    >
-                      {fee.active ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setRatingConfig((prev: any) => ({
-                          ...prev,
-                          feeTypes: prev.feeTypes.filter((f: any) => f.id !== fee.id)
-                        }));
-                        markAsChanged();
-                      }}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    );
-  }
+
 
   // Generic master data table for other tabs
   const getMasterDataConfig = () => {
@@ -767,9 +848,10 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
         return { 
           title: "Consultant Roles", 
           description: "Configure pricing for different consultant roles", 
-          data: consultantRolesData.map(item => item.label),
-          isLoading: isLoadingConsultantRoles,
-          error: consultantRolesError
+          data: consultantRolesData,
+          isLoading: isLoadingConsultantRoles || isLoadingConsultantRolesConfig,
+          error: consultantRolesError || consultantRolesConfigError,
+          configData: consultantRolesConfigData
         };
       case "security-types":
         return { 
@@ -814,6 +896,42 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
           error: zonesError || zonesConfigError,
           configData: zonesConfigData
         };
+      case "contract-types":
+        return { 
+          title: "Contract Types", 
+          description: "Configure pricing for different contract types", 
+          data: contractTypesData,
+          isLoading: isLoadingContractTypes || isLoadingContractTypesConfig,
+          error: contractTypesError || contractTypesConfigError,
+          configData: contractTypesConfigData
+        };
+      case "role-types":
+        return { 
+          title: "Role Types", 
+          description: "Configure pricing for different role types", 
+          data: roleTypesData,
+          isLoading: isLoadingRoleTypes || isLoadingRoleTypesConfig,
+          error: roleTypesError || roleTypesConfigError,
+          configData: roleTypesConfigData
+        };
+      case "soil-types":
+        return { 
+          title: "Soil Types", 
+          description: "Configure pricing for different soil types", 
+          data: soilTypesData,
+          isLoading: isLoadingSoilTypes || isLoadingSoilTypesConfig,
+          error: soilTypesError || soilTypesConfigError,
+          configData: soilTypesConfigData
+        };
+      case "subcontractor-types":
+        return { 
+          title: "Subcontractor Types", 
+          description: "Configure pricing for different subcontractor types", 
+          data: subcontractorTypesData,
+          isLoading: isLoadingSubcontractorTypes || isLoadingSubcontractorTypesConfig,
+          error: subcontractorTypesError || subcontractorTypesConfigError,
+          configData: subcontractorTypesConfigData
+        };
       default:
         return null;
     }
@@ -840,6 +958,14 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                 ? () => handleSaveRegionsConfiguration(regionsFormData)
                 : activePricingTab === "zones"
                 ? () => handleSaveZonesConfiguration(zonesFormData)
+                : activePricingTab === "contract-types"
+                ? () => handleSaveContractTypesConfiguration(contractTypesFormData)
+                : activePricingTab === "role-types"
+                ? () => handleSaveRoleTypesConfiguration(roleTypesFormData)
+                : activePricingTab === "soil-types"
+                ? () => handleSaveSoilTypesConfiguration(soilTypesFormData)
+                : activePricingTab === "subcontractor-types"
+                ? () => handleSaveSubcontractorTypesConfiguration(subcontractorTypesFormData)
                 : onSave
             } 
             size="sm" 
@@ -852,6 +978,14 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                 ? (config.isLoading || isSavingRegionsConfig)
                 : activePricingTab === "zones"
                 ? (config.isLoading || isSavingZonesConfig)
+                : activePricingTab === "contract-types"
+                ? (config.isLoading || isSavingContractTypesConfig)
+                : activePricingTab === "role-types"
+                ? (config.isLoading || isSavingRoleTypesConfig)
+                : activePricingTab === "soil-types"
+                ? (config.isLoading || isSavingSoilTypesConfig)
+                : activePricingTab === "subcontractor-types"
+                ? (config.isLoading || isSavingSubcontractorTypesConfig)
                 : config.isLoading
             }
           >
@@ -864,6 +998,14 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
               ? (isSavingRegionsConfig ? 'Saving...' : 'Save')
               : activePricingTab === "zones"
               ? (isSavingZonesConfig ? 'Saving...' : 'Save')
+              : activePricingTab === "contract-types"
+              ? (isSavingContractTypesConfig ? 'Saving...' : 'Save')
+              : activePricingTab === "role-types"
+              ? (isSavingRoleTypesConfig ? 'Saving...' : 'Save')
+              : activePricingTab === "soil-types"
+              ? (isSavingSoilTypesConfig ? 'Saving...' : 'Save')
+              : activePricingTab === "subcontractor-types"
+              ? (isSavingSubcontractorTypesConfig ? 'Saving...' : 'Save')
               : (config.isLoading ? 'Loading...' : 'Save')
             }
           </Button>
@@ -900,11 +1042,16 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                 </TableRow>
               ) : (
                 config.data.map((item: string, index: number) => {
-                  // Simple direct approach for Construction Types, Countries, Regions, and Zones
+                  // Simple direct approach for Construction Types, Countries, Regions, Zones, Contract Types, Role Types, Soil Types, and Subcontractor Types
                   const formData = activePricingTab === "construction-types" ? constructionTypesFormData[item] 
                     : activePricingTab === "countries" ? countriesFormData[item] 
                     : activePricingTab === "regions" ? regionsFormData[item]
                     : activePricingTab === "zones" ? zonesFormData[item]
+                    : activePricingTab === "contract-types" ? contractTypesFormData[item]
+                    : activePricingTab === "role-types" ? roleTypesFormData[item]
+                    : activePricingTab === "soil-types" ? soilTypesFormData[item]
+                    : activePricingTab === "subcontractor-types" ? subcontractorTypesFormData[item]
+                    : activePricingTab === "consultant-roles" ? consultantRolesFormData[item]
                     : null;
                   
                   console.log(`🔍 Rendering row for "${item}":`, {
@@ -946,6 +1093,46 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                               }));
                             } else if (activePricingTab === "zones") {
                               setZonesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            } else if (activePricingTab === "contract-types") {
+                              setContractTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            } else if (activePricingTab === "role-types") {
+                              setRoleTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            } else if (activePricingTab === "soil-types") {
+                              setSoilTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            } else if (activePricingTab === "subcontractor-types") {
+                              setSubcontractorTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            } else if (activePricingTab === "consultant-roles") {
+                              setConsultantRolesFormData(prev => ({
                                 ...prev,
                                 [item]: { 
                                   ...prev[item], 
@@ -1001,6 +1188,46 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                                   value: e.target.value
                                 }
                               }));
+                            } else if (activePricingTab === "contract-types") {
+                              setContractTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
+                            } else if (activePricingTab === "role-types") {
+                              setRoleTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
+                            } else if (activePricingTab === "soil-types") {
+                              setSoilTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
+                            } else if (activePricingTab === "subcontractor-types") {
+                              setSubcontractorTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
+                            } else if (activePricingTab === "consultant-roles") {
+                              setConsultantRolesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
                             }
                           }}
                           className="w-24" 
@@ -1036,6 +1263,46 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                               }));
                             } else if (activePricingTab === "zones") {
                               setZonesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            } else if (activePricingTab === "contract-types") {
+                              setContractTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            } else if (activePricingTab === "role-types") {
+                              setRoleTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            } else if (activePricingTab === "soil-types") {
+                              setSoilTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            } else if (activePricingTab === "subcontractor-types") {
+                              setSubcontractorTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            } else if (activePricingTab === "consultant-roles") {
+                              setConsultantRolesFormData(prev => ({
                                 ...prev,
                                 [item]: { 
                                   ...prev[item], 

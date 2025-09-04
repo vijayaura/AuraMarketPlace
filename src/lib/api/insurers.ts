@@ -2299,6 +2299,781 @@ export interface SaveZonesConfigResponse {
   };
 }
 
+// Contract Types Configuration
+export interface ContractTypeConfigItem {
+  name: string;
+  value: number;
+  is_active: boolean;
+  pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+  quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+  display_order: number;
+}
+
+export interface GetContractTypesConfigResponse {
+  items: ContractTypeConfigItem[];
+}
+
+export interface SaveContractTypesConfigRequest {
+  contract_types_config: {
+    items: {
+      name: string;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      value: number;
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+      is_active: boolean;
+    }[];
+  };
+}
+
+export interface SaveContractTypesConfigResponse {
+  message: string;
+  data: {
+    items: {
+      name: string;
+      value: number;
+      is_active: boolean;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+    }[];
+  };
+}
+
+// Role Types Configuration
+export interface RoleTypeConfigItem {
+  name: string;
+  value: number;
+  is_active: boolean;
+  pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+  quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+  display_order: number;
+}
+
+export interface GetRoleTypesConfigResponse {
+  items: RoleTypeConfigItem[];
+}
+
+export interface SaveRoleTypesConfigRequest {
+  role_types_config: {
+    items: {
+      name: string;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      value: number;
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+      is_active: boolean;
+    }[];
+  };
+}
+
+export interface SaveRoleTypesConfigResponse {
+  message: string;
+  data: {
+    items: {
+      name: string;
+      value: number;
+      is_active: boolean;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+    }[];
+  };
+}
+
+// Soil Types Configuration
+export interface SoilTypeConfigItem {
+  name: string;
+  value: number;
+  is_active: boolean;
+  pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+  quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+  display_order: number;
+}
+
+export interface GetSoilTypesConfigResponse {
+  items: SoilTypeConfigItem[];
+}
+
+export interface SaveSoilTypesConfigRequest {
+  soil_types_config: {
+    items: {
+      name: string;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      value: number;
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+      is_active: boolean;
+    }[];
+  };
+}
+
+export interface SaveSoilTypesConfigResponse {
+  message: string;
+  data: {
+    items: {
+      name: string;
+      value: number;
+      is_active: boolean;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+    }[];
+  };
+}
+
+// Subcontractor Types Configuration
+export interface SubcontractorTypeConfigItem {
+  name: string;
+  value: number;
+  is_active: boolean;
+  pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+  quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+  display_order: number;
+}
+
+export interface GetSubcontractorTypesConfigResponse {
+  items: SubcontractorTypeConfigItem[];
+}
+
+export interface SaveSubcontractorTypesConfigRequest {
+  subcontractor_types_config: {
+    items: {
+      name: string;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      value: number;
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+      is_active: boolean;
+    }[];
+  };
+}
+
+export interface SaveSubcontractorTypesConfigResponse {
+  message: string;
+  data: {
+    items: {
+      name: string;
+      value: number;
+      is_active: boolean;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+    }[];
+  };
+}
+
+// GET - Fetch subcontractor types configuration for insurer
+export async function getSubcontractorTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetSubcontractorTypesConfigResponse> {
+  console.log('🔍 GET Subcontractor Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/subcontractor-types`,
+    insurerId,
+    productId
+  });
+  
+  try {
+    const response = await apiGet<GetSubcontractorTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/subcontractor-types`
+    );
+    
+    console.log('✅ Subcontractor Types Configuration Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Subcontractor Types Configuration Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while fetching subcontractor types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to subcontractor types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while fetching subcontractor types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to fetch subcontractor types configuration.');
+    }
+  }
+}
+
+// POST - Create subcontractor types configuration for insurer
+export async function createSubcontractorTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveSubcontractorTypesConfigRequest
+): Promise<SaveSubcontractorTypesConfigResponse> {
+  console.log('🔍 POST Subcontractor Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/subcontractor-types`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPost<SaveSubcontractorTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/subcontractor-types`,
+      data
+    );
+    
+    console.log('✅ Subcontractor Types Configuration POST Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Subcontractor Types Configuration POST Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while creating subcontractor types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to create subcontractor types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while creating subcontractor types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to create subcontractor types configuration.');
+    }
+  }
+}
+
+// PATCH - Update subcontractor types configuration for insurer
+export async function updateSubcontractorTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveSubcontractorTypesConfigRequest
+): Promise<SaveSubcontractorTypesConfigResponse> {
+  console.log('🔍 PATCH Subcontractor Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/subcontractor-types`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPatch<SaveSubcontractorTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/subcontractor-types`,
+      data
+    );
+    
+    console.log('✅ Subcontractor Types Configuration PATCH Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Subcontractor Types Configuration PATCH Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while updating subcontractor types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to update subcontractor types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while updating subcontractor types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to update subcontractor types configuration.');
+    }
+  }
+}
+
+// Consultant Roles Configuration interfaces
+export interface ConsultantRoleConfigItem {
+  name: string;
+  value: number;
+  is_active: boolean;
+  pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+  quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+  display_order: number;
+}
+
+export interface GetConsultantRolesConfigResponse {
+  items: ConsultantRoleConfigItem[];
+}
+
+export interface SaveConsultantRolesConfigRequest {
+  consultant_roles_config: {
+    items: {
+      name: string;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      value: number;
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+      is_active: boolean;
+    }[];
+  };
+}
+
+export interface SaveConsultantRolesConfigResponse {
+  message: string;
+  data: {
+    items: {
+      name: string;
+      value: number;
+      is_active: boolean;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      quote_option: 'AUTO_QUOTE' | 'NO_QUOTE';
+      display_order: number;
+    }[];
+  };
+}
+
+// GET - Fetch consultant roles configuration for insurer
+export async function getConsultantRolesConfiguration(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetConsultantRolesConfigResponse> {
+  console.log('🔍 GET Consultant Roles Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/consultant-roles`,
+    insurerId,
+    productId
+  });
+  
+  try {
+    const response = await apiGet<GetConsultantRolesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/consultant-roles`
+    );
+    
+    console.log('✅ Consultant Roles Configuration Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Consultant Roles Configuration Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while fetching consultant roles configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to consultant roles configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while fetching consultant roles configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to fetch consultant roles configuration.');
+    }
+  }
+}
+
+// POST - Create consultant roles configuration for insurer
+export async function createConsultantRolesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveConsultantRolesConfigRequest
+): Promise<SaveConsultantRolesConfigResponse> {
+  console.log('🔍 POST Consultant Roles Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/consultant-roles`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPost<SaveConsultantRolesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/consultant-roles`,
+      data
+    );
+    
+    console.log('✅ Consultant Roles Configuration POST Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Consultant Roles Configuration POST Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while creating consultant roles configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to create consultant roles configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while creating consultant roles configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to create consultant roles configuration.');
+    }
+  }
+}
+
+// PATCH - Update consultant roles configuration for insurer
+export async function updateConsultantRolesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveConsultantRolesConfigRequest
+): Promise<SaveConsultantRolesConfigResponse> {
+  console.log('🔍 PATCH Consultant Roles Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/consultant-roles`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPatch<SaveConsultantRolesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/consultant-roles`,
+      data
+    );
+    
+    console.log('✅ Consultant Roles Configuration PATCH Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Consultant Roles Configuration PATCH Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while updating consultant roles configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to update consultant roles configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while updating consultant roles configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to update consultant roles configuration.');
+    }
+  }
+}
+
+// GET - Fetch soil types configuration for insurer
+export async function getSoilTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetSoilTypesConfigResponse> {
+  console.log('🔍 GET Soil Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/soil-types`,
+    insurerId,
+    productId
+  });
+  
+  try {
+    const response = await apiGet<GetSoilTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/soil-types`
+    );
+    
+    console.log('✅ Soil Types Configuration Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Soil Types Configuration Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while fetching soil types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to soil types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while fetching soil types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to fetch soil types configuration.');
+    }
+  }
+}
+
+// POST - Create soil types configuration for insurer
+export async function createSoilTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveSoilTypesConfigRequest
+): Promise<SaveSoilTypesConfigResponse> {
+  console.log('🔍 POST Soil Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/soil-types`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPost<SaveSoilTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/soil-types`,
+      data
+    );
+    
+    console.log('✅ Soil Types Configuration POST Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Soil Types Configuration POST Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while creating soil types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to create soil types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while creating soil types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to create soil types configuration.');
+    }
+  }
+}
+
+// PATCH - Update soil types configuration for insurer
+export async function updateSoilTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveSoilTypesConfigRequest
+): Promise<SaveSoilTypesConfigResponse> {
+  console.log('🔍 PATCH Soil Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/soil-types`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPatch<SaveSoilTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/soil-types`,
+      data
+    );
+    
+    console.log('✅ Soil Types Configuration PATCH Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Soil Types Configuration PATCH Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while updating soil types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to update soil types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while updating soil types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to update soil types configuration.');
+    }
+  }
+}
+
+// GET - Fetch role types configuration for insurer
+export async function getRoleTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetRoleTypesConfigResponse> {
+  console.log('🔍 GET Role Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/role-types`,
+    insurerId,
+    productId
+  });
+  
+  try {
+    const response = await apiGet<GetRoleTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/role-types`
+    );
+    
+    console.log('✅ Role Types Configuration Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Role Types Configuration Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while fetching role types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to role types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while fetching role types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to fetch role types configuration.');
+    }
+  }
+}
+
+// POST - Create role types configuration for insurer
+export async function createRoleTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveRoleTypesConfigRequest
+): Promise<SaveRoleTypesConfigResponse> {
+  console.log('🔍 POST Role Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/role-types`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPost<SaveRoleTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/role-types`,
+      data
+    );
+    
+    console.log('✅ Role Types Configuration POST Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Role Types Configuration POST Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while creating role types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to create role types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while creating role types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to create role types configuration.');
+    }
+  }
+}
+
+// PATCH - Update role types configuration for insurer
+export async function updateRoleTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveRoleTypesConfigRequest
+): Promise<SaveRoleTypesConfigResponse> {
+  console.log('🔍 PATCH Role Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/role-types`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPatch<SaveRoleTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/role-types`,
+      data
+    );
+    
+    console.log('✅ Role Types Configuration PATCH Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Role Types Configuration PATCH Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while updating role types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to update role types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while updating role types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to update role types configuration.');
+    }
+  }
+}
+
+// GET - Fetch contract types configuration for insurer
+export async function getContractTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetContractTypesConfigResponse> {
+  console.log('🔍 GET Contract Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/contract-types`,
+    insurerId,
+    productId
+  });
+  
+  try {
+    const response = await apiGet<GetContractTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/contract-types`
+    );
+    
+    console.log('✅ Contract Types Configuration Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Contract Types Configuration Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while fetching contract types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to contract types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while fetching contract types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to fetch contract types configuration.');
+    }
+  }
+}
+
+// POST - Create contract types configuration for insurer
+export async function createContractTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveContractTypesConfigRequest
+): Promise<SaveContractTypesConfigResponse> {
+  console.log('🔍 POST Contract Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/contract-types`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPost<SaveContractTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/contract-types`,
+      data
+    );
+    
+    console.log('✅ Contract Types Configuration POST Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Contract Types Configuration POST Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while creating contract types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to create contract types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while creating contract types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to create contract types configuration.');
+    }
+  }
+}
+
+// PATCH - Update contract types configuration for insurer
+export async function updateContractTypesConfiguration(
+  insurerId: number | string,
+  productId: number | string,
+  data: SaveContractTypesConfigRequest
+): Promise<SaveContractTypesConfigResponse> {
+  console.log('🔍 PATCH Contract Types Configuration API Call:', {
+    endpoint: `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/contract-types`,
+    insurerId,
+    productId,
+    requestData: data
+  });
+  
+  try {
+    const response = await apiPatch<SaveContractTypesConfigResponse>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/contract-types`,
+      data
+    );
+    
+    console.log('✅ Contract Types Configuration PATCH Response:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Contract Types Configuration PATCH Error:', error);
+    
+    const status = error?.status || error?.response?.status;
+    if (status === 400) {
+      throw new Error('Bad request while updating contract types configuration.');
+    } else if (status === 401) {
+      throw new Error('Unauthorized. Please log in again.');
+    } else if (status === 403) {
+      throw new Error('Forbidden. You do not have access to update contract types configuration.');
+    } else if (status >= 500) {
+      throw new Error('Server error while updating contract types configuration.');
+    } else {
+      throw new Error(error?.message || 'Failed to update contract types configuration.');
+    }
+  }
+}
+
 // GET - Fetch zones configuration for insurer
 export async function getZonesConfiguration(
   insurerId: number | string,
@@ -2753,5 +3528,169 @@ export async function updateConstructionTypesConfiguration(
   }
 }
 
+// ===== FEE TYPES CONFIGURATION =====
+
+// Fee Types Configuration Interfaces
+export interface FeeTypeConfigItem {
+  label: string;
+  value: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+  display_order: number;
+}
+
+export interface GetFeeTypesConfigResponse {
+  items: FeeTypeConfigItem[];
+}
+
+// Get Fee Types Configuration
+export const getFeeTypesConfiguration = async (insurerId: string, productId: string): Promise<GetFeeTypesConfigResponse> => {
+  console.log('🎯 === GET FEE TYPES CONFIGURATION STARTED ===');
+  console.log('📋 Request params:', { insurerId, productId });
+  
+  try {
+    console.log('🔍 Calling GET /fee-types API...');
+    const response = await apiGet<GetFeeTypesConfigResponse>(`/insurers/${insurerId}/products/${productId}/fee-types`);
+    
+    console.log('✅ Fee Types Configuration API Response:', response);
+    console.log('📊 Items count:', response?.items?.length || 0);
+    
+    if (response?.items) {
+      console.log('📝 Fee types items:', response.items);
+    }
+    
+    console.log('🎯 === GET FEE TYPES CONFIGURATION SUCCESS ===');
+    return response;
+    
+  } catch (error: any) {
+    console.error('❌ Error fetching fee types configuration:', error);
+    
+    const status = error?.status || error?.response?.status;
+    console.error('📊 Error status:', status);
+    console.error('📋 Error details:', error?.response?.data || error?.message);
+    
+    if (status === 400) {
+      throw new Error('Bad request while loading fee types configuration');
+    } else if (status === 401) {
+      throw new Error('Authentication required to access fee types configuration');
+    } else if (status === 403) {
+      throw new Error('You do not have permission to access fee types configuration');
+    } else if (status === 500) {
+      throw new Error('Server error occurred while loading fee types configuration');
+    }
+    
+    throw new Error(error?.response?.data?.message || error?.message || 'Failed to load fee types configuration');
+  }
+};
+
+// Save Fee Types Configuration Request/Response Interfaces
+export interface SaveFeeTypesConfigRequest {
+  fee_types_config: {
+    items: {
+      label: string;
+      pricing_type: 'PERCENTAGE' | 'FIXED_RATE';
+      value: number;
+      status: 'ACTIVE' | 'INACTIVE';
+      display_order: number;
+    }[];
+  };
+}
+
+export interface SaveFeeTypesConfigResponse {
+  message: string;
+  data: {
+    items: FeeTypeConfigItem[];
+  };
+}
+
+// Create Fee Types Configuration (POST)
+export const createFeeTypesConfiguration = async (
+  insurerId: string, 
+  productId: string, 
+  configData: SaveFeeTypesConfigRequest
+): Promise<SaveFeeTypesConfigResponse> => {
+  console.log('🎯 === CREATE FEE TYPES CONFIGURATION STARTED ===');
+  console.log('📋 Request params:', { insurerId, productId });
+  console.log('📝 Request data:', configData);
+  
+  try {
+    console.log('🔍 Calling POST /fee-types API...');
+    const response = await apiPost<SaveFeeTypesConfigResponse>(`/insurers/${insurerId}/products/${productId}/fee-types`, configData);
+    
+    console.log('✅ Create Fee Types Configuration API Response:', response);
+    console.log('📊 Items count:', response?.data?.items?.length || 0);
+    
+    if (response?.data?.items) {
+      console.log('📝 Created fee types items:', response.data.items);
+    }
+    
+    console.log('🎯 === CREATE FEE TYPES CONFIGURATION SUCCESS ===');
+    return response;
+    
+  } catch (error: any) {
+    console.error('❌ Error creating fee types configuration:', error);
+    
+    const status = error?.status || error?.response?.status;
+    console.error('📊 Error status:', status);
+    console.error('📋 Error details:', error?.response?.data || error?.message);
+    
+    if (status === 400) {
+      throw new Error('Bad request while creating fee types configuration');
+    } else if (status === 401) {
+      throw new Error('Authentication required to create fee types configuration');
+    } else if (status === 403) {
+      throw new Error('You do not have permission to create fee types configuration');
+    } else if (status === 500) {
+      throw new Error('Server error occurred while creating fee types configuration');
+    }
+    
+    throw new Error(error?.response?.data?.message || error?.message || 'Failed to create fee types configuration');
+  }
+};
+
+// Update Fee Types Configuration (PATCH)
+export const updateFeeTypesConfiguration = async (
+  insurerId: string, 
+  productId: string, 
+  configData: SaveFeeTypesConfigRequest
+): Promise<SaveFeeTypesConfigResponse> => {
+  console.log('🎯 === UPDATE FEE TYPES CONFIGURATION STARTED ===');
+  console.log('📋 Request params:', { insurerId, productId });
+  console.log('📝 Request data:', configData);
+  
+  try {
+    console.log('🔍 Calling PATCH /fee-types API...');
+    const response = await apiPatch<SaveFeeTypesConfigResponse>(`/insurers/${insurerId}/products/${productId}/fee-types`, configData);
+    
+    console.log('✅ Update Fee Types Configuration API Response:', response);
+    console.log('📊 Items count:', response?.data?.items?.length || 0);
+    
+    if (response?.data?.items) {
+      console.log('📝 Updated fee types items:', response.data.items);
+    }
+    
+    console.log('🎯 === UPDATE FEE TYPES CONFIGURATION SUCCESS ===');
+    return response;
+    
+  } catch (error: any) {
+    console.error('❌ Error updating fee types configuration:', error);
+    
+    const status = error?.status || error?.response?.status;
+    console.error('📊 Error status:', status);
+    console.error('📋 Error details:', error?.response?.data || error?.message);
+    
+    if (status === 400) {
+      throw new Error('Bad request while updating fee types configuration');
+    } else if (status === 401) {
+      throw new Error('Authentication required to update fee types configuration');
+    } else if (status === 403) {
+      throw new Error('You do not have permission to update fee types configuration');
+    } else if (status === 500) {
+      throw new Error('Server error occurred while updating fee types configuration');
+    }
+    
+    throw new Error(error?.response?.data?.message || error?.message || 'Failed to update fee types configuration');
+  }
+};
 
 

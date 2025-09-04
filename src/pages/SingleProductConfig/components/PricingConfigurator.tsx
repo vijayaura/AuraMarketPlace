@@ -9,6 +9,7 @@ import CoverageOptionsExtensions from "./CoverageOptionsExtensions";
 import PolicyLimitsDeductibles from "./PolicyLimitsDeductibles";
 
 import MasterDataTabs from "./MasterDataTabs";
+import FeeTypes from "./FeeTypes";
 
 type PricingConfiguratorProps = {
   activePricingTab: string;
@@ -138,6 +139,41 @@ type PricingConfiguratorProps = {
   zonesConfigError: string | null;
   isSavingZonesConfig: boolean;
   handleSaveZonesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Contract Types Configuration props
+  contractTypesConfigData: any[];
+  isLoadingContractTypesConfig: boolean;
+  contractTypesConfigError: string | null;
+  isSavingContractTypesConfig: boolean;
+  handleSaveContractTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Role Types Configuration props
+  roleTypesConfigData: any[];
+  isLoadingRoleTypesConfig: boolean;
+  roleTypesConfigError: string | null;
+  isSavingRoleTypesConfig: boolean;
+  handleSaveRoleTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Soil Types Configuration props
+  soilTypesConfigData: any[];
+  isLoadingSoilTypesConfig: boolean;
+  soilTypesConfigError: string | null;
+  isSavingSoilTypesConfig: boolean;
+  handleSaveSoilTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  // Subcontractor Types Configuration props
+  subcontractorTypesConfigData: any[];
+  isLoadingSubcontractorTypesConfig: boolean;
+  subcontractorTypesConfigError: string | null;
+  isSavingSubcontractorTypesConfig: boolean;
+  handleSaveSubcontractorTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+
+  // Consultant Roles Configuration props
+  consultantRolesConfigData: any[];
+  isLoadingConsultantRolesConfig: boolean;
+  consultantRolesConfigError: string | null;
+  // Fee Types Configuration props
+  feeTypesConfigData: any[];
+  isLoadingFeeTypesConfig: boolean;
+  feeTypesConfigError: string | null;
+  isSavingFeeTypesConfig: boolean;
+  handleSaveFeeTypesConfiguration: (feeTypes: any[]) => Promise<void>;
 };
 
 const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
@@ -261,6 +297,41 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   zonesConfigError,
   isSavingZonesConfig,
   handleSaveZonesConfiguration,
+  // Contract Types Configuration props
+  contractTypesConfigData,
+  isLoadingContractTypesConfig,
+  contractTypesConfigError,
+  isSavingContractTypesConfig,
+  handleSaveContractTypesConfiguration,
+  // Role Types Configuration props
+  roleTypesConfigData,
+  isLoadingRoleTypesConfig,
+  roleTypesConfigError,
+  isSavingRoleTypesConfig,
+  handleSaveRoleTypesConfiguration,
+  // Soil Types Configuration props
+  soilTypesConfigData,
+  isLoadingSoilTypesConfig,
+  soilTypesConfigError,
+  isSavingSoilTypesConfig,
+  handleSaveSoilTypesConfiguration,
+  // Subcontractor Types Configuration props
+  subcontractorTypesConfigData,
+  isLoadingSubcontractorTypesConfig,
+  subcontractorTypesConfigError,
+  isSavingSubcontractorTypesConfig,
+  handleSaveSubcontractorTypesConfiguration,
+
+  // Consultant Roles Configuration props
+  consultantRolesConfigData,
+  isLoadingConsultantRolesConfig,
+  consultantRolesConfigError,
+  // Fee Types Configuration props
+  feeTypesConfigData,
+  isLoadingFeeTypesConfig,
+  feeTypesConfigError,
+  isSavingFeeTypesConfig,
+  handleSaveFeeTypesConfiguration,
 }) => {
   return (
     <Card>
@@ -415,6 +486,16 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
               />
             )}
 
+            {activePricingTab === "fee-types" && (
+              <FeeTypes
+                feeTypesConfigData={feeTypesConfigData}
+                isLoadingFeeTypesConfig={isLoadingFeeTypesConfig}
+                feeTypesConfigError={feeTypesConfigError}
+                onSave={handleSaveFeeTypesConfiguration}
+                isSaving={isSavingFeeTypesConfig}
+              />
+            )}
+
             {/* Master Data Tabs */}
             {(activePricingTab === "clause-pricing" || 
               activePricingTab === "construction-types" || 
@@ -427,8 +508,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
               activePricingTab === "subcontractor-types" || 
               activePricingTab === "consultant-roles" || 
               activePricingTab === "security-types" || 
-              activePricingTab === "area-types" || 
-              activePricingTab === "fee-types") && (
+              activePricingTab === "area-types") && (
                               <MasterDataTabs
                   activePricingTab={activePricingTab}
                   activeConstructionTypes={activeConstructionTypes}
@@ -498,6 +578,29 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                   zonesConfigError={zonesConfigError}
                   isSavingZonesConfig={isSavingZonesConfig}
                   handleSaveZonesConfiguration={handleSaveZonesConfiguration}
+                  contractTypesConfigData={contractTypesConfigData}
+                  isLoadingContractTypesConfig={isLoadingContractTypesConfig}
+                  contractTypesConfigError={contractTypesConfigError}
+                  isSavingContractTypesConfig={isSavingContractTypesConfig}
+                  handleSaveContractTypesConfiguration={handleSaveContractTypesConfiguration}
+                  roleTypesConfigData={roleTypesConfigData}
+                  isLoadingRoleTypesConfig={isLoadingRoleTypesConfig}
+                  roleTypesConfigError={roleTypesConfigError}
+                  isSavingRoleTypesConfig={isSavingRoleTypesConfig}
+                  handleSaveRoleTypesConfiguration={handleSaveRoleTypesConfiguration}
+                  soilTypesConfigData={soilTypesConfigData}
+                  isLoadingSoilTypesConfig={isLoadingSoilTypesConfig}
+                  soilTypesConfigError={soilTypesConfigError}
+                  isSavingSoilTypesConfig={isSavingSoilTypesConfig}
+                  handleSaveSoilTypesConfiguration={handleSaveSoilTypesConfiguration}
+                  subcontractorTypesConfigData={subcontractorTypesConfigData}
+                  isLoadingSubcontractorTypesConfig={isLoadingSubcontractorTypesConfig}
+                  subcontractorTypesConfigError={subcontractorTypesConfigError}
+                  isSavingSubcontractorTypesConfig={isSavingSubcontractorTypesConfig}
+                  handleSaveSubcontractorTypesConfiguration={handleSaveSubcontractorTypesConfiguration}
+                  consultantRolesConfigData={consultantRolesConfigData}
+                  isLoadingConsultantRolesConfig={isLoadingConsultantRolesConfig}
+                  consultantRolesConfigError={consultantRolesConfigError}
                 />
             )}
           </div>

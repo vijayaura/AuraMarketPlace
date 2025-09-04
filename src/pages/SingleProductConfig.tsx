@@ -25,13 +25,14 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, listMasterConstructionTypes, listMasterRoleTypes, listMasterContractTypes, listMasterSoilTypes, listMasterSubcontractorTypes, listMasterConsultantRoles, listMasterSecurityTypes, listMasterAreaTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
 import QuoteFormat from "./SingleProductConfig/components/QuoteFormat";
 import CEWsConfiguration from "./SingleProductConfig/components/CEWsConfiguration";
 import WordingConfigurations from "./SingleProductConfig/components/WordingConfigurations";
+import FeeTypes from "./SingleProductConfig/components/FeeTypes";
 import BaseRates from "./SingleProductConfig/components/BaseRates";
 import ProjectRiskFactors from "./SingleProductConfig/components/ProjectRiskFactors";
 import RequiredDocuments from "./SingleProductConfig/components/RequiredDocuments";
@@ -231,6 +232,172 @@ const SingleProductConfig = () => {
   const [isLoadingZonesConfig, setIsLoadingZonesConfig] = useState(false);
   const [zonesConfigError, setZonesConfigError] = useState<string | null>(null);
   const [isSavingZonesConfig, setIsSavingZonesConfig] = useState(false);
+
+  // Contract Types Configuration state
+  const [contractTypesConfigData, setContractTypesConfigData] = useState<ContractTypeConfigItem[]>([]);
+  const [isLoadingContractTypesConfig, setIsLoadingContractTypesConfig] = useState(false);
+  const [contractTypesConfigError, setContractTypesConfigError] = useState<string | null>(null);
+  const [isSavingContractTypesConfig, setIsSavingContractTypesConfig] = useState(false);
+
+  // Role Types Configuration state
+  const [roleTypesConfigData, setRoleTypesConfigData] = useState<RoleTypeConfigItem[]>([]);
+  const [isLoadingRoleTypesConfig, setIsLoadingRoleTypesConfig] = useState(false);
+  const [roleTypesConfigError, setRoleTypesConfigError] = useState<string | null>(null);
+  const [isSavingRoleTypesConfig, setIsSavingRoleTypesConfig] = useState(false);
+
+  // Soil Types Configuration state
+  const [soilTypesConfigData, setSoilTypesConfigData] = useState<SoilTypeConfigItem[]>([]);
+  const [isLoadingSoilTypesConfig, setIsLoadingSoilTypesConfig] = useState(false);
+  const [soilTypesConfigError, setSoilTypesConfigError] = useState<string | null>(null);
+  const [isSavingSoilTypesConfig, setIsSavingSoilTypesConfig] = useState(false);
+
+  // Subcontractor Types Configuration state
+  const [subcontractorTypesConfigData, setSubcontractorTypesConfigData] = useState<SubcontractorTypeConfigItem[]>([]);
+  const [isLoadingSubcontractorTypesConfig, setIsLoadingSubcontractorTypesConfig] = useState(false);
+  const [subcontractorTypesConfigError, setSubcontractorTypesConfigError] = useState<string | null>(null);
+  const [isSavingSubcontractorTypesConfig, setIsSavingSubcontractorTypesConfig] = useState(false);
+
+  // Consultant Roles Configuration state
+  const [consultantRolesConfigData, setConsultantRolesConfigData] = useState<ConsultantRoleConfigItem[]>([]);
+  const [isLoadingConsultantRolesConfig, setIsLoadingConsultantRolesConfig] = useState(false);
+  const [consultantRolesConfigError, setConsultantRolesConfigError] = useState<string | null>(null);
+  const [isSavingConsultantRolesConfig, setIsSavingConsultantRolesConfig] = useState(false);
+
+  // Fee Types Configuration state
+  const [feeTypesConfigData, setFeeTypesConfigData] = useState<FeeTypeConfigItem[]>([]);
+  const [isLoadingFeeTypesConfig, setIsLoadingFeeTypesConfig] = useState(false);
+  const [feeTypesConfigError, setFeeTypesConfigError] = useState<string | null>(null);
+  const [isSavingFeeTypesConfig, setIsSavingFeeTypesConfig] = useState(false);
+
+  // Fetch Fee Types Configuration
+  const fetchFeeTypesConfig = async (): Promise<void> => {
+    console.log('🎯 === FETCH FEE TYPES CONFIGURATION STARTED ===');
+    
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs for fee types config fetch:', { insurerId, productId });
+      setFeeTypesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated for fee types config:', { insurerId, productId });
+    setIsLoadingFeeTypesConfig(true);
+    setFeeTypesConfigError(null);
+    
+    try {
+      console.log('🔍 Fetching fee types configuration...');
+      const response = await getFeeTypesConfiguration(String(insurerId), String(productId));
+      console.log('✅ Fee types config response:', response);
+      
+      if (response?.items) {
+        setFeeTypesConfigData(response.items);
+        console.log('✅ Fee types config data set:', response.items);
+      } else {
+        console.warn('⚠️ No fee types config items in response');
+        setFeeTypesConfigData([]);
+      }
+      
+      console.log('🎯 === FETCH FEE TYPES CONFIGURATION SUCCESS ===');
+    } catch (err: any) {
+      console.error('❌ Error fetching fee types configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while fetching fee types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access to fee types configuration.'
+        : status >= 500 ? 'Server error while fetching fee types configuration.'
+        : err?.message || 'Failed to fetch fee types configuration.';
+      
+      toast({
+        title: "Error",
+        description: msg,
+        variant: "destructive",
+      });
+      
+      setFeeTypesConfigError(msg);
+      setFeeTypesConfigData([]);
+    } finally {
+      setIsLoadingFeeTypesConfig(false);
+    }
+  };
+
+  // Save Fee Types Configuration handler
+  const handleSaveFeeTypesConfiguration = async (feeTypes: any[]): Promise<void> => {
+    console.log('🎯 === SAVE FEE TYPES CONFIGURATION STARTED ===');
+    console.log('🔍 Fee types to save:', feeTypes);
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      toast({
+        title: 'Error',
+        description: 'Unable to determine insurer ID or product ID.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsSavingFeeTypesConfig(true);
+    
+    try {
+      // Transform fee types data for API
+      const items = feeTypes.map((feeType: any, index: number) => ({
+        label: feeType.label,
+        pricing_type: feeType.pricing_type,
+        value: Number(feeType.value),
+        status: feeType.status,
+        display_order: index + 1
+      }));
+
+      const requestPayload: SaveFeeTypesConfigRequest = {
+        fee_types_config: { items }
+      };
+
+      console.log('🔍 Request payload:', requestPayload);
+
+      // Determine whether to use POST or PATCH based on existing data
+      const hasExistingData = feeTypesConfigData && feeTypesConfigData.length > 0;
+      console.log('🔍 Has existing data:', hasExistingData);
+      console.log('🔍 Using API method:', hasExistingData ? 'PATCH' : 'POST');
+
+      let response: SaveFeeTypesConfigResponse;
+      
+      if (hasExistingData) {
+        // Use PATCH for existing data
+        response = await updateFeeTypesConfiguration(String(insurerId), String(productId), requestPayload);
+      } else {
+        // Use POST for new data
+        response = await createFeeTypesConfiguration(String(insurerId), String(productId), requestPayload);
+      }
+
+      console.log('✅ API Response:', response);
+      
+      // Update local state with response data
+      if (response?.data?.items) {
+        setFeeTypesConfigData(response.data.items);
+      }
+      
+      toast({
+        title: "Success",
+        description: response?.message || "Fee types configuration saved successfully.",
+      });
+
+      console.log('🎯 === SAVE FEE TYPES CONFIGURATION SUCCESS ===');
+
+    } catch (err: any) {
+      console.error('❌ Error saving fee types configuration:', err);
+      toast({
+        title: "Error",
+        description: err?.message || 'Failed to save fee types configuration.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingFeeTypesConfig(false);
+    }
+  };
 
   // Coverage Options state
   const [coverageOptionsData, setCoverageOptionsData] = useState<CoverageOptionsResponse | null>(null);
@@ -2981,6 +3148,704 @@ const SingleProductConfig = () => {
     }
   };
 
+  // Fetch Contract Types Configuration after metadata loads
+  const fetchContractTypesConfig = async (): Promise<void> => {
+    console.log('🚀 fetchContractTypesConfig called');
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    console.log('🔍 IDs check:', { insurerId, productId });
+    
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      setContractTypesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated, starting API call...');
+    setIsLoadingContractTypesConfig(true);
+    setContractTypesConfigError(null);
+    
+    try {
+      console.log('🔍 Fetching Contract Types Configuration...');
+      console.log('📡 API Call Parameters:', { insurerId, productId });
+      const response = await getContractTypesConfiguration(insurerId, String(productId));
+      
+      console.log('🔍 Full API Response:', response);
+      console.log('🔍 Response type:', typeof response);
+      console.log('🔍 Response keys:', Object.keys(response || {}));
+      console.log('🔍 Response items:', response.items);
+      console.log('🔍 Items length:', response.items?.length);
+      console.log('🔍 Raw response JSON:', JSON.stringify(response, null, 2));
+      
+      if (response.items?.length > 0) {
+        console.log('✅ Found items, setting state...');
+        setContractTypesConfigData(response.items);
+        console.log('✅ Contract Types Configuration loaded:', response.items);
+        console.log('✅ Setting state with data:', response.items);
+      } else {
+        console.log('❌ No items found or empty array');
+        console.log('❌ Condition check:', {
+          hasItems: !!response.items,
+          itemsLength: response.items?.length,
+          itemsArray: response.items
+        });
+        setContractTypesConfigData([]);
+        console.log('ℹ️ No existing Contract Types Configuration found');
+      }
+    } catch (err: any) {
+      console.error('❌ Error loading Contract Types Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading contract types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading contract types configuration.'
+        : 'Failed to load contract types configuration.';
+      setContractTypesConfigError(msg);
+      setContractTypesConfigData([]);
+    } finally {
+      setIsLoadingContractTypesConfig(false);
+    }
+  };
+
+  // Save Contract Types Configuration handler with GET-then-POST/PATCH logic
+  const handleSaveContractTypesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
+    console.log('🎯 === SAVE CONTRACT TYPES CONFIGURATION STARTED ===');
+    console.log('🔍 Form data received:', formData);
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      toast({
+        title: "Error",
+        description: "Unable to determine insurer ID or product ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('✅ IDs validated:', { insurerId, productId });
+    setIsSavingContractTypesConfig(true);
+
+    try {
+      // Build request payload from form data
+      const items = Object.entries(formData).map(([contractTypeName, contractTypeFormData], index) => {
+        console.log(`📝 Processing contract type "${contractTypeName}":`, contractTypeFormData);
+        
+        const item = {
+          name: contractTypeName,
+          pricing_type: (contractTypeFormData.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE') as 'PERCENTAGE' | 'FIXED_RATE',
+          value: Number(contractTypeFormData.value || 0),
+          quote_option: (contractTypeFormData.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE') as 'AUTO_QUOTE' | 'NO_QUOTE',
+          display_order: index + 1,
+          is_active: true
+        };
+        
+        console.log(`✅ Mapped item for "${contractTypeName}":`, item);
+        return item;
+      });
+
+      const requestPayload: SaveContractTypesConfigRequest = {
+        contract_types_config: {
+          items
+        }
+      };
+
+      console.log('🔍 Final request payload:', JSON.stringify(requestPayload, null, 2));
+
+      // Determine if this is a POST or PATCH based on existing data
+      const hasExistingData = contractTypesConfigData && contractTypesConfigData.length > 0;
+      console.log('🔍 Has existing data?', hasExistingData);
+      console.log('🔍 Existing data:', contractTypesConfigData);
+
+      let response: SaveContractTypesConfigResponse;
+      
+      if (hasExistingData) {
+        console.log('🔄 Calling PATCH API (update existing)...');
+        response = await updateContractTypesConfiguration(insurerId, String(productId), requestPayload);
+        console.log('✅ PATCH Response:', response);
+        
+        toast({
+          title: "Success",
+          description: "Contract types configuration updated successfully!",
+          variant: "default",
+        });
+      } else {
+        console.log('🆕 Calling POST API (create new)...');
+        response = await createContractTypesConfiguration(insurerId, String(productId), requestPayload);
+        console.log('✅ POST Response:', response);
+        
+        toast({
+          title: "Success", 
+          description: "Contract types configuration created successfully!",
+          variant: "default",
+        });
+      }
+
+      // Update state with response data
+      if (response.data?.items) {
+        console.log('🔄 Updating contract types config data with response...');
+        setContractTypesConfigData(response.data.items);
+        console.log('✅ State updated with:', response.data.items);
+      }
+
+    } catch (err: any) {
+      console.error('❌ Error saving Contract Types Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while saving contract types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving contract types configuration.'
+        : 'Failed to save contract types configuration.';
+      
+      toast({
+        title: "Error",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingContractTypesConfig(false);
+      console.log('🎯 === SAVE CONTRACT TYPES CONFIGURATION COMPLETED ===');
+    }
+  };
+
+  // Fetch Role Types Configuration after metadata loads
+  const fetchRoleTypesConfig = async (): Promise<void> => {
+    console.log('🚀 fetchRoleTypesConfig called');
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    console.log('🔍 IDs check:', { insurerId, productId });
+    
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      setRoleTypesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated, starting API call...');
+    setIsLoadingRoleTypesConfig(true);
+    setRoleTypesConfigError(null);
+    
+    try {
+      console.log('🔍 Fetching Role Types Configuration...');
+      console.log('📡 API Call Parameters:', { insurerId, productId });
+      const response = await getRoleTypesConfiguration(insurerId, String(productId));
+      
+      console.log('🔍 Full API Response:', response);
+      console.log('🔍 Response type:', typeof response);
+      console.log('🔍 Response keys:', Object.keys(response || {}));
+      console.log('🔍 Response items:', response.items);
+      console.log('🔍 Items length:', response.items?.length);
+      console.log('🔍 Raw response JSON:', JSON.stringify(response, null, 2));
+      
+      if (response.items?.length > 0) {
+        console.log('✅ Found items, setting state...');
+        setRoleTypesConfigData(response.items);
+        console.log('✅ Role Types Configuration loaded:', response.items);
+        console.log('✅ Setting state with data:', response.items);
+      } else {
+        console.log('❌ No items found or empty array');
+        console.log('❌ Condition check:', {
+          hasItems: !!response.items,
+          itemsLength: response.items?.length,
+          itemsArray: response.items
+        });
+        setRoleTypesConfigData([]);
+        console.log('ℹ️ No existing Role Types Configuration found');
+      }
+    } catch (err: any) {
+      console.error('❌ Error loading Role Types Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading role types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading role types configuration.'
+        : 'Failed to load role types configuration.';
+      setRoleTypesConfigError(msg);
+      setRoleTypesConfigData([]);
+    } finally {
+      setIsLoadingRoleTypesConfig(false);
+    }
+  };
+
+  // Save Role Types Configuration handler with GET-then-POST/PATCH logic
+  const handleSaveRoleTypesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
+    console.log('🎯 === SAVE ROLE TYPES CONFIGURATION STARTED ===');
+    console.log('🔍 Form data received:', formData);
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      toast({
+        title: "Error",
+        description: "Unable to determine insurer ID or product ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('✅ IDs validated:', { insurerId, productId });
+    setIsSavingRoleTypesConfig(true);
+
+    try {
+      // Build request payload from form data
+      const items = Object.entries(formData).map(([roleTypeName, roleTypeFormData], index) => {
+        console.log(`📝 Processing role type "${roleTypeName}":`, roleTypeFormData);
+        
+        const item = {
+          name: roleTypeName,
+          pricing_type: (roleTypeFormData.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE') as 'PERCENTAGE' | 'FIXED_RATE',
+          value: Number(roleTypeFormData.value || 0),
+          quote_option: (roleTypeFormData.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE') as 'AUTO_QUOTE' | 'NO_QUOTE',
+          display_order: index + 1,
+          is_active: true
+        };
+        
+        console.log(`✅ Mapped item for "${roleTypeName}":`, item);
+        return item;
+      });
+
+      const requestPayload: SaveRoleTypesConfigRequest = {
+        role_types_config: {
+          items
+        }
+      };
+
+      console.log('🔍 Final request payload:', JSON.stringify(requestPayload, null, 2));
+
+      // Determine if this is a POST or PATCH based on existing data
+      const hasExistingData = roleTypesConfigData && roleTypesConfigData.length > 0;
+      console.log('🔍 Has existing data?', hasExistingData);
+      console.log('🔍 Existing data:', roleTypesConfigData);
+
+      let response: SaveRoleTypesConfigResponse;
+      
+      if (hasExistingData) {
+        console.log('🔄 Calling PATCH API (update existing)...');
+        response = await updateRoleTypesConfiguration(insurerId, String(productId), requestPayload);
+        console.log('✅ PATCH Response:', response);
+        
+        toast({
+          title: "Success",
+          description: "Role types configuration updated successfully!",
+          variant: "default",
+        });
+      } else {
+        console.log('🆕 Calling POST API (create new)...');
+        response = await createRoleTypesConfiguration(insurerId, String(productId), requestPayload);
+        console.log('✅ POST Response:', response);
+        
+        toast({
+          title: "Success", 
+          description: "Role types configuration created successfully!",
+          variant: "default",
+        });
+      }
+
+      // Update state with response data
+      if (response.data?.items) {
+        console.log('🔄 Updating role types config data with response...');
+        setRoleTypesConfigData(response.data.items);
+        console.log('✅ State updated with:', response.data.items);
+      }
+
+    } catch (err: any) {
+      console.error('❌ Error saving Role Types Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while saving role types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving role types configuration.'
+        : 'Failed to save role types configuration.';
+      
+      toast({
+        title: "Error",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingRoleTypesConfig(false);
+      console.log('🎯 === SAVE ROLE TYPES CONFIGURATION COMPLETED ===');
+    }
+  };
+
+  // Fetch Soil Types Configuration after metadata loads
+  const fetchSoilTypesConfig = async (): Promise<void> => {
+    console.log('🚀 fetchSoilTypesConfig called');
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    console.log('🔍 IDs check:', { insurerId, productId });
+    
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      setSoilTypesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated, starting API call...');
+    setIsLoadingSoilTypesConfig(true);
+    setSoilTypesConfigError(null);
+    
+    try {
+      console.log('🔍 Fetching Soil Types Configuration...');
+      console.log('📡 API Call Parameters:', { insurerId, productId });
+      const response = await getSoilTypesConfiguration(insurerId, String(productId));
+      
+      console.log('🔍 Full API Response:', response);
+      console.log('🔍 Response type:', typeof response);
+      console.log('🔍 Response keys:', Object.keys(response || {}));
+      console.log('🔍 Response items:', response.items);
+      console.log('🔍 Items length:', response.items?.length);
+      console.log('🔍 Raw response JSON:', JSON.stringify(response, null, 2));
+      
+      if (response.items?.length > 0) {
+        console.log('✅ Found items, setting state...');
+        setSoilTypesConfigData(response.items);
+        console.log('✅ Soil Types Configuration loaded:', response.items);
+        console.log('✅ Setting state with data:', response.items);
+      } else {
+        console.log('❌ No items found or empty array');
+        console.log('❌ Condition check:', {
+          hasItems: !!response.items,
+          itemsLength: response.items?.length,
+          itemsArray: response.items
+        });
+        setSoilTypesConfigData([]);
+        console.log('ℹ️ No existing Soil Types Configuration found');
+      }
+    } catch (err: any) {
+      console.error('❌ Error loading Soil Types Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading soil types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading soil types configuration.'
+        : 'Failed to load soil types configuration.';
+      setSoilTypesConfigError(msg);
+      setSoilTypesConfigData([]);
+    } finally {
+      setIsLoadingSoilTypesConfig(false);
+    }
+  };
+
+  // Save Soil Types Configuration handler with GET-then-POST/PATCH logic
+  const handleSaveSoilTypesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
+    console.log('🎯 === SAVE SOIL TYPES CONFIGURATION STARTED ===');
+    console.log('🔍 Form data received:', formData);
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      toast({
+        title: "Error",
+        description: "Unable to determine insurer ID or product ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('✅ IDs validated:', { insurerId, productId });
+    setIsSavingSoilTypesConfig(true);
+
+    try {
+      // Build request payload from form data
+      const items = Object.entries(formData).map(([soilTypeName, soilTypeFormData], index) => {
+        console.log(`📝 Processing soil type "${soilTypeName}":`, soilTypeFormData);
+        
+        const item = {
+          name: soilTypeName,
+          pricing_type: (soilTypeFormData.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE') as 'PERCENTAGE' | 'FIXED_RATE',
+          value: Number(soilTypeFormData.value || 0),
+          quote_option: (soilTypeFormData.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE') as 'AUTO_QUOTE' | 'NO_QUOTE',
+          display_order: index + 1,
+          is_active: true
+        };
+        
+        console.log(`✅ Mapped item for "${soilTypeName}":`, item);
+        return item;
+      });
+
+      const requestPayload: SaveSoilTypesConfigRequest = {
+        soil_types_config: {
+          items
+        }
+      };
+
+      console.log('🔍 Final request payload:', JSON.stringify(requestPayload, null, 2));
+
+      // Determine if this is a POST or PATCH based on existing data
+      const hasExistingData = soilTypesConfigData && soilTypesConfigData.length > 0;
+      console.log('🔍 Has existing data?', hasExistingData);
+      console.log('🔍 Existing data:', soilTypesConfigData);
+
+      let response: SaveSoilTypesConfigResponse;
+      
+      if (hasExistingData) {
+        console.log('🔄 Calling PATCH API (update existing)...');
+        response = await updateSoilTypesConfiguration(insurerId, String(productId), requestPayload);
+        console.log('✅ PATCH Response:', response);
+        
+        toast({
+          title: "Success",
+          description: "Soil types configuration updated successfully!",
+          variant: "default",
+        });
+      } else {
+        console.log('🆕 Calling POST API (create new)...');
+        response = await createSoilTypesConfiguration(insurerId, String(productId), requestPayload);
+        console.log('✅ POST Response:', response);
+        
+        toast({
+          title: "Success", 
+          description: "Soil types configuration created successfully!",
+          variant: "default",
+        });
+      }
+
+      // Update state with response data
+      if (response.data?.items) {
+        console.log('🔄 Updating soil types config data with response...');
+        setSoilTypesConfigData(response.data.items);
+        console.log('✅ State updated with:', response.data.items);
+      }
+
+    } catch (err: any) {
+      console.error('❌ Error saving Soil Types Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while saving soil types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving soil types configuration.'
+        : 'Failed to save soil types configuration.';
+      
+      toast({
+        title: "Error",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingSoilTypesConfig(false);
+      console.log('🎯 === SAVE SOIL TYPES CONFIGURATION COMPLETED ===');
+    }
+  };
+
+  // Fetch Subcontractor Types Configuration after metadata loads
+  const fetchSubcontractorTypesConfig = async (): Promise<void> => {
+    console.log('🚀 fetchSubcontractorTypesConfig called');
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    console.log('🔍 IDs check:', { insurerId, productId });
+    
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      setSubcontractorTypesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated, starting API call...');
+    setIsLoadingSubcontractorTypesConfig(true);
+    setSubcontractorTypesConfigError(null);
+    
+    try {
+      console.log('🔍 Fetching Subcontractor Types Configuration...');
+      console.log('📡 API Call Parameters:', { insurerId, productId });
+      const response = await getSubcontractorTypesConfiguration(insurerId, String(productId));
+      
+      console.log('🔍 Full API Response:', response);
+      console.log('🔍 Response type:', typeof response);
+      console.log('🔍 Response keys:', Object.keys(response || {}));
+      console.log('🔍 Response items:', response.items);
+      console.log('🔍 Items length:', response.items?.length);
+      console.log('🔍 Raw response JSON:', JSON.stringify(response, null, 2));
+      
+      if (response.items?.length > 0) {
+        console.log('✅ Found items, setting state...');
+        setSubcontractorTypesConfigData(response.items);
+        console.log('✅ Subcontractor Types Configuration loaded:', response.items);
+        console.log('✅ Setting state with data:', response.items);
+      } else {
+        console.log('❌ No items found or empty array');
+        console.log('❌ Condition check:', {
+          hasItems: !!response.items,
+          itemsLength: response.items?.length,
+          itemsArray: response.items
+        });
+        setSubcontractorTypesConfigData([]);
+        console.log('ℹ️ No existing Subcontractor Types Configuration found');
+      }
+    } catch (err: any) {
+      console.error('❌ Error loading Subcontractor Types Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading subcontractor types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading subcontractor types configuration.'
+        : 'Failed to load subcontractor types configuration.';
+      setSubcontractorTypesConfigError(msg);
+      setSubcontractorTypesConfigData([]);
+    } finally {
+      setIsLoadingSubcontractorTypesConfig(false);
+    }
+  };
+
+  // Fetch Consultant Roles Configuration
+  const fetchConsultantRolesConfig = async (): Promise<void> => {
+    console.log('🎯 === FETCH CONSULTANT ROLES CONFIGURATION STARTED ===');
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs for consultant roles config:', { insurerId, productId });
+      setConsultantRolesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated for consultant roles config:', { insurerId, productId });
+    setIsLoadingConsultantRolesConfig(true);
+    setConsultantRolesConfigError(null);
+
+    try {
+      console.log('🔍 Calling getConsultantRolesConfiguration API...');
+      const response = await getConsultantRolesConfiguration(insurerId, String(productId));
+      console.log('✅ Consultant Roles Configuration API Response:', response);
+
+      if (response?.items && Array.isArray(response.items)) {
+        console.log('📝 Setting consultant roles config data:', response.items);
+        setConsultantRolesConfigData(response.items);
+        console.log('✅ Consultant roles config data set successfully');
+      } else {
+        console.warn('⚠️ No consultant roles items in response:', response);
+        setConsultantRolesConfigData([]);
+      }
+
+    } catch (err: any) {
+      console.error('❌ Error fetching Consultant Roles Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading consultant roles configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading consultant roles configuration.'
+        : 'Failed to load consultant roles configuration.';
+      setConsultantRolesConfigError(msg);
+      setConsultantRolesConfigData([]);
+    } finally {
+      setIsLoadingConsultantRolesConfig(false);
+    }
+  };
+
+  // Save Subcontractor Types Configuration handler with GET-then-POST/PATCH logic
+  const handleSaveSubcontractorTypesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
+    console.log('🎯 === SAVE SUBCONTRACTOR TYPES CONFIGURATION STARTED ===');
+    console.log('🔍 Form data received:', formData);
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      toast({
+        title: "Error",
+        description: "Unable to determine insurer ID or product ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('✅ IDs validated:', { insurerId, productId });
+    setIsSavingSubcontractorTypesConfig(true);
+
+    try {
+      // Build request payload from form data
+      const items = Object.entries(formData).map(([subcontractorTypeName, subcontractorTypeFormData], index) => {
+        console.log(`📝 Processing subcontractor type "${subcontractorTypeName}":`, subcontractorTypeFormData);
+        
+        const item = {
+          name: subcontractorTypeName,
+          pricing_type: (subcontractorTypeFormData.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE') as 'PERCENTAGE' | 'FIXED_RATE',
+          value: Number(subcontractorTypeFormData.value || 0),
+          quote_option: (subcontractorTypeFormData.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE') as 'AUTO_QUOTE' | 'NO_QUOTE',
+          display_order: index + 1,
+          is_active: true
+        };
+        
+        console.log(`✅ Mapped item for "${subcontractorTypeName}":`, item);
+        return item;
+      });
+
+      const requestPayload: SaveSubcontractorTypesConfigRequest = {
+        subcontractor_types_config: {
+          items
+        }
+      };
+
+      console.log('🔍 Final request payload:', JSON.stringify(requestPayload, null, 2));
+
+      // Determine if this is a POST or PATCH based on existing data
+      const hasExistingData = subcontractorTypesConfigData && subcontractorTypesConfigData.length > 0;
+      console.log('🔍 Has existing data?', hasExistingData);
+      console.log('🔍 Existing data:', subcontractorTypesConfigData);
+
+      let response: SaveSubcontractorTypesConfigResponse;
+      
+      if (hasExistingData) {
+        console.log('🔄 Calling PATCH API (update existing)...');
+        response = await updateSubcontractorTypesConfiguration(insurerId, String(productId), requestPayload);
+        console.log('✅ PATCH Response:', response);
+        
+        toast({
+          title: "Success",
+          description: "Subcontractor types configuration updated successfully!",
+          variant: "default",
+        });
+      } else {
+        console.log('🆕 Calling POST API (create new)...');
+        response = await createSubcontractorTypesConfiguration(insurerId, String(productId), requestPayload);
+        console.log('✅ POST Response:', response);
+        
+        toast({
+          title: "Success", 
+          description: "Subcontractor types configuration created successfully!",
+          variant: "default",
+        });
+      }
+
+      // Update state with response data
+      if (response.data?.items) {
+        console.log('🔄 Updating subcontractor types config data with response...');
+        setSubcontractorTypesConfigData(response.data.items);
+        console.log('✅ State updated with:', response.data.items);
+      }
+
+    } catch (err: any) {
+      console.error('❌ Error saving Subcontractor Types Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while saving subcontractor types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving subcontractor types configuration.'
+        : 'Failed to save subcontractor types configuration.';
+      
+      toast({
+        title: "Error",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingSubcontractorTypesConfig(false);
+      console.log('🎯 === SAVE SUBCONTRACTOR TYPES CONFIGURATION COMPLETED ===');
+    }
+  };
+
   // Save Regions Configuration handler with GET-then-POST/PATCH logic
   const handleSaveRegionsConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
     console.log('🎯 === SAVE REGIONS CONFIGURATION STARTED ===');
@@ -4296,19 +5161,43 @@ const SingleProductConfig = () => {
                                 await fetchConstructionTypesConfig();
                                 console.log('🎯 Config fetch completed');
                               } else if (section.id === 'role-types') {
+                                console.log('🎯 Role Types tab clicked - starting fetch sequence...');
                                 await fetchRoleTypes();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchRoleTypesConfig();
+                                console.log('🎯 Config fetch completed');
                               } else if (section.id === 'contract-types') {
+                                console.log('🎯 Contract Types tab clicked - starting fetch sequence...');
                                 await fetchContractTypes();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchContractTypesConfig();
+                                console.log('🎯 Config fetch completed');
                               } else if (section.id === 'soil-types') {
+                                console.log('🎯 Soil Types tab clicked - starting fetch sequence...');
                                 await fetchSoilTypes();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchSoilTypesConfig();
+                                console.log('🎯 Config fetch completed');
                               } else if (section.id === 'subcontractor-types') {
+                                console.log('🎯 Subcontractor Types tab clicked - starting fetch sequence...');
                                 await fetchSubcontractorTypes();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchSubcontractorTypesConfig();
+                                console.log('🎯 Config fetch completed');
                               } else if (section.id === 'consultant-roles') {
+                                console.log('🎯 Consultant Roles tab clicked - starting fetch sequence...');
                                 await fetchConsultantRoles();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchConsultantRolesConfig();
+                                console.log('🎯 Config fetch completed');
                               } else if (section.id === 'security-types') {
                                 await fetchSecurityTypes();
                               } else if (section.id === 'area-types') {
                                 await fetchAreaTypes();
+                              } else if (section.id === 'fee-types') {
+                                console.log('🎯 Fee Types tab clicked - starting fetch sequence...');
+                                await fetchFeeTypesConfig();
+                                console.log('🎯 Fee types config fetch completed');
                               } else if (section.id === 'countries') {
                                 console.log('🎯 Countries tab clicked - starting fetch sequence...');
                                 await fetchCountries();
@@ -4393,6 +5282,15 @@ const SingleProductConfig = () => {
                           isSaving={isSavingContractorRiskFactors}
                         />
                         )}
+                       {activePricingTab === "fee-types" && (
+                        <FeeTypes
+                          feeTypesConfigData={feeTypesConfigData}
+                          isLoadingFeeTypesConfig={isLoadingFeeTypesConfig}
+                          feeTypesConfigError={feeTypesConfigError}
+                          onSave={handleSaveFeeTypesConfiguration}
+                          isSaving={isSavingFeeTypesConfig}
+                        />
+                       )}
                        {activePricingTab === "coverage-options" && (
                          <CoverageOptionsExtensions
                            ratingConfig={ratingConfig}
@@ -4443,8 +5341,7 @@ const SingleProductConfig = () => {
                          activePricingTab === "subcontractor-types" || 
                          activePricingTab === "consultant-roles" || 
                          activePricingTab === "security-types" || 
-                         activePricingTab === "area-types" || 
-                         activePricingTab === "fee-types") && (
+                         activePricingTab === "area-types") && (
                          <MasterDataTabs
                            activePricingTab={activePricingTab}
                            activeConstructionTypes={activeConstructionTypes}
@@ -4514,6 +5411,29 @@ const SingleProductConfig = () => {
                            zonesConfigError={zonesConfigError}
                            isSavingZonesConfig={isSavingZonesConfig}
                            handleSaveZonesConfiguration={handleSaveZonesConfiguration}
+                           contractTypesConfigData={contractTypesConfigData}
+                           isLoadingContractTypesConfig={isLoadingContractTypesConfig}
+                           contractTypesConfigError={contractTypesConfigError}
+                           isSavingContractTypesConfig={isSavingContractTypesConfig}
+                           handleSaveContractTypesConfiguration={handleSaveContractTypesConfiguration}
+                           roleTypesConfigData={roleTypesConfigData}
+                           isLoadingRoleTypesConfig={isLoadingRoleTypesConfig}
+                           roleTypesConfigError={roleTypesConfigError}
+                           isSavingRoleTypesConfig={isSavingRoleTypesConfig}
+                           handleSaveRoleTypesConfiguration={handleSaveRoleTypesConfiguration}
+                           soilTypesConfigData={soilTypesConfigData}
+                           isLoadingSoilTypesConfig={isLoadingSoilTypesConfig}
+                           soilTypesConfigError={soilTypesConfigError}
+                           isSavingSoilTypesConfig={isSavingSoilTypesConfig}
+                           handleSaveSoilTypesConfiguration={handleSaveSoilTypesConfiguration}
+                           subcontractorTypesConfigData={subcontractorTypesConfigData}
+                           isLoadingSubcontractorTypesConfig={isLoadingSubcontractorTypesConfig}
+                           subcontractorTypesConfigError={subcontractorTypesConfigError}
+                           isSavingSubcontractorTypesConfig={isSavingSubcontractorTypesConfig}
+                           handleSaveSubcontractorTypesConfiguration={handleSaveSubcontractorTypesConfiguration}
+                           consultantRolesConfigData={consultantRolesConfigData}
+                           isLoadingConsultantRolesConfig={isLoadingConsultantRolesConfig}
+                           consultantRolesConfigError={consultantRolesConfigError}
                          />
                         )}
                      </div>
