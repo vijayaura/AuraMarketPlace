@@ -939,7 +939,7 @@ export interface GetSecurityTypesResponse {
   }>;
 }
 
-export async function getSecurityTypes(
+export async function getSecurityTypesConfiguration(
   insurerId: number | string,
   productId: number | string
 ): Promise<GetSecurityTypesResponse> {
@@ -949,7 +949,7 @@ export async function getSecurityTypes(
   );
 }
 
-export async function saveSecurityTypes(
+export async function createSecurityTypesConfiguration(
   insurerId: number | string,
   productId: number | string,
   body: SaveSecurityTypesRequest
@@ -960,7 +960,7 @@ export async function saveSecurityTypes(
   );
 }
 
-export async function updateSecurityTypes(
+export async function updateSecurityTypesConfiguration(
   insurerId: number | string,
   productId: number | string,
   body: SaveSecurityTypesRequest

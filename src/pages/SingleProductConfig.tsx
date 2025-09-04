@@ -25,7 +25,7 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, listMasterConstructionTypes, listMasterRoleTypes, listMasterContractTypes, listMasterSoilTypes, listMasterSubcontractorTypes, listMasterConsultantRoles, listMasterSecurityTypes, listMasterAreaTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
@@ -262,6 +262,12 @@ const SingleProductConfig = () => {
   const [isLoadingConsultantRolesConfig, setIsLoadingConsultantRolesConfig] = useState(false);
   const [consultantRolesConfigError, setConsultantRolesConfigError] = useState<string | null>(null);
   const [isSavingConsultantRolesConfig, setIsSavingConsultantRolesConfig] = useState(false);
+
+  // Security Types Configuration state
+  const [securityTypesConfigData, setSecurityTypesConfigData] = useState<any[]>([]);
+  const [isLoadingSecurityTypesConfig, setIsLoadingSecurityTypesConfig] = useState(false);
+  const [securityTypesConfigError, setSecurityTypesConfigError] = useState<string | null>(null);
+  const [isSavingSecurityTypesConfig, setIsSavingSecurityTypesConfig] = useState(false);
 
   // Fee Types Configuration state
   const [feeTypesConfigData, setFeeTypesConfigData] = useState<FeeTypeConfigItem[]>([]);
@@ -3743,6 +3749,131 @@ const SingleProductConfig = () => {
     }
   };
 
+  // Fetch Security Types Configuration
+  const fetchSecurityTypesConfig = async (): Promise<void> => {
+    console.log('🎯 === FETCH SECURITY TYPES CONFIGURATION STARTED ===');
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs for security types config:', { insurerId, productId });
+      setSecurityTypesConfigError('Unable to determine insurer ID or product ID.');
+      return;
+    }
+
+    console.log('✅ IDs validated for security types config:', { insurerId, productId });
+    setIsLoadingSecurityTypesConfig(true);
+    setSecurityTypesConfigError(null);
+
+    try {
+      console.log('🔍 Calling getSecurityTypesConfiguration API...');
+      const response = await getSecurityTypesConfiguration(insurerId, String(productId));
+      console.log('✅ Security Types Configuration API Response:', response);
+
+      if (response?.items && Array.isArray(response.items)) {
+        console.log('📝 Setting security types config data:', response.items);
+        setSecurityTypesConfigData(response.items);
+        console.log('✅ Security types config data set successfully');
+      } else {
+        console.warn('⚠️ No security types items in response:', response);
+        setSecurityTypesConfigData([]);
+      }
+
+    } catch (err: any) {
+      console.error('❌ Error fetching Security Types Configuration:', err);
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading security types configuration.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading security types configuration.'
+        : 'Failed to load security types configuration.';
+      setSecurityTypesConfigError(msg);
+      setSecurityTypesConfigData([]);
+    } finally {
+      setIsLoadingSecurityTypesConfig(false);
+    }
+  };
+
+  // Save Security Types Configuration handler
+  const handleSaveSecurityTypesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
+    console.log('🎯 === SAVE SECURITY TYPES CONFIGURATION STARTED ===');
+    console.log('🔍 Form data received:', formData);
+
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+
+    if (!insurerId || !productId) {
+      console.error('❌ Missing IDs:', { insurerId, productId });
+      toast({
+        title: "Error",
+        description: "Unable to determine insurer ID or product ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingSecurityTypesConfig(true);
+    
+    try {
+      // Transform form data to API format
+      const items = Object.keys(formData).map((securityTypeName, index) => {
+        const securityTypeData = formData[securityTypeName];
+        return {
+          name: securityTypeName,
+          pricing_type: (securityTypeData?.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE') as 'FIXED_RATE' | 'PERCENTAGE',
+          value: Number(securityTypeData?.value || 0),
+          quote_option: (securityTypeData?.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'AUTO_QUOTE') as 'NO_QUOTE' | 'AUTO_QUOTE',
+          display_order: index + 1,
+          is_active: true
+        };
+      });
+
+      const requestPayload: SaveSecurityTypesRequest = {
+        security_types_config: { items }
+      };
+
+      console.log('🔍 Request payload:', requestPayload);
+
+      // Determine whether to use POST or PATCH based on existing data
+      const hasExistingData = securityTypesConfigData && securityTypesConfigData.length > 0;
+      console.log('🔍 Has existing data:', hasExistingData);
+      console.log('🔍 Using API method:', hasExistingData ? 'PATCH' : 'POST');
+
+      let response: SaveSecurityTypesResponse;
+      
+      if (hasExistingData) {
+        // Use PATCH for existing data
+        response = await updateSecurityTypesConfiguration(insurerId, String(productId), requestPayload);
+      } else {
+        // Use POST for new data
+        response = await createSecurityTypesConfiguration(insurerId, String(productId), requestPayload);
+      }
+
+      console.log('✅ API Response:', response);
+      
+      // Refresh the configuration data
+      await fetchSecurityTypesConfig();
+      
+      toast({
+        title: "Success",
+        description: response?.message || "Security types configuration saved successfully.",
+      });
+
+      console.log('🎯 === SAVE SECURITY TYPES CONFIGURATION SUCCESS ===');
+
+    } catch (err: any) {
+      console.error('❌ Error saving security types configuration:', err);
+      toast({
+        title: "Error",
+        description: err?.message || 'Failed to save security types configuration.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingSecurityTypesConfig(false);
+    }
+  };
+
   // Save Subcontractor Types Configuration handler with GET-then-POST/PATCH logic
   const handleSaveSubcontractorTypesConfiguration = async (formData: {[key: string]: any}): Promise<void> => {
     console.log('🎯 === SAVE SUBCONTRACTOR TYPES CONFIGURATION STARTED ===');
@@ -5191,7 +5322,11 @@ const SingleProductConfig = () => {
                                 await fetchConsultantRolesConfig();
                                 console.log('🎯 Config fetch completed');
                               } else if (section.id === 'security-types') {
+                                console.log('🎯 Security Types tab clicked - starting fetch sequence...');
                                 await fetchSecurityTypes();
+                                console.log('🎯 Metadata fetch completed, now fetching config...');
+                                await fetchSecurityTypesConfig();
+                                console.log('🎯 Config fetch completed');
                               } else if (section.id === 'area-types') {
                                 await fetchAreaTypes();
                               } else if (section.id === 'fee-types') {
@@ -5434,6 +5569,11 @@ const SingleProductConfig = () => {
                            consultantRolesConfigData={consultantRolesConfigData}
                            isLoadingConsultantRolesConfig={isLoadingConsultantRolesConfig}
                            consultantRolesConfigError={consultantRolesConfigError}
+                           securityTypesConfigData={securityTypesConfigData}
+                           isLoadingSecurityTypesConfig={isLoadingSecurityTypesConfig}
+                           securityTypesConfigError={securityTypesConfigError}
+                           isSavingSecurityTypesConfig={isSavingSecurityTypesConfig}
+                           handleSaveSecurityTypesConfiguration={handleSaveSecurityTypesConfiguration}
                          />
                         )}
                      </div>

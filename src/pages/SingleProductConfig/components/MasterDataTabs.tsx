@@ -114,6 +114,13 @@ export type MasterDataTabsProps = {
   consultantRolesConfigData: any[];
   isLoadingConsultantRolesConfig: boolean;
   consultantRolesConfigError: string | null;
+
+  // Security Types Configuration props
+  securityTypesConfigData: any[];
+  isLoadingSecurityTypesConfig: boolean;
+  securityTypesConfigError: string | null;
+  isSavingSecurityTypesConfig: boolean;
+  handleSaveSecurityTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
 };
 
 const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
@@ -220,6 +227,13 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
   consultantRolesConfigData,
   isLoadingConsultantRolesConfig,
   consultantRolesConfigError,
+
+  // Security Types Configuration props
+  securityTypesConfigData,
+  isLoadingSecurityTypesConfig,
+  securityTypesConfigError,
+  isSavingSecurityTypesConfig,
+  handleSaveSecurityTypesConfiguration,
 }) => {
   // Simple state for Construction Types form values - direct approach
   const [constructionTypesFormData, setConstructionTypesFormData] = useState<{[key: string]: any}>({});
@@ -247,6 +261,9 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
   
   // Simple state for Consultant Roles form values - direct approach
   const [consultantRolesFormData, setConsultantRolesFormData] = useState<{[key: string]: any}>({});
+
+  // Simple state for Security Types form values - direct approach
+  const [securityTypesFormData, setSecurityTypesFormData] = useState<{[key: string]: any}>({});
 
   // Clause Pricing state - moved to top level to avoid conditional hooks
   const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
@@ -528,6 +545,37 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
       console.log('✅ Consultant Roles form data populated:', formData);
     }
   }, [activePricingTab, consultantRolesConfigData]);
+
+  // Simple effect to populate security types form data when API data is available
+  useEffect(() => {
+    console.log('🔍 Security Types Effect Triggered:', {
+      activePricingTab,
+      hasConfigData: !!securityTypesConfigData,
+      configDataLength: securityTypesConfigData?.length,
+      configData: securityTypesConfigData
+    });
+
+    if (activePricingTab === "security-types" && securityTypesConfigData && securityTypesConfigData.length > 0) {
+      console.log('✅ Populating Security Types form data...');
+      const formData: {[key: string]: any} = {};
+      
+      // Simple direct mapping using name field
+      securityTypesConfigData.forEach((configItem: any) => {
+        console.log('📝 Processing config item:', configItem);
+        const securityTypeName = configItem.name;
+        if (securityTypeName) {
+          formData[securityTypeName] = {
+            pricingType: configItem.pricing_type === 'FIXED_RATE' ? 'fixed' : 'percentage',
+            value: String(configItem.value || 0),
+            quoteOption: configItem.quote_option === 'NO_QUOTE' ? 'no-quote' : 'quote'
+          };
+        }
+      });
+      
+      setSecurityTypesFormData(formData);
+      console.log('✅ Security Types form data populated:', formData);
+    }
+  }, [activePricingTab, securityTypesConfigData]);
 
   // Clause Pricing functions
   if (activePricingTab === "clause-pricing") {
@@ -868,8 +916,9 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
           title: "Security Types", 
           description: "Configure pricing for different security types", 
           data: securityTypesData.map(item => item.label),
-          isLoading: isLoadingSecurityTypes,
-          error: securityTypesError
+          isLoading: isLoadingSecurityTypes || isLoadingSecurityTypesConfig,
+          error: securityTypesError || securityTypesConfigError,
+          configData: securityTypesConfigData
         };
       case "area-types":
         return { 
@@ -976,6 +1025,8 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                 ? () => handleSaveSoilTypesConfiguration(soilTypesFormData)
                 : activePricingTab === "subcontractor-types"
                 ? () => handleSaveSubcontractorTypesConfiguration(subcontractorTypesFormData)
+                : activePricingTab === "security-types"
+                ? () => handleSaveSecurityTypesConfiguration(securityTypesFormData)
                 : onSave
             } 
             size="sm" 
@@ -996,6 +1047,8 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                 ? (config.isLoading || isSavingSoilTypesConfig)
                 : activePricingTab === "subcontractor-types"
                 ? (config.isLoading || isSavingSubcontractorTypesConfig)
+                : activePricingTab === "security-types"
+                ? (config.isLoading || isSavingSecurityTypesConfig)
                 : config.isLoading
             }
           >
@@ -1016,6 +1069,8 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
               ? (isSavingSoilTypesConfig ? 'Saving...' : 'Save')
               : activePricingTab === "subcontractor-types"
               ? (isSavingSubcontractorTypesConfig ? 'Saving...' : 'Save')
+              : activePricingTab === "security-types"
+              ? (isSavingSecurityTypesConfig ? 'Saving...' : 'Save')
               : (config.isLoading ? 'Loading...' : 'Save')
             }
           </Button>
@@ -1072,6 +1127,7 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                     : activePricingTab === "soil-types" ? soilTypesFormData[item]
                     : activePricingTab === "subcontractor-types" ? subcontractorTypesFormData[item]
                     : activePricingTab === "consultant-roles" ? consultantRolesFormData[item]
+                    : activePricingTab === "security-types" ? securityTypesFormData[item]
                     : null;
                   
                   console.log(`🔍 Rendering row for "${item}":`, {
@@ -1153,6 +1209,14 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                               }));
                             } else if (activePricingTab === "consultant-roles") {
                               setConsultantRolesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  pricingType: value
+                                }
+                              }));
+                            } else if (activePricingTab === "security-types") {
+                              setSecurityTypesFormData(prev => ({
                                 ...prev,
                                 [item]: { 
                                   ...prev[item], 
@@ -1248,6 +1312,14 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                                   value: e.target.value
                                 }
                               }));
+                            } else if (activePricingTab === "security-types") {
+                              setSecurityTypesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  value: e.target.value
+                                }
+                              }));
                             }
                           }}
                           className="w-24" 
@@ -1323,6 +1395,14 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                               }));
                             } else if (activePricingTab === "consultant-roles") {
                               setConsultantRolesFormData(prev => ({
+                                ...prev,
+                                [item]: { 
+                                  ...prev[item], 
+                                  quoteOption: value
+                                }
+                              }));
+                            } else if (activePricingTab === "security-types") {
+                              setSecurityTypesFormData(prev => ({
                                 ...prev,
                                 [item]: { 
                                   ...prev[item], 

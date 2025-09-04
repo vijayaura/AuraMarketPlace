@@ -168,6 +168,14 @@ type PricingConfiguratorProps = {
   consultantRolesConfigData: any[];
   isLoadingConsultantRolesConfig: boolean;
   consultantRolesConfigError: string | null;
+  
+  // Security Types Configuration props
+  securityTypesConfigData: any[];
+  isLoadingSecurityTypesConfig: boolean;
+  securityTypesConfigError: string | null;
+  isSavingSecurityTypesConfig: boolean;
+  handleSaveSecurityTypesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
+  
   // Fee Types Configuration props
   feeTypesConfigData: any[];
   isLoadingFeeTypesConfig: boolean;
@@ -326,6 +334,14 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   consultantRolesConfigData,
   isLoadingConsultantRolesConfig,
   consultantRolesConfigError,
+  
+  // Security Types Configuration props
+  securityTypesConfigData,
+  isLoadingSecurityTypesConfig,
+  securityTypesConfigError,
+  isSavingSecurityTypesConfig,
+  handleSaveSecurityTypesConfiguration,
+  
   // Fee Types Configuration props
   feeTypesConfigData,
   isLoadingFeeTypesConfig,
@@ -601,6 +617,11 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                   consultantRolesConfigData={consultantRolesConfigData}
                   isLoadingConsultantRolesConfig={isLoadingConsultantRolesConfig}
                   consultantRolesConfigError={consultantRolesConfigError}
+                  securityTypesConfigData={securityTypesConfigData}
+                  isLoadingSecurityTypesConfig={isLoadingSecurityTypesConfig}
+                  securityTypesConfigError={securityTypesConfigError}
+                  isSavingSecurityTypesConfig={isSavingSecurityTypesConfig}
+                  handleSaveSecurityTypesConfiguration={handleSaveSecurityTypesConfiguration}
                 />
             )}
           </div>
