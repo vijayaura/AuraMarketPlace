@@ -147,9 +147,19 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
 
         {isLoading ? (
           <div className="space-y-6">
-            <TableSkeleton />
-            <TableSkeleton />
-            <TableSkeleton />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Coverage</TableHead>
+                  <TableHead>Limit</TableHead>
+                  <TableHead>Deductible</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableSkeleton numRows={8} numCols={4} />
+              </TableBody>
+            </Table>
           </div>
         ) : (
           <div className="space-y-6">

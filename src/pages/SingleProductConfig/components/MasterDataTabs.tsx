@@ -617,9 +617,19 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
 
           {isLoadingClauseMetadata || isLoadingClausePricing ? (
             <div className="space-y-4">
-              <TableSkeleton />
-              <TableSkeleton />
-              <TableSkeleton />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Clause</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Pricing Type</TableHead>
+                    <TableHead>Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableSkeleton numRows={8} numCols={4} />
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <div className="space-y-4">
@@ -1020,9 +1030,19 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
         )}
 
         {config.isLoading ? (
-          <div className="space-y-4">
-            <TableSkeleton />
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Pricing Type</TableHead>
+                <TableHead>Value</TableHead>
+                <TableHead>Quote Options</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableSkeleton numRows={5} numCols={4} />
+            </TableBody>
+          </Table>
         ) : (
           <Table key={activePricingTab === "construction-types" ? `construction-${config.configData?.length || 0}` : activePricingTab}>
             <TableHeader>

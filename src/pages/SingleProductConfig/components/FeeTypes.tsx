@@ -104,7 +104,20 @@ const FeeTypes: React.FC<FeeTypesProps> = ({
           <CardDescription>Configure fee types and their values (VAT, GST, etc.)</CardDescription>
         </CardHeader>
         <CardContent>
-          <TableSkeleton />
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Label</TableHead>
+                <TableHead>Pricing Type</TableHead>
+                <TableHead>Value</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableSkeleton numRows={3} numCols={5} />
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     );

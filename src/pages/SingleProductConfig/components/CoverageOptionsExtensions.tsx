@@ -139,11 +139,19 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
 
         {isLoading ? (
           <div className="space-y-6">
-            <TableSkeleton />
-            <TableSkeleton />
-            <TableSkeleton />
-            <TableSkeleton />
-            <TableSkeleton />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Coverage Option</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableSkeleton numRows={10} numCols={4} />
+              </TableBody>
+            </Table>
           </div>
         ) : (
           <div className="space-y-6">
