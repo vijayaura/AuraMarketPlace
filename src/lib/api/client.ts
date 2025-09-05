@@ -27,9 +27,14 @@ export function setAuthToken(token: string | null): void {
 export const api: AxiosInstance = axios.create({
   baseURL: DEFAULT_BASE_URL,
   timeout: 15000,
-  headers: { Accept: 'application/json' },
+  headers: { 
+    Accept: 'application/json'
+  },
   withCredentials: false,
 });
+
+// Log the initial base URL
+console.log('🔧 Initial API base URL:', DEFAULT_BASE_URL);
 
 export function setBaseUrl(url: string): void {
   try {
@@ -38,11 +43,14 @@ export function setBaseUrl(url: string): void {
     if (!/\/api\/v\d+/.test(parsed.pathname)) {
       parsed.pathname = parsed.pathname.replace(/\/$/, '') + '/api/v1';
     }
-    api.defaults.baseURL = parsed.toString().replace(/\/$/, '');
+    const finalUrl = parsed.toString().replace(/\/$/, '');
+    api.defaults.baseURL = finalUrl;
+    console.log('✅ API base URL set to:', finalUrl);
   } catch {
     // Fallback for relative values (e.g., '/api/v1')
     const normalized = url.endsWith('/api/v1') ? url : url.replace(/\/$/, '') + '/api/v1';
     api.defaults.baseURL = normalized;
+    console.log('✅ API base URL set to (fallback):', normalized);
   }
 }
 
@@ -50,6 +58,7 @@ api.interceptors.request.use((config) => {
   const headers = config.headers instanceof AxiosHeaders
     ? config.headers
     : new AxiosHeaders(config.headers);
+  
   if (authToken) {
     headers.set('Authorization', `Bearer ${authToken}`);
   }
@@ -62,6 +71,11 @@ api.interceptors.request.use((config) => {
     config.params = params;
   }
   config.headers = headers;
+  
+  // Log all outgoing API requests for debugging
+  const fullUrl = `${config.baseURL || api.defaults.baseURL}${config.url}`;
+  console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${fullUrl}`);
+  
   return config;
 });
 
@@ -86,19 +100,26 @@ api.interceptors.response.use(
         if (!refreshToken) throw new Error('Missing refresh token');
 
         // Use a raw axios call to avoid recursion via interceptors
-        const resp = await axios.post<{ token: string; refreshToken: string }>(
+        const resp = await axios.post<{ accessToken: string }>(
           `${api.defaults.baseURL}/auth/refresh-token`,
           { refreshToken },
-          { headers: { Accept: 'application/json' }, timeout: 15000 }
+          { 
+            headers: { 
+              Accept: 'application/json'
+            }, 
+            timeout: 15000 
+          }
         );
-        const newAccess = resp.data.token;
-        const newRefresh = resp.data.refreshToken;
-        setAuthToken(newAccess);
-        setAuthTokens(newAccess, newRefresh);
+        
+        // The API returns accessToken as the new access token
+        const newAccessToken = resp.data.accessToken;
+        console.log('🔄 Token refreshed successfully, new token received');
+        setAuthToken(newAccessToken);
+        setAuthTokens(newAccessToken, refreshToken); // Keep the original refresh token
         const retryHeaders = originalRequest.headers instanceof AxiosHeaders
           ? originalRequest.headers
           : new AxiosHeaders(originalRequest.headers);
-        retryHeaders.set('Authorization', `Bearer ${newAccess}`);
+        retryHeaders.set('Authorization', `Bearer ${newAccessToken}`);
         originalRequest.headers = retryHeaders;
         return api.request(originalRequest);
       } catch (refreshErr) {

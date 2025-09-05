@@ -211,7 +211,10 @@ const CEWsConfiguration: React.FC<CEWsConfigurationProps> = ({
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            setTplExtensions((tplExtensions || []).filter((ext) => ext.id !== extension.id));
+                            console.log('🗑️ Removing TPL extension with ID:', extension.id);
+                            const updatedExtensions = (tplExtensions || []).filter((ext) => ext.id !== extension.id);
+                            console.log('🔧 Remaining extensions after removal:', updatedExtensions.length);
+                            setTplExtensions(updatedExtensions);
                           }}
                           className="text-destructive hover:text-destructive"
                         >

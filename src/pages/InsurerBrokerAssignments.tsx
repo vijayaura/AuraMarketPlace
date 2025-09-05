@@ -217,6 +217,9 @@ const InsurerBrokerAssignments = () => {
         variant: "default",
       });
 
+      // Close the dialog after successful save
+      setSelectedBroker(null);
+
     } catch (err: any) {
       console.error('❌ Error saving product assignments:', err);
       const status = err?.status as number | undefined;
@@ -245,7 +248,7 @@ const InsurerBrokerAssignments = () => {
           <div className="flex items-center justify-between h-16">
             <div>
               <h1 className="text-xl font-semibold text-foreground">
-                Broker Assignments
+                Broker Product Assignments
               </h1>
               <p className="text-sm text-muted-foreground">Configure broker settings and commission structure</p>
             </div>
@@ -266,7 +269,7 @@ const InsurerBrokerAssignments = () => {
                     <Calculator className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <CardTitle>Broker Assignments</CardTitle>
+                    <CardTitle>Broker Product Assignments</CardTitle>
                     <CardDescription>
                       Manage broker status and product assignments
                     </CardDescription>

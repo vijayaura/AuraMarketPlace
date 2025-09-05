@@ -199,7 +199,7 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
             {!isLoadingMetadata && (
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Operating Countries</Label>
-                {insurerMetadata ? (
+                {insurerMetadata && insurerMetadata.operating_countries ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg">
                     {insurerMetadata.operating_countries.map((countryName) => (
                       <div key={countryName} className="flex items-center space-x-2">
@@ -251,7 +251,7 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg max-h-48 overflow-y-auto bg-muted/20">
-                  {getAvailableRegions().map((region, index) => (
+                  {(getAvailableRegions() || []).map((region, index) => (
                     <div key={index} className="flex items-start space-x-2">
                       <Checkbox
                         id={`region-${index}`}
@@ -285,7 +285,7 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
                       </div>
                     </div>
                   ))}
-                  {getAvailableRegions().length === 0 && (
+                  {(getAvailableRegions() || []).length === 0 && (
                     <div className="col-span-full text-sm text-muted-foreground p-2 text-center">
                       No regions available for selected countries
                     </div>
@@ -304,7 +304,7 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg max-h-48 overflow-y-auto bg-muted/20">
-                  {getAvailableZones().map((zone, index) => (
+                  {(getAvailableZones() || []).map((zone, index) => (
                     <div key={index} className="flex items-start space-x-2">
                       <Checkbox
                         id={`zone-${index}`}
@@ -333,7 +333,7 @@ const QuoteConfigurator: React.FC<QuoteConfiguratorProps> = ({
                       </div>
                     </div>
                   ))}
-                  {getAvailableZones().length === 0 && (
+                  {(getAvailableZones() || []).length === 0 && (
                     <div className="col-span-full text-sm text-muted-foreground p-2 text-center">
                       No zones available for selected regions
                     </div>

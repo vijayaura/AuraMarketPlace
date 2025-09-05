@@ -17,8 +17,8 @@ export interface AuthUser {
 }
 
 export interface LoginResponse {
-  token: string;
-  refreshToken?: string;
+  accessToken: string;
+  refreshToken: string;
   user: AuthUser;
 }
 
@@ -30,7 +30,9 @@ export interface RefreshRequestBody {
   refreshToken: string;
 }
 
-export type RefreshResponse = LoginResponse;
+export interface RefreshResponse {
+  accessToken: string;
+}
 
 // Note: This is exported for typed use, but the axios client uses a low-level
 // call with a skip flag to avoid interceptor recursion during refresh.

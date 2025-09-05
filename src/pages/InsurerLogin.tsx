@@ -29,8 +29,8 @@ const InsurerLogin = () => {
       setIsSubmitting(true);
       setErrorMessage(null);
       const res = await login({ email: formData.email, password: formData.password });
-      setAuthToken(res.token);
-      if (res.refreshToken) setAuthTokens(res.token, res.refreshToken);
+      setAuthToken(res.accessToken);
+      setAuthTokens(res.accessToken, res.refreshToken);
       setAuthUser(res.user);
 
       // If company_id present, prefetch insurer details and store

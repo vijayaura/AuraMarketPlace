@@ -29,8 +29,8 @@ const MarketAdminLogin = () => {
     try {
       setIsSubmitting(true);
       const res = await login({ email: formData.email, password: formData.password });
-      setAuthToken(res.token);
-      setAuthTokens(res.token, res.refreshToken);
+      setAuthToken(res.accessToken);
+      setAuthTokens(res.accessToken, res.refreshToken);
       setAuthUser(res.user);
       toast({
         title: "Login Successful",

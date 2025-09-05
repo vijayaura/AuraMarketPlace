@@ -14,17 +14,53 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LocationSearch } from "./LocationSearch";
 import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesByProjectType } from "@/lib/masters-data";
 import { getActiveCountries, getRegionsByCountry, getZonesByRegion } from "@/lib/location-data";
+import { 
+  listMasterProjectTypes, 
+  listMasterSubProjectTypes, 
+  listMasterConstructionTypes, 
+  listMasterRoleTypes, 
+  listMasterContractTypes, 
+  listMasterSoilTypes, 
+  listMasterSecurityTypes, 
+  listMasterSubcontractorTypes, 
+  listMasterConsultantRoles,
+  type SimpleMasterItem,
+  type SubProjectTypeItem
+} from "@/lib/api/masters";
+import { useToast } from "@/hooks/use-toast";
 export const ProposalForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   const {
     navigateBack
   } = useNavigationHistory();
+  
+  // Legacy data (keeping for fallback)
   const activeProjectTypes = getActiveProjectTypes();
   const activeConstructionTypes = getActiveConstructionTypes();
   const activeCountries = getActiveCountries();
+
+  // Master Data State Management
+  const [masterData, setMasterData] = useState({
+    projectTypes: [] as SimpleMasterItem[],
+    subProjectTypes: [] as SubProjectTypeItem[],
+    constructionTypes: [] as SimpleMasterItem[],
+    roleTypes: [] as SimpleMasterItem[],
+    contractTypes: [] as SimpleMasterItem[],
+    soilTypes: [] as SimpleMasterItem[],
+    securityTypes: [] as SimpleMasterItem[],
+    subcontractorTypes: [] as SimpleMasterItem[],
+    consultantRoles: [] as SimpleMasterItem[]
+  });
+
+  const [loadingStates, setLoadingStates] = useState({
+    isLoading: true,
+    hasError: false,
+    errorMessage: ''
+  });
 
   // Default form data
   const getDefaultFormData = () => ({
@@ -116,6 +152,223 @@ export const ProposalForm = () => {
     }],
     otherMaterials: ""
   });
+
+  // Optimized Master Data Fetching Function
+  const fetchMasterData = async () => {
+    try {
+      console.log('🚀 Loading master data for proposal form...');
+      setLoadingStates({ isLoading: true, hasError: false, errorMessage: '' });
+
+      // Load all master data in parallel using Promise.allSettled for resilience
+      const allPromises = [
+        listMasterProjectTypes(),
+        listMasterSubProjectTypes(),
+        listMasterConstructionTypes(),
+        listMasterRoleTypes(),
+        listMasterContractTypes(),
+        listMasterSoilTypes(),
+        listMasterSecurityTypes(),
+        listMasterSubcontractorTypes(),
+        listMasterConsultantRoles()
+      ];
+
+      const results = await Promise.allSettled(allPromises);
+      
+      // Process results and handle partial failures gracefully
+      const [
+        projectTypesResult,
+        subProjectTypesResult,
+        constructionTypesResult,
+        roleTypesResult,
+        contractTypesResult,
+        soilTypesResult,
+        securityTypesResult,
+        subcontractorTypesResult,
+        consultantRolesResult
+      ] = results;
+
+      // Extract data from successful results, use empty array for failed ones
+      const projectTypes = projectTypesResult.status === 'fulfilled' ? projectTypesResult.value : [];
+      const subProjectTypes = subProjectTypesResult.status === 'fulfilled' ? subProjectTypesResult.value : [];
+      const constructionTypes = constructionTypesResult.status === 'fulfilled' ? constructionTypesResult.value : [];
+      const roleTypes = roleTypesResult.status === 'fulfilled' ? roleTypesResult.value : [];
+      const contractTypes = contractTypesResult.status === 'fulfilled' ? contractTypesResult.value : [];
+      const soilTypes = soilTypesResult.status === 'fulfilled' ? soilTypesResult.value : [];
+      const securityTypes = securityTypesResult.status === 'fulfilled' ? securityTypesResult.value : [];
+      const subcontractorTypes = subcontractorTypesResult.status === 'fulfilled' ? subcontractorTypesResult.value : [];
+      const consultantRoles = consultantRolesResult.status === 'fulfilled' ? consultantRolesResult.value : [];
+
+      // Update state with active items only
+      setMasterData({
+        projectTypes: projectTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
+        subProjectTypes: (subProjectTypes as SubProjectTypeItem[]).filter(item => item.active).sort((a, b) => a.order - b.order),
+        constructionTypes: constructionTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
+        roleTypes: roleTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
+        contractTypes: contractTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
+        soilTypes: soilTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
+        securityTypes: securityTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
+        subcontractorTypes: subcontractorTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
+        consultantRoles: consultantRoles.filter(item => item.active).sort((a, b) => a.order - b.order)
+      });
+
+      // Check for any failures and log them
+      const failedRequests = results.filter(result => result.status === 'rejected');
+      if (failedRequests.length > 0) {
+        console.warn(`⚠️ ${failedRequests.length} master data requests failed:`, failedRequests);
+        toast({
+          title: "Partial Data Load",
+          description: `Some form options may be limited. ${failedRequests.length} data sources failed to load.`,
+          variant: "default"
+        });
+      }
+
+      console.log('✅ Master data loaded successfully');
+      setLoadingStates({ isLoading: false, hasError: false, errorMessage: '' });
+
+    } catch (error: any) {
+      console.error('❌ Failed to load master data:', error);
+      const errorMessage = error?.message || 'Failed to load form options';
+      
+      setLoadingStates({ 
+        isLoading: false, 
+        hasError: true, 
+        errorMessage 
+      });
+
+      toast({
+        title: "Loading Error",
+        description: "Failed to load form options. Using default values.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Load master data when component mounts
+  useEffect(() => {
+    fetchMasterData();
+  }, []);
+
+  // Helper functions to get options with fallbacks
+  const getProjectTypeOptions = () => {
+    if (masterData.projectTypes.length > 0) {
+      return masterData.projectTypes;
+    }
+    // Fallback to legacy data
+    return activeProjectTypes.map(pt => ({
+      id: pt.id || 0,
+      label: pt.label,
+      active: true,
+      order: 0
+    }));
+  };
+
+  const getSubProjectTypeOptions = (projectTypeId?: number) => {
+    if (masterData.subProjectTypes.length > 0) {
+      return masterData.subProjectTypes.filter(spt => 
+        !projectTypeId || spt.projectTypeId === projectTypeId
+      );
+    }
+    // Fallback to legacy data
+    return getSubProjectTypesByProjectType(projectTypeId || 0).map(spt => ({
+      id: spt.id || 0,
+      projectTypeId: projectTypeId || 0,
+      label: spt.label,
+      active: true,
+      order: 0
+    }));
+  };
+
+  const getConstructionTypeOptions = () => {
+    if (masterData.constructionTypes.length > 0) {
+      return masterData.constructionTypes;
+    }
+    // Fallback to legacy data
+    return activeConstructionTypes.map(ct => ({
+      id: ct.id || 0,
+      label: ct.label,
+      active: true,
+      order: 0
+    }));
+  };
+
+  const getRoleTypeOptions = () => {
+    if (masterData.roleTypes.length > 0) {
+      return masterData.roleTypes;
+    }
+    // Fallback to hardcoded options
+    return [
+      { id: 1, label: 'Main Contractor', active: true, order: 1 },
+      { id: 2, label: 'Sub Contractor', active: true, order: 2 },
+      { id: 3, label: 'Developer', active: true, order: 3 },
+      { id: 4, label: 'Owner', active: true, order: 4 }
+    ];
+  };
+
+  const getContractTypeOptions = () => {
+    if (masterData.contractTypes.length > 0) {
+      return masterData.contractTypes;
+    }
+    // Fallback to hardcoded options
+    return [
+      { id: 1, label: 'Turnkey', active: true, order: 1 },
+      { id: 2, label: 'Design & Build', active: true, order: 2 },
+      { id: 3, label: 'Construction Only', active: true, order: 3 },
+      { id: 4, label: 'Supply Only', active: true, order: 4 }
+    ];
+  };
+
+  const getSoilTypeOptions = () => {
+    if (masterData.soilTypes.length > 0) {
+      return masterData.soilTypes;
+    }
+    // Fallback to hardcoded options
+    return [
+      { id: 1, label: 'Rock', active: true, order: 1 },
+      { id: 2, label: 'Clay', active: true, order: 2 },
+      { id: 3, label: 'Sandy', active: true, order: 3 },
+      { id: 4, label: 'Mixed', active: true, order: 4 },
+      { id: 5, label: 'Unknown', active: true, order: 5 }
+    ];
+  };
+
+  const getSecurityTypeOptions = () => {
+    if (masterData.securityTypes.length > 0) {
+      return masterData.securityTypes;
+    }
+    // Fallback to hardcoded options
+    return [
+      { id: 1, label: '24/7 Guarded', active: true, order: 1 },
+      { id: 2, label: 'CCTV', active: true, order: 2 },
+      { id: 3, label: 'Fenced', active: true, order: 3 },
+      { id: 4, label: 'None', active: true, order: 4 }
+    ];
+  };
+
+  const getSubcontractorTypeOptions = () => {
+    if (masterData.subcontractorTypes.length > 0) {
+      return masterData.subcontractorTypes;
+    }
+    // Fallback to hardcoded options
+    return [
+      { id: 1, label: 'Supply', active: true, order: 1 },
+      { id: 2, label: 'Install', active: true, order: 2 },
+      { id: 3, label: 'Supply & Install', active: true, order: 3 },
+      { id: 4, label: 'Labor Only', active: true, order: 4 }
+    ];
+  };
+
+  const getConsultantRoleOptions = () => {
+    if (masterData.consultantRoles.length > 0) {
+      return masterData.consultantRoles;
+    }
+    // Fallback to hardcoded options
+    return [
+      { id: 1, label: 'Structural Engineer', active: true, order: 1 },
+      { id: 2, label: 'Architect', active: true, order: 2 },
+      { id: 3, label: 'MEP Engineer', active: true, order: 3 },
+      { id: 4, label: 'Project Manager', active: true, order: 4 }
+    ];
+  };
 
   const [formData, setFormData] = useState(() => {
     // Check if we're editing an existing quote
@@ -410,34 +663,62 @@ export const ProposalForm = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="projectType">Project Type *</Label>
-                     <Select value={formData.projectType} onValueChange={value => setFormData({
-                    ...formData,
-                    projectType: value,
-                    subProjectType: ""
-                  })}>
+                     <Select 
+                       value={formData.projectType} 
+                       onValueChange={value => setFormData({
+                         ...formData,
+                         projectType: value,
+                         subProjectType: ""
+                       })}
+                       disabled={loadingStates.isLoading}
+                     >
                        <SelectTrigger>
-                         <SelectValue placeholder="Select project type" />
+                         <SelectValue placeholder={
+                           loadingStates.isLoading ? "Loading project types..." : "Select project type"
+                         } />
                        </SelectTrigger>
                        <SelectContent>
-                         {activeProjectTypes.map(type => <SelectItem key={type.value} value={type.value}>
-                             {type.label}
-                           </SelectItem>)}
+                         {loadingStates.isLoading ? (
+                           <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                         ) : (
+                           getProjectTypeOptions().map(type => (
+                             <SelectItem key={type.id} value={type.id.toString()}>
+                               {type.label}
+                             </SelectItem>
+                           ))
+                         )}
                        </SelectContent>
                      </Select>
                    </div>
                    <div className="space-y-2">
                      <Label htmlFor="subProjectType">Sub Project Type *</Label>
-                     <Select value={formData.subProjectType} onValueChange={value => setFormData({
-                    ...formData,
-                    subProjectType: value
-                  })} disabled={!formData.projectType}>
+                     <Select 
+                       value={formData.subProjectType} 
+                       onValueChange={value => setFormData({
+                         ...formData,
+                         subProjectType: value
+                       })} 
+                       disabled={!formData.projectType || loadingStates.isLoading}
+                     >
                        <SelectTrigger>
-                         <SelectValue placeholder="Select sub project type" />
+                         <SelectValue placeholder={
+                           loadingStates.isLoading ? "Loading sub project types..." : 
+                           !formData.projectType ? "Select project type first" : 
+                           "Select sub project type"
+                         } />
                        </SelectTrigger>
                        <SelectContent>
-                         {formData.projectType && getSubProjectTypesByProjectType(activeProjectTypes.find(pt => pt.value === formData.projectType)?.id || 0).map(subType => <SelectItem key={subType.value} value={subType.value}>
-                             {subType.label}
-                           </SelectItem>)}
+                         {loadingStates.isLoading ? (
+                           <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                         ) : formData.projectType ? (
+                           getSubProjectTypeOptions(parseInt(formData.projectType)).map(subType => (
+                             <SelectItem key={subType.id} value={subType.id.toString()}>
+                               {subType.label}
+                             </SelectItem>
+                           ))
+                         ) : (
+                           <div className="p-2 text-sm text-muted-foreground">Select project type first</div>
+                         )}
                        </SelectContent>
                      </Select>
                    </div>
@@ -446,17 +727,29 @@ export const ProposalForm = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="constructionType">Construction Type *</Label>
-                    <Select value={formData.constructionType} onValueChange={value => setFormData({
-                    ...formData,
-                    constructionType: value
-                  })}>
+                    <Select 
+                      value={formData.constructionType} 
+                      onValueChange={value => setFormData({
+                        ...formData,
+                        constructionType: value
+                      })}
+                      disabled={loadingStates.isLoading}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select construction type" />
+                        <SelectValue placeholder={
+                          loadingStates.isLoading ? "Loading construction types..." : "Select construction type"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        {activeConstructionTypes.map(type => <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>)}
+                        {loadingStates.isLoading ? (
+                          <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                        ) : (
+                          getConstructionTypeOptions().map(type => (
+                            <SelectItem key={type.id} value={type.id.toString()}>
+                              {type.label}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -582,18 +875,29 @@ export const ProposalForm = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="roleOfInsured">Role of Insured *</Label>
-                    <Select value={formData.roleOfInsured} onValueChange={value => setFormData({
-                    ...formData,
-                    roleOfInsured: value
-                  })}>
+                    <Select 
+                      value={formData.roleOfInsured} 
+                      onValueChange={value => setFormData({
+                        ...formData,
+                        roleOfInsured: value
+                      })}
+                      disabled={loadingStates.isLoading}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
+                        <SelectValue placeholder={
+                          loadingStates.isLoading ? "Loading role types..." : "Select role"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="principal">Principal</SelectItem>
-                        <SelectItem value="contractor">Contractor</SelectItem>
-                        <SelectItem value="subcontractor">Subcontractor</SelectItem>
-                        <SelectItem value="jv">JV</SelectItem>
+                        {loadingStates.isLoading ? (
+                          <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                        ) : (
+                          getRoleTypeOptions().map(role => (
+                            <SelectItem key={role.id} value={role.label.toLowerCase().replace(/\s+/g, '_')}>
+                              {role.label}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -685,20 +989,29 @@ export const ProposalForm = () => {
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="contractType">Contract Type *</Label>
-                    <Select value={formData.contractType} onValueChange={value => setFormData({
-                    ...formData,
-                    contractType: value
-                  })}>
+                    <Select 
+                      value={formData.contractType} 
+                      onValueChange={value => setFormData({
+                        ...formData,
+                        contractType: value
+                      })}
+                      disabled={loadingStates.isLoading}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select contract type" />
+                        <SelectValue placeholder={
+                          loadingStates.isLoading ? "Loading contract types..." : "Select contract type"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="turnkey">Turnkey</SelectItem>
-                        <SelectItem value="epc">EPC</SelectItem>
-                        <SelectItem value="design-build">Design & Build</SelectItem>
-                        <SelectItem value="supply">Supply</SelectItem>
-                        <SelectItem value="install">Install</SelectItem>
-                        <SelectItem value="others">Others</SelectItem>
+                        {loadingStates.isLoading ? (
+                          <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                        ) : (
+                          getContractTypeOptions().map(contract => (
+                            <SelectItem key={contract.id} value={contract.label.toLowerCase().replace(/\s+/g, '-')}>
+                              {contract.label}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -743,16 +1056,26 @@ export const ProposalForm = () => {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor={`subcontractor-type-${subcontractor.id}`}>Contract Type *</Label>
-                          <Select value={subcontractor.contractType} onValueChange={value => updateSubcontractor(subcontractor.id, 'contractType', value)}>
+                          <Select 
+                            value={subcontractor.contractType} 
+                            onValueChange={value => updateSubcontractor(subcontractor.id, 'contractType', value)}
+                            disabled={loadingStates.isLoading}
+                          >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
+                              <SelectValue placeholder={
+                                loadingStates.isLoading ? "Loading types..." : "Select type"
+                              } />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="supply">Supply</SelectItem>
-                              <SelectItem value="install">Install</SelectItem>
-                              <SelectItem value="supply-install">Supply & Install</SelectItem>
-                              <SelectItem value="design">Design</SelectItem>
-                              <SelectItem value="others">Others</SelectItem>
+                              {loadingStates.isLoading ? (
+                                <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                              ) : (
+                                getSubcontractorTypeOptions().map(type => (
+                                  <SelectItem key={type.id} value={type.label.toLowerCase().replace(/\s+/g, '-')}>
+                                    {type.label}
+                                  </SelectItem>
+                                ))
+                              )}
                             </SelectContent>
                           </Select>
                         </div>
@@ -786,20 +1109,26 @@ export const ProposalForm = () => {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor={`consultant-role-${consultant.id}`}>Role / Specialization</Label>
-                          <Select value={consultant.role} onValueChange={value => updateConsultant(consultant.id, 'role', value)}>
+                          <Select 
+                            value={consultant.role} 
+                            onValueChange={value => updateConsultant(consultant.id, 'role', value)}
+                            disabled={loadingStates.isLoading}
+                          >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select role" />
+                              <SelectValue placeholder={
+                                loadingStates.isLoading ? "Loading roles..." : "Select role"
+                              } />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Structural Engineer">Structural Engineer</SelectItem>
-                              <SelectItem value="MEP Engineer">MEP Engineer</SelectItem>
-                              <SelectItem value="Civil Engineer">Civil Engineer</SelectItem>
-                              <SelectItem value="Architect">Architect</SelectItem>
-                              <SelectItem value="Project Manager">Project Manager</SelectItem>
-                              <SelectItem value="Geotechnical Engineer">Geotechnical Engineer</SelectItem>
-                              <SelectItem value="Environmental Consultant">Environmental Consultant</SelectItem>
-                              <SelectItem value="Safety Consultant">Safety Consultant</SelectItem>
-                              <SelectItem value="Others">Others</SelectItem>
+                              {loadingStates.isLoading ? (
+                                <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                              ) : (
+                                getConsultantRoleOptions().map(role => (
+                                  <SelectItem key={role.id} value={role.label}>
+                                    {role.label}
+                                  </SelectItem>
+                                ))
+                              )}
                             </SelectContent>
                           </Select>
                         </div>
@@ -894,19 +1223,29 @@ export const ProposalForm = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="soilType">Soil Type *</Label>
-                    <Select value={formData.soilType} onValueChange={value => setFormData({
-                    ...formData,
-                    soilType: value
-                  })}>
+                    <Select 
+                      value={formData.soilType} 
+                      onValueChange={value => setFormData({
+                        ...formData,
+                        soilType: value
+                      })}
+                      disabled={loadingStates.isLoading}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select soil type" />
+                        <SelectValue placeholder={
+                          loadingStates.isLoading ? "Loading soil types..." : "Select soil type"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="rock">Rock</SelectItem>
-                        <SelectItem value="clay">Clay</SelectItem>
-                        <SelectItem value="sandy">Sandy</SelectItem>
-                        <SelectItem value="mixed">Mixed</SelectItem>
-                        <SelectItem value="unknown">Unknown</SelectItem>
+                        {loadingStates.isLoading ? (
+                          <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                        ) : (
+                          getSoilTypeOptions().map(soil => (
+                            <SelectItem key={soil.id} value={soil.label.toLowerCase()}>
+                              {soil.label}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -955,18 +1294,29 @@ export const ProposalForm = () => {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="siteSecurityArrangements">Site Security Arrangements *</Label>
-                    <Select value={formData.siteSecurityArrangements} onValueChange={value => setFormData({
-                    ...formData,
-                    siteSecurityArrangements: value
-                  })}>
+                    <Select 
+                      value={formData.siteSecurityArrangements} 
+                      onValueChange={value => setFormData({
+                        ...formData,
+                        siteSecurityArrangements: value
+                      })}
+                      disabled={loadingStates.isLoading}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select security level" />
+                        <SelectValue placeholder={
+                          loadingStates.isLoading ? "Loading security types..." : "Select security level"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="24-7-guarded">24/7 Guarded</SelectItem>
-                        <SelectItem value="cctv">CCTV</SelectItem>
-                        <SelectItem value="fenced">Fenced</SelectItem>
-                        <SelectItem value="none">None</SelectItem>
+                        {loadingStates.isLoading ? (
+                          <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                        ) : (
+                          getSecurityTypeOptions().map(security => (
+                            <SelectItem key={security.id} value={security.label.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-')}>
+                              {security.label}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>

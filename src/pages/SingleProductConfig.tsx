@@ -1531,22 +1531,30 @@ const SingleProductConfig = () => {
       setTplError(null);
       const insurerId = getInsurerCompanyId();
       if (!insurerId || !product.id) return;
+      
+      // Only send the current remaining extensions (after any removals)
+      const currentExtensions = (tplExtensions || [])
+        .filter(ext => (ext.title && ext.title.trim().length > 0) || (ext.tplLimitValue && String(ext.tplLimitValue).trim().length > 0))
+        .map(ext => ({
+          id: typeof ext.id === 'number' ? ext.id : undefined,
+          title: ext.title || '',
+          description: ext.description || '',
+          limit_value: Number(ext.tplLimitValue || 0),
+          pricing_type: (ext.pricingType === 'fixed' ? 'fixed' : 'percentage') as 'fixed' | 'percentage',
+          pricing_value: Number(ext.loadingDiscount || 0),
+          currency: 'AED',
+        }));
+
+      console.log('🔧 Saving TPL Extensions - Current extensions count:', currentExtensions.length);
+      console.log('🔧 Extensions being sent:', currentExtensions);
+
       const body: UpdateTplRequest = {
         product_id: Number(product.id),
         default_limit: Number(tplLimit || 0),
         currency: 'AED',
-        extensions: tplExtensions
-          .filter(ext => (ext.title && ext.title.trim().length > 0) || (ext.tplLimitValue && String(ext.tplLimitValue).trim().length > 0))
-          .map(ext => ({
-            id: typeof ext.id === 'number' ? ext.id : undefined,
-            title: ext.title || '',
-            description: ext.description || '',
-            limit_value: Number(ext.tplLimitValue || 0),
-            pricing_type: (ext.pricingType === 'fixed' ? 'fixed' : 'percentage'),
-            pricing_value: Number(ext.loadingDiscount || 0),
-            currency: 'AED',
-          })),
+        extensions: currentExtensions,
       };
+      
       await updateTplLimitsAndExtensions(insurerId, product.id as string, body);
       // refresh GET with shimmer
       hasLoadedTplRef.current = false;
@@ -1565,7 +1573,12 @@ const SingleProductConfig = () => {
       setTplExtensions(mapped);
       hasLoadedTplRef.current = true;
       setIsLoadingTpl(false);
-      toast({ title: 'TPL Extensions Saved', description: 'TPL limit & extensions updated successfully.' });
+      
+      console.log('✅ TPL Extensions saved and refreshed successfully');
+      toast({ 
+        title: 'TPL Extensions Saved', 
+        description: `Saved ${currentExtensions.length} TPL extensions successfully!` 
+      });
     } catch (err: any) {
       const status = err?.status as number | undefined;
       const message = err?.message as string | undefined;

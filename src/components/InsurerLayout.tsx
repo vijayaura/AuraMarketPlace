@@ -35,7 +35,7 @@ const sidebarItems = [{
   url: "/insurer/product-config",
   icon: Cog
 }, {
-  title: "Broker Assignments",
+  title: "Broker Product Assignments",
   url: "/insurer/broker-assignments",
   icon: Calculator
 }];
