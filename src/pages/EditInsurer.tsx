@@ -90,6 +90,7 @@ const EditInsurer = () => {
   const { navigateBack } = useNavigationHistory();
   const navigate = useNavigate();
   const { insurerId } = useParams<{ insurerId: string }>();
+  console.log('🔍 EditInsurer received insurerId:', insurerId, 'Type:', typeof insurerId);
   const location = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [insurerData, setInsurerData] = useState<any>(null);

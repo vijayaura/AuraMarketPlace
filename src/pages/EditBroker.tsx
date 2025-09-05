@@ -97,7 +97,8 @@ const EditBroker = () => {
   const { navigateBack } = useNavigationHistory();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { id } = useParams<{ id: string }>();
+  const { brokerId } = useParams<{ brokerId: string }>();
+  console.log('🔍 EditBroker received brokerId:', brokerId, 'Type:', typeof brokerId);
   const [selectedCountries, setSelectedCountries] = useState<number[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<number[]>([]);
   const [availableRegions, setAvailableRegions] = useState<Region[]>([]);
@@ -171,12 +172,12 @@ const EditBroker = () => {
 
   useEffect(() => {
     const load = async () => {
-      if (!id || mastersLoading || lastFetchedIdRef.current === id) return;
-      lastFetchedIdRef.current = id;
+      if (!brokerId || mastersLoading || lastFetchedIdRef.current === brokerId) return;
+      lastFetchedIdRef.current = brokerId;
       setIsLoading(true);
       setLoadError(null);
       try {
-        const data = await getBroker(id);
+        const data = await getBroker(brokerId);
         // Normalized compare helper
         const norm = (s: string | null | undefined) => (s || '').toString().trim().toLowerCase();
         // Map labels to ids
@@ -252,7 +253,7 @@ const EditBroker = () => {
       }
     };
     load();
-  }, [id, mastersLoading]);
+  }, [brokerId, mastersLoading]);
 
   // Update available regions when countries change
   const handleCountryChange = (countryIds: number[]) => {
@@ -287,13 +288,13 @@ const EditBroker = () => {
 
   const [statusChanging, setStatusChanging] = useState(false);
   const confirmStatusChange = async () => {
-    if (pendingStatusChange === null || !id) return;
+    if (pendingStatusChange === null || !brokerId) return;
     try {
       setStatusChanging(true);
       if (pendingStatusChange) {
-        await activateBroker(id);
+        await activateBroker(brokerId);
       } else {
-        await deactivateBroker(id);
+        await deactivateBroker(brokerId);
       }
       setIsActive(pendingStatusChange);
       toast({ title: 'Status Updated', description: `Broker has been ${pendingStatusChange ? 'activated' : 'deactivated'} successfully.` });
@@ -326,7 +327,7 @@ const EditBroker = () => {
     setIsLoading(true);
     
     try {
-      if (!id) throw new Error('Missing broker id');
+      if (!brokerId) throw new Error('Missing broker id');
 
       const countriesLabels = (selectedCountries || [])
         .map(cid => countries.find(c => c.id === cid)?.label)
@@ -363,7 +364,7 @@ const EditBroker = () => {
         join_date: values.validityStartDate || null, // backend example includes join_date; adjust if form collects
       };
 
-      await updateBroker(id, payload);
+      await updateBroker(brokerId, payload);
       
       toast({
         title: "Broker Updated Successfully",

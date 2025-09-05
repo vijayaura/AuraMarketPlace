@@ -6,5 +6,6 @@ export * from './brokers';
 export * from './masters';
 export * from './admin';
 export * from './users';
+export * from './quotes';
 
 

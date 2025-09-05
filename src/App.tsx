@@ -109,7 +109,7 @@ const App = () => (
             <Route path="create-insurer" element={<CreateInsurer />} />
             <Route path="insurer/:insurerId/edit" element={<EditInsurer />} />
             <Route path="create-broker" element={<CreateBroker />} />
-            <Route path="broker/:id/edit" element={<EditBroker />} />
+            <Route path="broker/:brokerId/edit" element={<EditBroker />} />
             
             <Route path="insurer/:insurerId/dashboard" element={<InsurerDetailDashboard />} />
             <Route path="insurer/:insurerId/quote/:quoteId" element={<MarketAdminInsurerQuoteDetails />} />

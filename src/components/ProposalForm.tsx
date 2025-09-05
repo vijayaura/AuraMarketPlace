@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Building, MapPin, Calendar, DollarSign, Shield, FileText, Plus, Trash2, Car, Umbrella } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LocationSearch } from "./LocationSearch";
+import { LocationSearchModal } from "./LocationSearchModal";
 import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesByProjectType } from "@/lib/masters-data";
 import { getActiveCountries, getRegionsByCountry, getZonesByRegion } from "@/lib/location-data";
 import { 
@@ -27,6 +27,8 @@ import {
   type SimpleMasterItem,
   type SubProjectTypeItem
 } from "@/lib/api/masters";
+import { getBroker, type Broker } from "@/lib/api/brokers";
+import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse } from "@/lib/api/quotes";
 import { useToast } from "@/hooks/use-toast";
 export const ProposalForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -62,6 +64,22 @@ export const ProposalForm = () => {
     errorMessage: ''
   });
 
+  // Broker Data State Management
+  const [brokerData, setBrokerData] = useState<Broker | null>(null);
+  const [brokerLoading, setBrokerLoading] = useState({
+    isLoading: false,
+    hasError: false,
+    errorMessage: ''
+  });
+
+  // Location Search Modal State
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
+  // Quote Project API State
+  const [isSavingProject, setIsSavingProject] = useState(false);
+  const [projectDataExists, setProjectDataExists] = useState(false);
+  const [savedProjectData, setSavedProjectData] = useState<QuoteProjectResponse | null>(null);
+
   // Default form data
   const getDefaultFormData = () => ({
     projectName: "Al Habtoor Tower Development",
@@ -75,7 +93,7 @@ export const ProposalForm = () => {
     coordinates: "25.2048, 55.2708",
     projectValue: "9175000",
     startDate: new Date().toISOString().split('T')[0],
-    completionDate: "2024-09-15",
+    completionDate: "",
     constructionPeriod: "18",
     maintenancePeriod: "24",
     thirdPartyLimit: "7340000",
@@ -223,6 +241,28 @@ export const ProposalForm = () => {
       }
 
       console.log('✅ Master data loaded successfully');
+      
+      // Clear form data fields that are populated from master data to show placeholders
+      setFormData(prev => ({
+        ...prev,
+        projectType: "",
+        subProjectType: "",
+        constructionType: "",
+        roleOfInsured: "",
+        contractType: "",
+        soilType: "",
+        siteSecurityArrangements: "",
+        // Clear dynamic fields
+        consultants: prev.consultants.map(consultant => ({
+          ...consultant,
+          role: ""
+        })),
+        subContractors: prev.subContractors.map(subcontractor => ({
+          ...subcontractor,
+          contractType: ""
+        }))
+      }));
+      
       setLoadingStates({ isLoading: false, hasError: false, errorMessage: '' });
 
     } catch (error: any) {
@@ -243,9 +283,48 @@ export const ProposalForm = () => {
     }
   };
 
+  // Broker Data Fetching Function
+  const fetchBrokerData = async () => {
+    try {
+      console.log('🚀 Loading broker data for geographical coverage...');
+      setBrokerLoading({ isLoading: true, hasError: false, errorMessage: '' });
+      
+      // Fetch broker details (assuming broker ID 1 for now)
+      const broker = await getBroker(1);
+      setBrokerData(broker);
+      
+      console.log('✅ Broker data loaded successfully:', broker);
+      console.log('🌍 Operating countries:', broker.operatingCountries);
+      console.log('🌍 Operating regions:', broker.operatingRegions);
+      console.log('🌍 Operating zones:', broker.operatingZones);
+      
+      // Clear geographical fields to show placeholders
+      setFormData(prev => ({
+        ...prev,
+        country: "",
+        region: "",
+        zone: ""
+      }));
+      
+    } catch (error: any) {
+      console.error('❌ Error loading broker data:', error);
+      const errorMessage = error?.message || 'Failed to load broker geographical coverage';
+      setBrokerLoading({ isLoading: false, hasError: true, errorMessage });
+      
+      toast({
+        title: "Warning",
+        description: "Could not load broker geographical coverage. Using default options.",
+        variant: "destructive"
+      });
+    } finally {
+      setBrokerLoading({ isLoading: false, hasError: false, errorMessage: '' });
+    }
+  };
+
   // Load master data when component mounts
   useEffect(() => {
     fetchMasterData();
+    fetchBrokerData();
   }, []);
 
   // Helper functions to get options with fallbacks
@@ -370,6 +449,66 @@ export const ProposalForm = () => {
     ];
   };
 
+  // Geographical Helper Functions from Broker Data
+  const getBrokerCountryOptions = () => {
+    if (brokerData?.operatingCountries && brokerData.operatingCountries.length > 0) {
+      return brokerData.operatingCountries.map((country, index) => ({
+        id: index + 1,
+        value: country.toLowerCase().replace(/\s+/g, '-'),
+        label: country
+      }));
+    }
+    // Fallback to legacy data
+    return activeCountries;
+  };
+
+  const getBrokerRegionOptions = (selectedCountry: string) => {
+    if (brokerData?.operatingRegions && brokerData.operatingRegions.length > 0) {
+      // Filter regions based on selected country
+      const countryRegions = brokerData.operatingRegions.filter(region => {
+        // Simple matching - in real implementation, you'd have proper country-region mapping
+        return true; // For now, return all regions
+      });
+      
+      return countryRegions.map((region, index) => {
+        const regionName = typeof region === 'string' ? region : region.name || String(region);
+        return {
+          id: index + 1,
+          value: regionName.toLowerCase().replace(/\s+/g, '-'),
+          label: regionName
+        };
+      });
+    }
+    // Fallback to legacy data
+    const country = activeCountries.find(c => c.value === selectedCountry);
+    return country ? getRegionsByCountry(country.id) : [];
+  };
+
+  const getBrokerZoneOptions = (selectedRegion: string) => {
+    if (brokerData?.operatingZones && brokerData.operatingZones.length > 0) {
+      // Filter zones based on selected region
+      const regionZones = brokerData.operatingZones.filter(zone => {
+        // Simple matching - in real implementation, you'd have proper region-zone mapping
+        return true; // For now, return all zones
+      });
+      
+      return regionZones.map((zone, index) => {
+        const zoneName = typeof zone === 'string' ? zone : zone.name || String(zone);
+        return {
+          id: index + 1,
+          value: zoneName.toLowerCase().replace(/\s+/g, '-'),
+          label: zoneName
+        };
+      });
+    }
+    // Fallback to legacy data
+    const country = activeCountries.find(c => c.value === formData.country);
+    if (!country) return [];
+    const regions = getRegionsByCountry(country.id);
+    const region = regions.find(r => r.value === selectedRegion);
+    return region ? getZonesByRegion(region.id) : [];
+  };
+
   const [formData, setFormData] = useState(() => {
     // Check if we're editing an existing quote
     const editingQuote = location.state?.editingQuote;
@@ -487,6 +626,195 @@ export const ProposalForm = () => {
     return Object.keys(errors).length === 0;
   };
 
+
+  // Calculate construction period in months
+  const calculateConstructionPeriod = (startDate: string, completionDate: string) => {
+    if (!startDate || !completionDate) return "";
+    
+    const start = new Date(startDate);
+    const completion = new Date(completionDate);
+    
+    if (completion <= start) return "";
+    
+    // Calculate the difference in months
+    const yearDiff = completion.getFullYear() - start.getFullYear();
+    const monthDiff = completion.getMonth() - start.getMonth();
+    const totalMonths = yearDiff * 12 + monthDiff;
+    
+    // Add partial month if completion day is after start day
+    if (completion.getDate() > start.getDate()) {
+      return (totalMonths + 1).toString();
+    }
+    
+    return totalMonths.toString();
+  };
+
+  // Update construction period when dates change
+  const updateConstructionPeriod = (startDate: string, completionDate: string) => {
+    const period = calculateConstructionPeriod(startDate, completionDate);
+    setFormData(prev => ({
+      ...prev,
+      constructionPeriod: period
+    }));
+  };
+
+  // Transform form data to API format
+  const transformFormDataToAPI = (): QuoteProjectRequest => {
+    // Parse coordinates
+    const [latitude, longitude] = formData.coordinates 
+      ? formData.coordinates.split(',').map(coord => parseFloat(coord.trim()))
+      : [0, 0];
+
+    // Get project type name from master data
+    const projectTypeName = masterData.projectTypes.find(pt => pt.id.toString() === formData.projectType)?.label || 
+                           getActiveProjectTypes().find(pt => pt.id.toString() === formData.projectType)?.label || 
+                           formData.projectType;
+
+    // Get sub project type name from master data
+    const subProjectTypeName = masterData.subProjectTypes.find(spt => spt.id.toString() === formData.subProjectType)?.label ||
+                              getSubProjectTypesByProjectType(parseInt(formData.projectType)).find(spt => spt.id.toString() === formData.subProjectType)?.label ||
+                              formData.subProjectType;
+
+    // Get construction type name from master data
+    const constructionTypeName = masterData.constructionTypes.find(ct => ct.id.toString() === formData.constructionType)?.label ||
+                                getActiveConstructionTypes().find(ct => ct.id.toString() === formData.constructionType)?.label ||
+                                formData.constructionType;
+
+    return {
+      client_name: formData.insuredName || "Unknown Client",
+      project_name: formData.projectName,
+      project_type: projectTypeName,
+      sub_project_type: subProjectTypeName,
+      construction_type: constructionTypeName,
+      address: formData.projectAddress,
+      country: formData.country.toUpperCase(),
+      region: formData.region,
+      zone: formData.zone,
+      latitude: latitude,
+      longitude: longitude,
+      sum_insured: parseInt(formData.projectValue) || 0,
+      start_date: formData.startDate,
+      completion_date: formData.completionDate,
+      construction_period_months: parseInt(formData.constructionPeriod) || 0,
+      maintenance_period_months: parseInt(formData.maintenancePeriod) || 0
+    };
+  };
+
+  // Validate project details before saving
+  const validateProjectDetails = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    if (!formData.projectName.trim()) {
+      errors.projectName = "Project name is required";
+    }
+    if (!formData.projectType) {
+      errors.projectType = "Project type is required";
+    }
+    if (!formData.subProjectType) {
+      errors.subProjectType = "Sub project type is required";
+    }
+    if (!formData.constructionType) {
+      errors.constructionType = "Construction type is required";
+    }
+    if (!formData.projectAddress.trim()) {
+      errors.projectAddress = "Project address is required";
+    }
+    if (!formData.startDate) {
+      errors.startDate = "Start date is required";
+    }
+    if (!formData.completionDate) {
+      errors.completionDate = "Completion date is required";
+    }
+    if (!formData.projectValue || parseInt(formData.projectValue) <= 0) {
+      errors.projectValue = "Valid project value is required";
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Save project data via API
+  const saveProjectData = async (): Promise<boolean> => {
+    // Validate required fields first
+    if (!validateProjectDetails()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields before proceeding.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      setIsSavingProject(true);
+      const apiData = transformFormDataToAPI();
+      
+      let response: QuoteProjectResponse;
+      if (projectDataExists) {
+        // Update existing project data
+        response = await updateQuoteProject(apiData);
+        toast({
+          title: "Project Updated",
+          description: "Project details have been updated successfully.",
+        });
+      } else {
+        // Create new project data
+        response = await createQuoteProject(apiData);
+        setProjectDataExists(true);
+        toast({
+          title: "Project Saved",
+          description: "Project details have been saved successfully.",
+        });
+      }
+      
+      setSavedProjectData(response);
+      return true;
+    } catch (error: any) {
+      console.error('Error saving project data:', error);
+      
+      let errorMessage = "Failed to save project details. Please try again.";
+      if (error.response?.status === 400) {
+        errorMessage = "Invalid project data. Please check your inputs.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Authentication required. Please log in again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "You don't have permission to save project data.";
+      } else if (error.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      }
+      
+      toast({
+        title: "Save Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSavingProject(false);
+    }
+  };
+
+  // Effect to validate and clear completion date if it becomes invalid
+  useEffect(() => {
+    if (formData.startDate && formData.completionDate) {
+      const start = new Date(formData.startDate);
+      const completion = new Date(formData.completionDate);
+      
+      if (completion <= start) {
+        setFormData(prev => ({
+          ...prev,
+          completionDate: "",
+          constructionPeriod: ""
+        }));
+        toast({
+          title: "Completion Date Cleared",
+          description: "Completion date was cleared as it was before or equal to the start date.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [formData.startDate, formData.completionDate]);
+
   // Update debris removal limit when project value changes
   const handleProjectValueChange = (value: string) => {
     const defaults = calculateDefaultValues(value);
@@ -596,7 +924,7 @@ export const ProposalForm = () => {
         
         <Card className="shadow-large border-border w-full overflow-hidden">
           <CardHeader className="px-4 sm:px-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+            <div className="flex items-center gap-4">
               <CardTitle className="text-xl">
                 {location.state?.editingQuote ? 'Edit Quote' : 'Create New Quote'}
               </CardTitle>
@@ -605,11 +933,56 @@ export const ProposalForm = () => {
               </div>
             </div>
             
-            {/* Progress Bar */}
-            <div className="w-full bg-muted rounded-full h-2">
-              <div className="bg-gradient-primary h-2 rounded-full transition-smooth" style={{
-              width: `${(currentStep + 1) / steps.length * 100}%`
-            }} />
+            {/* Progress Bar with Navigation Buttons */}
+            <div className="flex items-center gap-4">
+              {/* Back Button */}
+              <div className="flex-shrink-0">
+                {currentStep > 0 && (
+                  <Button variant="outline" onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}>
+                    Back
+                  </Button>
+                )}
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="flex-1 bg-muted rounded-full h-2">
+                <div className="bg-gradient-primary h-2 rounded-full transition-smooth" style={{
+                  width: `${(currentStep + 1) / steps.length * 100}%`
+                }} />
+              </div>
+              
+              {/* Next/Proceed Button */}
+              <div className="flex-shrink-0">
+                {currentStep === steps.length - 1 ? (
+                  <Button variant="hero" size="lg" onClick={handleSubmit}>
+                    Proceed
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={async () => {
+                      // If moving from project details step (step 0), save data first
+                      if (currentStep === 0) {
+                        const success = await saveProjectData();
+                        if (success) {
+                          setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                        }
+                      } else {
+                        setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                      }
+                    }}
+                    disabled={isSavingProject}
+                  >
+                    {isSavingProject ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      'Next'
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
 
@@ -656,15 +1029,34 @@ export const ProposalForm = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="projectName">Project Name *</Label>
-                    <Input id="projectName" value={formData.projectName} onChange={e => setFormData({
-                    ...formData,
-                    projectName: e.target.value
-                  })} placeholder="Full name of the construction project" />
+                    <Input 
+                      id="projectName" 
+                      value={formData.projectName} 
+                      onChange={e => {
+                        setFormData({
+                          ...formData,
+                          projectName: e.target.value
+                        });
+                        // Clear validation error when user starts typing
+                        if (validationErrors.projectName) {
+                          setValidationErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.projectName;
+                            return newErrors;
+                          });
+                        }
+                      }} 
+                      placeholder="Full name of the construction project"
+                      className={validationErrors.projectName ? "border-red-500" : ""}
+                    />
+                    {validationErrors.projectName && (
+                      <p className="text-sm text-red-500">{validationErrors.projectName}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="projectType">Project Type *</Label>
                      <Select 
-                       value={formData.projectType} 
+                       value={formData.projectType || undefined} 
                        onValueChange={value => setFormData({
                          ...formData,
                          projectType: value,
@@ -693,11 +1085,11 @@ export const ProposalForm = () => {
                    <div className="space-y-2">
                      <Label htmlFor="subProjectType">Sub Project Type *</Label>
                      <Select 
-                       value={formData.subProjectType} 
+                       value={formData.subProjectType || undefined} 
                        onValueChange={value => setFormData({
                          ...formData,
                          subProjectType: value
-                       })} 
+                       })}
                        disabled={!formData.projectType || loadingStates.isLoading}
                      >
                        <SelectTrigger>
@@ -722,127 +1114,274 @@ export const ProposalForm = () => {
                        </SelectContent>
                      </Select>
                    </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="constructionType">Construction Type *</Label>
+                     <Select 
+                       value={formData.constructionType || undefined} 
+                       onValueChange={value => setFormData({
+                         ...formData,
+                         constructionType: value
+                       })}
+                       disabled={loadingStates.isLoading}
+                     >
+                       <SelectTrigger>
+                         <SelectValue placeholder={
+                           loadingStates.isLoading ? "Loading construction types..." : "Select construction type"
+                         } />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {loadingStates.isLoading ? (
+                           <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                         ) : (
+                           getConstructionTypeOptions().map(type => (
+                             <SelectItem key={type.id} value={type.id.toString()}>
+                               {type.label}
+                             </SelectItem>
+                           ))
+                         )}
+                       </SelectContent>
+                     </Select>
+                   </div>
                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="projectAddress">Project Address *</Label>
+                  <Input 
+                    id="projectAddress" 
+                    value={formData.projectAddress} 
+                    onChange={e => {
+                      setFormData({
+                        ...formData,
+                        projectAddress: e.target.value
+                      });
+                      // Clear validation error when user starts typing
+                      if (validationErrors.projectAddress) {
+                        setValidationErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.projectAddress;
+                          return newErrors;
+                        });
+                      }
+                    }} 
+                    placeholder="Location of the project site"
+                    className={validationErrors.projectAddress ? "border-red-500" : ""}
+                  />
+                  {validationErrors.projectAddress && (
+                    <p className="text-sm text-red-500">{validationErrors.projectAddress}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="constructionType">Construction Type *</Label>
+                    <Label htmlFor="country">Country *</Label>
                     <Select 
-                      value={formData.constructionType} 
+                      value={formData.country || undefined} 
                       onValueChange={value => setFormData({
                         ...formData,
-                        constructionType: value
+                        country: value,
+                        region: "",
+                        zone: ""
                       })}
-                      disabled={loadingStates.isLoading}
+                      disabled={brokerLoading.isLoading}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={
-                          loadingStates.isLoading ? "Loading construction types..." : "Select construction type"
+                          brokerLoading.isLoading ? "Loading countries..." : "Select country"
                         } />
                       </SelectTrigger>
                       <SelectContent>
-                        {loadingStates.isLoading ? (
+                        {brokerLoading.isLoading ? (
                           <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
                         ) : (
-                          getConstructionTypeOptions().map(type => (
-                            <SelectItem key={type.id} value={type.id.toString()}>
-                              {type.label}
+                          getBrokerCountryOptions().map(country => (
+                            <SelectItem key={country.value} value={country.value}>
+                              {country.label}
                             </SelectItem>
                           ))
                         )}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="projectAddress">Project Address *</Label>
-                    <Textarea id="projectAddress" value={formData.projectAddress} onChange={e => setFormData({
-                    ...formData,
-                    projectAddress: e.target.value
-                  })} placeholder="Location of the project site" rows={2} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="country">Country *</Label>
-                    <Select value={formData.country} onValueChange={value => setFormData({
-                    ...formData,
-                    country: value,
-                    region: "",
-                    zone: ""
-                  })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {activeCountries.map(country => <SelectItem key={country.value} value={country.value}>
-                            {country.label}
-                          </SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="region">Region *</Label>
-                    <Select value={formData.region} onValueChange={value => setFormData({
-                    ...formData,
-                    region: value,
-                    zone: ""
-                  })} disabled={!formData.country}>
+                    <Select 
+                      value={formData.region || undefined} 
+                      onValueChange={value => setFormData({
+                        ...formData,
+                        region: value,
+                        zone: ""
+                      })} 
+                      disabled={!formData.country || brokerLoading.isLoading}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select region" />
+                        <SelectValue placeholder={
+                          !formData.country ? "Select country first" : 
+                          brokerLoading.isLoading ? "Loading regions..." : "Select region"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        {formData.country && getRegionsByCountry(activeCountries.find(c => c.value === formData.country)?.id || 0).map(region => <SelectItem key={region.value} value={region.value}>
+                        {formData.country && getBrokerRegionOptions(formData.country).map(region => (
+                          <SelectItem key={region.value} value={region.value}>
                             {region.label}
-                          </SelectItem>)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="zone">Zone *</Label>
-                    <Select value={formData.zone} onValueChange={value => setFormData({
-                    ...formData,
-                    zone: value
-                  })} disabled={!formData.region}>
+                    <Select 
+                      value={formData.zone || undefined} 
+                      onValueChange={value => setFormData({
+                        ...formData,
+                        zone: value
+                      })} 
+                      disabled={!formData.region || brokerLoading.isLoading}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select zone" />
+                        <SelectValue placeholder={
+                          !formData.region ? "Select region first" : 
+                          brokerLoading.isLoading ? "Loading zones..." : "Select zone"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        {formData.region && getZonesByRegion(getRegionsByCountry(activeCountries.find(c => c.value === formData.country)?.id || 0).find(r => r.value === formData.region)?.id || 0).map(zone => <SelectItem key={zone.value} value={zone.value}>
+                        {formData.region && getBrokerZoneOptions(formData.region).map(zone => (
+                          <SelectItem key={zone.value} value={zone.value}>
                             {zone.label}
-                          </SelectItem>)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="coordinates">Latitude & Longitude</Label>
+                    <div className="relative">
+                      <Input 
+                        id="coordinates"
+                        placeholder="Latitude, Longitude"
+                        value={formData.coordinates || ''}
+                        onChange={e => setFormData({
+                          ...formData,
+                          coordinates: e.target.value
+                        })}
+                        className="pr-10"
+                      />
+                      <Button 
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                        onClick={() => setIsLocationModalOpen(true)}
+                      >
+                        <MapPin className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4 md:gap-6">
-                  <LocationSearch value={formData.coordinates} onChange={coordinates => setFormData({
-                  ...formData,
-                  coordinates
-                })} projectAddress={formData.projectAddress} onAddressChange={address => setFormData({
-                  ...formData,
-                  projectAddress: address
-                })} />
-                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="startDate">Start Date *</Label>
-                    <Input id="startDate" type="date" value={formData.startDate} onChange={e => setFormData({
-                    ...formData,
-                    startDate: e.target.value
-                  })} />
+                    <Input 
+                      id="startDate" 
+                      type="date" 
+                      value={formData.startDate} 
+                      onChange={e => {
+                        const newStartDate = e.target.value;
+                        const completionDate = formData.completionDate;
+                        
+                        // If completion date exists and is before or equal to new start date, clear it
+                        if (completionDate && newStartDate) {
+                          const start = new Date(newStartDate);
+                          const completion = new Date(completionDate);
+                          
+                          if (completion <= start) {
+                            setFormData({
+                              ...formData,
+                              startDate: newStartDate,
+                              completionDate: "" // Clear completion date if it's invalid
+                            });
+                            // Update construction period (will be empty since completion date is cleared)
+                            updateConstructionPeriod(newStartDate, "");
+                            toast({
+                              title: "Completion Date Cleared",
+                              description: "Completion date was cleared as it was before or equal to the new start date.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                        }
+                        
+                        setFormData({
+                          ...formData,
+                          startDate: newStartDate
+                        });
+                        // Update construction period
+                        updateConstructionPeriod(newStartDate, formData.completionDate);
+                        // Clear any existing validation errors
+                        setValidationErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.completionDate;
+                          return newErrors;
+                        });
+                      }}
+                    />
                     <p className="text-xs text-muted-foreground">Planned project commencement date</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="completionDate">Completion Date *</Label>
-                    <Input id="completionDate" type="date" value={formData.completionDate} onChange={e => setFormData({
-                    ...formData,
-                    completionDate: e.target.value
-                  })} />
+                    <Input 
+                      id="completionDate" 
+                      type="date" 
+                      value={formData.completionDate} 
+                      min={formData.startDate ? (() => {
+                        const startDate = new Date(formData.startDate);
+                        const nextDay = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+                        return nextDay.toISOString().split('T')[0];
+                      })() : undefined}
+                      onChange={e => {
+                        const newCompletionDate = e.target.value;
+                        const startDate = formData.startDate;
+                        
+                        // Check if completion date is before or equal to start date
+                        if (startDate && newCompletionDate) {
+                          const start = new Date(startDate);
+                          const completion = new Date(newCompletionDate);
+                          
+                          if (completion <= start) {
+                            toast({
+                              title: "Invalid Date",
+                              description: "Completion date cannot be less than or equal to start date.",
+                              variant: "destructive",
+                            });
+                            // Clear the completion date if it's invalid
+                            setFormData(prev => ({
+                              ...prev,
+                              completionDate: ""
+                            }));
+                            updateConstructionPeriod(startDate, "");
+                            return;
+                          }
+                        }
+                        
+                        setFormData({
+                          ...formData,
+                          completionDate: newCompletionDate
+                        });
+                        // Update construction period
+                        updateConstructionPeriod(formData.startDate, newCompletionDate);
+                        // Clear any existing validation errors
+                        setValidationErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.completionDate;
+                          return newErrors;
+                        });
+                      }}
+                    />
                     <p className="text-xs text-muted-foreground">Expected project end date</p>
                   </div>
                 </div>
@@ -876,7 +1415,7 @@ export const ProposalForm = () => {
                   <div className="space-y-2">
                     <Label htmlFor="roleOfInsured">Role of Insured *</Label>
                     <Select 
-                      value={formData.roleOfInsured} 
+                      value={formData.roleOfInsured || undefined} 
                       onValueChange={value => setFormData({
                         ...formData,
                         roleOfInsured: value
@@ -885,7 +1424,7 @@ export const ProposalForm = () => {
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={
-                          loadingStates.isLoading ? "Loading role types..." : "Select role"
+                          loadingStates.isLoading ? "Loading role types..." : "Select role of insured"
                         } />
                       </SelectTrigger>
                       <SelectContent>
@@ -915,12 +1454,12 @@ export const ProposalForm = () => {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="lossesInLastFiveYears">Any insurance losses in last 5 years? *</Label>
-                      <Select value={formData.lossesInLastFiveYears} onValueChange={value => setFormData({
+                      <Select value={formData.lossesInLastFiveYears || undefined} onValueChange={value => setFormData({
                       ...formData,
                       lossesInLastFiveYears: value
                     })}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select option" />
+                          <SelectValue placeholder="Select yes or no" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="yes">Yes</SelectItem>
@@ -990,7 +1529,7 @@ export const ProposalForm = () => {
                   <div className="space-y-2">
                     <Label htmlFor="contractType">Contract Type *</Label>
                     <Select 
-                      value={formData.contractType} 
+                      value={formData.contractType || undefined} 
                       onValueChange={value => setFormData({
                         ...formData,
                         contractType: value
@@ -1057,13 +1596,13 @@ export const ProposalForm = () => {
                         <div className="space-y-2">
                           <Label htmlFor={`subcontractor-type-${subcontractor.id}`}>Contract Type *</Label>
                           <Select 
-                            value={subcontractor.contractType} 
+                            value={subcontractor.contractType || undefined} 
                             onValueChange={value => updateSubcontractor(subcontractor.id, 'contractType', value)}
                             disabled={loadingStates.isLoading}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder={
-                                loadingStates.isLoading ? "Loading types..." : "Select type"
+                                loadingStates.isLoading ? "Loading contract types..." : "Select contract type"
                               } />
                             </SelectTrigger>
                             <SelectContent>
@@ -1110,13 +1649,13 @@ export const ProposalForm = () => {
                         <div className="space-y-2">
                           <Label htmlFor={`consultant-role-${consultant.id}`}>Role / Specialization</Label>
                           <Select 
-                            value={consultant.role} 
+                            value={consultant.role || undefined} 
                             onValueChange={value => updateConsultant(consultant.id, 'role', value)}
                             disabled={loadingStates.isLoading}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder={
-                                loadingStates.isLoading ? "Loading roles..." : "Select role"
+                                loadingStates.isLoading ? "Loading roles..." : "Select role / specialization"
                               } />
                             </SelectTrigger>
                             <SelectContent>
@@ -1151,12 +1690,12 @@ export const ProposalForm = () => {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="nearWaterBody">Is site near water body? (Within 100 meters)*</Label>
-                    <Select value={formData.nearWaterBody} onValueChange={value => setFormData({
+                    <Select value={formData.nearWaterBody || undefined} onValueChange={value => setFormData({
                     ...formData,
                     nearWaterBody: value
                   })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select option" />
+                        <SelectValue placeholder="Select yes or no" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="yes">Yes</SelectItem>
@@ -1174,12 +1713,12 @@ export const ProposalForm = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="floodProneZone">Is site in flood-prone zone? *</Label>
-                    <Select value={formData.floodProneZone} onValueChange={value => setFormData({
+                    <Select value={formData.floodProneZone || undefined} onValueChange={value => setFormData({
                     ...formData,
                     floodProneZone: value
                   })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select option" />
+                        <SelectValue placeholder="Select yes or no" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="yes">Yes</SelectItem>
@@ -1193,12 +1732,12 @@ export const ProposalForm = () => {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="withinCityCenter">Is site within city center? *</Label>
-                    <Select value={formData.withinCityCenter} onValueChange={value => setFormData({
+                    <Select value={formData.withinCityCenter || undefined} onValueChange={value => setFormData({
                     ...formData,
                     withinCityCenter: value
                   })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select option" />
+                        <SelectValue placeholder="Select yes or no" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="yes">Yes</SelectItem>
@@ -1207,12 +1746,12 @@ export const ProposalForm = () => {
                     </Select>
                     {formData.withinCityCenter === "yes" && <div className="space-y-2 mt-3">
                         <Label htmlFor="cityAreaType">Area Type</Label>
-                        <Select value={formData.cityAreaType} onValueChange={value => setFormData({
+                        <Select value={formData.cityAreaType || undefined} onValueChange={value => setFormData({
                       ...formData,
                       cityAreaType: value
                     })}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select area type" />
+                            <SelectValue placeholder="Select urban or congested" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="urban">Urban</SelectItem>
@@ -1224,7 +1763,7 @@ export const ProposalForm = () => {
                   <div className="space-y-2">
                     <Label htmlFor="soilType">Soil Type *</Label>
                     <Select 
-                      value={formData.soilType} 
+                      value={formData.soilType || undefined} 
                       onValueChange={value => setFormData({
                         ...formData,
                         soilType: value
@@ -1254,12 +1793,12 @@ export const ProposalForm = () => {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="existingStructure">Existing Structure on Site? *</Label>
-                    <Select value={formData.existingStructure} onValueChange={value => setFormData({
+                    <Select value={formData.existingStructure || undefined} onValueChange={value => setFormData({
                     ...formData,
                     existingStructure: value
                   })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select option" />
+                        <SelectValue placeholder="Select yes or no" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="yes">Yes</SelectItem>
@@ -1276,12 +1815,12 @@ export const ProposalForm = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="blastingExcavation">Blasting/Deep Excavation? *</Label>
-                    <Select value={formData.blastingExcavation} onValueChange={value => setFormData({
+                    <Select value={formData.blastingExcavation || undefined} onValueChange={value => setFormData({
                     ...formData,
                     blastingExcavation: value
                   })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select option" />
+                        <SelectValue placeholder="Select yes or no" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="yes">Yes</SelectItem>
@@ -1295,7 +1834,7 @@ export const ProposalForm = () => {
                   <div className="space-y-2">
                     <Label htmlFor="siteSecurityArrangements">Site Security Arrangements *</Label>
                     <Select 
-                      value={formData.siteSecurityArrangements} 
+                      value={formData.siteSecurityArrangements || undefined} 
                       onValueChange={value => setFormData({
                         ...formData,
                         siteSecurityArrangements: value
@@ -1304,7 +1843,7 @@ export const ProposalForm = () => {
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={
-                          loadingStates.isLoading ? "Loading security types..." : "Select security level"
+                          loadingStates.isLoading ? "Loading security types..." : "Select site security arrangements"
                         } />
                       </SelectTrigger>
                       <SelectContent>
@@ -1337,8 +1876,28 @@ export const ProposalForm = () => {
                       <div className="grid md:grid-cols-1 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="projectValue">Project Value (AED/USD) *</Label>
-                          <Input id="projectValue" type="number" value={formData.projectValue} onChange={e => handleProjectValueChange(e.target.value)} placeholder="Total contract value" />
+                          <Input 
+                            id="projectValue" 
+                            type="number" 
+                            value={formData.projectValue} 
+                            onChange={e => {
+                              handleProjectValueChange(e.target.value);
+                              // Clear validation error when user starts typing
+                              if (validationErrors.projectValue) {
+                                setValidationErrors(prev => {
+                                  const newErrors = { ...prev };
+                                  delete newErrors.projectValue;
+                                  return newErrors;
+                                });
+                              }
+                            }} 
+                            placeholder="Total contract value"
+                            className={validationErrors.projectValue ? "border-red-500" : ""}
+                          />
                           <p className="text-xs text-muted-foreground">Total estimated project cost</p>
+                          {validationErrors.projectValue && (
+                            <p className="text-sm text-red-500">{validationErrors.projectValue}</p>
+                          )}
                         </div>
                       </div>
                       <div className="grid md:grid-cols-2 gap-4">
@@ -1414,12 +1973,12 @@ export const ProposalForm = () => {
                       <div className="grid md:grid-cols-1 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="crossLiabilityCover">Cross Liability Cover</Label>
-                        <Select value={formData.crossLiabilityCover} onValueChange={value => setFormData({
+                        <Select value={formData.crossLiabilityCover || undefined} onValueChange={value => setFormData({
                         ...formData,
                         crossLiabilityCover: value
                       })}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Include cross liability" />
+                            <SelectValue placeholder="Select yes or no" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="yes">Yes</SelectItem>
@@ -1437,21 +1996,23 @@ export const ProposalForm = () => {
 
             </Tabs>
 
-            <div className="flex justify-between mt-8">
-              {currentStep > 0 && <Button variant="outline" onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}>
-                  Back
-                </Button>}
-              
-              <div className="ml-auto">
-                {currentStep === steps.length - 1 ? <Button variant="hero" size="lg" onClick={handleSubmit}>
-                    Proceed
-                  </Button> : <Button onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}>
-                    Next
-                  </Button>}
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Location Search Modal */}
+      <LocationSearchModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        onLocationSelect={(coordinates, address) => {
+          setFormData({
+            ...formData,
+            coordinates,
+            projectAddress: address
+          });
+          setIsLocationModalOpen(false);
+        }}
+        projectAddress={formData.projectAddress}
+      />
     </section>;
 };

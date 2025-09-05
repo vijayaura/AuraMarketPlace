@@ -174,7 +174,11 @@ const MarketAdminInsurerManagement = () => {
                            <Button 
                              variant="outline"
                              size="sm"
-                             onClick={() => navigate(`/market-admin/insurer/${insurer.id}/edit`)}
+                             onClick={() => {
+                               console.log('🔍 Clicking edit for insurer:', insurer);
+                               console.log('🔍 Insurer ID:', insurer.id, 'Type:', typeof insurer.id);
+                               navigate(`/market-admin/insurer/${insurer.id}/edit`);
+                             }}
                            >
                              <Eye className="w-4 h-4 mr-2" />
                              Edit Details

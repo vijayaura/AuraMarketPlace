@@ -119,6 +119,7 @@ const MarketAdminBrokerManagement = () => {
       setErrorMessage(null);
       try {
         const data = await listBrokers();
+        console.log('🔍 Fetched brokers data:', data);
         if (isMounted) setBrokers(data);
       } catch (err: any) {
         const status = err?.status;
@@ -310,7 +311,11 @@ const MarketAdminBrokerManagement = () => {
                              <Button
                                variant="outline"
                                size="sm"
-                               onClick={() => navigate(`/market-admin/broker/${broker.id}/edit`)}
+                               onClick={() => {
+                                 console.log('🔍 Clicking edit for broker:', broker);
+                                 console.log('🔍 Broker ID:', broker.id, 'Type:', typeof broker.id);
+                                 navigate(`/market-admin/broker/${broker.id}/edit`);
+                               }}
                              >
                                <Settings className="w-4 h-4 mr-2" />
                                Edit Details
