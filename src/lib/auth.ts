@@ -58,6 +58,7 @@ export interface StoredCompanyInfo {
   id: number;
   name: string;
   logo?: string | null;
+  licenseEndDate?: string | null;
 }
 
 export function setInsurerCompany(company: StoredCompanyInfo): void {

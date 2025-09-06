@@ -35,8 +35,13 @@ const BrokerLogin = () => {
 
       if (res.user?.company_id) {
         try {
-          const company = await getBroker(res.user.company_id);
-          setBrokerCompany({ id: company.id, name: company.name, logo: company.companyLogo ?? null });
+          const broker = await getBroker(res.user.company_id);
+          setBrokerCompany({ 
+            id: broker.id, 
+            name: broker.name, 
+            logo: broker.companyLogo ?? null,
+            licenseEndDate: broker.licenseEndDate
+          });
         } catch (e: any) {
           // Non-blocking if company fetch fails
         }

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Building, MapPin, Calendar, DollarSign, Shield, FileText, Plus, Trash2, Car, Umbrella } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LocationSearchModal } from "./LocationSearchModal";
+import { OpenStreetMapDialog } from "./OpenStreetMapDialog";
 import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesByProjectType } from "@/lib/masters-data";
 import { getActiveCountries, getRegionsByCountry, getZonesByRegion } from "@/lib/location-data";
 import { 
@@ -29,6 +29,7 @@ import {
 } from "@/lib/api/masters";
 import { getBroker, type Broker } from "@/lib/api/brokers";
 import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse } from "@/lib/api/quotes";
+import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 export const ProposalForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -79,6 +80,9 @@ export const ProposalForm = () => {
   const [isSavingProject, setIsSavingProject] = useState(false);
   const [projectDataExists, setProjectDataExists] = useState(false);
   const [savedProjectData, setSavedProjectData] = useState<QuoteProjectResponse | null>(null);
+  
+  // Water Body Detection State
+  const [isCheckingWaterBody, setIsCheckingWaterBody] = useState(false);
 
   // Default form data
   const getDefaultFormData = () => ({
@@ -747,6 +751,44 @@ export const ProposalForm = () => {
 
     try {
       setIsSavingProject(true);
+      
+      // Check for water body proximity if coordinates are available
+      if (formData.coordinates) {
+        const [latitude, longitude] = formData.coordinates
+          .split(',')
+          .map(coord => parseFloat(coord.trim()));
+        
+        if (!isNaN(latitude) && !isNaN(longitude)) {
+          setIsCheckingWaterBody(true);
+          try {
+            const waterBodyResult = await checkWaterBodyProximity(latitude, longitude);
+            
+            // Update form data with water body detection result
+            setFormData(prev => ({
+              ...prev,
+              nearWaterBody: waterBodyResult.isNearWaterBody ? "yes" : "no",
+              waterBodyDistance: waterBodyResult.isNearWaterBody ? "100" : ""
+            }));
+            
+            if (waterBodyResult.isNearWaterBody) {
+              toast({
+                title: "Water Body Detected",
+                description: `Found ${waterBodyResult.waterBodies.length} water body(ies) within 100 meters.`,
+              });
+            }
+          } catch (waterError) {
+            console.error('Error checking water body proximity:', waterError);
+            toast({
+              title: "Water Body Check Failed",
+              description: "Could not check for nearby water bodies. Please verify manually.",
+              variant: "destructive",
+            });
+          } finally {
+            setIsCheckingWaterBody(false);
+          }
+        }
+      }
+      
       const apiData = transformFormDataToAPI();
       
       let response: QuoteProjectResponse;
@@ -970,12 +1012,17 @@ export const ProposalForm = () => {
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       }
                     }}
-                    disabled={isSavingProject}
+                    disabled={isSavingProject || isCheckingWaterBody}
                   >
                     {isSavingProject ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Saving...
+                      </>
+                    ) : isCheckingWaterBody ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Checking water bodies...
                       </>
                     ) : (
                       'Next'
@@ -2000,8 +2047,8 @@ export const ProposalForm = () => {
         </Card>
       </div>
 
-      {/* Location Search Modal */}
-      <LocationSearchModal
+      {/* OpenStreetMap Location Dialog */}
+      <OpenStreetMapDialog
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
         onLocationSelect={(coordinates, address) => {
@@ -2012,7 +2059,8 @@ export const ProposalForm = () => {
           });
           setIsLocationModalOpen(false);
         }}
-        projectAddress={formData.projectAddress}
+        currentAddress={formData.projectAddress}
+        currentCoordinates={formData.coordinates}
       />
     </section>;
 };

@@ -434,7 +434,7 @@ const EditBroker = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col">
         <div className="flex-1 p-6">
-          <div className="max-w-4xl mx-auto">
+          <div className="w-full max-w-7xl mx-auto">
             <FormSkeleton pairs={6} />
           </div>
         </div>
@@ -469,7 +469,7 @@ const EditBroker = () => {
   return (
     <div className={`min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col ${!isActive ? 'opacity-60' : ''}`}>
       <div className="flex-1 p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Building2, LayoutDashboard, Users, Shield, Settings, Bell, TrendingUp, LogOut, AlertTriangle, Upload, Plus } from "lucide-react";
+import { Building2, LayoutDashboard, Users, Shield, Settings, Bell, TrendingUp, LogOut, AlertTriangle, Upload, Plus, Calendar } from "lucide-react";
 import brokerLogo from "@/assets/broker-logo.png";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,6 +34,81 @@ function toSentenceCase(value: string | null | undefined): string {
   if (!value) return '';
   const lower = value.toLowerCase();
   return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
+// License validity calculation
+function calculateLicenseValidity(licenseEndDate: string | null | undefined): {
+  daysRemaining: number;
+  color: 'red' | 'yellow' | 'green';
+  message: string;
+} {
+  if (!licenseEndDate) {
+    return {
+      daysRemaining: 0,
+      color: 'red',
+      message: 'License not found'
+    };
+  }
+
+  const today = new Date();
+  const endDate = new Date(licenseEndDate);
+  const timeDiff = endDate.getTime() - today.getTime();
+  const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+  if (daysRemaining < 0) {
+    return {
+      daysRemaining: 0,
+      color: 'red',
+      message: 'License expired'
+    };
+  }
+
+  if (daysRemaining < 15) {
+    return {
+      daysRemaining,
+      color: 'red',
+      message: `License expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`
+    };
+  }
+
+  if (daysRemaining < 30) {
+    return {
+      daysRemaining,
+      color: 'yellow',
+      message: `License expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`
+    };
+  }
+
+  return {
+    daysRemaining,
+    color: 'green',
+    message: `License expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`
+  };
+}
+
+// License Badge Component
+function LicenseBadge({ licenseEndDate }: { licenseEndDate: string | null | undefined }) {
+  const validity = calculateLicenseValidity(licenseEndDate);
+  
+  const getBadgeClasses = () => {
+    switch (validity.color) {
+      case 'red':
+        return 'bg-red-500 hover:bg-red-600 text-white border-red-600';
+      case 'yellow':
+        return 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600';
+      case 'green':
+        return 'bg-green-500 hover:bg-green-600 text-white border-green-600';
+      default:
+        return 'bg-gray-500 hover:bg-gray-600 text-white border-gray-600';
+    }
+  };
+
+  return (
+    <Badge className={`${getBadgeClasses()} transition-colors`}>
+      <Calendar className="w-3 h-3 mr-1" />
+      {validity.message}
+    </Badge>
+  );
 }
 
 function BrokerSidebar() {
@@ -211,6 +286,9 @@ export function BrokerLayout() {
     validityTo: "",
     licenseImage: null as File | null
   });
+  
+  // Get broker company data for license information
+  const company = getBrokerCompany();
   const handleLicenseUpdate = () => {
     // In real app, this would upload the license data to the backend
     toast({
@@ -247,9 +325,8 @@ export function BrokerLayout() {
               </div>
               <Dialog open={licenseDialogOpen} onOpenChange={setLicenseDialogOpen}>
                 <DialogTrigger asChild>
-                  <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span className="text-sm font-medium">License expires in 3 days</span>
+                  <div className="cursor-pointer">
+                    <LicenseBadge licenseEndDate={company?.licenseEndDate} />
                   </div>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">

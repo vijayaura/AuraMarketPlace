@@ -76,7 +76,7 @@ export default function EditInsurerUser() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto">
           <FormSkeleton pairs={6} />
         </div>
       </div>
@@ -158,7 +158,7 @@ export default function EditInsurerUser() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-6">
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="w-full max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
