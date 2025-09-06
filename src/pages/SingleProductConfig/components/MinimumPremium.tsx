@@ -84,10 +84,7 @@ const MinimumPremium: React.FC<MinimumPremiumProps> = ({
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-18"></div>
                         </th>
                         <th className="h-10 px-4 text-left align-middle font-medium w-[16%]">
-                          <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
-                        </th>
-                        <th className="h-10 px-4 text-left align-middle font-medium w-[16%]">
-                          <div className="h-4 bg-gray-200 rounded animate-pulse w-18"></div>
+                          <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
                         </th>
                       </tr>
                     </thead>
@@ -105,9 +102,6 @@ const MinimumPremium: React.FC<MinimumPremiumProps> = ({
                               <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
                               <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
                             </div>
-                          </td>
-                          <td className="p-4 align-middle">
-                            <div className="h-8 bg-gray-200 rounded animate-pulse w-full"></div>
                           </td>
                           <td className="p-4 align-middle">
                             <div className="h-8 bg-gray-200 rounded animate-pulse w-full"></div>
@@ -141,6 +135,8 @@ const MinimumPremium: React.FC<MinimumPremiumProps> = ({
             selectedProjectTypes={selectedProjectTypes}
             onSubProjectEntryChange={onSubProjectEntryChange}
             onProjectTypeToggle={onProjectTypeToggle}
+            title="Minimum Premiums by Sub Project Type"
+            description="Configure minimum premium rates and quote decisions for specific sub project categories"
           />
         )}
       </CardContent>

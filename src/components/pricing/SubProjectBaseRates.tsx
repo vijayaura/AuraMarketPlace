@@ -28,6 +28,8 @@ interface SubProjectBaseRatesProps {
   selectedProjectTypes?: Set<string>;
   onSubProjectEntryChange: (index: number, field: string, value: string | number) => void;
   onProjectTypeToggle: (projectType: string) => void;
+  title?: string;
+  description?: string;
 }
 
 const getProjectTypeIcon = (value: string) => {
@@ -64,6 +66,8 @@ export const SubProjectBaseRates = ({
   selectedProjectTypes,
   onSubProjectEntryChange,
   onProjectTypeToggle,
+  title = "Base Rates by Sub Project Type",
+  description = "Configure base premium rates and quote decisions for specific sub project categories",
 }: SubProjectBaseRatesProps) => {
   // Only allow entries whose project type exists in masters list
   const allowedProjectValues = new Set(projectTypes.map(pt => pt.value));
@@ -86,10 +90,10 @@ export const SubProjectBaseRates = ({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              Base Rates by Sub Project Type
+              {title}
             </CardTitle>
             <CardDescription className="mt-2">
-              Configure base premium rates and quote decisions for specific sub project categories
+              {description}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -108,8 +112,7 @@ export const SubProjectBaseRates = ({
                 <TableHead className="font-medium text-muted-foreground w-[22%] px-3">Project Type</TableHead>
                 <TableHead className="font-medium text-muted-foreground w-[28%] px-3">Sub Project Type</TableHead>
                 <TableHead className="font-medium text-muted-foreground w-[18%] px-2">Pricing Type</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[16%] px-2">Base Rate</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[16%] px-2">Quote Option</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[16%] px-2">Minimum Premium</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -153,20 +156,6 @@ export const SubProjectBaseRates = ({
                       className="w-full font-mono"
                       placeholder="0.00"
                     />
-                  </TableCell>
-                  <TableCell className="py-4 px-2">
-                    <Select
-                      value={entry.quoteOption}
-                      onValueChange={(value) => onSubProjectEntryChange(entry.originalIndex, 'quoteOption', value)}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="z-50 bg-popover border border-border shadow-md">
-                        <SelectItem value="quote">Auto Quote</SelectItem>
-                        <SelectItem value="no-quote">No Quote</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </TableCell>
                 </TableRow>
               ))}

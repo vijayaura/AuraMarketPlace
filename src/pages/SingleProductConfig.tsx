@@ -614,7 +614,7 @@ const SingleProductConfig = () => {
         if (!byProject.has(slug)) byProject.set(slug, { projectLabel, items: [] });
         const pricing_type = (String(e.pricingType).toLowerCase() === 'fixed') ? 'FIXED_AMOUNT' : 'PERCENTAGE';
         const currency = pricing_type === 'FIXED_AMOUNT' ? 'AED' : '%';
-        const quote_option = (String(e.quoteOption).toLowerCase() === 'no-quote') ? 'NO_QUOTE' : 'AUTO_QUOTE';
+        const quote_option = 'AUTO_QUOTE'; // Always use AUTO_QUOTE for minimum premiums
         byProject.get(slug)!.items.push({
           name: e.subProjectType,
           pricing_type,
