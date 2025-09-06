@@ -28,10 +28,16 @@ import {
   type SubProjectTypeItem
 } from "@/lib/api/masters";
 import { getBroker, type Broker } from "@/lib/api/brokers";
-import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse } from "@/lib/api/quotes";
+import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
-export const ProposalForm = () => {
+
+interface ProposalFormProps {
+  onStepChange?: (step: number) => void;
+  onQuoteReferenceChange?: (reference: string) => void;
+}
+
+export const ProposalForm = ({ onStepChange, onQuoteReferenceChange }: ProposalFormProps = {}) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
@@ -105,6 +111,7 @@ export const ProposalForm = () => {
   // Claims Disclaimer State
   const [showClaimsDisclaimer, setShowClaimsDisclaimer] = useState(false);
   const [claimsDisclaimerAccepted, setClaimsDisclaimerAccepted] = useState(false);
+  
 
   // Initialize fresh temporary storage for new quote session
   const initializeFreshQuoteStorage = () => {
@@ -490,6 +497,18 @@ export const ProposalForm = () => {
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
+
+  // Notify parent component about step changes
+  useEffect(() => {
+    onStepChange?.(currentStep);
+  }, [currentStep, onStepChange]);
+
+  // Notify parent component about quote reference changes
+  useEffect(() => {
+    if (quoteReferenceNumber) {
+      onQuoteReferenceChange?.(quoteReferenceNumber);
+    }
+  }, [quoteReferenceNumber, onQuoteReferenceChange]);
 
   // Helper functions to get options with fallbacks
   const getProjectTypeOptions = () => {
@@ -1270,7 +1289,21 @@ export const ProposalForm = () => {
       const apiData = transformInsuredDetailsToAPI();
       console.log('💾 Saving insured details:', apiData);
       
-      const response = await saveInsuredDetails(apiData, currentQuoteId);
+      // Check if insured_details step is already completed to decide between POST and PATCH
+      const isInsuredDetailsCompleted = isStepCompleted('insured_details');
+      console.log('📊 Insured details completion status:', isInsuredDetailsCompleted);
+      
+      let response;
+      if (isInsuredDetailsCompleted) {
+        // Use PATCH for updates
+        console.log('🔄 Using PATCH to update existing insured details');
+        response = await updateInsuredDetails(apiData, currentQuoteId);
+      } else {
+        // Use POST for new insured details
+        console.log('💾 Using POST to create new insured details');
+        response = await saveInsuredDetails(apiData, currentQuoteId);
+      }
+      
       console.log('✅ Insured details saved successfully:', response);
       
       // Mark insured_details step as completed
@@ -1455,15 +1488,6 @@ export const ProposalForm = () => {
             
             {/* Progress Bar with Navigation Buttons */}
             <div className="flex items-center gap-4 mt-6">
-              {/* Back Button */}
-              <div className="flex-shrink-0">
-                {currentStep > 0 && (
-                  <Button variant="outline" onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}>
-                    Back
-                  </Button>
-                )}
-              </div>
-              
               {/* Progress Bar */}
               <div className="flex-1 bg-muted rounded-full h-2">
                 <div className="bg-gradient-primary h-2 rounded-full transition-smooth" style={{
@@ -1471,8 +1495,16 @@ export const ProposalForm = () => {
                 }} />
               </div>
               
-              {/* Next/Proceed Button */}
-              <div className="flex-shrink-0">
+              {/* Navigation Buttons */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {/* Previous Button */}
+                {currentStep > 0 && (
+                  <Button variant="outline" onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}>
+                    Previous
+                  </Button>
+                )}
+                
+                {/* Next/Proceed Button */}
                 {currentStep === steps.length - 1 ? (
                   <Button variant="hero" size="lg" onClick={handleSubmit}>
                     Proceed
@@ -2722,5 +2754,6 @@ export const ProposalForm = () => {
           </div>
         </div>
       )}
+
     </section>;
 };

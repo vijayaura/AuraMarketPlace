@@ -95,12 +95,22 @@ export interface InsuredDetailsResponse {
   message: string;
 }
 
-// Save insured details
+// Save insured details (POST for new)
 export const saveInsuredDetails = async (data: InsuredDetailsRequest, quoteId: number): Promise<InsuredDetailsResponse> => {
   if (!quoteId) {
     throw new Error('Quote ID is required for insured details operations');
   }
   const endpoint = `/quotes/insured/${quoteId}`;
-  console.log('💾 saveInsuredDetails called with:', { quoteId, endpoint, data });
+  console.log('💾 saveInsuredDetails (POST) called with:', { quoteId, endpoint, data });
   return apiPost<InsuredDetailsResponse>(endpoint, data);
+};
+
+// Update insured details (PATCH for existing)
+export const updateInsuredDetails = async (data: InsuredDetailsRequest, quoteId: number): Promise<InsuredDetailsResponse> => {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for insured details operations');
+  }
+  const endpoint = `/quotes/insured/${quoteId}`;
+  console.log('🔄 updateInsuredDetails (PATCH) called with:', { quoteId, endpoint, data });
+  return apiPatch<InsuredDetailsResponse>(endpoint, data);
 };
