@@ -77,3 +77,30 @@ export const updateQuoteProject = async (data: QuoteProjectRequest, quoteId: num
   console.log('🔄 updateQuoteProject called with:', { quoteId, endpoint });
   return apiPatch<QuoteProjectResponse>(endpoint, data);
 };
+
+// Types for Insured Details API
+export interface InsuredDetailsRequest {
+  insured_name: string;
+  role_of_insured: string;
+  had_losses_last_5yrs: boolean;
+  claims_matrix: Array<{
+    year: number;
+    count: number;
+    amount: number;
+    description: string;
+  }>;
+}
+
+export interface InsuredDetailsResponse {
+  message: string;
+}
+
+// Save insured details
+export const saveInsuredDetails = async (data: InsuredDetailsRequest, quoteId: number): Promise<InsuredDetailsResponse> => {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for insured details operations');
+  }
+  const endpoint = `/quotes/insured/${quoteId}`;
+  console.log('💾 saveInsuredDetails called with:', { quoteId, endpoint, data });
+  return apiPost<InsuredDetailsResponse>(endpoint, data);
+};

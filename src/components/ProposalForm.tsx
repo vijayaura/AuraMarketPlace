@@ -28,7 +28,7 @@ import {
   type SubProjectTypeItem
 } from "@/lib/api/masters";
 import { getBroker, type Broker } from "@/lib/api/brokers";
-import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse } from "@/lib/api/quotes";
+import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 export const ProposalForm = () => {
@@ -80,6 +80,9 @@ export const ProposalForm = () => {
   const [isSavingProject, setIsSavingProject] = useState(false);
   const [savedProjectData, setSavedProjectData] = useState<QuoteProjectResponse | null>(null);
   
+  // Insured Details API State
+  const [isSavingInsuredDetails, setIsSavingInsuredDetails] = useState(false);
+  
   // Fresh Temporary Storage for Current Quote Session
   const [currentQuoteId, setCurrentQuoteId] = useState<number | null>(null);
   const [quoteReferenceNumber, setQuoteReferenceNumber] = useState<string | null>(null);
@@ -98,6 +101,10 @@ export const ProposalForm = () => {
   
   // Water Body Detection State
   const [isCheckingWaterBody, setIsCheckingWaterBody] = useState(false);
+  
+  // Claims Disclaimer State
+  const [showClaimsDisclaimer, setShowClaimsDisclaimer] = useState(false);
+  const [claimsDisclaimerAccepted, setClaimsDisclaimerAccepted] = useState(false);
 
   // Initialize fresh temporary storage for new quote session
   const initializeFreshQuoteStorage = () => {
@@ -125,6 +132,7 @@ export const ProposalForm = () => {
     localStorage.removeItem('quoteReferenceNumber');
     localStorage.removeItem('stepCompletionStatus');
     localStorage.removeItem('projectDataExists');
+    localStorage.removeItem('claimsDisclaimerAccepted');
   };
 
   // Clear temporary storage when exiting proposal form
@@ -153,6 +161,7 @@ export const ProposalForm = () => {
     localStorage.removeItem('quoteReferenceNumber');
     localStorage.removeItem('stepCompletionStatus');
     localStorage.removeItem('projectDataExists');
+    localStorage.removeItem('claimsDisclaimerAccepted');
   };
 
   // Mark a step as completed
@@ -445,6 +454,12 @@ export const ProposalForm = () => {
   useEffect(() => {
     console.log('🚀 ProposalForm mounted - initializing fresh storage');
     initializeFreshQuoteStorage();
+    
+    // Load disclaimer acceptance state from localStorage
+    const savedDisclaimerAccepted = localStorage.getItem('claimsDisclaimerAccepted');
+    if (savedDisclaimerAccepted === 'true') {
+      setClaimsDisclaimerAccepted(true);
+    }
     
     // Cleanup when component unmounts (user exits /customer/proposal)
     return () => {
@@ -920,6 +935,25 @@ export const ProposalForm = () => {
     }));
   };
 
+  // Transform insured details form data to API format
+  const transformInsuredDetailsToAPI = (): InsuredDetailsRequest => {
+    const claimsMatrix = formData.claimsHistory
+      .filter(claim => claim.claimCount > 0)
+      .map(claim => ({
+        year: claim.year,
+        count: claim.claimCount,
+        amount: claim.amount,
+        description: claim.description || ""
+      }));
+
+    return {
+      insured_name: formData.insuredName || "",
+      role_of_insured: formData.roleOfInsured || "",
+      had_losses_last_5yrs: formData.lossesInLastFiveYears === "yes",
+      claims_matrix: claimsMatrix
+    };
+  };
+
   // Transform form data to API format
   const transformFormDataToAPI = (): QuoteProjectRequest => {
     // Parse coordinates
@@ -1030,6 +1064,9 @@ export const ProposalForm = () => {
         if (!formData.roleOfInsured) {
           errors.roleOfInsured = "Role of insured must be selected";
         }
+        if (!claimsDisclaimerAccepted) {
+          errors.claimsDisclaimer = "You must accept the claims disclaimer to proceed";
+        }
         break;
         
       case 2: // Contract Structure step
@@ -1077,6 +1114,7 @@ export const ProposalForm = () => {
           projectValue: 'Project Value',
           insuredName: 'Insured Name',
           roleOfInsured: 'Role of Insured',
+          claimsDisclaimer: 'Claims Disclaimer',
           mainContractor: 'Main Contractor',
           principalOwner: 'Principal Owner',
           contractType: 'Contract Type',
@@ -1216,6 +1254,59 @@ export const ProposalForm = () => {
     }
   };
 
+  // Save insured details via API
+  const saveInsuredDetailsData = async (): Promise<boolean> => {
+    if (!currentQuoteId) {
+      toast({
+        title: "Error",
+        description: "Quote ID not found. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsSavingInsuredDetails(true);
+    try {
+      const apiData = transformInsuredDetailsToAPI();
+      console.log('💾 Saving insured details:', apiData);
+      
+      const response = await saveInsuredDetails(apiData, currentQuoteId);
+      console.log('✅ Insured details saved successfully:', response);
+      
+      // Mark insured_details step as completed
+      markStepCompleted('insured_details');
+      
+      toast({
+        title: "Insured Details Saved",
+        description: "Insured details have been saved successfully.",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error saving insured details:', error);
+      
+      let errorMessage = "Failed to save insured details. Please try again.";
+      if (error.response?.status === 400) {
+        errorMessage = "Invalid data provided. Please check your inputs.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "You are not authorized. Please log in again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "You don't have permission to save insured details.";
+      } else if (error.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSavingInsuredDetails(false);
+    }
+  };
+
   // Effect to validate and clear completion date if it becomes invalid
   useEffect(() => {
     if (formData.startDate && formData.completionDate) {
@@ -1346,17 +1437,24 @@ export const ProposalForm = () => {
         
         <Card className="shadow-large border-border w-full overflow-hidden">
           <CardHeader className="px-4 sm:px-6">
-            <div className="flex items-center gap-4">
-              <CardTitle className="text-xl">
-                {location.state?.editingQuote ? 'Edit Quote' : 'Create New Quote'}
-              </CardTitle>
-              <div className="text-sm text-muted-foreground">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">
+                  {location.state?.editingQuote ? 'Edit Quote' : 'Create New Quote'}
+                </CardTitle>
+                {quoteReferenceNumber && currentStep >= 1 && (
+                  <div className="text-sm text-gray-900">
+                    Quote No. : {quoteReferenceNumber}
+                  </div>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground">
                 Step {currentStep + 1} of {steps.length}
               </div>
             </div>
             
             {/* Progress Bar with Navigation Buttons */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 mt-6">
               {/* Back Button */}
               <div className="flex-shrink-0">
                 {currentStep > 0 && (
@@ -1400,6 +1498,7 @@ export const ProposalForm = () => {
                             projectValue: 'Project Value',
                             insuredName: 'Insured Name',
                             roleOfInsured: 'Role of Insured',
+                            claimsDisclaimer: 'Claims Disclaimer',
                             mainContractor: 'Main Contractor',
                             principalOwner: 'Principal Owner',
                             contractType: 'Contract Type',
@@ -1416,19 +1515,32 @@ export const ProposalForm = () => {
                         return;
                       }
                       
-                      // If moving from project details step (step 0), save data first
+                      // Save data based on current step
                       if (currentStep === 0) {
+                        // Project Details step
                         const success = await saveProjectData();
                         if (success) {
                           setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                         }
+                      } else if (currentStep === 1) {
+                        // Insured Details step
+                        const success = await saveInsuredDetailsData();
+                        if (success) {
+                          setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                        }
                       } else {
+                        // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       }
                     }}
-                    disabled={isSavingProject || isCheckingWaterBody}
+                    disabled={isSavingProject || isSavingInsuredDetails || isCheckingWaterBody}
                   >
                     {isSavingProject ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : isSavingInsuredDetails ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Saving...
@@ -1965,6 +2077,39 @@ export const ProposalForm = () => {
                         </div>
                       </div>}
                   </div>
+                  
+                  {/* Claims Disclaimer Checkbox */}
+                  <div className="space-y-4 border-t border-border pt-6">
+                    <div 
+                      className="flex items-start space-x-3 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+                      onClick={() => setShowClaimsDisclaimer(true)}
+                    >
+                      <Checkbox
+                        id="claimsDisclaimer"
+                        checked={claimsDisclaimerAccepted}
+                        onCheckedChange={(checked) => {
+                          if (checked && !claimsDisclaimerAccepted) {
+                            // Only allow checking if disclaimer was accepted
+                            return;
+                          }
+                          setClaimsDisclaimerAccepted(checked as boolean);
+                        }}
+                        className="mt-1 cursor-pointer"
+                        onClick={() => setShowClaimsDisclaimer(true)}
+                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="claimsDisclaimer" className="text-sm font-medium cursor-pointer">
+                          I accept{" "}
+                          <span className="text-primary hover:text-primary/80 underline font-medium">
+                            Disclaimer & Importance of Declaring Claims
+                          </span>
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          You must accept the disclaimer to proceed with your application
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -2477,5 +2622,105 @@ export const ProposalForm = () => {
         currentCoordinates={formData.coordinates}
         coverageAreas={getCoverageAreas()}
       />
+
+      {/* Claims Disclaimer Dialog */}
+      {showClaimsDisclaimer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-6 text-gray-900">
+                Disclaimer & Importance of Declaring Claims
+              </h2>
+              
+              <div className="space-y-6 text-sm text-gray-700 leading-relaxed">
+                <div>
+                  <p className="mb-4">
+                    Before submitting a claim under your Contractors All Risk (CAR) policy, please read the following carefully:
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Accuracy of Information</h3>
+                  <p className="mb-2">
+                    All details provided in this claim declaration must be true, complete, and accurate to the best of your knowledge.
+                  </p>
+                  <p>
+                    Any misrepresentation, omission, or falsification of facts may result in the rejection of your claim and could affect your future insurance coverage.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Timely Notification</h3>
+                  <p className="mb-2">
+                    Claims must be reported as soon as you become aware of the loss, damage, or incident.
+                  </p>
+                  <p>
+                    Delay in reporting may impact the insurer's ability to assess the claim and could lead to partial or full denial of benefits.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Supporting Documentation</h3>
+                  <p className="mb-2">
+                    You may be required to submit relevant evidence such as photographs, reports, invoices, or other documents to support your claim when required
+                  </p>
+                  <p>
+                    The insurer reserves the right to request additional information or conduct investigations as needed.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Non-Admission of Liability</h3>
+                  <p className="mb-2">
+                    Submission of a claim does not imply automatic acceptance or admission of liability by the insurer.
+                  </p>
+                  <p>
+                    All claims will be reviewed and processed in accordance with the terms, conditions, and exclusions of your CAR policy.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Importance of Declaring Claims</h3>
+                  <p className="mb-2">
+                    Prompt and transparent claim declaration ensures quicker processing, fair assessment, and compliance with regulatory obligations.
+                  </p>
+                  <p>
+                    Non-declaration or delayed declaration of claims may prejudice your rights under the policy and affect your relationship with insurers in the future.
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <p className="font-medium text-blue-900">
+                    By proceeding, you acknowledge that you have read and understood this disclaimer and agree to provide honest and accurate information in your claim submission.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowClaimsDisclaimer(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    setClaimsDisclaimerAccepted(true);
+                    setShowClaimsDisclaimer(false);
+                    localStorage.setItem('claimsDisclaimerAccepted', 'true');
+                    toast({
+                      title: "Disclaimer Accepted",
+                      description: "You have accepted the claims disclaimer and can now proceed.",
+                    });
+                  }}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  Accept
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>;
 };
