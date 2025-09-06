@@ -78,11 +78,27 @@ export const ProposalForm = () => {
 
   // Quote Project API State
   const [isSavingProject, setIsSavingProject] = useState(false);
-  const [projectDataExists, setProjectDataExists] = useState(false);
+  const [projectDataExists, setProjectDataExists] = useState(() => {
+    const saved = localStorage.getItem('projectDataExists');
+    return saved === 'true';
+  });
   const [savedProjectData, setSavedProjectData] = useState<QuoteProjectResponse | null>(null);
+  const [currentQuoteId, setCurrentQuoteId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('currentQuoteId');
+    return saved ? parseInt(saved, 10) : null;
+  });
   
   // Water Body Detection State
   const [isCheckingWaterBody, setIsCheckingWaterBody] = useState(false);
+
+  // Function to clear stored quote data
+  const clearStoredQuoteData = () => {
+    setProjectDataExists(false);
+    setCurrentQuoteId(null);
+    setSavedProjectData(null);
+    localStorage.removeItem('projectDataExists');
+    localStorage.removeItem('currentQuoteId');
+  };
 
   // Default form data
   const getDefaultFormData = () => ({
@@ -513,6 +529,119 @@ export const ProposalForm = () => {
     return region ? getZonesByRegion(region.id) : [];
   };
 
+  // Convert broker coverage data to coverage areas format for map validation
+  const getCoverageAreas = () => {
+    const coverageAreas = [];
+    
+    if (brokerData?.operatingCountries && brokerData.operatingCountries.length > 0) {
+      // Use broker's operating countries, regions, and zones
+      brokerData.operatingCountries.forEach((country, countryIndex) => {
+        const countryName = typeof country === 'string' ? country : (country as any)?.name || String(country);
+        
+        // Find regions for this country
+        const countryRegions = brokerData?.operatingRegions?.filter(region => {
+          // Simple matching - in real implementation, you'd have proper country-region mapping
+          return true; // For now, include all regions
+        }) || [];
+        
+        if (countryRegions.length > 0) {
+          countryRegions.forEach((region, regionIndex) => {
+            const regionName = typeof region === 'string' ? region : (region as any)?.name || String(region);
+            
+            // Find zones for this region
+            const regionZones = brokerData?.operatingZones?.filter(zone => {
+              // Simple matching - in real implementation, you'd have proper region-zone mapping
+              return true; // For now, include all zones
+            }) || [];
+            
+            if (regionZones.length > 0) {
+              regionZones.forEach((zone, zoneIndex) => {
+                const zoneName = typeof zone === 'string' ? zone : (zone as any)?.name || String(zone);
+                coverageAreas.push({
+                  id: `${countryIndex}-${regionIndex}-${zoneIndex}`,
+                  name: `${zoneName}, ${regionName}, ${countryName}`,
+                  country: countryName,
+                  region: regionName,
+                  zone: zoneName,
+                  bounds: undefined // Will be enhanced with actual geographic bounds
+                });
+              });
+            } else {
+              // No zones, just region level
+              coverageAreas.push({
+                id: `${countryIndex}-${regionIndex}`,
+                name: `${regionName}, ${countryName}`,
+                country: countryName,
+                region: regionName,
+                zone: undefined,
+                bounds: undefined
+              });
+            }
+          });
+        } else {
+          // No regions, just country level
+          coverageAreas.push({
+            id: countryIndex.toString(),
+            name: countryName,
+            country: countryName,
+            region: undefined,
+            zone: undefined,
+            bounds: undefined
+          });
+        }
+      });
+    } else {
+      // Fallback to masters data with full hierarchy
+      activeCountries.forEach(country => {
+        const regions = getRegionsByCountry(country.id);
+        
+        if (regions.length > 0) {
+          regions.forEach(region => {
+            const zones = getZonesByRegion(region.id);
+            
+            if (zones.length > 0) {
+              zones.forEach(zone => {
+                coverageAreas.push({
+                  id: `${country.id}-${region.id}-${zone.id}`,
+                  name: `${zone.label}, ${region.label}, ${country.label}`,
+                  country: country.label,
+                  region: region.label,
+                  zone: zone.label,
+                  bounds: undefined
+                });
+              });
+            } else {
+              // No zones, just region level
+              coverageAreas.push({
+                id: `${country.id}-${region.id}`,
+                name: `${region.label}, ${country.label}`,
+                country: country.label,
+                region: region.label,
+                zone: undefined,
+                bounds: undefined
+              });
+            }
+          });
+        } else {
+          // No regions, just country level
+          coverageAreas.push({
+            id: country.id.toString(),
+            name: country.label,
+            country: country.label,
+            region: undefined,
+            zone: undefined,
+            bounds: undefined
+          });
+        }
+      });
+    }
+    
+    // Debug logging
+    console.log('Coverage areas for map validation:', coverageAreas);
+    
+    return coverageAreas;
+  };
+
   const [formData, setFormData] = useState(() => {
     // Check if we're editing an existing quote
     const editingQuote = location.state?.editingQuote;
@@ -792,17 +921,41 @@ export const ProposalForm = () => {
       const apiData = transformFormDataToAPI();
       
       let response: QuoteProjectResponse;
-      if (projectDataExists) {
-        // Update existing project data
-        response = await updateQuoteProject(apiData);
+      if (projectDataExists && currentQuoteId) {
+        // Update existing project data using stored quote ID
+        console.log('🔄 Updating project with quote ID:', currentQuoteId);
+        response = await updateQuoteProject(apiData, currentQuoteId);
         toast({
           title: "Project Updated",
           description: "Project details have been updated successfully.",
         });
       } else {
         // Create new project data
+        console.log('🆕 Creating new project');
+        console.log('📤 API Data being sent:', apiData);
         response = await createQuoteProject(apiData);
+        console.log('✅ Project created successfully');
+        console.log('📥 Full response:', response);
+        console.log('🆔 Response ID:', response.id);
+        
+        // Handle different response structures
+        if (!response || !response.id) {
+          console.error('❌ Invalid response structure:', response);
+          
+          // Try to extract ID from different possible structures
+          const possibleId = (response as any)?.data?.id || response?.project_id || response?.quote_id;
+          if (possibleId) {
+            console.log('🔍 Found ID in nested structure:', possibleId);
+            response = { ...response, id: possibleId };
+          } else {
+            throw new Error('Invalid response from server: missing ID');
+          }
+        }
+        
         setProjectDataExists(true);
+        localStorage.setItem('projectDataExists', 'true');
+        setCurrentQuoteId(response.id); // Store the quote ID for future PATCH operations
+        localStorage.setItem('currentQuoteId', response.id.toString());
         toast({
           title: "Project Saved",
           description: "Project details have been saved successfully.",
@@ -812,7 +965,14 @@ export const ProposalForm = () => {
       setSavedProjectData(response);
       return true;
     } catch (error: any) {
-      console.error('Error saving project data:', error);
+      console.error('❌ Error saving project data:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        stack: error.stack
+      });
       
       let errorMessage = "Failed to save project details. Please try again.";
       if (error.response?.status === 400) {
@@ -823,6 +983,8 @@ export const ProposalForm = () => {
         errorMessage = "You don't have permission to save project data.";
       } else if (error.response?.status === 500) {
         errorMessage = "Server error. Please try again later.";
+      } else if (error.message?.includes('Invalid response from server')) {
+        errorMessage = "Server returned invalid response. Please try again.";
       }
       
       toast({
@@ -2061,6 +2223,7 @@ export const ProposalForm = () => {
         }}
         currentAddress={formData.projectAddress}
         currentCoordinates={formData.coordinates}
+        coverageAreas={getCoverageAreas()}
       />
     </section>;
 };

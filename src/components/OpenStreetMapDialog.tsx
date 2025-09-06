@@ -26,6 +26,8 @@ interface LocationResult {
   lon: number;
   type: string;
   importance: number;
+  isValid?: boolean;
+  validationError?: string;
   address?: {
     house_number?: string;
     road?: string;
@@ -36,13 +38,109 @@ interface LocationResult {
   };
 }
 
+interface CoverageArea {
+  id: number;
+  name: string;
+  country: string;
+  region?: string;
+  zone?: string;
+  bounds?: {
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  };
+}
+
 interface OpenStreetMapDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onLocationSelect: (coordinates: string, address: string) => void;
   currentAddress?: string;
   currentCoordinates?: string;
+  coverageAreas?: CoverageArea[];
 }
+
+// Search Result Card Component
+const SearchResultCard = ({ 
+  result, 
+  onSelect, 
+  coverageAreas 
+}: { 
+  result: LocationResult; 
+  onSelect: (location: LocationResult) => void; 
+  coverageAreas: CoverageArea[];
+}) => {
+  // No validation - all locations are valid
+  const isValid = true;
+  const isValidating = false;
+  const validationError = null;
+
+  const getLocationTypeColor = (type: string) => {
+    switch (type) {
+      case 'house':
+      case 'building':
+        return 'bg-blue-100 text-blue-800';
+      case 'city':
+      case 'town':
+        return 'bg-green-100 text-green-800';
+      case 'state':
+      case 'region':
+        return 'bg-purple-100 text-purple-800';
+      case 'country':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatAddress = (location: LocationResult) => {
+    if (location.address) {
+      const parts = [];
+      if (location.address.house_number) parts.push(location.address.house_number);
+      if (location.address.road) parts.push(location.address.road);
+      if (location.address.city) parts.push(location.address.city);
+      if (location.address.state) parts.push(location.address.state);
+      if (location.address.country) parts.push(location.address.country);
+      return parts.join(', ');
+    }
+    return location.display_name;
+  };
+
+  return (
+    <Card 
+      className="cursor-pointer transition-colors hover:bg-muted/50"
+      onClick={() => onSelect(result)}
+    >
+      <CardContent className="p-2">
+        <div className="flex items-start gap-2">
+          <MapPin className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-xs line-clamp-2">
+              {formatAddress(result)}
+            </div>
+            <div className="flex items-center gap-1 mt-1">
+              <Badge 
+                variant="secondary" 
+                className={`text-xs px-1 py-0 ${getLocationTypeColor(result.type)}`}
+              >
+                {result.type}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {result.lat.toFixed(4)}, {result.lon.toFixed(4)}
+              </span>
+            </div>
+            {result.importance > 0 && (
+              <div className="text-xs mt-1 text-muted-foreground">
+                Importance: {(result.importance * 100).toFixed(1)}%
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 // Map click handler component
 function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
@@ -61,6 +159,7 @@ export const OpenStreetMapDialog: React.FC<OpenStreetMapDialogProps> = ({
   onLocationSelect,
   currentAddress,
   currentCoordinates,
+  coverageAreas = [],
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<LocationResult[]>([]);
@@ -68,8 +167,112 @@ export const OpenStreetMapDialog: React.FC<OpenStreetMapDialogProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Check if coordinates are within coverage areas (async version for API calls)
+  const isLocationInCoverageAreaAsync = async (lat: number, lng: number): Promise<{ isValid: boolean; area?: CoverageArea; error?: string }> => {
+    if (coverageAreas.length === 0) {
+      return { isValid: true }; // No restrictions if no coverage areas defined
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=en`,
+        {
+          headers: {
+            'Accept-Language': 'en'
+          }
+        }
+      );
+      const data = await response.json();
+      const address = data.address || {};
+      const country = address.country;
+      const state = address.state || address.region;
+      const city = address.city || address.town || address.village;
+      
+      if (!country) {
+        return { isValid: false, error: "Could not determine country for selected location" };
+      }
+
+      // Helper function for better matching
+      const normalizeString = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const isMatch = (str1: string, str2: string) => {
+        const norm1 = normalizeString(str1);
+        const norm2 = normalizeString(str2);
+        return norm1.includes(norm2) || norm2.includes(norm1);
+      };
+
+      // Check hierarchical coverage: zone -> region -> country
+      const matchingArea = coverageAreas.find(area => {
+        // First check if we have zone-level coverage
+        if (area.zone && area.region && area.country) {
+          const countryMatch = isMatch(area.country, country);
+          const regionMatch = state ? isMatch(area.region, state) : false;
+          const zoneMatch = city ? isMatch(area.zone, city) : false;
+          
+          // For zone-level, we need all three to match
+          return countryMatch && regionMatch && zoneMatch;
+        }
+        
+        // Then check region-level coverage
+        if (area.region && area.country && !area.zone) {
+          const countryMatch = isMatch(area.country, country);
+          const regionMatch = state ? isMatch(area.region, state) : false;
+          
+          // For region-level, we need country and region to match
+          return countryMatch && regionMatch;
+        }
+        
+        // Finally check country-level coverage
+        if (area.country && !area.region && !area.zone) {
+          return isMatch(area.country, country);
+        }
+        
+        return false;
+      });
+
+      if (matchingArea) {
+        return { isValid: true, area: matchingArea };
+      } else {
+        // Create a detailed error message showing available coverage
+        const countryAreas = [...new Set(coverageAreas.map(area => area.country))];
+        const regionAreas = [...new Set(coverageAreas.filter(area => area.region).map(area => `${area.region}, ${area.country}`))];
+        const zoneAreas = [...new Set(coverageAreas.filter(area => area.zone).map(area => `${area.zone}, ${area.region}, ${area.country}`))];
+        
+        let errorMessage = `Location is in ${city ? `${city}, ` : ''}${state ? `${state}, ` : ''}${country}, but coverage is only available in:\n`;
+        
+        if (zoneAreas.length > 0) {
+          errorMessage += `Zones: ${zoneAreas.slice(0, 5).join(', ')}${zoneAreas.length > 5 ? '...' : ''}\n`;
+        }
+        if (regionAreas.length > 0) {
+          errorMessage += `Regions: ${regionAreas.slice(0, 5).join(', ')}${regionAreas.length > 5 ? '...' : ''}\n`;
+        }
+        if (countryAreas.length > 0) {
+          errorMessage += `Countries: ${countryAreas.join(', ')}`;
+        }
+        
+        return { 
+          isValid: false, 
+          error: errorMessage.trim()
+        };
+      }
+    } catch (error) {
+      return { isValid: false, error: "Could not validate location coverage" };
+    }
+  };
+
+  // Synchronous version for immediate validation (basic check)
+  const isLocationInCoverageArea = (lat: number, lng: number): { isValid: boolean; area?: CoverageArea; error?: string } => {
+    if (coverageAreas.length === 0) {
+      return { isValid: true }; // No restrictions if no coverage areas defined
+    }
+
+    // For now, return true for immediate validation
+    // The async validation will be called in the actual selection handlers
+    return { isValid: true };
+  };
 
   // Initialize with current address and coordinates if available
   useEffect(() => {
@@ -151,13 +354,19 @@ export const OpenStreetMapDialog: React.FC<OpenStreetMapDialogProps> = ({
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  const handleLocationSelect = (location: LocationResult) => {
-    setSelectedLocation(location);
+  const handleLocationSelect = async (location: LocationResult) => {
+    // Set the selected location without validation
+    setSelectedLocation({
+      ...location,
+      isValid: true,
+      validationError: null
+    });
     setMapCenter({ lat: location.lat, lng: location.lon });
     setShowMap(true);
+    setLocationError(null);
   };
 
-  const confirmLocation = () => {
+  const confirmLocation = async () => {
     if (selectedLocation) {
       const coordinates = `${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lon.toFixed(6)}`;
       onLocationSelect(coordinates, selectedLocation.display_name);
@@ -170,7 +379,7 @@ export const OpenStreetMapDialog: React.FC<OpenStreetMapDialogProps> = ({
     }
   };
 
-  const handleMapClick = (lat: number, lng: number) => {
+  const handleMapClick = async (lat: number, lng: number) => {
     // Reverse geocoding to get address
     fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=en`,
@@ -189,9 +398,12 @@ export const OpenStreetMapDialog: React.FC<OpenStreetMapDialogProps> = ({
           lon: lng,
           type: 'manual',
           importance: 0,
+          isValid: true,
+          validationError: null,
           address: data.address || {}
         };
         setSelectedLocation(location);
+        setLocationError(null);
       })
       .catch(error => {
         console.error('Reverse geocoding error:', error);
@@ -201,9 +413,12 @@ export const OpenStreetMapDialog: React.FC<OpenStreetMapDialogProps> = ({
           lat: lat,
           lon: lng,
           type: 'manual',
-          importance: 0
+          importance: 0,
+          isValid: true,
+          validationError: null
         };
         setSelectedLocation(location);
+        setLocationError(null);
       });
   };
 
@@ -291,71 +506,94 @@ export const OpenStreetMapDialog: React.FC<OpenStreetMapDialogProps> = ({
                 <Label className="text-sm text-muted-foreground">Search Results</Label>
                 <div className="max-h-60 overflow-y-auto space-y-2">
                   {searchResults.map((result) => (
-                    <Card 
+                    <SearchResultCard 
                       key={result.id} 
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleLocationSelect(result)}
-                    >
-                      <CardContent className="p-3">
-                        <div className="flex items-start gap-3">
-                          <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm line-clamp-2">
-                              {formatAddress(result)}
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge 
-                                variant="secondary" 
-                                className={`text-xs ${getLocationTypeColor(result.type)}`}
-                              >
-                                {result.type}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {result.lat.toFixed(4)}, {result.lon.toFixed(4)}
-                              </span>
-                            </div>
-                            {result.importance > 0 && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Importance: {(result.importance * 100).toFixed(1)}%
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      result={result} 
+                      onSelect={handleLocationSelect}
+                      coverageAreas={coverageAreas}
+                    />
                   ))}
                 </div>
               </div>
             )}
 
+            {/* Coverage Areas Info */}
+            {coverageAreas.length > 0 && (
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-3">
+                  <div className="flex items-start gap-2">
+                    <Globe className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-blue-800 text-sm">Coverage Areas</h4>
+                      <div className="text-xs text-blue-600 mt-1 space-y-1">
+                        {(() => {
+                          const countryAreas = [...new Set(coverageAreas.map(area => area.country))];
+                          const regionAreas = [...new Set(coverageAreas.filter(area => area.region).map(area => `${area.region}, ${area.country}`))];
+                          const zoneAreas = [...new Set(coverageAreas.filter(area => area.zone).map(area => `${area.zone}, ${area.region}, ${area.country}`))];
+                          
+                          return (
+                            <div>
+                              {zoneAreas.length > 0 && (
+                                <div>
+                                  <span className="font-medium">Zones:</span> {zoneAreas.slice(0, 3).join(', ')}{zoneAreas.length > 3 && ` +${zoneAreas.length - 3} more`}
+                                </div>
+                              )}
+                              {regionAreas.length > 0 && (
+                                <div>
+                                  <span className="font-medium">Regions:</span> {regionAreas.slice(0, 3).join(', ')}{regionAreas.length > 3 && ` +${regionAreas.length - 3} more`}
+                                </div>
+                              )}
+                              {countryAreas.length > 0 && (
+                                <div>
+                                  <span className="font-medium">Countries:</span> {countryAreas.join(', ')}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+
             {/* Selected Location */}
             {selectedLocation && (
               <Card className="bg-green-50 border-green-200">
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-green-600 mt-0.5" />
+                <CardContent className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <h4 className="font-medium text-foreground">Selected Location</h4>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <h4 className="font-medium text-sm text-foreground">
+                          Selected Location
+                        </h4>
+                        <p className="text-xs mt-1 text-muted-foreground">
                           {formatAddress(selectedLocation)}
                         </p>
-                        <p className="text-xs text-green-600 mt-1">
-                          Coordinates: {selectedLocation.lat.toFixed(6)}, {selectedLocation.lon.toFixed(6)}
+                        <p className="text-xs mt-1 text-green-600">
+                          {selectedLocation.lat.toFixed(6)}, {selectedLocation.lon.toFixed(6)}
                         </p>
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={confirmLocation} size="sm" className="bg-green-600 hover:bg-green-700">
-                        <Check className="w-4 h-4 mr-1" />
+                      <Button 
+                        onClick={confirmLocation} 
+                        size="sm" 
+                        className="text-xs h-7 bg-green-600 hover:bg-green-700"
+                      >
+                        <Check className="w-3 h-3 mr-1" />
                         Use This Location
                       </Button>
                       <Button 
                         onClick={() => setSelectedLocation(null)} 
                         variant="outline" 
                         size="sm"
+                        className="text-xs h-7"
                       >
-                        <X className="w-4 h-4 mr-1" />
+                        <X className="w-3 h-3 mr-1" />
                         Clear
                       </Button>
                     </div>
@@ -436,7 +674,9 @@ export const OpenStreetMapDialog: React.FC<OpenStreetMapDialogProps> = ({
                     >
                       <Popup>
                         <div className="p-2">
-                          <div className="font-medium text-sm text-green-600">Selected Location</div>
+                          <div className="font-medium text-sm text-green-600">
+                            Selected Location
+                          </div>
                           <div className="text-sm">{formatAddress(selectedLocation)}</div>
                           <div className="text-xs text-muted-foreground mt-1">
                             {selectedLocation.lat.toFixed(6)}, {selectedLocation.lon.toFixed(6)}

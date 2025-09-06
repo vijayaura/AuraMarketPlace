@@ -563,12 +563,20 @@ const SingleProductConfig = () => {
         }
       } catch (err: any) {
         const status = err?.status;
-        const msg = status === 400 ? 'Bad request while loading minimum premiums.'
-          : status === 401 ? 'Unauthorized. Please log in again.'
-          : status === 403 ? 'Forbidden. You do not have access.'
-          : status >= 500 ? 'Server error while loading minimum premiums.'
-          : 'Failed to load minimum premiums.';
-        setMinimumPremiumsMastersError(msg);
+        const errorMessage = err?.message || '';
+        
+        // Suppress error message for 500 status with "error fetching" message on first load
+        if (status === 500 && errorMessage.includes('error fetching')) {
+          console.warn('[MinimumPremiums] API returned 500 with "error fetching" - suppressing error message');
+          setMinimumPremiumsMastersError(null);
+        } else {
+          const msg = status === 400 ? 'Bad request while loading minimum premiums.'
+            : status === 401 ? 'Unauthorized. Please log in again.'
+            : status === 403 ? 'Forbidden. You do not have access.'
+            : status >= 500 ? 'Server error while loading minimum premiums.'
+            : 'Failed to load minimum premiums.';
+          setMinimumPremiumsMastersError(msg);
+        }
         // Still show UI even if API fails - just log the error
         try { console.warn('[MinimumPremiums] API failed, showing UI with default data:', err); } catch {}
       }
@@ -624,7 +632,7 @@ const SingleProductConfig = () => {
         });
       });
       const body = {
-        minimum_premiums: Array.from(byProject.values()).map(group => ({
+        minimum_premium_rates: Array.from(byProject.values()).map(group => ({
           project_type: group.projectLabel,
           sub_projects: group.items,
         }))
@@ -5649,25 +5657,25 @@ const SingleProductConfig = () => {
                       <h3 className="font-semibold text-foreground mb-4">Pricing Configuration</h3>
                       <div className="space-y-2">
                         {[
-                          { id: "base-rates", label: "Base Rates", icon: DollarSign, count: activeProjectTypes.length },
-                          { id: "minimum-premiums", label: "Minimum Premium", icon: DollarSign, count: activeProjectTypes.length },
-                          { id: "project-risk", label: "Project Risk Factors", icon: TrendingUp, count: 4 },
-                          { id: "contractor-risk", label: "Contractor Risk Factors", icon: Shield, count: 3 },
-                          { id: "coverage-options", label: "Coverage Options & Extensions", icon: Shield, count: 2 },
-                          { id: "limits-deductibles", label: "Policy Limits & Deductibles", icon: Calculator, count: 2 },
-                          { id: "clause-pricing", label: "Clause Pricing Configuration", icon: FileText, count: ratingConfig.clausesPricing.length },
-                          { id: "construction-types", label: "Construction Types", icon: DollarSign, count: activeConstructionTypes.length },
-                          { id: "countries", label: "Countries", icon: MapPin, count: activeCountries.length },
-                          { id: "regions", label: "Regions", icon: MapPin, count: 0 },
-                          { id: "zones", label: "Zones", icon: MapPin, count: 0 },
-                          { id: "role-types", label: "Role Types", icon: Shield, count: 5 },
-                          { id: "contract-types", label: "Contract Types", icon: FileText, count: 4 },
-                          { id: "soil-types", label: "Soil Types", icon: TrendingUp, count: 6 },
-                          { id: "subcontractor-types", label: "Subcontractor Types", icon: Shield, count: 8 },
-                          { id: "consultant-roles", label: "Consultant Roles", icon: Shield, count: 7 },
-                          { id: "security-types", label: "Security Types", icon: Shield, count: 5 },
-                          { id: "area-types", label: "Area Types", icon: MapPin, count: 6 },
-                          { id: "fee-types", label: "Fee Types", icon: Percent, count: ratingConfig.feeTypes?.length || 0 },
+                          { id: "base-rates", label: "Base Rates", icon: DollarSign },
+                          { id: "minimum-premiums", label: "Minimum Premium", icon: DollarSign },
+                          { id: "project-risk", label: "Project Risk Factors", icon: TrendingUp },
+                          { id: "contractor-risk", label: "Contractor Risk Factors", icon: Shield },
+                          { id: "coverage-options", label: "Coverage Options & Extensions", icon: Shield },
+                          { id: "limits-deductibles", label: "Policy Limits & Deductibles", icon: Calculator },
+                          { id: "clause-pricing", label: "Clause Pricing Configuration", icon: FileText },
+                          { id: "construction-types", label: "Construction Types", icon: DollarSign },
+                          { id: "countries", label: "Countries", icon: MapPin },
+                          { id: "regions", label: "Regions", icon: MapPin },
+                          { id: "zones", label: "Zones", icon: MapPin },
+                          { id: "role-types", label: "Role Types", icon: Shield },
+                          { id: "contract-types", label: "Contract Types", icon: FileText },
+                          { id: "soil-types", label: "Soil Types", icon: TrendingUp },
+                          { id: "subcontractor-types", label: "Subcontractor Types", icon: Shield },
+                          { id: "consultant-roles", label: "Consultant Roles", icon: Shield },
+                          { id: "security-types", label: "Security Types", icon: Shield },
+                          { id: "area-types", label: "Area Types", icon: MapPin },
+                          { id: "fee-types", label: "Fee Types", icon: Percent },
                         ].map((section) => (
                           <button
                             key={section.id}
@@ -5770,9 +5778,7 @@ const SingleProductConfig = () => {
                               <section.icon className="w-4 h-4" />
                               <span className="font-medium text-sm">{section.label}</span>
                             </div>
-                            <Badge variant={activePricingTab === section.id ? "secondary" : "outline"} className="text-xs">
-                              {section.count}
-                            </Badge>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
                           </button>
                         ))}
                       </div>

@@ -351,7 +351,7 @@ export interface SaveMinimumPremiumsRequestItem {
 }
 
 export interface SaveMinimumPremiumsRequest {
-  minimum_premiums: SaveMinimumPremiumsRequestItem[];
+  minimum_premium_rates: SaveMinimumPremiumsRequestItem[];
 }
 
 export interface SaveMinimumPremiumsResponse { message?: string }
@@ -362,7 +362,7 @@ export async function saveMinimumPremiums(
   body: SaveMinimumPremiumsRequest
 ): Promise<SaveMinimumPremiumsResponse> {
   return apiPost<SaveMinimumPremiumsResponse>(
-    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premiums`,
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premium-rates`,
     body
   );
 }
@@ -373,7 +373,7 @@ export async function updateMinimumPremiums(
   body: SaveMinimumPremiumsRequest
 ): Promise<SaveMinimumPremiumsResponse> {
   return apiPatch<SaveMinimumPremiumsResponse>(
-    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premiums`,
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premium-rates`,
     body
   );
 }
@@ -399,7 +399,7 @@ export async function getMinimumPremiums(
   productId: number | string
 ): Promise<GetMinimumPremiumsResponse> {
   return apiGet<GetMinimumPremiumsResponse>(
-    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premiums`
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premium-rates`
   );
 }
 

@@ -37,6 +37,8 @@ export const createQuoteProject = async (data: QuoteProjectRequest): Promise<Quo
 };
 
 // Update an existing quote project
-export const updateQuoteProject = async (data: QuoteProjectRequest): Promise<QuoteProjectResponse> => {
-  return apiPatch<QuoteProjectResponse>('/quotes/project/1', data);
+export const updateQuoteProject = async (data: QuoteProjectRequest, quoteId?: number): Promise<QuoteProjectResponse> => {
+  const endpoint = quoteId ? `/quotes/project/${quoteId}` : '/quotes/project/1';
+  console.log('🔄 updateQuoteProject called with:', { quoteId, endpoint });
+  return apiPatch<QuoteProjectResponse>(endpoint, data);
 };
