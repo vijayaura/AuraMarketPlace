@@ -344,6 +344,65 @@ export async function getBaseRates(
   );
 }
 
+// Minimum Premiums - Same structure as Base Rates but with minimum_premiums endpoint
+export interface SaveMinimumPremiumsRequestItem {
+  project_type: string;
+  sub_projects: BaseRateSubProjectRequest[];
+}
+
+export interface SaveMinimumPremiumsRequest {
+  minimum_premiums: SaveMinimumPremiumsRequestItem[];
+}
+
+export interface SaveMinimumPremiumsResponse { message?: string }
+
+export async function saveMinimumPremiums(
+  insurerId: number | string,
+  productId: number | string,
+  body: SaveMinimumPremiumsRequest
+): Promise<SaveMinimumPremiumsResponse> {
+  return apiPost<SaveMinimumPremiumsResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premiums`,
+    body
+  );
+}
+
+export async function updateMinimumPremiums(
+  insurerId: number | string,
+  productId: number | string,
+  body: SaveMinimumPremiumsRequest
+): Promise<SaveMinimumPremiumsResponse> {
+  return apiPatch<SaveMinimumPremiumsResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premiums`,
+    body
+  );
+}
+
+// Get Minimum Premiums
+export interface GetMinimumPremiumsItemSubProject {
+  name: string;
+  currency: 'AED' | '%';
+  base_rate: number;
+  pricing_type: PricingTypeEnum;
+  quote_option: QuoteOptionEnum;
+}
+
+export interface GetMinimumPremiumsItem {
+  project_type: string;
+  sub_projects: GetMinimumPremiumsItemSubProject[];
+}
+
+export type GetMinimumPremiumsResponse = GetMinimumPremiumsItem[];
+
+export async function getMinimumPremiums(
+  insurerId: number | string,
+  productId: number | string
+): Promise<GetMinimumPremiumsResponse> {
+  return apiGet<GetMinimumPremiumsResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premiums`
+  );
+}
+
 // Construction Types Config
 export type ConstructionPricingEnum = 'PERCENTAGE' | 'FIXED_RATE';
 

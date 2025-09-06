@@ -25,7 +25,7 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, listMasterConstructionTypes, listMasterRoleTypes, listMasterContractTypes, listMasterSoilTypes, listMasterSubcontractorTypes, listMasterConsultantRoles, listMasterSecurityTypes, listMasterAreaTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, updateRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getAreaTypesConfiguration, createAreaTypesConfiguration, updateAreaTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type GetAreaTypesResponse, type SaveAreaTypesRequest, type SaveAreaTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, updateRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getMinimumPremiums, saveMinimumPremiums, updateMinimumPremiums, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getAreaTypesConfiguration, createAreaTypesConfiguration, updateAreaTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type GetAreaTypesResponse, type SaveAreaTypesRequest, type SaveAreaTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
@@ -34,6 +34,7 @@ import CEWsConfiguration from "./SingleProductConfig/components/CEWsConfiguratio
 import WordingConfigurations from "./SingleProductConfig/components/WordingConfigurations";
 import FeeTypes from "./SingleProductConfig/components/FeeTypes";
 import BaseRates from "./SingleProductConfig/components/BaseRates";
+import MinimumPremium from "./SingleProductConfig/components/MinimumPremium";
 import ProjectRiskFactors from "./SingleProductConfig/components/ProjectRiskFactors";
 import RequiredDocuments from "./SingleProductConfig/components/RequiredDocuments";
 import ContractorRiskFactors from "./SingleProductConfig/components/ContractorRiskFactors";
@@ -139,6 +140,11 @@ const SingleProductConfig = () => {
   const [isLoadingBaseRatesMasters, setIsLoadingBaseRatesMasters] = useState(false);
   const [baseRatesMastersError, setBaseRatesMastersError] = useState<string | null>(null);
   const [isSavingBaseRates, setIsSavingBaseRates] = useState(false);
+  
+  // Masters fetched from API for Minimum Premiums
+  const [isLoadingMinimumPremiumsMasters, setIsLoadingMinimumPremiumsMasters] = useState(false);
+  const [minimumPremiumsMastersError, setMinimumPremiumsMastersError] = useState<string | null>(null);
+  const [isSavingMinimumPremiums, setIsSavingMinimumPremiums] = useState(false);
   
   // Project Risk Factors loading state
   const [isLoadingProjectRiskFactors, setIsLoadingProjectRiskFactors] = useState(false);
@@ -499,6 +505,146 @@ const SingleProductConfig = () => {
       try { toast({ title: 'Failed to load', description: msg, variant: 'destructive' }); } catch {}
     } finally {
       setIsLoadingBaseRatesMasters(false);
+    }
+  };
+
+  // Always fetch on demand (Pricing tab or Minimum Premiums click)
+  const fetchMinimumPremiumsMasters = async (): Promise<void> => {
+    setIsLoadingMinimumPremiumsMasters(true);
+    setMinimumPremiumsMastersError(null);
+    try { console.debug('[MinimumPremiums] Loading masters...'); } catch {}
+    try { toast({ title: 'Loading...', description: 'Fetching Project Types and Sub Project Types for Minimum Premiums' }); } catch {}
+    try {
+      const projects = await listMasterProjectTypes();
+      setProjectTypesMasters(projects);
+      const subs = await listMasterSubProjectTypes();
+      setSubProjectTypesMasters(subs);
+      // Map sub projects under their parent project type (slugged value)
+      const projectSlugById = new Map<number, string>();
+      const projectSlugs: string[] = [];
+      projects.forEach((p) => {
+        const slug = (p.label || String(p.id)).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        projectSlugById.set(p.id, slug);
+        projectSlugs.push(slug);
+      });
+      // Keep shimmer running; fetch insurer minimum premiums and map values onto the metadata
+      const insurerId = getInsurerCompanyId();
+      const pid = product?.id || '1';
+      let mappedEntries: SubProjectEntry[] = subs.map((s) => ({
+        projectType: projectSlugById.get(s.projectTypeId) || String(s.projectTypeId),
+        subProjectType: s.label,
+        pricingType: 'percentage',
+        baseRate: 0,
+        quoteOption: 'quote',
+      }));
+      try {
+        if (insurerId && pid) {
+          const minimumPremiums = await getMinimumPremiums(insurerId, String(pid));
+          const byProject = new Map<string, Array<{ name: string; currency: 'AED' | '%'; base_rate: number; pricing_type: string; quote_option: string }>>();
+          (minimumPremiums || []).forEach((item) => {
+            const slug = (item.project_type || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            byProject.set(slug, Array.isArray(item.sub_projects) ? item.sub_projects : []);
+          });
+          mappedEntries = mappedEntries.map((e) => {
+            const list = byProject.get(e.projectType) || [];
+            const match = list.find(sp => (sp.name || '').toLowerCase() === e.subProjectType.toLowerCase());
+            if (!match) return e;
+            // Append values into UI without overwriting metadata structure
+            const normalizedPricing = String(match.pricing_type || '').toUpperCase() === 'FIXED_AMOUNT' ? 'fixed' : 'percentage';
+            const normalizedQuote = String(match.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote';
+            return {
+              ...e,
+              pricingType: normalizedPricing as 'fixed' | 'percentage',
+              baseRate: Number(match.base_rate || 0),
+              // currency informs display; UI already shows % vs AED based on pricingType
+              quoteOption: normalizedQuote as 'quote' | 'no-quote',
+            };
+          });
+        }
+      } catch (err: any) {
+        const status = err?.status;
+        const msg = status === 400 ? 'Bad request while loading minimum premiums.'
+          : status === 401 ? 'Unauthorized. Please log in again.'
+          : status === 403 ? 'Forbidden. You do not have access.'
+          : status >= 500 ? 'Server error while loading minimum premiums.'
+          : 'Failed to load minimum premiums.';
+        setMinimumPremiumsMastersError(msg);
+        // Still show UI even if API fails - just log the error
+        try { console.warn('[MinimumPremiums] API failed, showing UI with default data:', err); } catch {}
+      }
+      // Always set the UI data even if API fails
+      setRatingConfig((prev) => ({ ...prev, subProjectEntries: mappedEntries }));
+      setSelectedProjectTypes(new Set(projectSlugs));
+      try { console.debug('[MinimumPremiums] Loaded', { projects: projects?.length, subs: subs?.length }); } catch {}
+      try { toast({ title: 'Loaded', description: `Project Types: ${(projects||[]).length}, Sub Types: ${(subs||[]).length}` }); } catch {}
+    } catch (err: any) {
+      const status = err?.status;
+      const msg = status === 400 ? 'Bad request while loading project types.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while loading masters.'
+        : 'Failed to load masters.';
+      setMinimumPremiumsMastersError(msg);
+      // Still show UI even if masters loading fails - use fallback data
+      try { console.warn('[MinimumPremiums] Masters loading failed, showing UI with fallback data:', err); } catch {}
+      // Set fallback data to ensure UI is shown
+      setRatingConfig((prev) => ({ ...prev, subProjectEntries: [] }));
+      setSelectedProjectTypes(new Set());
+      try { toast({ title: 'Warning', description: 'Using fallback data. Some features may be limited.', variant: 'destructive' }); } catch {}
+    } finally {
+      setIsLoadingMinimumPremiumsMasters(false);
+    }
+  };
+
+  // Minimum Premiums save handler
+  const handleSaveMinimumPremiums = async () => {
+    const insurerId = getInsurerCompanyId();
+    const pid = product?.id || '1';
+    if (!insurerId || !pid) return;
+    
+    setIsSavingMinimumPremiums(true);
+    try {
+      setMinimumPremiumsMastersError(null);
+      const byProject = new Map<string, { projectLabel: string; items: { name: string; pricing_type: 'PERCENTAGE' | 'FIXED_AMOUNT'; base_rate: number; currency: '%' | 'AED'; quote_option: 'AUTO_QUOTE' | 'NO_QUOTE' | 'QUOTE_AND_REFER' }[] }>();
+      const labelBySlug = new Map<string, string>();
+      (projectTypesMasters || []).forEach(p => labelBySlug.set(p.label.toLowerCase().replace(/[^a-z0-9]+/g, '-'), p.label));
+      ratingConfig.subProjectEntries.forEach(e => {
+        const slug = e.projectType;
+        const projectLabel = labelBySlug.get(slug) || slug;
+        if (!byProject.has(slug)) byProject.set(slug, { projectLabel, items: [] });
+        const pricing_type = (String(e.pricingType).toLowerCase() === 'fixed') ? 'FIXED_AMOUNT' : 'PERCENTAGE';
+        const currency = pricing_type === 'FIXED_AMOUNT' ? 'AED' : '%';
+        const quote_option = (String(e.quoteOption).toLowerCase() === 'no-quote') ? 'NO_QUOTE' : 'AUTO_QUOTE';
+        byProject.get(slug)!.items.push({
+          name: e.subProjectType,
+          pricing_type,
+          base_rate: Number(e.baseRate || 0),
+          currency,
+          quote_option,
+        });
+      });
+      const body = {
+        minimum_premiums: Array.from(byProject.values()).map(group => ({
+          project_type: group.projectLabel,
+          sub_projects: group.items,
+        }))
+      };
+      const hasExisting = Boolean(projectTypesMasters && subProjectTypesMasters && ratingConfig.subProjectEntries.some(e => Number(e.baseRate) !== 0));
+      const resp = hasExisting
+        ? await updateMinimumPremiums(insurerId, String(pid), body)
+        : await saveMinimumPremiums(insurerId, String(pid), body);
+      toast({ title: 'Saved', description: resp?.message || 'Minimum premiums saved.' });
+    } catch (err: any) {
+      const status = err?.status;
+      const msg = status === 400 ? 'Invalid data while saving minimum premiums.'
+        : status === 401 ? 'Unauthorized. Please log in again.'
+        : status === 403 ? 'Forbidden. You do not have access.'
+        : status >= 500 ? 'Server error while saving minimum premiums.'
+        : (err?.message || 'Failed to save minimum premiums.');
+      setMinimumPremiumsMastersError(msg);
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      setIsSavingMinimumPremiums(false);
     }
   };
 
@@ -5504,6 +5650,7 @@ const SingleProductConfig = () => {
                       <div className="space-y-2">
                         {[
                           { id: "base-rates", label: "Base Rates", icon: DollarSign, count: activeProjectTypes.length },
+                          { id: "minimum-premiums", label: "Minimum Premium", icon: DollarSign, count: activeProjectTypes.length },
                           { id: "project-risk", label: "Project Risk Factors", icon: TrendingUp, count: 4 },
                           { id: "contractor-risk", label: "Contractor Risk Factors", icon: Shield, count: 3 },
                           { id: "coverage-options", label: "Coverage Options & Extensions", icon: Shield, count: 2 },
@@ -5528,6 +5675,8 @@ const SingleProductConfig = () => {
                               setActivePricingTab(section.id);
                               if (section.id === 'base-rates') {
                                 await fetchBaseRatesMasters();
+                              } else if (section.id === 'minimum-premiums') {
+                                await fetchMinimumPremiumsMasters();
                               } else if (section.id === 'project-risk') {
                                 await fetchProjectRiskFactors();
                               } else if (section.id === 'contractor-risk') {
@@ -5643,6 +5792,21 @@ const SingleProductConfig = () => {
                               onProjectTypeToggle={toggleProjectType}
                           onSave={handleSaveBaseRates}
                           isSaving={isSavingBaseRates}
+                            />
+                      )}
+
+                      {activePricingTab === "minimum-premiums" && (
+                        <MinimumPremium
+                          isLoading={isLoadingMinimumPremiumsMasters}
+                          error={minimumPremiumsMastersError}
+                          projectTypesMasters={projectTypesMasters}
+                          activeProjectTypes={activeProjectTypes}
+                          ratingConfig={ratingConfig}
+                              selectedProjectTypes={selectedProjectTypes}
+                              onSubProjectEntryChange={updateSubProjectEntry}
+                              onProjectTypeToggle={toggleProjectType}
+                          onSave={handleSaveMinimumPremiums}
+                          isSaving={isSavingMinimumPremiums}
                             />
                       )}
 

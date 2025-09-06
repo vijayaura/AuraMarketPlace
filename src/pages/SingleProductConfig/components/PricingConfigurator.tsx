@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Calculator, DollarSign, TrendingUp, Shield, FileText, MapPin, Percent } from "lucide-react";
 import BaseRates from "./BaseRates";
+import MinimumPremium from "./MinimumPremium";
 import ProjectRiskFactors from "./ProjectRiskFactors";
 import ContractorRiskFactors from "./ContractorRiskFactors";
 import CoverageOptionsExtensions from "./CoverageOptionsExtensions";
@@ -19,6 +20,7 @@ type PricingConfiguratorProps = {
   activeConstructionTypes: any[];
   activeCountries: any[];
   fetchBaseRatesMasters: () => Promise<void>;
+  fetchMinimumPremiumsMasters: () => Promise<void>;
   fetchProjectRiskFactors: () => Promise<void>;
   fetchCoverageOptions: () => Promise<void>;
   fetchPolicyLimits: () => Promise<void>;
@@ -33,6 +35,9 @@ type PricingConfiguratorProps = {
   selectedProjectTypes: Set<string>;
   updateSubProjectEntry: (index: number, field: string, value: string | number) => void;
   toggleProjectType: (projectType: string) => void;
+  // Minimum Premiums props
+  isLoadingMinimumPremiumsMasters: boolean;
+  minimumPremiumsMastersError: string | null;
   // Project Risk Factors props
   addDurationLoading: () => void;
   updateDurationLoading: (id: any, field: string, value: any) => void;
@@ -80,6 +85,9 @@ type PricingConfiguratorProps = {
   // Base Rates save handler
   handleSaveBaseRates: () => Promise<void>;
   isSavingBaseRates: boolean;
+  // Minimum Premiums save handler
+  handleSaveMinimumPremiums: () => Promise<void>;
+  isSavingMinimumPremiums: boolean;
   handleSaveProjectRiskFactors: () => Promise<void>;
   // Master Data props
   constructionTypesData: any[];
@@ -199,6 +207,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   activeConstructionTypes,
   activeCountries,
   fetchBaseRatesMasters,
+  fetchMinimumPremiumsMasters,
   fetchProjectRiskFactors,
   fetchCoverageOptions,
   fetchPolicyLimits,
@@ -212,6 +221,8 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   selectedProjectTypes,
   updateSubProjectEntry,
   toggleProjectType,
+  isLoadingMinimumPremiumsMasters,
+  minimumPremiumsMastersError,
   addDurationLoading,
   updateDurationLoading,
   removeDurationLoading,
@@ -253,6 +264,8 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
   handleSavePolicyLimits,
   handleSaveBaseRates,
   isSavingBaseRates,
+  handleSaveMinimumPremiums,
+  isSavingMinimumPremiums,
   handleSaveProjectRiskFactors,
   // Master Data props
   constructionTypesData,
@@ -386,6 +399,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
             <div className="space-y-2">
               {[
                 { id: "base-rates", label: "Base Rates", icon: DollarSign, count: activeProjectTypes.length },
+                { id: "minimum-premiums", label: "Minimum Premium", icon: DollarSign, count: activeProjectTypes.length },
                 { id: "project-risk", label: "Project Risk Factors", icon: TrendingUp, count: 4 },
                 { id: "contractor-risk", label: "Contractor Risk Factors", icon: Shield, count: 3 },
                 { id: "coverage-options", label: "Coverage Options & Extensions", icon: Shield, count: 2 },
@@ -410,6 +424,8 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                     setActivePricingTab(section.id);
                     if (section.id === 'base-rates') {
                       await fetchBaseRatesMasters();
+                    } else if (section.id === 'minimum-premiums') {
+                      await fetchMinimumPremiumsMasters();
                     } else if (section.id === 'project-risk') {
                       await fetchProjectRiskFactors();
                     } else if (section.id === 'coverage-options') {
@@ -452,6 +468,21 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                 onProjectTypeToggle={toggleProjectType}
                 onSave={handleSaveBaseRates}
                 isSaving={isSavingBaseRates}
+              />
+            )}
+
+            {activePricingTab === "minimum-premiums" && (
+              <MinimumPremium
+                isLoading={isLoadingMinimumPremiumsMasters}
+                error={minimumPremiumsMastersError}
+                projectTypesMasters={projectTypesMasters}
+                activeProjectTypes={activeProjectTypes}
+                ratingConfig={ratingConfig}
+                selectedProjectTypes={Array.isArray(selectedProjectTypes) ? new Set(selectedProjectTypes) : (selectedProjectTypes as Set<string>)}
+                onSubProjectEntryChange={updateSubProjectEntry}
+                onProjectTypeToggle={toggleProjectType}
+                onSave={handleSaveMinimumPremiums}
+                isSaving={isSavingMinimumPremiums}
               />
             )}
 
