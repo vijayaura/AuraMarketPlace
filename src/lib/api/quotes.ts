@@ -95,6 +95,29 @@ export interface InsuredDetailsResponse {
   message: string;
 }
 
+// Types for Contract Structure API
+export interface ContractStructureRequest {
+  main_contractor: string;
+  principal_owner: string;
+  contract_type: string;
+  contract_number: string;
+  experience_years: number;
+  sub_contractors: Array<{
+    name: string;
+    contract_type: string;
+    contract_number: string;
+  }>;
+  consultants: Array<{
+    name: string;
+    role: string;
+    license_number: string;
+  }>;
+}
+
+export interface ContractStructureResponse {
+  message: string;
+}
+
 // Save insured details (POST for new)
 export const saveInsuredDetails = async (data: InsuredDetailsRequest, quoteId: number): Promise<InsuredDetailsResponse> => {
   if (!quoteId) {
@@ -113,4 +136,24 @@ export const updateInsuredDetails = async (data: InsuredDetailsRequest, quoteId:
   const endpoint = `/quotes/insured/${quoteId}`;
   console.log('🔄 updateInsuredDetails (PATCH) called with:', { quoteId, endpoint, data });
   return apiPatch<InsuredDetailsResponse>(endpoint, data);
+};
+
+// Save contract structure (POST for new)
+export const saveContractStructure = async (data: ContractStructureRequest, quoteId: number): Promise<ContractStructureResponse> => {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for contract structure operations');
+  }
+  const endpoint = `/quotes/contract/${quoteId}`;
+  console.log('💾 saveContractStructure (POST) called with:', { quoteId, endpoint, data });
+  return apiPost<ContractStructureResponse>(endpoint, data);
+};
+
+// Update contract structure (PATCH for existing)
+export const updateContractStructure = async (data: ContractStructureRequest, quoteId: number): Promise<ContractStructureResponse> => {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for contract structure operations');
+  }
+  const endpoint = `/quotes/contract/${quoteId}`;
+  console.log('🔄 updateContractStructure (PATCH) called with:', { quoteId, endpoint, data });
+  return apiPatch<ContractStructureResponse>(endpoint, data);
 };

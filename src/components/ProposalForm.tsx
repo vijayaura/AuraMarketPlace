@@ -28,7 +28,7 @@ import {
   type SubProjectTypeItem
 } from "@/lib/api/masters";
 import { getBroker, type Broker } from "@/lib/api/brokers";
-import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse } from "@/lib/api/quotes";
+import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 
@@ -88,6 +88,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange }: ProposalF
   
   // Insured Details API State
   const [isSavingInsuredDetails, setIsSavingInsuredDetails] = useState(false);
+  
+  // Contract Structure API State
+  const [isSavingContractStructure, setIsSavingContractStructure] = useState(false);
   
   // Fresh Temporary Storage for Current Quote Session
   const [currentQuoteId, setCurrentQuoteId] = useState<number | null>(null);
@@ -1101,6 +1104,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange }: ProposalF
         if (!formData.contractNumber?.trim()) {
           errors.contractNumber = "Contract number is required";
         }
+        if (!formData.experienceYears || parseInt(formData.experienceYears) <= 0) {
+          errors.experienceYears = "Valid experience years is required";
+        }
         break;
         
       // Add more cases for other steps as needed
@@ -1340,6 +1346,86 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange }: ProposalF
     }
   };
 
+  // Transform contract structure form data to API format
+  const transformContractStructureToAPI = (): ContractStructureRequest => {
+    return {
+      main_contractor: formData.mainContractor || '',
+      principal_owner: formData.principalOwner || '',
+      contract_type: formData.contractType || '',
+      contract_number: formData.contractNumber || '',
+      experience_years: parseInt(formData.experienceYears) || 0,
+      sub_contractors: formData.subContractors || [],
+      consultants: formData.consultants || []
+    };
+  };
+
+  // Save contract structure via API
+  const saveContractStructureData = async (): Promise<boolean> => {
+    if (!currentQuoteId) {
+      toast({
+        title: "Error",
+        description: "Quote ID not found. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsSavingContractStructure(true);
+    try {
+      const apiData = transformContractStructureToAPI();
+      console.log('💾 Saving contract structure:', apiData);
+      
+      // Check if contract_structure step is already completed to decide between POST and PATCH
+      const isContractStructureCompleted = isStepCompleted('contract_structure');
+      console.log('📊 Contract structure completion status:', isContractStructureCompleted);
+      
+      let response;
+      if (isContractStructureCompleted) {
+        // Use PATCH for updates
+        console.log('🔄 Using PATCH to update existing contract structure');
+        response = await updateContractStructure(apiData, currentQuoteId);
+      } else {
+        // Use POST for new contract structure
+        console.log('💾 Using POST to create new contract structure');
+        response = await saveContractStructure(apiData, currentQuoteId);
+      }
+      
+      console.log('✅ Contract structure saved successfully:', response);
+      
+      // Mark contract_structure step as completed
+      markStepCompleted('contract_structure');
+      
+      toast({
+        title: "Contract Structure Saved",
+        description: "Contract structure has been saved successfully.",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error saving contract structure:', error);
+      
+      let errorMessage = "Failed to save contract structure. Please try again.";
+      if (error.response?.status === 400) {
+        errorMessage = "Invalid data provided. Please check your inputs.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Authentication required. Please log in again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "You don't have permission to save contract structure.";
+      } else if (error.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSavingContractStructure(false);
+    }
+  };
+
   // Effect to validate and clear completion date if it becomes invalid
   useEffect(() => {
     if (formData.startDate && formData.completionDate) {
@@ -1534,7 +1620,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange }: ProposalF
                             mainContractor: 'Main Contractor',
                             principalOwner: 'Principal Owner',
                             contractType: 'Contract Type',
-                            contractNumber: 'Contract Number'
+                            contractNumber: 'Contract Number',
+                            experienceYears: 'Experience Years'
                           };
                           return fieldMap[field] || field;
                         });
@@ -1560,12 +1647,18 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange }: ProposalF
                         if (success) {
                           setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                         }
+                      } else if (currentStep === 2) {
+                        // Contract Structure step
+                        const success = await saveContractStructureData();
+                        if (success) {
+                          setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                        }
                       } else {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       }
                     }}
-                    disabled={isSavingProject || isSavingInsuredDetails || isCheckingWaterBody}
+                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isCheckingWaterBody}
                   >
                     {isSavingProject ? (
                       <>
@@ -1573,6 +1666,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange }: ProposalF
                         Saving...
                       </>
                     ) : isSavingInsuredDetails ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : isSavingContractStructure ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Saving...
