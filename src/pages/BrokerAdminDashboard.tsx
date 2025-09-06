@@ -293,7 +293,7 @@ const BrokerAdminDashboard = () => {
                <Button 
                  size="lg"
                  className="gap-2"
-                 onClick={() => navigate("/customer/proposal")}
+                 onClick={() => navigate("/customer/proposal?new=true")}
                >
                  <Plus className="w-5 h-5" />
                  Create New Quote

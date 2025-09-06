@@ -235,29 +235,29 @@ const MarketAdminPolicyDetails = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Policy Number</label>
+                    <div className="text-sm font-medium text-muted-foreground">Policy Number</div>
                     <p className="text-sm font-semibold">{policy.policyNumber}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Status</label>
+                    <div className="text-sm font-medium text-muted-foreground">Status</div>
                     <div className="mt-1">
                       {getPolicyStatusBadge(policy.policyStatus)}
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Start Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">Start Date</div>
                     <p className="text-sm">{policy.startDate}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">End Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">End Date</div>
                     <p className="text-sm">{policy.endDate}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Broker</label>
+                    <div className="text-sm font-medium text-muted-foreground">Broker</div>
                     <p className="text-sm text-primary font-medium">{policy.broker}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Insurer</label>
+                    <div className="text-sm font-medium text-muted-foreground">Insurer</div>
                     <p className="text-sm text-primary font-medium">{policy.insurer}</p>
                   </div>
                 </div>
@@ -275,31 +275,31 @@ const MarketAdminPolicyDetails = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Project Name</label>
+                    <div className="text-sm font-medium text-muted-foreground">Project Name</div>
                     <p className="text-sm font-semibold">{policy.projectName}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Project Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Project Type</div>
                     <p className="text-sm">{policy.projectType}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Construction Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Construction Type</div>
                     <p className="text-sm">{policy.constructionType}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Building Height</label>
+                    <div className="text-sm font-medium text-muted-foreground">Building Height</div>
                     <p className="text-sm">{policy.buildingHeight}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Building Age</label>
+                    <div className="text-sm font-medium text-muted-foreground">Building Age</div>
                     <p className="text-sm">{policy.buildingAge}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Location</label>
+                    <div className="text-sm font-medium text-muted-foreground">Location</div>
                     <p className="text-sm">{policy.location}</p>
                   </div>
                   <div className="col-span-2">
-                    <label className="text-sm font-medium text-muted-foreground">Occupation</label>
+                    <div className="text-sm font-medium text-muted-foreground">Occupation</div>
                     <p className="text-sm">{policy.occupation}</p>
                   </div>
                 </div>

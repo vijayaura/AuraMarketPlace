@@ -67,16 +67,18 @@ export const Hero = () => {
               <h3 className="text-2xl font-bold mb-6 text-center">Quick Quote Calculator</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Project Value</label>
+                  <label htmlFor="hero-project-value" className="block text-sm font-medium mb-2">Project Value</label>
                   <input 
+                    id="hero-project-value"
                     type="text" 
                     placeholder="e.g., AED 1,000,000" 
                     className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-secondary"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Project Type</label>
+                  <label htmlFor="hero-project-type" className="block text-sm font-medium mb-2">Project Type</label>
                   <select 
+                    id="hero-project-type"
                     className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-secondary"
                     value={selectedProjectType}
                     onChange={(e) => setSelectedProjectType(e.target.value)}
@@ -90,8 +92,9 @@ export const Hero = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Sub Project Type</label>
+                  <label htmlFor="hero-sub-project-type" className="block text-sm font-medium mb-2">Sub Project Type</label>
                   <select 
+                    id="hero-sub-project-type"
                     className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-secondary"
                     disabled={!selectedProjectType}
                   >

@@ -481,27 +481,27 @@ const MarketAdminBrokerPolicyDetails = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Policy Number</label>
+                    <div className="text-sm font-medium text-muted-foreground">Policy Number</div>
                     <p className="font-medium">{policy.policyNumber}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Certificate Number</label>
+                    <div className="text-sm font-medium text-muted-foreground">Certificate Number</div>
                     <p className="font-medium">{policy.certificateNumber}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Issue Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">Issue Date</div>
                     <p className="font-medium">{policy.issueDate}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Effective Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">Effective Date</div>
                     <p className="font-medium">{policy.effectiveDate}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Expiry Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">Expiry Date</div>
                     <p className="font-medium">{policy.expiryDate}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Deductible</label>
+                    <div className="text-sm font-medium text-muted-foreground">Deductible</div>
                     <p className="font-medium">{policy.deductible}</p>
                   </div>
                 </div>
@@ -519,25 +519,25 @@ const MarketAdminBrokerPolicyDetails = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Base Premium</label>
+                    <div className="text-sm font-medium text-muted-foreground">Base Premium</div>
                     <p className="font-medium">{policy.basePremium}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Tax Amount</label>
+                    <div className="text-sm font-medium text-muted-foreground">Tax Amount</div>
                     <p className="font-medium">{policy.taxAmount}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Total Premium</label>
+                    <div className="text-sm font-medium text-muted-foreground">Total Premium</div>
                     <p className="font-medium text-lg">{policy.totalPremium}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium text-muted-foreground">Payment Status:</label>
+                    <div className="text-sm font-medium text-muted-foreground">Payment Status:</div>
                     {getPaymentStatusBadge(policy.paymentStatus)}
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Payment Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">Payment Date</div>
                     <p className="font-medium">{policy.paymentDate}</p>
                   </div>
                 </div>
@@ -554,34 +554,34 @@ const MarketAdminBrokerPolicyDetails = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Project Name</label>
+                  <div className="text-sm font-medium text-muted-foreground">Project Name</div>
                   <p className="font-medium">{policy.projectName}</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Project Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Project Type</div>
                     <p className="font-medium">{policy.projectType}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Construction Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Construction Type</div>
                     <p className="font-medium">{policy.constructionType}</p>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Project Address</label>
+                  <div className="text-sm font-medium text-muted-foreground">Project Address</div>
                   <p className="font-medium">{policy.projectAddress}</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Project Value</label>
+                    <div className="text-sm font-medium text-muted-foreground">Project Value</div>
                     <p className="font-medium">{policy.projectValue}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Start Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">Start Date</div>
                     <p className="font-medium">{policy.startDate}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Completion Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">Completion Date</div>
                     <p className="font-medium">{policy.completionDate}</p>
                   </div>
                 </div>
@@ -723,19 +723,19 @@ const MarketAdminBrokerPolicyDetails = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Company</label>
+                  <div className="text-sm font-medium text-muted-foreground">Company</div>
                   <p className="font-medium">{policy.insurer}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Insurer Code</label>
+                  <div className="text-sm font-medium text-muted-foreground">Insurer Code</div>
                   <p className="font-medium">{policy.insurerCode}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Underwriter</label>
+                  <div className="text-sm font-medium text-muted-foreground">Underwriter</div>
                   <p className="font-medium">{policy.underwriterName}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Email</label>
+                  <div className="text-sm font-medium text-muted-foreground">Email</div>
                   <p className="font-medium text-sm">{policy.underwriterEmail}</p>
                 </div>
               </CardContent>
@@ -751,19 +751,19 @@ const MarketAdminBrokerPolicyDetails = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Company Name</label>
+                  <div className="text-sm font-medium text-muted-foreground">Company Name</div>
                   <p className="font-medium">{policy.insuredName}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Role</label>
+                  <div className="text-sm font-medium text-muted-foreground">Role</div>
                   <p className="font-medium">{policy.roleOfInsured}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">VAT Number</label>
+                  <div className="text-sm font-medium text-muted-foreground">VAT Number</div>
                   <p className="font-medium">{policy.vatNumber}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Country</label>
+                  <div className="text-sm font-medium text-muted-foreground">Country</div>
                   <p className="font-medium">{policy.countryOfIncorporation}</p>
                 </div>
               </CardContent>
@@ -779,19 +779,19 @@ const MarketAdminBrokerPolicyDetails = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Contract Works</label>
+                  <div className="text-sm font-medium text-muted-foreground">Contract Works</div>
                   <p className="font-medium">{policy.sumInsuredMaterial}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Plant & Equipment</label>
+                  <div className="text-sm font-medium text-muted-foreground">Plant & Equipment</div>
                   <p className="font-medium">{policy.sumInsuredPlant}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">TPL Limit</label>
+                  <div className="text-sm font-medium text-muted-foreground">TPL Limit</div>
                   <p className="font-medium">{policy.tplLimit}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Debris Removal</label>
+                  <div className="text-sm font-medium text-muted-foreground">Debris Removal</div>
                   <p className="font-medium">{policy.removalDebrisLimit}</p>
                 </div>
               </CardContent>

@@ -435,9 +435,9 @@ New Broker Name,contact@newbroker.com,BRK-XXX-2024,Active,NO,0,0,NO,0,0`;
                   {tempProductAssignments.includes(product.id) && (
                     <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t">
                       <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                        <div className="text-xs font-medium text-muted-foreground mb-1 block">
                           Min Commission (%)
-                        </label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"
@@ -449,9 +449,9 @@ New Broker Name,contact@newbroker.com,BRK-XXX-2024,Active,NO,0,0,NO,0,0`;
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                        <div className="text-xs font-medium text-muted-foreground mb-1 block">
                           Max Commission (%)
-                        </label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"

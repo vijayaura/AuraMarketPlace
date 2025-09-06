@@ -177,5 +177,5 @@ export const PolicyDelivery = () => {
 
 // Helper component for labels
 const Label = ({ className, children, ...props }: { className?: string; children: React.ReactNode; [key: string]: any }) => (
-  <label className={className} {...props}>{children}</label>
+  <div className={className} {...props}>{children}</div>
 );

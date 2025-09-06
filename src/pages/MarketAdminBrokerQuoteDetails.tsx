@@ -474,44 +474,44 @@ const MarketAdminBrokerQuoteDetails = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Project Name</label>
+                  <div className="text-sm font-medium text-muted-foreground">Project Name</div>
                   <p className="font-medium">{quote.projectName}</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Project Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Project Type</div>
                     <p className="font-medium">{quote.projectType}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Construction Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Construction Type</div>
                     <p className="font-medium">{quote.constructionType}</p>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Project Address</label>
+                  <div className="text-sm font-medium text-muted-foreground">Project Address</div>
                   <p className="font-medium">{quote.projectAddress}</p>
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                    <div>
-                     <label className="text-sm font-medium text-muted-foreground">Sum Insured Value</label>
+                     <div className="text-sm font-medium text-muted-foreground">Sum Insured Value</div>
                      <p className="font-medium">{quote.projectValue}</p>
                    </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Start Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">Start Date</div>
                     <p className="font-medium">{quote.startDate}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Completion Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">Completion Date</div>
                     <p className="font-medium">{quote.completionDate}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Construction Period</label>
+                    <div className="text-sm font-medium text-muted-foreground">Construction Period</div>
                     <p className="font-medium">{quote.constructionPeriod}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Maintenance Period</label>
+                    <div className="text-sm font-medium text-muted-foreground">Maintenance Period</div>
                     <p className="font-medium">{quote.maintenancePeriod}</p>
                   </div>
                 </div>
@@ -529,19 +529,19 @@ const MarketAdminBrokerQuoteDetails = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Insured Name</label>
+                    <div className="text-sm font-medium text-muted-foreground">Insured Name</div>
                     <p className="font-medium">{quote.insuredName}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Role of Insured</label>
+                    <div className="text-sm font-medium text-muted-foreground">Role of Insured</div>
                     <p className="font-medium">{quote.roleOfInsured}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">VAT Number</label>
+                    <div className="text-sm font-medium text-muted-foreground">VAT Number</div>
                     <p className="font-medium">{quote.vatNumber}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Country of Incorporation</label>
+                    <div className="text-sm font-medium text-muted-foreground">Country of Incorporation</div>
                     <p className="font-medium">{quote.countryOfIncorporation}</p>
                   </div>
                 </div>
@@ -552,11 +552,11 @@ const MarketAdminBrokerQuoteDetails = () => {
                     <h4 className="font-medium text-sm text-muted-foreground mb-3">Contact Information</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Email</label>
+                        <div className="text-sm font-medium text-muted-foreground">Email</div>
                         <p className="font-medium">{quote.contactEmail}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                        <div className="text-sm font-medium text-muted-foreground">Phone</div>
                         <p className="font-medium">{quote.phoneNumber}</p>
                       </div>
                     </div>
@@ -576,29 +576,29 @@ const MarketAdminBrokerQuoteDetails = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Main Contractor</label>
+                    <div className="text-sm font-medium text-muted-foreground">Main Contractor</div>
                     <p className="font-medium">{quote.mainContractor}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Principal/Owner</label>
+                    <div className="text-sm font-medium text-muted-foreground">Principal/Owner</div>
                     <p className="font-medium">{quote.principalOwner}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Contract Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Contract Type</div>
                     <p className="font-medium">{quote.contractType}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Contract Number</label>
+                    <div className="text-sm font-medium text-muted-foreground">Contract Number</div>
                     <p className="font-medium">{quote.contractNumber}</p>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Engineer/Consultant</label>
+                  <div className="text-sm font-medium text-muted-foreground">Engineer/Consultant</div>
                   <p className="font-medium">{quote.engineerConsultant}</p>
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Sub-Contractors</label>
+                  <div className="text-sm font-medium text-muted-foreground">Sub-Contractors</div>
                   <div className="space-y-2 mt-2">
                     {quote.subContractors.map((subcontractor, index) => (
                       <div key={index} className="p-3 border border-border rounded-lg bg-muted/30">
@@ -631,35 +631,35 @@ const MarketAdminBrokerQuoteDetails = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Near Water Body</label>
+                    <div className="text-sm font-medium text-muted-foreground">Near Water Body</div>
                     <p className="font-medium">{quote.nearWaterBody}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Flood Prone Zone</label>
+                    <div className="text-sm font-medium text-muted-foreground">Flood Prone Zone</div>
                     <p className="font-medium">{quote.floodProneZone}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Within City Center</label>
+                    <div className="text-sm font-medium text-muted-foreground">Within City Center</div>
                     <p className="font-medium">{quote.withinCityCenter}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Area Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Area Type</div>
                     <p className="font-medium">{quote.cityAreaType}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Soil Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Soil Type</div>
                     <p className="font-medium">{quote.soilType}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Existing Structure</label>
+                    <div className="text-sm font-medium text-muted-foreground">Existing Structure</div>
                     <p className="font-medium">{quote.existingStructure}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Blasting/Deep Excavation</label>
+                    <div className="text-sm font-medium text-muted-foreground">Blasting/Deep Excavation</div>
                     <p className="font-medium">{quote.blastingExcavation}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Site Security Arrangements</label>
+                    <div className="text-sm font-medium text-muted-foreground">Site Security Arrangements</div>
                     <p className="font-medium">{quote.siteSecurityArrangements}</p>
                   </div>
                 </div>
@@ -677,31 +677,31 @@ const MarketAdminBrokerQuoteDetails = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Contract Works</label>
+                    <div className="text-sm font-medium text-muted-foreground">Contract Works</div>
                     <p className="font-medium">{quote.sumInsuredMaterial}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Plant & Equipment</label>
+                    <div className="text-sm font-medium text-muted-foreground">Plant & Equipment</div>
                     <p className="font-medium">{quote.sumInsuredPlant}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Temporary Works</label>
+                    <div className="text-sm font-medium text-muted-foreground">Temporary Works</div>
                     <p className="font-medium">{quote.sumInsuredTemporary}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Principal's Existing Property</label>
+                    <div className="text-sm font-medium text-muted-foreground">Principal's Existing Property</div>
                     <p className="font-medium">{quote.principalExistingProperty}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">TPL Limit</label>
+                    <div className="text-sm font-medium text-muted-foreground">TPL Limit</div>
                     <p className="font-medium">{quote.tplLimit}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Cross Liability Cover</label>
+                    <div className="text-sm font-medium text-muted-foreground">Cross Liability Cover</div>
                     <p className="font-medium">{quote.crossLiabilityCover}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Removal of Debris Limit</label>
+                    <div className="text-sm font-medium text-muted-foreground">Removal of Debris Limit</div>
                     <p className="font-medium">{quote.removalDebrisLimit}</p>
                   </div>
                 </div>
@@ -811,7 +811,7 @@ const MarketAdminBrokerQuoteDetails = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Losses in Last 5 Years</label>
+                  <div className="text-sm font-medium text-muted-foreground">Losses in Last 5 Years</div>
                   <p className="font-medium">{quote.lossesInLastFiveYears}</p>
                 </div>
                 {quote.lossesInLastFiveYears === "Yes" && (

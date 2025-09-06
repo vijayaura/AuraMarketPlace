@@ -78,27 +78,121 @@ export const ProposalForm = () => {
 
   // Quote Project API State
   const [isSavingProject, setIsSavingProject] = useState(false);
-  const [projectDataExists, setProjectDataExists] = useState(() => {
-    const saved = localStorage.getItem('projectDataExists');
-    return saved === 'true';
-  });
   const [savedProjectData, setSavedProjectData] = useState<QuoteProjectResponse | null>(null);
-  const [currentQuoteId, setCurrentQuoteId] = useState<number | null>(() => {
-    const saved = localStorage.getItem('currentQuoteId');
-    return saved ? parseInt(saved, 10) : null;
+  
+  // Fresh Temporary Storage for Current Quote Session
+  const [currentQuoteId, setCurrentQuoteId] = useState<number | null>(null);
+  const [quoteReferenceNumber, setQuoteReferenceNumber] = useState<string | null>(null);
+  const [stepCompletionStatus, setStepCompletionStatus] = useState({
+    project_details: false,
+    contract_structure: false,
+    cover_requirements: false,
+    insured_details: false,
+    site_risks: false,
+    underwriting_documents: false,
+    coverages_selected: false,
+    plans_selected: false,
+    policy_required_documents: false,
+    policy_issued: false
   });
   
   // Water Body Detection State
   const [isCheckingWaterBody, setIsCheckingWaterBody] = useState(false);
 
-  // Function to clear stored quote data
-  const clearStoredQuoteData = () => {
-    setProjectDataExists(false);
+  // Initialize fresh temporary storage for new quote session
+  const initializeFreshQuoteStorage = () => {
+    console.log('🆕 Initializing fresh quote storage for new session');
+    
+    // Reset all quote-related state
     setCurrentQuoteId(null);
+    setQuoteReferenceNumber(null);
     setSavedProjectData(null);
-    localStorage.removeItem('projectDataExists');
+    setStepCompletionStatus({
+      project_details: false,
+      contract_structure: false,
+      cover_requirements: false,
+      insured_details: false,
+      site_risks: false,
+      underwriting_documents: false,
+      coverages_selected: false,
+      plans_selected: false,
+      policy_required_documents: false,
+      policy_issued: false
+    });
+    
+    // Clear any existing localStorage for this session
     localStorage.removeItem('currentQuoteId');
+    localStorage.removeItem('quoteReferenceNumber');
+    localStorage.removeItem('stepCompletionStatus');
+    localStorage.removeItem('projectDataExists');
   };
+
+  // Clear temporary storage when exiting proposal form
+  const clearTemporaryStorage = () => {
+    console.log('🧹 Clearing temporary quote storage on exit');
+    
+    // Reset all state
+    setCurrentQuoteId(null);
+    setQuoteReferenceNumber(null);
+    setSavedProjectData(null);
+    setStepCompletionStatus({
+      project_details: false,
+      contract_structure: false,
+      cover_requirements: false,
+      insured_details: false,
+      site_risks: false,
+      underwriting_documents: false,
+      coverages_selected: false,
+      plans_selected: false,
+      policy_required_documents: false,
+      policy_issued: false
+    });
+    
+    // Clear localStorage
+    localStorage.removeItem('currentQuoteId');
+    localStorage.removeItem('quoteReferenceNumber');
+    localStorage.removeItem('stepCompletionStatus');
+    localStorage.removeItem('projectDataExists');
+  };
+
+  // Mark a step as completed
+  const markStepCompleted = (stepName: keyof typeof stepCompletionStatus) => {
+    console.log(`✅ Marking step completed: ${stepName}`);
+    setStepCompletionStatus(prev => {
+      const updated = { ...prev, [stepName]: true };
+      localStorage.setItem('stepCompletionStatus', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Check if a step is completed
+  const isStepCompleted = (stepName: keyof typeof stepCompletionStatus): boolean => {
+    return stepCompletionStatus[stepName];
+  };
+
+  // Get completion percentage
+  const getCompletionPercentage = (): number => {
+    const totalSteps = Object.keys(stepCompletionStatus).length;
+    const completedSteps = Object.values(stepCompletionStatus).filter(Boolean).length;
+    return Math.round((completedSteps / totalSteps) * 100);
+  };
+
+  // Expose storage management functions for external use
+  const storageAPI = {
+    getCurrentQuoteId: () => currentQuoteId,
+    getQuoteReferenceNumber: () => quoteReferenceNumber,
+    getStepCompletionStatus: () => stepCompletionStatus,
+    getCompletionPercentage,
+    isStepCompleted,
+    markStepCompleted,
+    clearTemporaryStorage,
+    initializeFreshQuoteStorage
+  };
+
+  // Make storage API available globally for debugging
+  if (typeof window !== 'undefined') {
+    (window as any).proposalStorageAPI = storageAPI;
+  }
 
   // Default form data
   const getDefaultFormData = () => ({
@@ -345,6 +439,41 @@ export const ProposalForm = () => {
   useEffect(() => {
     fetchMasterData();
     fetchBrokerData();
+  }, []);
+
+  // Initialize fresh storage when component mounts (user enters /customer/proposal)
+  useEffect(() => {
+    console.log('🚀 ProposalForm mounted - initializing fresh storage');
+    initializeFreshQuoteStorage();
+    
+    // Cleanup when component unmounts (user exits /customer/proposal)
+    return () => {
+      console.log('🚪 ProposalForm unmounting - clearing temporary storage');
+      clearTemporaryStorage();
+    };
+  }, []);
+
+  // Handle browser navigation (back/forward/refresh) to clear storage
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      console.log('🔄 Browser navigation detected - clearing temporary storage');
+      clearTemporaryStorage();
+    };
+
+    const handlePopState = () => {
+      console.log('⬅️ Browser back/forward detected - clearing temporary storage');
+      clearTemporaryStorage();
+    };
+
+    // Add event listeners
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   // Helper functions to get options with fallbacks
@@ -833,33 +962,95 @@ export const ProposalForm = () => {
     };
   };
 
-  // Validate project details before saving
-  const validateProjectDetails = (): boolean => {
+  // Validate current step fields only
+  const validateCurrentStep = (): boolean => {
     const errors: Record<string, string> = {};
     
-    if (!formData.projectName.trim()) {
-      errors.projectName = "Project name is required";
-    }
-    if (!formData.projectType) {
-      errors.projectType = "Project type is required";
-    }
-    if (!formData.subProjectType) {
-      errors.subProjectType = "Sub project type is required";
-    }
-    if (!formData.constructionType) {
-      errors.constructionType = "Construction type is required";
-    }
-    if (!formData.projectAddress.trim()) {
-      errors.projectAddress = "Project address is required";
-    }
-    if (!formData.startDate) {
-      errors.startDate = "Start date is required";
-    }
-    if (!formData.completionDate) {
-      errors.completionDate = "Completion date is required";
-    }
-    if (!formData.projectValue || parseInt(formData.projectValue) <= 0) {
-      errors.projectValue = "Valid project value is required";
+    // Only validate fields that are visible on the current step
+    switch (currentStep) {
+      case 0: // Project Details step
+        // Required text fields
+        if (!formData.projectName?.trim()) {
+          errors.projectName = "Project name is required";
+        }
+        
+        // Required dropdown selections
+        if (!formData.projectType) {
+          errors.projectType = "Project type must be selected";
+        }
+        if (!formData.subProjectType) {
+          errors.subProjectType = "Sub project type must be selected";
+        }
+        if (!formData.constructionType) {
+          errors.constructionType = "Construction type must be selected";
+        }
+        
+        // Required address fields
+        if (!formData.projectAddress?.trim()) {
+          errors.projectAddress = "Project address is required";
+        }
+        if (!formData.country) {
+          errors.country = "Country must be selected";
+        }
+        if (!formData.region) {
+          errors.region = "Region must be selected";
+        }
+        if (!formData.zone) {
+          errors.zone = "Zone must be selected";
+        }
+        
+        // Required date fields
+        if (!formData.startDate) {
+          errors.startDate = "Start date is required";
+        }
+        if (!formData.completionDate) {
+          errors.completionDate = "Completion date is required";
+        }
+        
+        // Validate date logic
+        if (formData.startDate && formData.completionDate) {
+          const startDate = new Date(formData.startDate);
+          const completionDate = new Date(formData.completionDate);
+          
+          if (completionDate <= startDate) {
+            errors.completionDate = "Completion date must be after start date";
+          }
+        }
+        
+        // Required project value
+        if (!formData.projectValue || parseFloat(formData.projectValue.replace(/[^0-9.]/g, '')) <= 0) {
+          errors.projectValue = "Valid project value is required";
+        }
+        break;
+        
+      case 1: // Insured Details step
+        if (!formData.insuredName?.trim()) {
+          errors.insuredName = "Insured name is required";
+        }
+        if (!formData.roleOfInsured) {
+          errors.roleOfInsured = "Role of insured must be selected";
+        }
+        break;
+        
+      case 2: // Contract Structure step
+        if (!formData.mainContractor?.trim()) {
+          errors.mainContractor = "Main contractor is required";
+        }
+        if (!formData.principalOwner?.trim()) {
+          errors.principalOwner = "Principal owner is required";
+        }
+        if (!formData.contractType) {
+          errors.contractType = "Contract type must be selected";
+        }
+        if (!formData.contractNumber?.trim()) {
+          errors.contractNumber = "Contract number is required";
+        }
+        break;
+        
+      // Add more cases for other steps as needed
+      default:
+        // For other steps, no validation for now
+        break;
     }
     
     setValidationErrors(errors);
@@ -869,10 +1060,34 @@ export const ProposalForm = () => {
   // Save project data via API
   const saveProjectData = async (): Promise<boolean> => {
     // Validate required fields first
-    if (!validateProjectDetails()) {
+    if (!validateCurrentStep()) {
+      const errorFields = Object.keys(validationErrors);
+      const fieldNames = errorFields.map(field => {
+        const fieldMap: Record<string, string> = {
+          projectName: 'Project Name',
+          projectType: 'Project Type',
+          subProjectType: 'Sub Project Type',
+          constructionType: 'Construction Type',
+          projectAddress: 'Project Address',
+          country: 'Country',
+          region: 'Region',
+          zone: 'Zone',
+          startDate: 'Start Date',
+          completionDate: 'Completion Date',
+          projectValue: 'Project Value',
+          insuredName: 'Insured Name',
+          roleOfInsured: 'Role of Insured',
+          mainContractor: 'Main Contractor',
+          principalOwner: 'Principal Owner',
+          contractType: 'Contract Type',
+          contractNumber: 'Contract Number'
+        };
+        return fieldMap[field] || field;
+      });
+      
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields before proceeding.",
+        description: `Please fill in the following required fields: ${fieldNames.join(', ')}`,
         variant: "destructive",
       });
       return false;
@@ -921,7 +1136,7 @@ export const ProposalForm = () => {
       const apiData = transformFormDataToAPI();
       
       let response: QuoteProjectResponse;
-      if (projectDataExists && currentQuoteId) {
+      if (isStepCompleted('project_details') && currentQuoteId) {
         // Update existing project data using stored quote ID
         console.log('🔄 Updating project with quote ID:', currentQuoteId);
         response = await updateQuoteProject(apiData, currentQuoteId);
@@ -936,31 +1151,34 @@ export const ProposalForm = () => {
         response = await createQuoteProject(apiData);
         console.log('✅ Project created successfully');
         console.log('📥 Full response:', response);
-        console.log('🆔 Response ID:', response.id);
+        console.log('🆔 Quote ID:', response.quote?.id);
         
-        // Handle different response structures
-        if (!response || !response.id) {
+        // Validate response structure
+        if (!response || !response.quote || !response.quote.id) {
           console.error('❌ Invalid response structure:', response);
-          
-          // Try to extract ID from different possible structures
-          const possibleId = (response as any)?.data?.id || response?.project_id || response?.quote_id;
-          if (possibleId) {
-            console.log('🔍 Found ID in nested structure:', possibleId);
-            response = { ...response, id: possibleId };
-          } else {
-            throw new Error('Invalid response from server: missing ID');
-          }
+          throw new Error('Invalid response from server: missing quote data');
         }
         
-        setProjectDataExists(true);
-        localStorage.setItem('projectDataExists', 'true');
-        setCurrentQuoteId(response.id); // Store the quote ID for future PATCH operations
-        localStorage.setItem('currentQuoteId', response.id.toString());
+        // Store quote ID and reference number from response
+        const quoteId = response.quote.id;
+        const quoteReference = response.quote.quote_id;
+        
+        setCurrentQuoteId(quoteId);
+        localStorage.setItem('currentQuoteId', quoteId.toString());
+        
+        setQuoteReferenceNumber(quoteReference);
+        localStorage.setItem('quoteReferenceNumber', quoteReference);
+        
+        console.log('💾 Stored quote data:', { quoteId, quoteReference });
+        
         toast({
           title: "Project Saved",
           description: "Project details have been saved successfully.",
         });
       }
+      
+      // Mark project_details step as completed
+      markStepCompleted('project_details');
       
       setSavedProjectData(response);
       return true;
@@ -1164,6 +1382,40 @@ export const ProposalForm = () => {
                 ) : (
                   <Button 
                     onClick={async () => {
+                      // Validate current step first
+                      if (!validateCurrentStep()) {
+                        const errorFields = Object.keys(validationErrors);
+                        const fieldNames = errorFields.map(field => {
+                          const fieldMap: Record<string, string> = {
+                            projectName: 'Project Name',
+                            projectType: 'Project Type',
+                            subProjectType: 'Sub Project Type',
+                            constructionType: 'Construction Type',
+                            projectAddress: 'Project Address',
+                            country: 'Country',
+                            region: 'Region',
+                            zone: 'Zone',
+                            startDate: 'Start Date',
+                            completionDate: 'Completion Date',
+                            projectValue: 'Project Value',
+                            insuredName: 'Insured Name',
+                            roleOfInsured: 'Role of Insured',
+                            mainContractor: 'Main Contractor',
+                            principalOwner: 'Principal Owner',
+                            contractType: 'Contract Type',
+                            contractNumber: 'Contract Number'
+                          };
+                          return fieldMap[field] || field;
+                        });
+                        
+                        toast({
+                          title: "Validation Error",
+                          description: `Please fill in the following required fields: ${fieldNames.join(', ')}`,
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      
                       // If moving from project details step (step 0), save data first
                       if (currentStep === 0) {
                         const success = await saveProjectData();

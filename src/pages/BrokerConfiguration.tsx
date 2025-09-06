@@ -434,9 +434,9 @@ const BrokerConfiguration = () => {
                       {tempProductAssignments.includes(product.id) && (
                         <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border">
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                            <div className="text-sm font-medium text-muted-foreground mb-2 block">
                               Min Commission (%)
-                            </label>
+                            </div>
                             <div className="relative">
                               <Input
                                 type="number"
@@ -455,9 +455,9 @@ const BrokerConfiguration = () => {
                             </div>
                           </div>
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                            <div className="text-sm font-medium text-muted-foreground mb-2 block">
                               Max Commission (%)
-                            </label>
+                            </div>
                             <div className="relative">
                               <Input
                                 type="number"

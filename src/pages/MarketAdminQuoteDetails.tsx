@@ -301,33 +301,33 @@ const MarketAdminQuoteDetails = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Quote ID</label>
+                    <div className="text-sm font-medium text-muted-foreground">Quote ID</div>
                     <p className="text-sm font-semibold">{quote.id}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Status</label>
+                    <div className="text-sm font-medium text-muted-foreground">Status</div>
                     <div className="mt-1">
                       <QuoteStatusDot status={quote.status} />
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Submitted Date</label>
+                    <div className="text-sm font-medium text-muted-foreground">Submitted Date</div>
                     <p className="text-sm">{quote.submittedDate}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Valid Until</label>
+                    <div className="text-sm font-medium text-muted-foreground">Valid Until</div>
                     <p className="text-sm">{quote.validUntil}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Quote Expiry</label>
+                    <div className="text-sm font-medium text-muted-foreground">Quote Expiry</div>
                     <p className="text-sm font-medium text-red-600">{quote.expiryDate}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Broker</label>
+                    <div className="text-sm font-medium text-muted-foreground">Broker</div>
                     <p className="text-sm text-primary font-medium">{quote.broker}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Insurer</label>
+                    <div className="text-sm font-medium text-muted-foreground">Insurer</div>
                     <p className="text-sm text-primary font-medium">{quote.insurer}</p>
                   </div>
                 </div>
@@ -345,31 +345,31 @@ const MarketAdminQuoteDetails = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Project Name</label>
+                    <div className="text-sm font-medium text-muted-foreground">Project Name</div>
                     <p className="text-sm font-semibold">{quote.projectName}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Project Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Project Type</div>
                     <p className="text-sm">{quote.projectType}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Construction Type</label>
+                    <div className="text-sm font-medium text-muted-foreground">Construction Type</div>
                     <p className="text-sm">{quote.constructionType}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Building Height</label>
+                    <div className="text-sm font-medium text-muted-foreground">Building Height</div>
                     <p className="text-sm">{quote.buildingHeight}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Building Age</label>
+                    <div className="text-sm font-medium text-muted-foreground">Building Age</div>
                     <p className="text-sm">{quote.buildingAge}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Location</label>
+                    <div className="text-sm font-medium text-muted-foreground">Location</div>
                     <p className="text-sm">{quote.location}</p>
                   </div>
                   <div className="col-span-2">
-                    <label className="text-sm font-medium text-muted-foreground">Occupation</label>
+                    <div className="text-sm font-medium text-muted-foreground">Occupation</div>
                     <p className="text-sm">{quote.occupation}</p>
                   </div>
                 </div>

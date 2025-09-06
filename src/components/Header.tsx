@@ -2,7 +2,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { Shield, Phone, Mail, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-export const Header = () => {
+
+interface HeaderProps {
+  onBackToDashboard?: () => void;
+  showBackConfirmation?: boolean;
+}
+
+export const Header = ({ onBackToDashboard, showBackConfirmation = false }: HeaderProps) => {
   const navigate = useNavigate();
   const {
     navigateBack
@@ -11,7 +17,12 @@ export const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/broker/dashboard")} className="mr-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onBackToDashboard || (() => navigate("/broker/dashboard"))} 
+              className="mr-2"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
