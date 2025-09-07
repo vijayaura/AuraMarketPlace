@@ -1354,8 +1354,16 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange }: ProposalF
       contract_type: formData.contractType || '',
       contract_number: formData.contractNumber || '',
       experience_years: parseInt(formData.experienceYears) || 0,
-      sub_contractors: formData.subContractors || [],
-      consultants: formData.consultants || []
+      sub_contractors: (formData.subContractors || []).map(sub => ({
+        name: sub.name || '',
+        contract_type: sub.contractType || sub.contract_type || '',
+        contract_number: sub.contractNumber || sub.contract_number || ''
+      })),
+      consultants: (formData.consultants || []).map(consultant => ({
+        name: consultant.name || '',
+        role: consultant.role || '',
+        license_number: consultant.licenseNumber || consultant.license_number || ''
+      }))
     };
   };
 
