@@ -556,89 +556,185 @@ Contact us for more details or to proceed with the application.
 
         {/* Comparison Dialog */}
         <Dialog open={isCompareDialogOpen} onOpenChange={setIsCompareDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
             <DialogHeader>
               <div className="flex items-center justify-between">
                 <DialogTitle>Compare Insurance Plans</DialogTitle>
-                <Button 
-                  onClick={handleDownload}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download Comparison
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={handleDownload}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Comparison
+                  </Button>
+                  <Button 
+                    onClick={() => setIsCompareDialogOpen(false)}
+                    variant="outline"
+                  >
+                    Close
+                  </Button>
+                </div>
               </div>
             </DialogHeader>
             
             <div className="grid grid-cols-2 gap-6 mt-6">
               {comparedQuotes.map((quote) => (
                 <div key={quote.id} className="space-y-4">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center mx-auto mb-3">
-                      <Building className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-semibold text-lg">{quote.insurerName}</h3>
-                  </div>
                   
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Annual Premium</span>
-                      <div className="text-right">
-                        <span className="font-semibold">{formatCurrency(getCurrentPremium(quote))}</span>
-                        {updatedQuotes[quote.id]?.isUpdated && (
-                          <div className="text-xs text-muted-foreground">
-                            Original: {formatCurrency(quote.annualPremium)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
                   
-                  <div>
-                    <h4 className="font-medium mb-2">Key Coverage</h4>
-                    <ul className="text-sm space-y-1">
-                      {quote.keyCoverage.map((coverage, index) => (
-                        <li key={index} className="text-muted-foreground">• {coverage}</li>
-                      ))}
-                    </ul>
-                  </div>
                   
-                  <div>
-                    <h4 className="font-medium mb-2">Benefits</h4>
-                    <ul className="text-sm space-y-1">
-                      {quote.benefits.map((benefit, index) => (
-                        <li key={index} className="text-muted-foreground">• {benefit}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  {/* CEW Extensions Comparison */}
-                  {getCEWItems(quote.id).length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">Selected Extensions</h4>
-                      <ul className="text-sm space-y-1">
-                        {getCEWItems(quote.id).map((item, index) => (
-                          <li key={index} className="flex justify-between items-center">
-                            <span className="text-muted-foreground">• {item.name}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {item.impact.premiumAmount > 0 ? "+" : ""}{item.impact.premiumAmount}%
-                            </Badge>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  
-                  <Button 
-                    className="w-full"
-                    onClick={() => handleSelectPlan(quote.id)}
-                  >
-                    Select This Plan
-                  </Button>
                 </div>
               ))}
             </div>
+            
+            {/* Selected Extensions Table */}
+            {comparedQuotes.some(quote => getCEWItems(quote.id).length > 0) && (
+              <div className="mt-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-200 table-fixed">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-200 px-4 py-2 text-left font-medium w-1/3"></th>
+                        {comparedQuotes.map((quote) => (
+                          <th key={quote.id} className="border border-gray-200 px-4 py-2 text-center font-medium w-1/3">
+                            <div className="flex flex-col items-center space-y-1">
+                              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                                {quote.insurerName.charAt(0)}
+                              </div>
+                              <div className="text-xs">{quote.insurerName}</div>
+                            </div>
+                          </th>
+                        ))}
+                      </tr>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-200 px-4 py-2 text-left font-medium text-sm text-muted-foreground w-1/3">Sum Insured</th>
+                        {comparedQuotes.map((quote) => (
+                          <th key={`sum-insured-${quote.id}`} className="border border-gray-200 px-4 py-2 text-center font-medium text-sm text-muted-foreground w-1/3">
+                            <div className="font-semibold text-foreground">{formatCurrency(quote.coverageAmount)}</div>
+                          </th>
+                        ))}
+                      </tr>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-200 px-4 py-2 text-left font-medium text-sm text-muted-foreground w-1/3">Default TPL Limit</th>
+                        {comparedQuotes.map((quote) => (
+                          <th key={`tpl-limit-${quote.id}`} className="border border-gray-200 px-4 py-2 text-center font-medium text-sm text-muted-foreground w-1/3">
+                            <div className="font-semibold text-foreground">{formatCurrency(quote.annualPremium)}</div>
+                          </th>
+                        ))}
+                      </tr>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-200 px-4 py-2 text-left font-medium text-sm text-muted-foreground w-1/3">Premium</th>
+                        {comparedQuotes.map((quote) => (
+                          <th key={`premium-${quote.id}`} className="border border-gray-200 px-4 py-2 text-center font-medium text-sm text-muted-foreground w-1/3">
+                            <div className="font-semibold text-foreground">{formatCurrency(quote.annualPremium)}</div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        // Get all unique CEW items across all compared quotes
+                        const allCEWItems = new Map();
+                        comparedQuotes.forEach(quote => {
+                          getCEWItems(quote.id).forEach(item => {
+                            if (!allCEWItems.has(item.id)) {
+                              allCEWItems.set(item.id, item);
+                            }
+                          });
+                        });
+                        
+                        return Array.from(allCEWItems.values()).map((item, index) => (
+                          <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="border border-gray-200 px-4 py-2 font-medium text-sm w-1/3">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs font-medium">{item.name}</span>
+                                <Badge variant="outline" className="text-xs">{item.code}</Badge>
+                              </div>
+                            </td>
+                            {comparedQuotes.map((quote) => {
+                              const quoteCEWItems = getCEWItems(quote.id);
+                              const hasItem = quoteCEWItems.some(cewItem => cewItem.id === item.id);
+                              return (
+                                <td key={quote.id} className="border border-gray-200 px-4 py-2 text-center w-1/3">
+                                  {hasItem ? (
+                                    <div className="w-full">
+                                      <div className="text-center mb-2">
+                                        <div className="text-xs font-medium text-green-600">
+                                          AED {Math.round(25000 * (item.impact.premiumAmount / 100)).toLocaleString()} ({item.impact.premiumAmount > 0 ? "+" : ""}{item.impact.premiumAmount}%)
+                                        </div>
+                                      </div>
+                                      <div className="text-xs text-muted-foreground leading-relaxed text-left break-words">
+                                        This extension provides additional coverage for {item.name.toLowerCase()} as per the policy terms and conditions. The coverage includes all standard exclusions and limitations as outlined in the main policy document.
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-center">
+                                      <div className="text-xs text-muted-foreground">Not Available</div>
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ));
+                      })()}
+                      
+                      {/* TPL Extension Selection Row */}
+                      <tr className="bg-blue-50">
+                        <td className="border border-gray-200 px-4 py-2 font-medium text-sm w-1/3">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-medium">TPL Extension Selection</span>
+                            <Badge variant="outline" className="text-xs">TPL</Badge>
+                          </div>
+                        </td>
+                        {comparedQuotes.map((quote) => (
+                          <td key={`tpl-extension-${quote.id}`} className="border border-gray-200 px-4 py-2 text-center w-1/3">
+                            <div className="flex flex-col items-center space-y-1">
+                              <div className="text-xs font-medium text-blue-600">
+                                {tplAdjustment > 0 ? `+${tplAdjustment}%` : 'Standard'}
+                              </div>
+                              <div className="text-xs text-muted-foreground">TPL Adjustment</div>
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                      
+                      {/* Revised Premium Row */}
+                      <tr className="bg-green-50 border-t-2 border-green-200">
+                        <td className="border border-gray-200 px-4 py-3 font-semibold text-center text-sm w-1/3">
+                          Revised Premium (After Extensions)
+                        </td>
+                        {comparedQuotes.map((quote) => (
+                          <td key={`revised-premium-${quote.id}`} className="border border-gray-200 px-4 py-3 text-center w-1/3">
+                            <div className="font-semibold text-green-600">{formatCurrency(getCurrentPremium(quote))}</div>
+                          </td>
+                        ))}
+                      </tr>
+                      
+                      {/* Select Plan Buttons Row */}
+                      <tr className="bg-blue-50 border-t-2 border-blue-200">
+                        <td className="border border-gray-200 px-4 py-3 font-semibold text-center w-1/3">
+                          
+                        </td>
+                        {comparedQuotes.map((quote) => (
+                          <td key={`action-${quote.id}`} className="border border-gray-200 px-4 py-3 text-center w-1/3">
+                            <Button 
+                              onClick={() => handleSelectPlan(quote.id)}
+                              className="w-full"
+                              size="sm"
+                            >
+                              Select This Plan
+                            </Button>
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 
