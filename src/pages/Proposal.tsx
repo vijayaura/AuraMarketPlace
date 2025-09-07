@@ -207,9 +207,6 @@ const Proposal = () => {
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-green-600 mt-2">
-                  These completed steps will be lost if you discontinue the quote.
-                </p>
               </div>
             )}
             <div className="flex gap-3 justify-end">
