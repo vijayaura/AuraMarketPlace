@@ -35,9 +35,10 @@ import { useToast } from "@/hooks/use-toast";
 interface ProposalFormProps {
   onStepChange?: (step: number) => void;
   onQuoteReferenceChange?: (reference: string) => void;
+  onStepCompletionChange?: (completionStatus: Record<string, boolean>) => void;
 }
 
-export const ProposalForm = ({ onStepChange, onQuoteReferenceChange }: ProposalFormProps = {}) => {
+export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompletionChange }: ProposalFormProps = {}) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
@@ -512,6 +513,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange }: ProposalF
       onQuoteReferenceChange?.(quoteReferenceNumber);
     }
   }, [quoteReferenceNumber, onQuoteReferenceChange]);
+
+  // Notify parent component about step completion changes
+  useEffect(() => {
+    onStepCompletionChange?.(stepCompletionStatus);
+  }, [stepCompletionStatus, onStepCompletionChange]);
 
   // Helper functions to get options with fallbacks
   const getProjectTypeOptions = () => {
