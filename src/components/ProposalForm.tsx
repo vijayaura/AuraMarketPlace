@@ -31,6 +31,7 @@ import { getBroker, type Broker } from "@/lib/api/brokers";
 import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentUpload } from "./DocumentUpload";
 
 interface ProposalFormProps {
   onStepChange?: (step: number) => void;
@@ -1169,6 +1170,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         }
         break;
         
+      case 5: // Documents step
+        // For documents step, we'll check if all required documents are uploaded
+        // This validation will be handled by the DocumentUpload component itself
+        // No additional validation needed here as the component manages its own state
+        break;
+        
       // Add more cases for other steps as needed
       default:
         // For other steps, no validation for now
@@ -1770,6 +1777,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     id: "coverage",
     label: "Cover Requirements",
     icon: Umbrella
+  }, {
+    id: "documents",
+    label: "Required Documents",
+    icon: FileText
   }];
   return <section className="pt-6 pb-20 bg-background min-h-screen">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1873,12 +1884,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         // Cover Requirements step
                         const success = await saveCoverRequirementsData();
                         if (success) {
-                          // Navigate to documents page after successful save
-                          navigate('/customer/documents');
+                          // Navigate to step 5 (Documents) instead of external page
+                          setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                         }
                       } else {
                         // Other steps - just navigate
-                        navigate('/customer/documents');
+                        setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       }
                     }}
                     disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isCheckingWaterBody}
@@ -1975,6 +1986,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         if (success) {
                           setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                         }
+                      } else if (currentStep === 5) {
+                        // Documents step - mark as completed and navigate to quotes
+                        markStepCompleted('underwriting_documents');
+                        navigate('/customer/quotes');
                       } else {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
@@ -3085,6 +3100,20 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     </CardContent>
                   </Card>
 
+                </div>
+              </TabsContent>
+
+              <TabsContent value="documents" className="space-y-6">
+                <div className="space-y-6">
+                  <div className="text-center mb-8">
+                    <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground mb-4">
+                      Upload Required Documents
+                    </h2>
+                    <p className="text-base text-muted-foreground">
+                      Please upload documents needed for policy issuance
+                    </p>
+                  </div>
+                  <DocumentUpload />
                 </div>
               </TabsContent>
 

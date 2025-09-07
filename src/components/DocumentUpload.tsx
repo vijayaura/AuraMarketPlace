@@ -77,16 +77,9 @@ export const DocumentUpload = () => {
   };
 
   return (
-    <section className="py-8 lg:py-20 bg-primary/5">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8 lg:mb-12">
-          <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground mb-4">
-            Upload Required Documents
-          </h2>
-        </div>
-
-        {/* Document List */}
-        <div className="grid gap-4 lg:gap-6">
+    <div className="w-full">
+      {/* Document List */}
+      <div className="grid gap-4 lg:gap-6">
           {documents.map((doc) => (
             <Card 
               key={doc.id} 
@@ -148,21 +141,6 @@ export const DocumentUpload = () => {
             </Card>
           ))}
         </div>
-
-
-        {/* Action Button */}
-        <div className="mt-8 lg:mt-12 text-center">
-          <Button 
-            variant="default" 
-            size="lg"
-            onClick={handleSubmit}
-            disabled={!allRequiredUploaded}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 lg:px-8"
-          >
-            Get Quotes
-          </Button>
-        </div>
-      </div>
-    </section>
+    </div>
   );
 };
