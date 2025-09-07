@@ -1,4 +1,4 @@
-import { apiPost, apiPatch, apiUploadFile } from './client';
+import { apiPost, apiPatch, apiUploadFile, apiGet } from './client';
 
 // File Upload Types
 export interface UploadedFile {
@@ -441,4 +441,356 @@ export async function getProposalBundle(quoteId: number): Promise<ProposalBundle
   const endpoint = `/quotes/getProposalBundle/${quoteId}`;
   console.log('📋 getProposalBundle called with:', { quoteId, endpoint });
   return apiGet<ProposalBundleResponse>(endpoint);
+}
+
+// Types for Insurer Pricing Configuration API
+export interface BaseRate {
+  project_type: string;
+  sub_projects: {
+    name: string;
+    currency: string;
+    base_rate: number;
+    pricing_type: string;
+    quote_option: string;
+  }[];
+}
+
+export interface LocationHazardFactor {
+  factor: string;
+  low_risk: string;
+  high_risk: string;
+  moderate_risk: string;
+  very_high_risk: string;
+}
+
+export interface LocationHazardRates {
+  risk_level: string;
+  pricing_type: string;
+  quote_option: string;
+  loading_discount: number;
+}
+
+export interface ProjectDurationLoading {
+  to_months: number;
+  from_months: number;
+  pricing_type: string;
+  quote_option: string;
+  loading_discount: number;
+}
+
+export interface MaintenancePeriodLoading {
+  to_months: number | null;
+  from_months: number;
+  pricing_type: string;
+  quote_option: string;
+  loading_discount: number;
+}
+
+export interface ProjectRiskFactors {
+  location_hazard_loadings: {
+    risk_definition: {
+      factors: LocationHazardFactor[];
+    };
+    location_hazard_rates: LocationHazardRates[];
+  };
+  project_duration_loadings: ProjectDurationLoading[];
+  maintenance_period_loadings: MaintenancePeriodLoading[];
+}
+
+export interface ContractorRiskFactors {
+  experience_loadings: {
+    to_years: number;
+    from_years: number;
+    pricing_type: string;
+    quote_option: string;
+    loading_discount: number;
+  }[];
+  claims_based_loadings: {
+    to_claims: number;
+    from_claims: number;
+    pricing_type: string;
+    quote_option: string;
+    loading_discount: number;
+  }[];
+}
+
+export interface CoverageOptions {
+  sum_insured_loadings: {
+    to_amount: number;
+    from_amount: number;
+    pricing_type: string;
+    quote_option: string;
+    loading_discount: number;
+  }[];
+  cross_liability_cover: {
+    cover_option: string;
+    pricing_type: string;
+    quote_option: string;
+    loading_discount: number;
+  }[];
+  project_value_loadings: {
+    to_amount: number;
+    from_amount: number;
+    pricing_type: string;
+    quote_option: string;
+    loading_discount: number;
+  }[];
+  contract_works_loadings: {
+    to_amount: number;
+    from_amount: number;
+    pricing_type: string;
+    quote_option: string;
+    loading_discount: number;
+  }[];
+  plant_equipment_loadings: {
+    to_amount: number;
+    from_amount: number;
+    pricing_type: string;
+    quote_option: string;
+    loading_discount: number;
+  }[];
+}
+
+export interface PolicyLimitsAndDeductible {
+  sub_limits: {
+    title: string;
+    value: number;
+    description: string;
+    pricing_type: string;
+  }[];
+  deductibles: {
+    type: string;
+    value: number;
+    quote_option: string;
+    loading_discount: number;
+  }[];
+  policy_limits: {
+    maximum_cover: {
+      value: number;
+      pricing_type: string;
+    };
+    minimum_premium: {
+      value: number;
+      pricing_type: string;
+    };
+    base_broker_commission: {
+      value: number;
+      pricing_type: string;
+    };
+    maximum_broker_commission: {
+      value: number;
+      pricing_type: string;
+    };
+    minimum_broker_commission: {
+      value: number;
+      pricing_type: string;
+    };
+  };
+}
+
+export interface ClausePricingConfig {
+  insurer_id: number;
+  product_id: number;
+  clause_code: string;
+  is_enabled: number;
+  is_mandatory: number;
+  base_type: string;
+  base_value: string;
+  base_currency: string;
+  options: {
+    type: string;
+    label: string;
+    limit: string;
+    value: number;
+    currency: string;
+    display_order: number;
+  }[];
+  updated_at: string;
+  created_at: string;
+  meta: {
+    clause_code: string;
+    title: string;
+    clause_type: string;
+    display_order: number;
+    is_active: number;
+  } | null;
+}
+
+export interface TplExtension {
+  id: number;
+  product_id: number;
+  title: string;
+  description: string;
+  limit_value: string;
+  pricing_type: string;
+  pricing_value: string;
+  currency: string;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+  insurer_id: number | null;
+}
+
+export interface QuoteFormat {
+  id: number;
+  product_id: number;
+  company_name: string;
+  company_address: string;
+  quotation_prefix: string;
+  contact_info: {
+    raw: string;
+  };
+  header_bg_color: string;
+  header_text_color: string;
+  logo_position: string;
+  logo_path: string;
+  show_project_details: number;
+  show_coverage_types: number;
+  show_coverage_limits: number;
+  show_deductibles: number;
+  show_contractor_info: number;
+  risk_section_title: string;
+  show_base_premium: number;
+  show_risk_adjustments: number;
+  show_fees_charges: number;
+  show_taxes_vat: number;
+  show_total_premium: number;
+  premium_section_title: string;
+  premium_currency: string;
+  show_warranties: number;
+  show_exclusions: number;
+  show_deductible_details: number;
+  show_policy_conditions: number;
+  terms_section_title: string;
+  additional_terms_text: string;
+  show_signature_block: number;
+  authorized_signatory_name: string;
+  signatory_title: string;
+  signature_block_text: string;
+  show_footer: number;
+  show_general_disclaimer: number;
+  show_regulatory_info: number;
+  general_disclaimer_text: string;
+  regulatory_info_text: string;
+  footer_bg_color: string;
+  footer_text_color: string;
+  created_at: string;
+  updated_at: string;
+  insurer_id: number;
+}
+
+export interface RequiredDocument {
+  id: number;
+  product_id: number;
+  display_order: number;
+  display_label: string;
+  description: string;
+  is_required: number;
+  template_file: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  insurer_id: number | null;
+}
+
+export interface ConfigItem {
+  name?: string;
+  value: number;
+  is_active?: boolean;
+  pricing_type: string;
+  quote_option: string;
+  display_order?: number;
+  country?: string;
+}
+
+export interface InsurerPricingConfigResponse {
+  insurer_id: number;
+  product_id: number;
+  product: {
+    id: number;
+    insurer_id: number;
+    product_name: string;
+    product_type: string;
+    description: string;
+    is_active: number;
+    created_at: string;
+    updated_at: string;
+  };
+  base_rates: BaseRate[];
+  project_risk_factors: ProjectRiskFactors;
+  contractor_risk_factors: ContractorRiskFactors;
+  coverage_options: CoverageOptions;
+  policy_limits_and_deductible: PolicyLimitsAndDeductible;
+  clause_pricing_config: ClausePricingConfig[];
+  quote_config: {
+    id: number;
+    product_id: number;
+    validity_days: number;
+    backdate_days: number;
+    operating_countries: string[];
+    operating_regions: string[];
+    operating_zones: string[];
+    created_at: string;
+    updated_at: string;
+    insurer_id: number;
+  };
+  pricing_config: any;
+  tpl_limits: {
+    id: number;
+    product_id: number;
+    default_limit: string;
+    currency: string;
+    created_at: string;
+    updated_at: string;
+    insurer_id: number;
+  };
+  tpl_extensions: TplExtension[];
+  quote_format: QuoteFormat;
+  required_documents: RequiredDocument[];
+  construction_types_config: {
+    items: ConfigItem[];
+  };
+  countries_config: {
+    items: ConfigItem[];
+  };
+  regions_config: {
+    items: ConfigItem[];
+  };
+  zones_config: {
+    items: ConfigItem[];
+  };
+  role_types_config: {
+    items: ConfigItem[];
+  };
+  contract_types_config: {
+    items: ConfigItem[];
+  };
+  soil_types_config: {
+    items: ConfigItem[];
+  };
+  subcontractor_types_config: {
+    items: ConfigItem[];
+  };
+  consultant_roles_config: {
+    items: ConfigItem[];
+  };
+  security_types_config: {
+    items: ConfigItem[];
+  };
+  area_types_config: {
+    items: ConfigItem[];
+  };
+  fee_types_config: {
+    items: ConfigItem[];
+  };
+}
+
+// Get insurer pricing configuration
+export async function getInsurerPricingConfig(insurerId: number): Promise<InsurerPricingConfigResponse> {
+  if (!insurerId) {
+    throw new Error('Insurer ID is required for getting pricing configuration');
+  }
+  const endpoint = `/insurers/${insurerId}/products/1/product-config-bundle`;
+  console.log('💰 getInsurerPricingConfig called with:', { insurerId, endpoint });
+  return apiGet<InsurerPricingConfigResponse>(endpoint);
 }

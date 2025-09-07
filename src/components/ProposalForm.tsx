@@ -28,11 +28,11 @@ import {
   type SubProjectTypeItem
 } from "@/lib/api/masters";
 import { getBroker, getBrokerInsurers, type Broker, type BrokerInsurersResponse } from "@/lib/api/brokers";
-import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse, saveRequiredDocuments, updateRequiredDocuments, type RequiredDocumentsRequest, type RequiredDocumentsResponse, getProposalBundle, type ProposalBundleResponse } from "@/lib/api/quotes";
+import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse, saveRequiredDocuments, updateRequiredDocuments, type RequiredDocumentsRequest, type RequiredDocumentsResponse, getProposalBundle, type ProposalBundleResponse, getInsurerPricingConfig, type InsurerPricingConfigResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentUpload } from "./DocumentUpload";
-import QuotesComparison from "./QuotesComparison";
+import { QuotesComparison } from "./QuotesComparison";
 import Declaration from "@/pages/Declaration";
 
 // Extend Window interface for global functions
@@ -121,6 +121,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   // Current Proposal State
   const [currentProposal, setCurrentProposal] = useState<ProposalBundleResponse | null>(null);
   const [isLoadingProposal, setIsLoadingProposal] = useState(false);
+  
+  // Insurer Pricing Configurations State
+  const [insurerPricingConfigs, setInsurerPricingConfigs] = useState<Record<number, InsurerPricingConfigResponse>>({});
+  const [isLoadingPricingConfigs, setIsLoadingPricingConfigs] = useState(false);
   
   
   // Water Body Detection State
@@ -1720,6 +1724,90 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     });
     
     return documentsPayload;
+  };
+
+  // Load pricing configurations for eligible insurers
+  const loadInsurerPricingConfigs = async (eligibleInsurers: any[]): Promise<boolean> => {
+    if (!eligibleInsurers || eligibleInsurers.length === 0) {
+      console.log('⚠️ No eligible insurers to load pricing configs for');
+      return true;
+    }
+
+    setIsLoadingPricingConfigs(true);
+    
+    try {
+      // Clear existing pricing configs before loading new ones
+      setInsurerPricingConfigs({});
+      
+      console.log('💰 Loading pricing configs for eligible insurers:', eligibleInsurers.map(i => i.insurer_name));
+      
+      // Load pricing configs for each eligible insurer
+      const pricingConfigPromises = eligibleInsurers.map(async (insurer) => {
+        try {
+          const config = await getInsurerPricingConfig(insurer.insurer_id);
+          console.log(`✅ Pricing config loaded for ${insurer.insurer_name}:`, config);
+          return { insurerId: insurer.insurer_id, config };
+        } catch (error: any) {
+          console.error(`❌ Error loading pricing config for ${insurer.insurer_name}:`, error);
+          
+          let errorMessage = `Failed to load pricing config for ${insurer.insurer_name}. Please try again.`;
+          if (error.response?.status === 400) {
+            errorMessage = `Invalid insurer ID for ${insurer.insurer_name}. Please refresh and try again.`;
+          } else if (error.response?.status === 401) {
+            errorMessage = `Authentication required for ${insurer.insurer_name}. Please log in again.`;
+          } else if (error.response?.status === 403) {
+            errorMessage = `Access denied for ${insurer.insurer_name}. You do not have permission to view pricing config.`;
+          } else if (error.response?.status === 500) {
+            errorMessage = `Server error for ${insurer.insurer_name}. Please try again later.`;
+          }
+          
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+          
+          return null;
+        }
+      });
+      
+      const results = await Promise.all(pricingConfigPromises);
+      
+      // Store successful results
+      const successfulConfigs: Record<number, InsurerPricingConfigResponse> = {};
+      results.forEach((result) => {
+        if (result) {
+          successfulConfigs[result.insurerId] = result.config;
+        }
+      });
+      
+      setInsurerPricingConfigs(successfulConfigs);
+      
+      const successCount = Object.keys(successfulConfigs).length;
+      const totalCount = eligibleInsurers.length;
+      
+      if (successCount > 0) {
+        toast({
+          title: "Pricing Configs Loaded",
+          description: `Successfully loaded pricing configurations for ${successCount} out of ${totalCount} eligible insurers.`,
+          variant: "default",
+        });
+      }
+      
+      return successCount > 0;
+    } catch (error: any) {
+      console.error('❌ Error loading pricing configurations:', error);
+      
+      toast({
+        title: "Error",
+        description: "Failed to load pricing configurations. Please try again.",
+        variant: "destructive",
+      });
+      
+      return false;
+    } finally {
+      setIsLoadingPricingConfigs(false);
+    }
   };
 
   // Load current proposal form details
@@ -3526,6 +3614,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     assignedInsurers={assignedInsurers} 
                     currentProposal={currentProposal}
                     isLoadingProposal={isLoadingProposal}
+                    insurerPricingConfigs={insurerPricingConfigs}
+                    isLoadingPricingConfigs={isLoadingPricingConfigs}
+                    onLoadPricingConfigs={loadInsurerPricingConfigs}
                   />
                 )}
               </TabsContent>

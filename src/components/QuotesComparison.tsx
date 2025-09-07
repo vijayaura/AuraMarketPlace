@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { formatCurrency, formatNumber } from "@/lib/utils";
@@ -15,12 +15,15 @@ import { CEWSelection } from "./CEWSelection";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import { type BrokerInsurersResponse } from "@/lib/api/brokers";
-import { type ProposalBundleResponse } from "@/lib/api/quotes";
+import { type ProposalBundleResponse, type InsurerPricingConfigResponse } from "@/lib/api/quotes";
 
 interface QuotesComparisonProps {
   assignedInsurers?: BrokerInsurersResponse | null;
   currentProposal?: ProposalBundleResponse | null;
   isLoadingProposal?: boolean;
+  insurerPricingConfigs?: Record<number, InsurerPricingConfigResponse>;
+  isLoadingPricingConfigs?: boolean;
+  onLoadPricingConfigs?: (eligibleInsurers: any[]) => Promise<boolean>;
 }
 
 const allQuotes = [
@@ -118,7 +121,14 @@ const allQuotes = [
   }
 ];
 
-const QuotesComparison = ({ assignedInsurers, currentProposal, isLoadingProposal }: QuotesComparisonProps) => {
+const QuotesComparison = ({ 
+  assignedInsurers, 
+  currentProposal, 
+  isLoadingProposal, 
+  insurerPricingConfigs, 
+  isLoadingPricingConfigs, 
+  onLoadPricingConfigs 
+}: QuotesComparisonProps) => {
   const [selectedQuotes, setSelectedQuotes] = useState<number[]>([]);
   const [isCompareDialogOpen, setIsCompareDialogOpen] = useState(false);
   const [showCEWDialog, setShowCEWDialog] = useState(false);
@@ -129,6 +139,157 @@ const QuotesComparison = ({ assignedInsurers, currentProposal, isLoadingProposal
   console.log('🏢 QuotesComparison received assignedInsurers:', assignedInsurers);
   console.log('📋 QuotesComparison received currentProposal:', currentProposal);
   console.log('⏳ QuotesComparison isLoadingProposal:', isLoadingProposal);
+
+  // Helper function to normalize geographic strings for comparison
+  const normalizeGeographicString = (str: string): string => {
+    return str
+      .toLowerCase()                    // Convert to lowercase
+      .replace(/\s+/g, '')             // Remove all spaces
+      .replace(/[^a-z0-9]/g, '')       // Remove special characters, keep only letters and numbers
+      .trim();                         // Remove any remaining whitespace
+  };
+
+  // Insurer validation logic
+  const validateInsurerEligibility = (insurer: any): boolean => {
+    console.log('🔍 Validating insurer:', insurer.insurer_name);
+    
+    // Check 1: Active status
+    const isActive = insurer.status === "active";
+    console.log('✅ Active status check:', isActive, `(status: ${insurer.status})`);
+    
+    // Check 2: Has product_id = 1
+    const hasProductId1 = insurer.product_assigned_details.some((product: any) => product.product_id === 1);
+    console.log('✅ Product ID 1 check:', hasProductId1, `(products: ${insurer.product_assigned_details.map((p: any) => p.product_id).join(', ')})`);
+    
+    // Check 3: Backdate validation
+    let isWithinBackdate = false;
+    if (currentProposal?.project?.start_date) {
+      const startDate = new Date(currentProposal.project.start_date);
+      const currentDate = new Date();
+      const daysDifference = Math.ceil((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Find the product with product_id = 1 to get backdate_days
+      const productWithId1 = insurer.product_assigned_details.find((product: any) => product.product_id === 1);
+      if (productWithId1?.quote_config?.backdate_days) {
+        isWithinBackdate = daysDifference <= productWithId1.quote_config.backdate_days;
+        console.log('✅ Backdate check:', isWithinBackdate, `(days difference: ${daysDifference}, backdate_days: ${productWithId1.quote_config.backdate_days})`);
+      } else {
+        console.log('❌ Backdate check failed: No product with ID 1 found or no backdate_days configured');
+      }
+    } else {
+      console.log('❌ Backdate check failed: No start_date in current proposal');
+    }
+    
+    // Check 4: Geographic validation
+    let isGeographicMatch = false;
+    if (currentProposal?.project?.country && currentProposal?.project?.region && currentProposal?.project?.zone) {
+      const proposalCountry = currentProposal.project.country;
+      const proposalRegion = currentProposal.project.region;
+      const proposalZone = currentProposal.project.zone;
+      
+      // Find the product with product_id = 1 to get operating areas
+      const productWithId1 = insurer.product_assigned_details.find((product: any) => product.product_id === 1);
+      if (productWithId1?.quote_config) {
+        const operatingCountries = productWithId1.quote_config.operating_countries || [];
+        const operatingRegions = productWithId1.quote_config.operating_regions || [];
+        const operatingZones = productWithId1.quote_config.operating_zones || [];
+        
+        // Normalize all strings for comparison
+        const normalizedProposalCountry = normalizeGeographicString(proposalCountry);
+        const normalizedProposalRegion = normalizeGeographicString(proposalRegion);
+        const normalizedProposalZone = normalizeGeographicString(proposalZone);
+        
+        // Check if any operating country matches the proposal country (normalized)
+        const countryMatch = operatingCountries.some((country: string) => 
+          normalizeGeographicString(country) === normalizedProposalCountry
+        );
+        
+        // Check if any operating region matches the proposal region (normalized)
+        const regionMatch = operatingRegions.some((region: string) => 
+          normalizeGeographicString(region) === normalizedProposalRegion
+        );
+        
+        // Check if any operating zone matches the proposal zone (normalized)
+        const zoneMatch = operatingZones.some((zone: string) => 
+          normalizeGeographicString(zone) === normalizedProposalZone
+        );
+        
+        // All three must match for geographic validation to pass
+        isGeographicMatch = countryMatch && regionMatch && zoneMatch;
+        
+        console.log('✅ Geographic check:', isGeographicMatch, {
+          proposal: { 
+            country: proposalCountry, 
+            region: proposalRegion, 
+            zone: proposalZone,
+            normalized: { 
+              country: normalizedProposalCountry, 
+              region: normalizedProposalRegion, 
+              zone: normalizedProposalZone 
+            }
+          },
+          insurer: { 
+            countries: operatingCountries, 
+            regions: operatingRegions, 
+            zones: operatingZones,
+            normalized: {
+              countries: operatingCountries.map(normalizeGeographicString),
+              regions: operatingRegions.map(normalizeGeographicString),
+              zones: operatingZones.map(normalizeGeographicString)
+            }
+          },
+          matches: { country: countryMatch, region: regionMatch, zone: zoneMatch }
+        });
+      } else {
+        console.log('❌ Geographic check failed: No product with ID 1 found or no operating areas configured');
+      }
+    } else {
+      console.log('❌ Geographic check failed: Missing proposal location data');
+    }
+    
+    // All checks must pass
+    const isEligible = isActive && hasProductId1 && isWithinBackdate && isGeographicMatch;
+    console.log(`🎯 Insurer ${insurer.insurer_name} eligibility:`, isEligible, {
+      active: isActive,
+      hasProductId1,
+      withinBackdate: isWithinBackdate,
+      geographicMatch: isGeographicMatch
+    });
+    
+    return isEligible;
+  };
+
+  // Get eligible insurers for pricing
+  const getEligibleInsurers = () => {
+    if (!assignedInsurers?.insurers || !currentProposal) {
+      return [];
+    }
+    
+    console.log('🔍 Starting insurer eligibility validation...');
+    const eligibleInsurers = assignedInsurers.insurers.filter(validateInsurerEligibility);
+    console.log('✅ Eligible insurers for pricing:', eligibleInsurers.map(i => i.insurer_name));
+    
+    return eligibleInsurers;
+  };
+
+  // Get eligible insurers whenever data changes
+  const eligibleInsurers = getEligibleInsurers();
+
+  // Load pricing configs when eligible insurers are found and not already loaded
+  React.useEffect(() => {
+    if (eligibleInsurers.length > 0 && onLoadPricingConfigs && !isLoadingPricingConfigs) {
+      // Check if we already have pricing configs for all eligible insurers
+      const hasAllConfigs = eligibleInsurers.every(insurer => 
+        insurerPricingConfigs && insurerPricingConfigs[insurer.insurer_id]
+      );
+      
+      if (!hasAllConfigs) {
+        console.log('💰 Triggering pricing config loading for eligible insurers...');
+        onLoadPricingConfigs(eligibleInsurers);
+      }
+    }
+  }, [eligibleInsurers, onLoadPricingConfigs, insurerPricingConfigs, isLoadingPricingConfigs]);
+
   const [tplAdjustment, setTPLAdjustment] = useState(0);
   const [cewAdjustment, setCEWAdjustment] = useState(0);
   const [brokerCommissionPercent, setBrokerCommissionPercent] = useState(10);
@@ -515,6 +676,39 @@ Contact us for more details or to proceed with the application.
           )}
         </div>
 
+
+        {/* Eligible Insurers Information */}
+        {eligibleInsurers.length > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <h3 className="font-semibold text-green-800">Eligible Insurers for Pricing</h3>
+            </div>
+            <p className="text-sm text-green-700 mb-3">
+              {eligibleInsurers.length} insurer{eligibleInsurers.length !== 1 ? 's' : ''} passed all validation checks and can proceed with pricing.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {eligibleInsurers.map((insurer, index) => (
+                <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  {insurer.insurer_name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Show message if no eligible insurers */}
+        {assignedInsurers && currentProposal && eligibleInsurers.length === 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <h3 className="font-semibold text-red-800">No Eligible Insurers</h3>
+            </div>
+            <p className="text-sm text-red-700">
+              None of the assigned insurers passed the validation checks. Please check the console for detailed validation results.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-4">
           {allQuotes.map((quote) => {
@@ -1034,4 +1228,4 @@ Contact us for more details or to proceed with the application.
   );
 };
 
-export default QuotesComparison;
+export { QuotesComparison };
