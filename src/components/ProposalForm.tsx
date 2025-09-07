@@ -112,6 +112,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   // Required Documents API State
   const [isSavingDocuments, setIsSavingDocuments] = useState(false);
   
+  
   // Water Body Detection State
   const [isWaterBodyAutoFilled, setIsWaterBodyAutoFilled] = useState(false);
   
@@ -328,11 +329,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     otherMaterials: "",
     // Document upload status
     documents: {
-      boq: { uploaded: false, url: "", label: "BOQ or Cost Breakdown" },
-      gantt_chart: { uploaded: false, url: "", label: "Project Gantt Chart" },
-      contract_agreement: { uploaded: false, url: "", label: "Contract Agreement" },
-      site_layout_plan: { uploaded: false, url: "", label: "Site Layout Plan" },
-      other_supporting_docs: { uploaded: false, url: "", label: "Other supporting docs" }
+      boq: { uploaded: false, url: "", fileName: "", label: "BOQ or Cost Breakdown" },
+      gantt_chart: { uploaded: false, url: "", fileName: "", label: "Project Gantt Chart" },
+      contract_agreement: { uploaded: false, url: "", fileName: "", label: "Contract Agreement" },
+      site_layout_plan: { uploaded: false, url: "", fileName: "", label: "Site Layout Plan" },
+      other_supporting_docs: { uploaded: false, url: "", fileName: "", label: "Other supporting docs" }
     }
   });
 
@@ -955,11 +956,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         otherMaterials: editingQuote.otherMaterials || "",
         // Document upload status
         documents: {
-          boq: { uploaded: false, url: "", label: "BOQ or Cost Breakdown" },
-          gantt_chart: { uploaded: false, url: "", label: "Project Gantt Chart" },
-          contract_agreement: { uploaded: false, url: "", label: "Contract Agreement" },
-          site_layout_plan: { uploaded: false, url: "", label: "Site Layout Plan" },
-          other_supporting_docs: { uploaded: false, url: "", label: "Other supporting docs" }
+          boq: { uploaded: false, url: "", fileName: "", label: "BOQ or Cost Breakdown" },
+          gantt_chart: { uploaded: false, url: "", fileName: "", label: "Project Gantt Chart" },
+          contract_agreement: { uploaded: false, url: "", fileName: "", label: "Contract Agreement" },
+          site_layout_plan: { uploaded: false, url: "", fileName: "", label: "Site Layout Plan" },
+          other_supporting_docs: { uploaded: false, url: "", fileName: "", label: "Other supporting docs" }
         }
       };
     }
@@ -976,6 +977,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       // Add more default calculations as needed
     };
   };
+
 
   // Validation logic
   const validateCoverageRequirements = () => {
@@ -3307,26 +3309,31 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     </p>
                   </div>
                   <DocumentUpload 
-                    documents={Object.values(formData.documents).map((doc, index) => ({
-                      id: index + 1,
-                      name: doc.label,
-                      description: doc.label,
-                      required: ['boq', 'gantt_chart', 'contract_agreement', 'site_layout_plan'].includes(Object.keys(formData.documents)[index]),
-                      status: doc.uploaded ? "uploaded" : "pending",
-                      fileSize: doc.uploaded ? "2.1 MB" : null
-                    }))}
                     onDocumentStatusChange={(updatedDocuments) => {
+                      // Map the API-loaded documents back to formData structure
                       const updatedFormData = { ...formData };
-                      updatedDocuments.forEach((doc, index) => {
-                        const docKey = Object.keys(formData.documents)[index] as keyof typeof formData.documents;
+                      
+                      // Create a mapping of document names to our formData keys
+                      const docNameToKey: Record<string, keyof typeof formData.documents> = {
+                        'BOQ or Cost Breakdown': 'boq',
+                        'Project Gantt Chart': 'gantt_chart',
+                        'Contract Agreement': 'contract_agreement',
+                        'Site Layout Plan': 'site_layout_plan',
+                        'Other supporting docs': 'other_supporting_docs'
+                      };
+                      
+                      updatedDocuments.forEach((doc) => {
+                        const docKey = docNameToKey[doc.name];
                         if (docKey) {
                           updatedFormData.documents[docKey] = {
                             ...updatedFormData.documents[docKey],
                             uploaded: doc.status === "uploaded",
-                            url: doc.status === "uploaded" ? "https://example.com/" + doc.name.toLowerCase().replace(/\s+/g, '-') + ".pdf" : ""
+                            url: doc.fileUrl || "",
+                            fileName: doc.fileName || ""
                           };
                         }
                       });
+                      
                       setFormData(updatedFormData);
                     }}
                   />

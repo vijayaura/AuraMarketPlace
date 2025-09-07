@@ -17,6 +17,7 @@ import {
   Loader2
 } from "lucide-react";
 import { listMasterDocumentTypes, type DocumentTypeItem } from "@/lib/api/masters";
+import { uploadFile, type UploadedFile } from "@/lib/api/quotes";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentItem {
@@ -24,8 +25,10 @@ interface DocumentItem {
   name: string;
   description: string;
   required: boolean;
-  status: "pending" | "uploaded" | "approved" | "rejected";
+  status: "pending" | "uploaded" | "approved" | "rejected" | "uploading";
   fileSize: string | null;
+  fileName?: string;
+  fileUrl?: string;
 }
 
 interface DocumentUploadProps {
@@ -37,6 +40,7 @@ export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChang
   const [documents, setDocuments] = useState<DocumentItem[]>(propDocuments || []);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingDocs, setUploadingDocs] = useState<Set<number>>(new Set());
   const navigate = useNavigate();
   const { navigateBack } = useNavigationHistory();
   const { toast } = useToast();
@@ -48,8 +52,14 @@ export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChang
     }
   }, [propDocuments]);
 
-  // Load document types from API
+  // Load document types from API only if no documents are provided as props
   useEffect(() => {
+    // If documents are provided as props, don't load from API
+    if (propDocuments && propDocuments.length > 0) {
+      setIsLoading(false);
+      return;
+    }
+
     const loadDocumentTypes = async () => {
       try {
         setIsLoading(true);
@@ -87,16 +97,108 @@ export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChang
     };
 
     loadDocumentTypes();
-  }, [toast]);
+  }, [toast, propDocuments]);
 
   const handleSubmit = () => {
     navigate('/customer/quotes');
   };
 
-  const handleUpload = (docId: number) => {
+  const handleFileSelect = (docId: number) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleFileUpload(docId, file);
+      }
+    };
+    input.click();
+  };
+
+  const handleFileUpload = async (docId: number, file: File) => {
+    try {
+      // Add to uploading set
+      setUploadingDocs(prev => new Set(prev).add(docId));
+      
+      // Update document status to uploading
+      const updatedDocuments = documents.map(doc => 
+        doc.id === docId 
+          ? { ...doc, status: "uploading" as const }
+          : doc
+      );
+      setDocuments(updatedDocuments);
+      
+      // Upload file
+      const uploadResponse = await uploadFile(file);
+      
+      if (uploadResponse.files && uploadResponse.files.length > 0) {
+        const uploadedFile = uploadResponse.files[0];
+        const fileSizeInMB = (uploadedFile.size_bytes / (1024 * 1024)).toFixed(1);
+        
+        // Update document with uploaded file info
+        const finalDocuments = documents.map(doc => 
+          doc.id === docId 
+            ? { 
+                ...doc, 
+                status: "uploaded" as const,
+                fileName: uploadedFile.original_name,
+                fileUrl: uploadedFile.url,
+                fileSize: `${fileSizeInMB} MB`
+              }
+            : doc
+        );
+        setDocuments(finalDocuments);
+        
+        // Notify parent component about status change
+        if (onDocumentStatusChange) {
+          onDocumentStatusChange(finalDocuments);
+        }
+        
+        toast({
+          title: "File Uploaded",
+          description: `${uploadedFile.original_name} has been uploaded successfully.`,
+          variant: "default",
+        });
+      } else {
+        throw new Error('No file data returned from upload');
+      }
+    } catch (error: any) {
+      console.error('File upload error:', error);
+      
+      // Revert to pending status on error
+      const errorDocuments = documents.map(doc => 
+        doc.id === docId 
+          ? { ...doc, status: "pending" as const }
+          : doc
+      );
+      setDocuments(errorDocuments);
+      
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload file. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      // Remove from uploading set
+      setUploadingDocs(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(docId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleRemoveFile = (docId: number) => {
     const updatedDocuments = documents.map(doc => 
       doc.id === docId 
-        ? { ...doc, status: "uploaded", fileSize: "2.1 MB" }
+        ? { 
+            ...doc, 
+            status: "pending" as const,
+            fileName: undefined,
+            fileUrl: undefined,
+            fileSize: null
+          }
         : doc
     );
     setDocuments(updatedDocuments);
@@ -105,6 +207,12 @@ export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChang
     if (onDocumentStatusChange) {
       onDocumentStatusChange(updatedDocuments);
     }
+    
+    toast({
+      title: "File Removed",
+      description: "File has been removed successfully.",
+      variant: "default",
+    });
   };
 
   const uploadedDocs = documents.filter(doc => doc.status === "uploaded").length;
@@ -115,6 +223,8 @@ export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChang
     switch (status) {
       case "uploaded":
         return <CheckCircle className="w-5 h-5 text-success" />;
+      case "uploading":
+        return <Loader2 className="w-5 h-5 text-primary animate-spin" />;
       case "pending":
         return <Clock className="w-5 h-5 text-warning" />;
       case "error":
@@ -127,6 +237,9 @@ export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChang
   const getStatusBadge = (status: string, required: boolean) => {
     if (status === "uploaded") {
       return <Badge variant="outline" className="text-success border-success">Uploaded</Badge>;
+    }
+    if (status === "uploading") {
+      return <Badge variant="outline" className="text-primary border-primary">Uploading...</Badge>;
     }
     if (status === "pending" && required) {
       return <Badge variant="outline" className="text-warning border-warning">Required</Badge>;
@@ -213,10 +326,21 @@ export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChang
                       <p className="text-xs lg:text-sm text-muted-foreground mb-3">
                         {doc.description}
                       </p>
+                      {doc.fileName && (
+                        <div className="flex items-center space-x-2 text-xs lg:text-sm mb-2">
+                          <FileText className="w-3 h-3 text-primary" />
+                          <span className="text-primary font-medium">{doc.fileName}</span>
+                        </div>
+                      )}
                       {doc.fileSize && (
                         <div className="flex items-center space-x-4 text-xs lg:text-sm">
                           <span className="text-muted-foreground">Size: {doc.fileSize}</span>
-                          <span className="text-success font-medium">Uploaded successfully</span>
+                          {doc.status === "uploaded" && (
+                            <span className="text-success font-medium">Uploaded successfully</span>
+                          )}
+                          {doc.status === "uploading" && (
+                            <span className="text-primary font-medium">Uploading...</span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -225,19 +349,45 @@ export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChang
                   <div className="flex items-center space-x-1 lg:space-x-2 ml-3 lg:ml-4">
                     {doc.status === "uploaded" ? (
                       <>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0"
+                          onClick={() => doc.fileUrl && window.open(doc.fileUrl, '_blank')}
+                          disabled={!doc.fileUrl}
+                        >
                           <Eye className="w-3 h-3 lg:w-4 lg:h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0"
+                          onClick={() => doc.fileUrl && window.open(doc.fileUrl, '_blank')}
+                          disabled={!doc.fileUrl}
+                        >
                           <Download className="w-3 h-3 lg:w-4 lg:h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          onClick={() => handleRemoveFile(doc.id)}
+                        >
                           <Trash2 className="w-3 h-3 lg:w-4 lg:h-4" />
                         </Button>
                       </>
+                    ) : doc.status === "uploading" ? (
+                      <Button variant="outline" size="sm" disabled className="bg-primary/10 text-primary border-primary">
+                        <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2 animate-spin" />
+                        <span className="text-xs lg:text-sm">Uploading...</span>
+                      </Button>
                     ) : (
-                      <Button variant="outline" size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
-                        onClick={() => handleUpload(doc.id)}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
+                        onClick={() => handleFileSelect(doc.id)}
+                        disabled={uploadingDocs.has(doc.id)}
                       >
                         <Upload className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2" />
                         <span className="text-xs lg:text-sm">Upload</span>

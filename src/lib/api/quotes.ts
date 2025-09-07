@@ -1,4 +1,24 @@
-import { apiPost, apiPatch } from './client';
+import { apiPost, apiPatch, apiUploadFile } from './client';
+
+// File Upload Types
+export interface UploadedFile {
+  original_name: string;
+  stored_name: string;
+  size_bytes: number;
+  s3_uri: string;
+  url: string;
+  url_expires_in_seconds: number;
+}
+
+export interface FileUploadResponse {
+  message: string;
+  files: UploadedFile[];
+  body: {
+    policy_id: null;
+    document_type: null;
+  };
+  persisted: boolean;
+}
 
 // Types for Quote Project API
 export interface QuoteProjectRequest {
@@ -269,4 +289,18 @@ export const updateRequiredDocuments = async (data: RequiredDocumentsRequest, qu
   const endpoint = `/quotes/cover/${quoteId}`;
   console.log('🔄 updateRequiredDocuments (PATCH) called with:', { quoteId, endpoint, data });
   return apiPatch<RequiredDocumentsResponse>(endpoint, data);
+};
+
+// File Upload Function
+export const uploadFile = async (file: File): Promise<FileUploadResponse> => {
+  console.log('📤 uploadFile called with:', { fileName: file.name, fileSize: file.size, fileType: file.type });
+  
+  try {
+    const data = await apiUploadFile<FileUploadResponse>('/documents/upload', file);
+    console.log('✅ uploadFile success:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ uploadFile error:', error);
+    throw error;
+  }
 };

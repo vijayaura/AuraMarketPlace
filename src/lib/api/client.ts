@@ -197,4 +197,18 @@ export async function apiPatch<T>(path: string, body?: unknown, config?: AxiosRe
   return apiRequest<T>(path, { method: 'PATCH', data: body, ...(config || {}) });
 }
 
+export async function apiUploadFile<T>(path: string, file: File, config?: AxiosRequestConfig): Promise<T> {
+  const formData = new FormData();
+  formData.append('files', file);
+  
+  return apiRequest<T>(path, {
+    method: 'POST',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    ...(config || {})
+  });
+}
+
 
