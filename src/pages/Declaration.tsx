@@ -100,7 +100,7 @@ const Declaration = () => {
     <div className="w-full">
       <div className="text-left mb-6">
         <h2 className="text-lg font-semibold text-foreground mb-1">
-          Upload Required Documents
+          Upload Declaration Documents
         </h2>
         <p className="text-sm text-muted-foreground">
           Please upload documents needed for policy issuance

@@ -28,7 +28,7 @@ import {
   type SubProjectTypeItem
 } from "@/lib/api/masters";
 import { getBroker, type Broker } from "@/lib/api/brokers";
-import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse } from "@/lib/api/quotes";
+import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse, saveRequiredDocuments, updateRequiredDocuments, type RequiredDocumentsRequest, type RequiredDocumentsResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentUpload } from "./DocumentUpload";
@@ -108,6 +108,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   
   // Cover Requirements API State
   const [isSavingCoverRequirements, setIsSavingCoverRequirements] = useState(false);
+  
+  // Required Documents API State
+  const [isSavingDocuments, setIsSavingDocuments] = useState(false);
   
   // Water Body Detection State
   const [isWaterBodyAutoFilled, setIsWaterBodyAutoFilled] = useState(false);
@@ -322,7 +325,15 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       amount: "",
       description: ""
     }],
-    otherMaterials: ""
+    otherMaterials: "",
+    // Document upload status
+    documents: {
+      boq: { uploaded: false, url: "", label: "BOQ or Cost Breakdown" },
+      gantt_chart: { uploaded: false, url: "", label: "Project Gantt Chart" },
+      contract_agreement: { uploaded: false, url: "", label: "Contract Agreement" },
+      site_layout_plan: { uploaded: false, url: "", label: "Site Layout Plan" },
+      other_supporting_docs: { uploaded: false, url: "", label: "Other supporting docs" }
+    }
   });
 
   // Optimized Master Data Fetching Function
@@ -941,7 +952,15 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
           amount: "",
           description: ""
         }],
-        otherMaterials: editingQuote.otherMaterials || ""
+        otherMaterials: editingQuote.otherMaterials || "",
+        // Document upload status
+        documents: {
+          boq: { uploaded: false, url: "", label: "BOQ or Cost Breakdown" },
+          gantt_chart: { uploaded: false, url: "", label: "Project Gantt Chart" },
+          contract_agreement: { uploaded: false, url: "", label: "Contract Agreement" },
+          site_layout_plan: { uploaded: false, url: "", label: "Site Layout Plan" },
+          other_supporting_docs: { uploaded: false, url: "", label: "Other supporting docs" }
+        }
       };
     }
     return getDefaultFormData();
@@ -1208,9 +1227,19 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         break;
         
       case 5: // Documents step
-        // For documents step, we'll check if all required documents are uploaded
-        // This validation will be handled by the DocumentUpload component itself
-        // No additional validation needed here as the component manages its own state
+        // Check if all required documents are uploaded
+        const requiredDocuments = ['boq', 'gantt_chart', 'contract_agreement', 'site_layout_plan'];
+        const missingDocuments: string[] = [];
+        
+        requiredDocuments.forEach(docKey => {
+          if (!formData.documents[docKey as keyof typeof formData.documents]?.uploaded) {
+            missingDocuments.push(formData.documents[docKey as keyof typeof formData.documents]?.label || docKey);
+          }
+        });
+        
+        if (missingDocuments.length > 0) {
+          errors.documents = `Please upload the following required documents: ${missingDocuments.join(', ')}`;
+        }
         break;
         
       case 6: // Quotes step
@@ -1646,6 +1675,97 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     };
   };
 
+  // Transform documents data to API format
+  const transformDocumentsToAPI = (): RequiredDocumentsRequest => {
+    return {
+      boq: {
+        label: formData.documents.boq.label,
+        url: formData.documents.boq.url || "https://example.com/boq.pdf"
+      },
+      gantt_chart: {
+        label: formData.documents.gantt_chart.label,
+        url: formData.documents.gantt_chart.url || "https://example.com/gantt.pdf"
+      },
+      contract_agreement: {
+        label: formData.documents.contract_agreement.label,
+        url: formData.documents.contract_agreement.url || "https://example.com/contract.pdf"
+      },
+      site_layout_plan: {
+        label: formData.documents.site_layout_plan.label,
+        url: formData.documents.site_layout_plan.url || "https://example.com/site-layout.pdf"
+      },
+      other_supporting_docs: {
+        label: formData.documents.other_supporting_docs.label,
+        url: formData.documents.other_supporting_docs.url || "https://example.com/other-docs.pdf"
+      }
+    };
+  };
+
+  // Save required documents via API
+  const saveRequiredDocumentsData = async (): Promise<boolean> => {
+    if (!currentQuoteId) {
+      toast({
+        title: "Error",
+        description: "Quote ID not found. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsSavingDocuments(true);
+    
+    try {
+      const apiData = transformDocumentsToAPI();
+      let response: RequiredDocumentsResponse;
+      
+      if (isStepCompleted('underwriting_documents')) {
+        // Use PATCH for existing documents
+        console.log('🔄 Using PATCH to update existing required documents');
+        response = await updateRequiredDocuments(apiData, currentQuoteId);
+      } else {
+        // Use POST for new documents
+        console.log('💾 Using POST to create new required documents');
+        response = await saveRequiredDocuments(apiData, currentQuoteId);
+      }
+      
+      console.log('✅ Required documents saved successfully:', response);
+      
+      // Mark underwriting_documents step as completed
+      markStepCompleted('underwriting_documents');
+      
+      toast({
+        title: "Documents Saved",
+        description: "Required documents have been saved successfully.",
+        variant: "default",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error saving required documents:', error);
+      
+      let errorMessage = 'Failed to save required documents. Please try again.';
+      if (error?.response?.status === 400) {
+        errorMessage = 'Invalid document data. Please check your uploads and try again.';
+      } else if (error?.response?.status === 401) {
+        errorMessage = 'Authentication required. Please log in again.';
+      } else if (error?.response?.status === 403) {
+        errorMessage = 'You do not have permission to save documents.';
+      } else if (error?.response?.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      return false;
+    } finally {
+      setIsSavingDocuments(false);
+    }
+  };
+
   // Save cover requirements via API
   const saveCoverRequirementsData = async (): Promise<boolean> => {
     if (!currentQuoteId) {
@@ -1949,7 +2069,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       }
                     }}
-                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isCheckingWaterBody}
+                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody}
                   >
                     {isSavingCoverRequirements ? (
                       <>
@@ -2044,9 +2164,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                         }
                       } else if (currentStep === 5) {
-                        // Documents step - mark as completed and go to step 6 (Quotes)
-                        markStepCompleted('underwriting_documents');
-                        setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                        // Documents step - save documents and go to step 6 (Quotes)
+                        const success = await saveRequiredDocumentsData();
+                        if (success) {
+                          setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                        }
                       } else if (currentStep === 6) {
                         // Quotes step - mark as completed and go to step 7 (Declaration)
                         markStepCompleted('coverages_selected');
@@ -2060,7 +2182,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       }
                     }}
-                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isCheckingWaterBody}
+                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody}
                   >
                     {isSavingProject ? (
                       <>
@@ -2086,6 +2208,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Saving...
+                      </>
+                    ) : isSavingDocuments ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving Documents...
                       </>
                     ) : isCheckingWaterBody ? (
                       <>
@@ -3179,7 +3306,30 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       Please upload documents needed for underwriting
                     </p>
                   </div>
-                  <DocumentUpload />
+                  <DocumentUpload 
+                    documents={Object.values(formData.documents).map((doc, index) => ({
+                      id: index + 1,
+                      name: doc.label,
+                      description: doc.label,
+                      required: ['boq', 'gantt_chart', 'contract_agreement', 'site_layout_plan'].includes(Object.keys(formData.documents)[index]),
+                      status: doc.uploaded ? "uploaded" : "pending",
+                      fileSize: doc.uploaded ? "2.1 MB" : null
+                    }))}
+                    onDocumentStatusChange={(updatedDocuments) => {
+                      const updatedFormData = { ...formData };
+                      updatedDocuments.forEach((doc, index) => {
+                        const docKey = Object.keys(formData.documents)[index] as keyof typeof formData.documents;
+                        if (docKey) {
+                          updatedFormData.documents[docKey] = {
+                            ...updatedFormData.documents[docKey],
+                            uploaded: doc.status === "uploaded",
+                            url: doc.status === "uploaded" ? "https://example.com/" + doc.name.toLowerCase().replace(/\s+/g, '-') + ".pdf" : ""
+                          };
+                        }
+                      });
+                      setFormData(updatedFormData);
+                    }}
+                  />
                 </div>
               </TabsContent>
 

@@ -230,3 +230,43 @@ export const updateCoverRequirements = async (data: CoverRequirementsRequest, qu
   console.log('🔄 updateCoverRequirements (PATCH) called with:', { quoteId, endpoint, data });
   return apiPatch<CoverRequirementsResponse>(endpoint, data);
 };
+
+// Types for Required Documents API
+export interface DocumentInfo {
+  label: string;
+  url: string;
+}
+
+export interface RequiredDocumentsRequest {
+  boq: DocumentInfo;
+  gantt_chart: DocumentInfo;
+  contract_agreement: DocumentInfo;
+  site_layout_plan: DocumentInfo;
+  other_supporting_docs: DocumentInfo;
+}
+
+export interface RequiredDocumentsResponse {
+  message: string;
+  quote_id: number;
+  required_documents: RequiredDocumentsRequest;
+}
+
+// Save required documents (POST for new)
+export const saveRequiredDocuments = async (data: RequiredDocumentsRequest, quoteId: number): Promise<RequiredDocumentsResponse> => {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for required documents operations');
+  }
+  const endpoint = `/quotes/cover/${quoteId}`;
+  console.log('💾 saveRequiredDocuments (POST) called with:', { quoteId, endpoint, data });
+  return apiPost<RequiredDocumentsResponse>(endpoint, data);
+};
+
+// Update required documents (PATCH for existing)
+export const updateRequiredDocuments = async (data: RequiredDocumentsRequest, quoteId: number): Promise<RequiredDocumentsResponse> => {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for required documents operations');
+  }
+  const endpoint = `/quotes/cover/${quoteId}`;
+  console.log('🔄 updateRequiredDocuments (PATCH) called with:', { quoteId, endpoint, data });
+  return apiPatch<RequiredDocumentsResponse>(endpoint, data);
+};

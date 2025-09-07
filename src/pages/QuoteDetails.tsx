@@ -192,10 +192,504 @@ const getQuoteDetails = (id: string) => {
       status: QUOTE_STATUSES.QUOTE_GENERATED,
       submittedDate: "2024-01-15",
       expiryDate: "2024-02-15"
+    },
+    "Q002": {
+      id: "Q002",
+      projectName: "Downtown Residential Complex",
+      projectType: "Residential",
+      constructionType: "Concrete",
+      projectAddress: "Downtown Dubai, UAE",
+      coordinates: "25.1972, 55.2744",
+      projectValue: "AED 6,200,000",
+      startDate: "2024-02-01",
+      completionDate: "2024-08-15",
+      constructionPeriod: "12 months",
+      maintenancePeriod: "18 months",
+      insuredName: "Emaar Properties",
+      roleOfInsured: "Developer",
+      contactEmail: "projects@emaar.ae",
+      phoneNumber: "+971-4-367-3333",
+      vatNumber: "100123456700004",
+      countryOfIncorporation: "UAE",
+      mainContractor: "Emaar Construction",
+      principalOwner: "Emaar Properties",
+      contractType: "Design & Build",
+      contractNumber: "EMA-2024-RES-001",
+      engineerConsultant: "AECOM Middle East",
+      subContractors: [
+        {
+          name: "Al Habtoor Leighton",
+          contractType: "Supply",
+          contractNumber: "AH-2024-001"
+        }
+      ],
+      nearWaterBody: "No",
+      floodProneZone: "No",
+      withinCityCenter: "Yes",
+      cityAreaType: "Urban",
+      soilType: "Clay",
+      existingStructure: "No",
+      blastingExcavation: "No",
+      siteSecurityArrangements: "24/7 Guarded",
+      sumInsuredMaterial: "AED 4,340,000",
+      sumInsuredPlant: "AED 930,000",
+      sumInsuredTemporary: "AED 310,000",
+      principalExistingProperty: "AED 0",
+      tplLimit: "AED 3,100,000",
+      crossLiabilityCover: "Yes",
+      removalDebrisLimit: "AED 310,000",
+      extensions: {
+        debrisRemoval: true,
+        professionalFees: true,
+        offsiteStorage: false,
+        transitStorage: false,
+        icow: false,
+        fireBrigadeCharges: false
+      },
+      selectedCEWItems: [
+        {
+          id: 1,
+          name: "Maintenance Extension",
+          type: "extension",
+          selectedOption: "12 Months",
+          limit: "18 Months",
+          percentage: "+10%",
+          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
+        }
+      ],
+      claimsHistory: [
+        {
+          year: 2023,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        },
+        {
+          year: 2022,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }
+      ],
+      status: QUOTE_STATUSES.QUOTE_CONFIRMED,
+      submittedDate: "2024-01-12",
+      expiryDate: "2024-02-12"
+    },
+    "Q003": {
+      id: "Q003",
+      projectName: "Marina Shopping Mall Renovation",
+      projectType: "Commercial",
+      constructionType: "Steel Frame",
+      projectAddress: "Dubai Marina, UAE",
+      coordinates: "25.0772, 55.1307",
+      projectValue: "AED 14,800,000",
+      startDate: "2024-01-15",
+      completionDate: "2024-07-15",
+      constructionPeriod: "6 months",
+      maintenancePeriod: "12 months",
+      insuredName: "DAMAC Properties",
+      roleOfInsured: "Owner",
+      contactEmail: "projects@damac.ae",
+      phoneNumber: "+971-4-444-4444",
+      vatNumber: "100123456700005",
+      countryOfIncorporation: "UAE",
+      mainContractor: "DAMAC Construction",
+      principalOwner: "DAMAC Properties",
+      contractType: "Renovation",
+      contractNumber: "DAM-2024-REN-001",
+      engineerConsultant: "WSP Middle East",
+      subContractors: [
+        {
+          name: "Marina Glass Works",
+          contractType: "Supply",
+          contractNumber: "MGW-2024-001"
+        }
+      ],
+      nearWaterBody: "Yes",
+      floodProneZone: "No",
+      withinCityCenter: "Yes",
+      cityAreaType: "Urban",
+      soilType: "Sandy",
+      existingStructure: "Yes",
+      blastingExcavation: "No",
+      siteSecurityArrangements: "24/7 Guarded",
+      sumInsuredMaterial: "AED 10,360,000",
+      sumInsuredPlant: "AED 2,220,000",
+      sumInsuredTemporary: "AED 740,000",
+      principalExistingProperty: "AED 1,480,000",
+      tplLimit: "AED 7,400,000",
+      crossLiabilityCover: "Yes",
+      removalDebrisLimit: "AED 740,000",
+      extensions: {
+        debrisRemoval: true,
+        professionalFees: true,
+        offsiteStorage: true,
+        transitStorage: false,
+        icow: true,
+        fireBrigadeCharges: false
+      },
+      selectedCEWItems: [
+        {
+          id: 1,
+          name: "Maintenance Extension",
+          type: "extension",
+          selectedOption: "6 Months",
+          limit: "12 Months",
+          percentage: "+5%",
+          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
+        }
+      ],
+      claimsHistory: [
+        {
+          year: 2023,
+          claimCount: 1,
+          amount: "AED 50,000",
+          description: "Minor water damage during renovation"
+        },
+        {
+          year: 2022,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }
+      ],
+      status: QUOTE_STATUSES.SELECTED_PRODUCT,
+      submittedDate: "2024-01-10",
+      expiryDate: "2024-02-10"
+    },
+    "Q004": {
+      id: "Q004",
+      projectName: "Palm Jumeirah Villa Complex",
+      projectType: "Residential",
+      constructionType: "Concrete",
+      projectAddress: "Palm Jumeirah, Dubai, UAE",
+      coordinates: "25.1124, 55.1390",
+      projectValue: "AED 11,200,000",
+      startDate: "2024-01-20",
+      completionDate: "2024-10-20",
+      constructionPeriod: "9 months",
+      maintenancePeriod: "12 months",
+      insuredName: "Nakheel Properties",
+      roleOfInsured: "Developer",
+      contactEmail: "projects@nakheel.ae",
+      phoneNumber: "+971-4-390-3333",
+      vatNumber: "100123456700006",
+      countryOfIncorporation: "UAE",
+      mainContractor: "Nakheel Construction",
+      principalOwner: "Nakheel Properties",
+      contractType: "Turnkey",
+      contractNumber: "NAK-2024-VIL-001",
+      engineerConsultant: "Parsons Corporation",
+      subContractors: [
+        {
+          name: "Palm Marine Works",
+          contractType: "Supply",
+          contractNumber: "PMW-2024-001"
+        }
+      ],
+      nearWaterBody: "Yes",
+      floodProneZone: "No",
+      withinCityCenter: "No",
+      cityAreaType: "Coastal",
+      soilType: "Sandy",
+      existingStructure: "No",
+      blastingExcavation: "No",
+      siteSecurityArrangements: "24/7 Guarded",
+      sumInsuredMaterial: "AED 7,840,000",
+      sumInsuredPlant: "AED 1,680,000",
+      sumInsuredTemporary: "AED 560,000",
+      principalExistingProperty: "AED 0",
+      tplLimit: "AED 5,600,000",
+      crossLiabilityCover: "Yes",
+      removalDebrisLimit: "AED 560,000",
+      extensions: {
+        debrisRemoval: true,
+        professionalFees: false,
+        offsiteStorage: false,
+        transitStorage: false,
+        icow: false,
+        fireBrigadeCharges: false
+      },
+      selectedCEWItems: [
+        {
+          id: 1,
+          name: "Maintenance Extension",
+          type: "extension",
+          selectedOption: "9 Months",
+          limit: "12 Months",
+          percentage: "+8%",
+          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
+        }
+      ],
+      claimsHistory: [
+        {
+          year: 2023,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        },
+        {
+          year: 2022,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }
+      ],
+      status: QUOTE_STATUSES.QUOTE_EDITED,
+      submittedDate: "2024-01-08",
+      expiryDate: "2024-02-08"
+    },
+    "Q005": {
+      id: "Q005",
+      projectName: "Public Infrastructure Project",
+      projectType: "Infrastructure",
+      constructionType: "Concrete & Steel",
+      projectAddress: "Dubai Municipality Area, UAE",
+      coordinates: "25.2048, 55.2708",
+      projectValue: "AED 18,700,000",
+      startDate: "2024-02-01",
+      completionDate: "2024-12-01",
+      constructionPeriod: "10 months",
+      maintenancePeriod: "24 months",
+      insuredName: "Dubai Municipality",
+      roleOfInsured: "Government Entity",
+      contactEmail: "projects@dm.gov.ae",
+      phoneNumber: "+971-4-221-5555",
+      vatNumber: "100123456700007",
+      countryOfIncorporation: "UAE",
+      mainContractor: "Dubai Municipality Construction",
+      principalOwner: "Dubai Municipality",
+      contractType: "Government Contract",
+      contractNumber: "DM-2024-INF-001",
+      engineerConsultant: "AECOM Middle East",
+      subContractors: [
+        {
+          name: "Dubai Roads & Transport Authority",
+          contractType: "Supply",
+          contractNumber: "RTA-2024-001"
+        }
+      ],
+      nearWaterBody: "No",
+      floodProneZone: "No",
+      withinCityCenter: "Yes",
+      cityAreaType: "Urban",
+      soilType: "Mixed",
+      existingStructure: "Yes",
+      blastingExcavation: "Yes",
+      siteSecurityArrangements: "24/7 Guarded",
+      sumInsuredMaterial: "AED 13,090,000",
+      sumInsuredPlant: "AED 2,805,000",
+      sumInsuredTemporary: "AED 935,000",
+      principalExistingProperty: "AED 1,870,000",
+      tplLimit: "AED 9,350,000",
+      crossLiabilityCover: "Yes",
+      removalDebrisLimit: "AED 935,000",
+      extensions: {
+        debrisRemoval: true,
+        professionalFees: true,
+        offsiteStorage: true,
+        transitStorage: true,
+        icow: true,
+        fireBrigadeCharges: true
+      },
+      selectedCEWItems: [
+        {
+          id: 1,
+          name: "Maintenance Extension",
+          type: "extension",
+          selectedOption: "10 Months",
+          limit: "24 Months",
+          percentage: "+12%",
+          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
+        }
+      ],
+      claimsHistory: [
+        {
+          year: 2023,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        },
+        {
+          year: 2022,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }
+      ],
+      status: QUOTE_STATUSES.QUOTE_GENERATED,
+      submittedDate: "2024-01-05",
+      expiryDate: "2024-02-05"
+    },
+    "Q006": {
+      id: "Q006",
+      projectName: "Bluewaters Island Resort",
+      projectType: "Commercial",
+      constructionType: "Concrete",
+      projectAddress: "Bluewaters Island, Dubai, UAE",
+      coordinates: "25.0772, 55.1307",
+      projectValue: "AED 15,600,000",
+      startDate: "2024-03-01",
+      completionDate: "2024-11-01",
+      constructionPeriod: "8 months",
+      maintenancePeriod: "18 months",
+      insuredName: "Meraas Holding",
+      roleOfInsured: "Developer",
+      contactEmail: "projects@meraas.ae",
+      phoneNumber: "+971-4-317-7777",
+      vatNumber: "100123456700008",
+      countryOfIncorporation: "UAE",
+      mainContractor: "Meraas Construction",
+      principalOwner: "Meraas Holding",
+      contractType: "Design & Build",
+      contractNumber: "MER-2024-RES-001",
+      engineerConsultant: "Atkins Middle East",
+      subContractors: [
+        {
+          name: "Bluewaters Marine Works",
+          contractType: "Supply",
+          contractNumber: "BMW-2024-001"
+        }
+      ],
+      nearWaterBody: "Yes",
+      floodProneZone: "No",
+      withinCityCenter: "No",
+      cityAreaType: "Island",
+      soilType: "Sandy",
+      existingStructure: "No",
+      blastingExcavation: "No",
+      siteSecurityArrangements: "24/7 Guarded",
+      sumInsuredMaterial: "AED 10,920,000",
+      sumInsuredPlant: "AED 2,340,000",
+      sumInsuredTemporary: "AED 780,000",
+      principalExistingProperty: "AED 0",
+      tplLimit: "AED 7,800,000",
+      crossLiabilityCover: "Yes",
+      removalDebrisLimit: "AED 780,000",
+      extensions: {
+        debrisRemoval: true,
+        professionalFees: true,
+        offsiteStorage: false,
+        transitStorage: false,
+        icow: false,
+        fireBrigadeCharges: false
+      },
+      selectedCEWItems: [
+        {
+          id: 1,
+          name: "Maintenance Extension",
+          type: "extension",
+          selectedOption: "8 Months",
+          limit: "18 Months",
+          percentage: "+10%",
+          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
+        }
+      ],
+      claimsHistory: [
+        {
+          year: 2023,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        },
+        {
+          year: 2022,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }
+      ],
+      status: QUOTE_STATUSES.QUOTE_GENERATED,
+      submittedDate: "2024-01-03",
+      expiryDate: "2024-02-03"
+    },
+    "Q007": {
+      id: "Q007",
+      projectName: "Dubai Hills Mall Expansion",
+      projectType: "Commercial",
+      constructionType: "Steel Frame",
+      projectAddress: "Dubai Hills, UAE",
+      coordinates: "25.0657, 55.1713",
+      projectValue: "AED 22,400,000",
+      startDate: "2024-02-15",
+      completionDate: "2024-10-15",
+      constructionPeriod: "8 months",
+      maintenancePeriod: "12 months",
+      insuredName: "Emaar Properties",
+      roleOfInsured: "Developer",
+      contactEmail: "projects@emaar.ae",
+      phoneNumber: "+971-4-367-3333",
+      vatNumber: "100123456700009",
+      countryOfIncorporation: "UAE",
+      mainContractor: "Emaar Construction",
+      principalOwner: "Emaar Properties",
+      contractType: "Design & Build",
+      contractNumber: "EMA-2024-MAL-001",
+      engineerConsultant: "WSP Middle East",
+      subContractors: [
+        {
+          name: "Dubai Hills Steel Works",
+          contractType: "Supply",
+          contractNumber: "DHSW-2024-001"
+        }
+      ],
+      nearWaterBody: "No",
+      floodProneZone: "No",
+      withinCityCenter: "No",
+      cityAreaType: "Suburban",
+      soilType: "Clay",
+      existingStructure: "Yes",
+      blastingExcavation: "No",
+      siteSecurityArrangements: "24/7 Guarded",
+      sumInsuredMaterial: "AED 15,680,000",
+      sumInsuredPlant: "AED 3,360,000",
+      sumInsuredTemporary: "AED 1,120,000",
+      principalExistingProperty: "AED 2,240,000",
+      tplLimit: "AED 11,200,000",
+      crossLiabilityCover: "Yes",
+      removalDebrisLimit: "AED 1,120,000",
+      extensions: {
+        debrisRemoval: true,
+        professionalFees: true,
+        offsiteStorage: true,
+        transitStorage: false,
+        icow: true,
+        fireBrigadeCharges: false
+      },
+      selectedCEWItems: [
+        {
+          id: 1,
+          name: "Maintenance Extension",
+          type: "extension",
+          selectedOption: "8 Months",
+          limit: "12 Months",
+          percentage: "+8%",
+          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
+        }
+      ],
+      claimsHistory: [
+        {
+          year: 2023,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        },
+        {
+          year: 2022,
+          claimCount: 0,
+          amount: "",
+          description: ""
+        }
+      ],
+      status: QUOTE_STATUSES.POLICY_GENERATED,
+      submittedDate: "2024-01-01",
+      expiryDate: "2024-02-01"
     }
   };
   
-  return quotes[id as keyof typeof quotes] || null;
+  // For now, always return Q001 details regardless of the quote ID
+  // This will be replaced with API integration later
+  return quotes["Q001"] || null;
 };
 
 const getStatusBadge = (status: string) => {

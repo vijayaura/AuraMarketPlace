@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Upload, 
   FileText, 
@@ -12,38 +13,98 @@ import {
   AlertCircle, 
   Download,
   Eye,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react";
-import { getActiveDocumentTypes } from "@/lib/masters-data";
+import { listMasterDocumentTypes, type DocumentTypeItem } from "@/lib/api/masters";
+import { useToast } from "@/hooks/use-toast";
 
-// Get documents from masters data and add status fields
-const getRequiredDocuments = () => {
-  const masterDocuments = getActiveDocumentTypes();
-  return masterDocuments.map(doc => ({
-    id: doc.id,
-    name: doc.label,
-    description: doc.description,
-    required: doc.required,
-    status: "pending",
-    fileSize: null
-  }));
-};
+interface DocumentItem {
+  id: number;
+  name: string;
+  description: string;
+  required: boolean;
+  status: "pending" | "uploaded" | "approved" | "rejected";
+  fileSize: string | null;
+}
 
-export const DocumentUpload = () => {
-  const [documents, setDocuments] = useState(getRequiredDocuments());
+interface DocumentUploadProps {
+  documents?: DocumentItem[];
+  onDocumentStatusChange?: (documents: DocumentItem[]) => void;
+}
+
+export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChange }: DocumentUploadProps) => {
+  const [documents, setDocuments] = useState<DocumentItem[]>(propDocuments || []);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { navigateBack } = useNavigationHistory();
+  const { toast } = useToast();
+
+  // Update local state when props change
+  useEffect(() => {
+    if (propDocuments) {
+      setDocuments(propDocuments);
+    }
+  }, [propDocuments]);
+
+  // Load document types from API
+  useEffect(() => {
+    const loadDocumentTypes = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const documentTypes = await listMasterDocumentTypes();
+        
+        // Filter only active documents and sort by order
+        const activeDocuments = documentTypes
+          .filter(doc => doc.active)
+          .sort((a, b) => a.order - b.order)
+          .map(doc => ({
+            id: doc.id,
+            name: doc.label,
+            description: doc.description || '',
+            required: doc.required,
+            status: "pending" as const,
+            fileSize: null
+          }));
+        
+        setDocuments(activeDocuments);
+      } catch (err: any) {
+        console.error('Error loading document types:', err);
+        setError('Failed to load document types. Please try again.');
+        
+        // Show error toast
+        toast({
+          title: "Error",
+          description: "Failed to load document types. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDocumentTypes();
+  }, [toast]);
 
   const handleSubmit = () => {
     navigate('/customer/quotes');
   };
 
   const handleUpload = (docId: number) => {
-    setDocuments(prev => prev.map(doc => 
+    const updatedDocuments = documents.map(doc => 
       doc.id === docId 
         ? { ...doc, status: "uploaded", fileSize: "2.1 MB" }
         : doc
-    ));
+    );
+    setDocuments(updatedDocuments);
+    
+    // Notify parent component about status change
+    if (onDocumentStatusChange) {
+      onDocumentStatusChange(updatedDocuments);
+    }
   };
 
   const uploadedDocs = documents.filter(doc => doc.status === "uploaded").length;
@@ -75,6 +136,53 @@ export const DocumentUpload = () => {
     }
     return null;
   };
+
+  // Loading skeleton
+  if (isLoading) {
+    return (
+      <div className="w-full">
+        <div className="grid gap-4 lg:gap-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Card key={i} className="border-2 border-muted/30 bg-muted/5">
+              <CardContent className="p-4 lg:p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3 lg:space-x-4 flex-1">
+                    <div className="mt-1">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 lg:space-x-3 mb-2">
+                        <div className="h-4 bg-muted rounded w-32 animate-pulse"></div>
+                        <div className="h-5 bg-muted rounded w-16 animate-pulse"></div>
+                      </div>
+                      <div className="h-3 bg-muted rounded w-48 animate-pulse mb-3"></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1 lg:space-x-2 ml-3 lg:ml-4">
+                    <div className="h-8 bg-muted rounded w-20 animate-pulse"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="w-full">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
