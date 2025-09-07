@@ -27,12 +27,12 @@ import {
   type SimpleMasterItem,
   type SubProjectTypeItem
 } from "@/lib/api/masters";
-import { getBroker, type Broker } from "@/lib/api/brokers";
-import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse, saveRequiredDocuments, updateRequiredDocuments, type RequiredDocumentsRequest, type RequiredDocumentsResponse } from "@/lib/api/quotes";
+import { getBroker, getBrokerInsurers, type Broker, type BrokerInsurersResponse } from "@/lib/api/brokers";
+import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse, saveRequiredDocuments, updateRequiredDocuments, type RequiredDocumentsRequest, type RequiredDocumentsResponse, getProposalBundle, type ProposalBundleResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentUpload } from "./DocumentUpload";
-import { QuotesComparison } from "./QuotesComparison";
+import QuotesComparison from "./QuotesComparison";
 import Declaration from "@/pages/Declaration";
 
 // Extend Window interface for global functions
@@ -113,6 +113,14 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const [isSavingDocuments, setIsSavingDocuments] = useState(false);
   const [requiredDocumentTypes, setRequiredDocumentTypes] = useState<Array<{id: number, name: string, required: boolean}>>([]);
   const [allDocumentTypes, setAllDocumentTypes] = useState<Array<{id: number, name: string, required: boolean, status: string, fileUrl?: string, fileName?: string}>>([]);
+  
+  // Assigned Insurers State
+  const [assignedInsurers, setAssignedInsurers] = useState<BrokerInsurersResponse | null>(null);
+  const [isLoadingInsurers, setIsLoadingInsurers] = useState(false);
+  
+  // Current Proposal State
+  const [currentProposal, setCurrentProposal] = useState<ProposalBundleResponse | null>(null);
+  const [isLoadingProposal, setIsLoadingProposal] = useState(false);
   
   
   // Water Body Detection State
@@ -1387,12 +1395,16 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         // Store quote ID and reference number from response
         const quoteId = response.quote.id;
         const quoteReference = response.quote.quote_id;
+        const brokerId = response.project.broker_id;
         
         setCurrentQuoteId(quoteId);
         localStorage.setItem('currentQuoteId', quoteId.toString());
         
         setQuoteReferenceNumber(quoteReference);
         localStorage.setItem('quoteReferenceNumber', quoteReference);
+        
+        // Store broker ID for future use
+        localStorage.setItem('broker_id', brokerId.toString());
         
         console.log('💾 Stored quote data:', { quoteId, quoteReference });
         
@@ -1708,6 +1720,121 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     });
     
     return documentsPayload;
+  };
+
+  // Load current proposal form details
+  const loadCurrentProposal = async (): Promise<boolean> => {
+    const quoteId = currentQuoteId;
+    if (!quoteId) {
+      toast({
+        title: "Error",
+        description: "Quote ID not found. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsLoadingProposal(true);
+    
+    try {
+      // Clear existing data before loading new data
+      setCurrentProposal(null);
+      
+      const response = await getProposalBundle(quoteId);
+      console.log('✅ Current proposal loaded successfully:', response);
+      
+      setCurrentProposal(response);
+      
+      toast({
+        title: "Proposal Loaded",
+        description: "Current proposal details have been loaded successfully.",
+        variant: "default",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error loading current proposal:', error);
+      
+      let errorMessage = 'Failed to load current proposal details. Please try again.';
+      if (error.response?.status === 400) {
+        errorMessage = 'Invalid quote ID. Please refresh and try again.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Authentication required. Please log in again.';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Access denied. You do not have permission to view proposal details.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      return false;
+    } finally {
+      setIsLoadingProposal(false);
+    }
+  };
+
+  // Load assigned insurers for broker
+  const loadAssignedInsurers = async (): Promise<boolean> => {
+    const brokerId = localStorage.getItem('broker_id');
+    if (!brokerId) {
+      toast({
+        title: "Error",
+        description: "Broker ID not found. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsLoadingInsurers(true);
+    
+    try {
+      // Clear existing data before loading new data
+      setAssignedInsurers(null);
+      
+      const response = await getBrokerInsurers(parseInt(brokerId));
+      console.log('✅ Assigned insurers loaded successfully:', response);
+      
+      setAssignedInsurers(response);
+      
+      toast({
+        title: "Insurers Loaded",
+        description: `Found ${response.insurers.length} insurers assigned to this broker.`,
+        variant: "default",
+      });
+      
+      // Load current proposal details after successful insurers load
+      await loadCurrentProposal();
+      
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error loading assigned insurers:', error);
+      
+      let errorMessage = 'Failed to load assigned insurers. Please try again.';
+      if (error.response?.status === 400) {
+        errorMessage = 'Invalid broker ID. Please refresh and try again.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Authentication required. Please log in again.';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Access denied. You do not have permission to view assigned insurers.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      return false;
+    } finally {
+      setIsLoadingInsurers(false);
+    }
   };
 
   // Save required documents via API
@@ -2176,6 +2303,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         // Documents step - save documents and go to step 6 (Quotes)
                         const success = await saveRequiredDocumentsData();
                         if (success) {
+                          // Load assigned insurers when navigating to quotes comparison
+                          await loadAssignedInsurers();
                           setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                         }
                       } else if (currentStep === 6) {
@@ -3380,7 +3509,25 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               </TabsContent>
 
               <TabsContent value="quotes" className="space-y-6">
-                <QuotesComparison />
+                {isLoadingInsurers ? (
+                  <div className="space-y-4">
+                    <div className="animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
+                      <div className="space-y-3">
+                        <div className="h-32 bg-gray-200 rounded"></div>
+                        <div className="h-32 bg-gray-200 rounded"></div>
+                        <div className="h-32 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <QuotesComparison 
+                    assignedInsurers={assignedInsurers} 
+                    currentProposal={currentProposal}
+                    isLoadingProposal={isLoadingProposal}
+                  />
+                )}
               </TabsContent>
 
               <TabsContent value="declaration">

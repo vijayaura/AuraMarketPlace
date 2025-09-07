@@ -14,6 +14,14 @@ import { Building, ArrowLeft, Download, Eye, FileText, ChevronDown, ChevronUp, A
 import { CEWSelection } from "./CEWSelection";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
+import { type BrokerInsurersResponse } from "@/lib/api/brokers";
+import { type ProposalBundleResponse } from "@/lib/api/quotes";
+
+interface QuotesComparisonProps {
+  assignedInsurers?: BrokerInsurersResponse | null;
+  currentProposal?: ProposalBundleResponse | null;
+  isLoadingProposal?: boolean;
+}
 
 const allQuotes = [
   // Al Buhaira Insurance - Best plan only
@@ -110,12 +118,17 @@ const allQuotes = [
   }
 ];
 
-export const QuotesComparison = () => {
+const QuotesComparison = ({ assignedInsurers, currentProposal, isLoadingProposal }: QuotesComparisonProps) => {
   const [selectedQuotes, setSelectedQuotes] = useState<number[]>([]);
   const [isCompareDialogOpen, setIsCompareDialogOpen] = useState(false);
   const [showCEWDialog, setShowCEWDialog] = useState(false);
   const [selectedQuoteForCEW, setSelectedQuoteForCEW] = useState<any>(null);
   const [premiumAdjustment, setPremiumAdjustment] = useState(0);
+
+  // Log assigned insurers data for debugging
+  console.log('🏢 QuotesComparison received assignedInsurers:', assignedInsurers);
+  console.log('📋 QuotesComparison received currentProposal:', currentProposal);
+  console.log('⏳ QuotesComparison isLoadingProposal:', isLoadingProposal);
   const [tplAdjustment, setTPLAdjustment] = useState(0);
   const [cewAdjustment, setCEWAdjustment] = useState(0);
   const [brokerCommissionPercent, setBrokerCommissionPercent] = useState(10);
@@ -1020,3 +1033,5 @@ Contact us for more details or to proceed with the application.
     </section>
   );
 };
+
+export default QuotesComparison;

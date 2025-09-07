@@ -41,6 +41,41 @@ export interface Broker {
   status: 'active' | 'inactive' | string;
 }
 
+// Types for Broker Insurers API
+export interface QuoteConfig {
+  product_id: number;
+  validity_days: number;
+  backdate_days: number;
+  operating_countries: string[];
+  operating_regions: string[];
+  operating_zones: string[];
+}
+
+export interface ProductAssignedDetail {
+  product_id: number;
+  product_name: string;
+  product_type: string;
+  description: string;
+  is_assigned: boolean;
+  quote_config: QuoteConfig;
+}
+
+export interface BrokerInsurer {
+  insurer_id: number;
+  insurer_name: string;
+  status: string;
+  products_assigned: number;
+  product_assigned_details: ProductAssignedDetail[];
+}
+
+export interface BrokerInsurersResponse {
+  broker: {
+    id: number;
+    name: string;
+  };
+  insurers: BrokerInsurer[];
+}
+
 function toDateInputString(value: string | null | undefined): string | null {
   if (!value) return null;
   // Expecting ISO-like string; take first 10 chars to match <input type="date">
@@ -226,4 +261,13 @@ export async function deactivateBroker(brokerId: string | number): Promise<Statu
   return apiPatch<StatusChangeResponse>(`/brokers/${encodeURIComponent(String(brokerId))}/deactivate`);
 }
 
+// Get insurers assigned to a broker
+export async function getBrokerInsurers(brokerId: number): Promise<BrokerInsurersResponse> {
+  if (!brokerId) {
+    throw new Error('Broker ID is required for getting assigned insurers');
+  }
+  const endpoint = `/brokers/${brokerId}/list-insurers`;
+  console.log('🏢 getBrokerInsurers called with:', { brokerId, endpoint });
+  return apiGet<BrokerInsurersResponse>(endpoint);
+}
 

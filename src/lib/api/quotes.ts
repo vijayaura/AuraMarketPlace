@@ -300,3 +300,145 @@ export const uploadFile = async (file: File): Promise<FileUploadResponse> => {
     throw error;
   }
 };
+
+// Types for Proposal Bundle API
+export interface QuoteMeta {
+  quote_id: number;
+  insurer_id: number | null;
+  status: string;
+  validity_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectDetails {
+  id: number;
+  project_id: string;
+  broker_id: number;
+  broker_company_id: number;
+  broker_company_name: string;
+  broker_user_id: number;
+  broker_user_name: string;
+  broker_user_role: string;
+  broker_user_type: string;
+  client_name: string;
+  project_name: string;
+  project_type: string;
+  sub_project_type: string;
+  construction_type: string;
+  address: string;
+  country: string;
+  region: string;
+  zone: string;
+  latitude: string;
+  longitude: string;
+  sum_insured: string;
+  start_date: string;
+  completion_date: string;
+  construction_period_months: number;
+  maintenance_period_months: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Claim {
+  claim_year: number;
+  count_of_claims: number;
+  amount_of_claims: string;
+  description: string;
+}
+
+export interface InsuredDetails {
+  id: number;
+  project_id: number;
+  insured_name: string;
+  role_of_insured: string;
+  had_losses_last_5yrs: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Insured {
+  details: InsuredDetails;
+  claims: Claim[];
+}
+
+export interface SubContractor {
+  name: string;
+  contract_type: string;
+  contract_number: string;
+}
+
+export interface Consultant {
+  name: string;
+  role: string;
+  license_number: string;
+}
+
+export interface ContractStructureDetails {
+  id: number;
+  project_id: number;
+  main_contractor: string;
+  principal_owner: string;
+  contract_type: string;
+  contract_number: string;
+  experience_years: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContractStructure {
+  details: ContractStructureDetails;
+  sub_contractors: SubContractor[];
+  consultants: Consultant[];
+}
+
+export interface SiteRisks {
+  id: number;
+  project_id: number;
+  near_water_body: number;
+  flood_prone_zone: number;
+  within_city_center: string;
+  soil_type: string;
+  existing_structure: number;
+  blasting_or_deep_excavation: number;
+  site_security_arrangements: string;
+  area_type: string;
+  describe_existing_structure: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CoverRequirements {
+  id: number;
+  project_id: number;
+  project_value: string;
+  contract_works: string;
+  plant_and_equipment: string;
+  temporary_works: string;
+  other_materials: string;
+  principals_property: string;
+  cross_liability_cover: string;
+  // Add more fields as needed based on the complete response
+}
+
+export interface ProposalBundleResponse {
+  project_id: number;
+  quote_meta: QuoteMeta;
+  project: ProjectDetails;
+  insured: Insured;
+  contract_structure: ContractStructure;
+  site_risks: SiteRisks;
+  cover_requirements: CoverRequirements;
+  // Add more sections as needed
+}
+
+// Get current proposal form details
+export async function getProposalBundle(quoteId: number): Promise<ProposalBundleResponse> {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for getting proposal bundle');
+  }
+  const endpoint = `/quotes/getProposalBundle/${quoteId}`;
+  console.log('📋 getProposalBundle called with:', { quoteId, endpoint });
+  return apiGet<ProposalBundleResponse>(endpoint);
+}
