@@ -436,20 +436,13 @@ Contact us for more details or to proceed with the application.
   return (
     <section className="py-4 lg:py-6 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back Button */}
-        <div className="mb-3">
-          <Link to="/customer/proposal">
-            <Button variant="outline" className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-          </Link>
-        </div>
-        <div className="text-center mb-4 lg:mb-6">
-          <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground mb-3 lg:mb-4">
+        <div className="text-left mb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-1">
             CAR Insurance Plans
           </h2>
-          <p className="text-muted-foreground">Select up to 2 plans to compare</p>
+          <p className="text-sm text-muted-foreground">
+            Select up to 2 plans to compare
+          </p>
         </div>
 
         {/* Action Buttons */}

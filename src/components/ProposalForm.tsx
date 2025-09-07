@@ -3129,7 +3129,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               <TabsContent value="documents" className="space-y-6">
                 <div className="space-y-6">
                   <div className="text-left mb-6">
-                    <h2 className="text-lg font-semibold text-foreground mb-2">
+                    <h2 className="text-lg font-semibold text-foreground mb-1">
                       Upload Required Documents
                     </h2>
                     <p className="text-sm text-muted-foreground">
@@ -3141,17 +3141,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               </TabsContent>
 
               <TabsContent value="quotes" className="space-y-6">
-                <div className="space-y-6">
-                  <div className="text-left mb-6">
-                    <h2 className="text-lg font-semibold text-foreground mb-2">
-                      Quotes Comparison
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      Compare and select the best insurance quotes for your project
-                    </p>
-                  </div>
-                  <QuotesComparison />
-                </div>
+                <QuotesComparison />
               </TabsContent>
 
             </Tabs>
