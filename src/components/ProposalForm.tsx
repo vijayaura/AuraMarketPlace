@@ -190,6 +190,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     console.log(`✅ Marking step completed: ${stepName}`);
     setStepCompletionStatus(prev => {
       const updated = { ...prev, [stepName]: true };
+      console.log('📊 Updated step completion status:', updated);
       localStorage.setItem('stepCompletionStatus', JSON.stringify(updated));
       return updated;
     });
@@ -526,6 +527,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
   // Notify parent component about step completion changes
   useEffect(() => {
+    console.log('📤 Notifying parent about step completion changes:', stepCompletionStatus);
     onStepCompletionChange?.(stepCompletionStatus);
   }, [stepCompletionStatus, onStepCompletionChange]);
 
@@ -1090,7 +1092,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         }
         
         // Required project value
-        if (!formData.projectValue || parseFloat(formData.projectValue.replace(/[^0-9.]/g, '')) <= 0) {
+        const projectValue = parseFloat(formData.projectValue?.replace(/[^0-9.]/g, '') || '0');
+        if (!formData.projectValue || formData.projectValue.trim() === '' || isNaN(projectValue) || projectValue < 0) {
           errors.projectValue = "Valid project value is required";
         }
         break;
@@ -1150,19 +1153,24 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         break;
         
       case 4: // Cover Requirements step
-        if (!formData.sumInsuredMaterial || parseFloat(formData.sumInsuredMaterial.replace(/[^0-9.]/g, '')) <= 0) {
+        const materialValue = parseFloat(formData.sumInsuredMaterial?.replace(/[^0-9.]/g, '') || '0');
+        if (!formData.sumInsuredMaterial || formData.sumInsuredMaterial.trim() === '' || isNaN(materialValue) || materialValue < 0) {
           errors.sumInsuredMaterial = "Valid contract works amount is required";
         }
-        if (!formData.sumInsuredPlant || parseFloat(formData.sumInsuredPlant.replace(/[^0-9.]/g, '')) <= 0) {
+        const plantValue = parseFloat(formData.sumInsuredPlant?.replace(/[^0-9.]/g, '') || '0');
+        if (!formData.sumInsuredPlant || formData.sumInsuredPlant.trim() === '' || isNaN(plantValue) || plantValue < 0) {
           errors.sumInsuredPlant = "Valid plant and equipment amount is required";
         }
-        if (!formData.sumInsuredTemporary || parseFloat(formData.sumInsuredTemporary.replace(/[^0-9.]/g, '')) <= 0) {
+        const temporaryValue = parseFloat(formData.sumInsuredTemporary?.replace(/[^0-9.]/g, '') || '0');
+        if (!formData.sumInsuredTemporary || formData.sumInsuredTemporary.trim() === '' || isNaN(temporaryValue) || temporaryValue < 0) {
           errors.sumInsuredTemporary = "Valid temporary works amount is required";
         }
-        if (!formData.otherMaterials || parseFloat(formData.otherMaterials.replace(/[^0-9.]/g, '')) <= 0) {
+        const otherMaterialsValue = parseFloat(formData.otherMaterials?.replace(/[^0-9.]/g, '') || '0');
+        if (!formData.otherMaterials || formData.otherMaterials.trim() === '' || isNaN(otherMaterialsValue) || otherMaterialsValue < 0) {
           errors.otherMaterials = "Valid other materials amount is required";
         }
-        if (!formData.principalExistingProperty || parseFloat(formData.principalExistingProperty.replace(/[^0-9.]/g, '')) <= 0) {
+        const principalValue = parseFloat(formData.principalExistingProperty?.replace(/[^0-9.]/g, '') || '0');
+        if (!formData.principalExistingProperty || formData.principalExistingProperty.trim() === '' || isNaN(principalValue) || principalValue < 0) {
           errors.principalExistingProperty = "Valid principals property amount is required";
         }
         if (!formData.crossLiabilityCover) {
@@ -1513,7 +1521,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       soil_type: formData.soilType || '',
       existing_structure: formData.existingStructure === "yes",
       blasting_or_deep_excavation: formData.blastingExcavation === "yes",
-      site_security_arrangements: formData.siteSecurityArrangements || ''
+      site_security_arrangements: formData.siteSecurityArrangements || '',
+      area_type: formData.cityAreaType || 'Urban',
+      describe_existing_structure: formData.existingStructureDetails || 'sample existing structures'
     };
   };
 
@@ -2832,7 +2842,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       <SelectContent>
                         <SelectItem value="yes">Yes</SelectItem>
                         <SelectItem value="no">No</SelectItem>
-                        <SelectItem value="external-api">Check via External API</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -3039,7 +3048,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="otherMaterials">Other Materials</Label>
-                          <Input id="otherMaterials" type="number" value={formData.otherMaterials || ""} onChange={e => setFormData({
+                          <Input id="otherMaterials" type="number" value={formData.otherMaterials || "0"} onChange={e => setFormData({
                           ...formData,
                           otherMaterials: e.target.value
                         })} placeholder="Enter amount (AED)" />
@@ -3105,12 +3114,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
               <TabsContent value="documents" className="space-y-6">
                 <div className="space-y-6">
-                  <div className="text-center mb-8">
-                    <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground mb-4">
+                  <div className="text-left mb-6">
+                    <h2 className="text-lg font-semibold text-foreground mb-2">
                       Upload Required Documents
                     </h2>
-                    <p className="text-base text-muted-foreground">
-                      Please upload documents needed for policy issuance
+                    <p className="text-sm text-muted-foreground">
+                      Please upload documents needed for underwriting
                     </p>
                   </div>
                   <DocumentUpload />

@@ -127,6 +127,8 @@ export interface SiteRisksRequest {
   existing_structure: boolean;
   blasting_or_deep_excavation: boolean;
   site_security_arrangements: string;
+  area_type: string;
+  describe_existing_structure: string;
 }
 
 export interface SiteRisksResponse {

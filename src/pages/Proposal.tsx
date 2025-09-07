@@ -62,6 +62,7 @@ const Proposal = () => {
 
   // Handle step completion status changes
   const handleStepCompletionChange = (completionStatus: Record<string, boolean>) => {
+    console.log('📥 Received step completion status from ProposalForm:', completionStatus);
     setStepCompletionStatus(completionStatus);
   };
 
@@ -100,6 +101,7 @@ const Proposal = () => {
             )}
 
             {/* Show completed steps */}
+            {console.log('🔍 Dialog stepCompletionStatus:', stepCompletionStatus)}
             {Object.values(stepCompletionStatus).some(Boolean) && (
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                 <h4 className="text-sm font-medium text-green-800 mb-3">Completed Steps:</h4>
