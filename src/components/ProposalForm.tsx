@@ -32,6 +32,7 @@ import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type 
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentUpload } from "./DocumentUpload";
+import { QuotesComparison } from "./QuotesComparison";
 
 interface ProposalFormProps {
   onStepChange?: (step: number) => void;
@@ -1184,6 +1185,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         // No additional validation needed here as the component manages its own state
         break;
         
+      case 6: // Quotes step
+        // For quotes step, no validation needed as it's a comparison/selection step
+        // Users can proceed without selecting quotes
+        break;
+        
       // Add more cases for other steps as needed
       default:
         // For other steps, no validation for now
@@ -1791,6 +1797,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     id: "documents",
     label: "Required Documents",
     icon: FileText
+  }, {
+    id: "quotes",
+    label: "Quotes Comparison",
+    icon: Building
   }];
   return <section className="pt-6 pb-20 bg-background min-h-screen">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1997,9 +2007,13 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                         }
                       } else if (currentStep === 5) {
-                        // Documents step - mark as completed and navigate to quotes
+                        // Documents step - mark as completed and go to step 6 (Quotes)
                         markStepCompleted('underwriting_documents');
-                        navigate('/customer/quotes');
+                        setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                      } else if (currentStep === 6) {
+                        // Quotes step - mark as completed and navigate to final page
+                        markStepCompleted('coverages_selected');
+                        navigate('/customer/dashboard');
                       } else {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
@@ -3123,6 +3137,20 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     </p>
                   </div>
                   <DocumentUpload />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="quotes" className="space-y-6">
+                <div className="space-y-6">
+                  <div className="text-left mb-6">
+                    <h2 className="text-lg font-semibold text-foreground mb-2">
+                      Quotes Comparison
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Compare and select the best insurance quotes for your project
+                    </p>
+                  </div>
+                  <QuotesComparison />
                 </div>
               </TabsContent>
 
