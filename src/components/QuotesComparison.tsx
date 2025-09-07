@@ -120,6 +120,8 @@ export const QuotesComparison = () => {
   const [cewAdjustment, setCEWAdjustment] = useState(0);
   const [brokerCommissionPercent, setBrokerCommissionPercent] = useState(10);
   const [selectedCEWItems, setSelectedCEWItems] = useState<any[]>([]);
+  const [showExtensionConfirmDialog, setShowExtensionConfirmDialog] = useState(false);
+  const [pendingQuoteId, setPendingQuoteId] = useState<number | null>(null);
   // Store updated premiums and CEW selections per quote
   const [updatedQuotes, setUpdatedQuotes] = useState<Record<number, { 
     premium: number; 
@@ -161,7 +163,28 @@ export const QuotesComparison = () => {
   };
 
   const handleSelectPlan = (quoteId: number) => {
-    navigate('/customer/declaration', { state: { selectedQuote: quoteId } });
+    // Check if extensions have been customized for this quote
+    const hasCustomizedExtensions = updatedQuotes[quoteId]?.isUpdated || false;
+    
+    if (!hasCustomizedExtensions) {
+      // Show confirmation dialog for default extensions
+      setPendingQuoteId(quoteId);
+      setShowExtensionConfirmDialog(true);
+    } else {
+      // Proceed with selection
+      proceedWithSelection(quoteId);
+    }
+  };
+
+  const proceedWithSelection = (quoteId: number) => {
+    // Check if we're in the proposal form context by looking for a parent function
+    if (window.onQuoteSelected) {
+      // We're in the proposal form, navigate to declaration step
+      window.onQuoteSelected(quoteId);
+    } else {
+      // We're in standalone quotes page, navigate to declaration page
+      navigate('/customer/declaration', { state: { selectedQuote: quoteId } });
+    }
   };
 
   const handleExtensionsClick = (quote: any) => {
@@ -436,46 +459,48 @@ Contact us for more details or to proceed with the application.
   return (
     <section className="py-4 lg:py-6 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-left mb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-1">
-            CAR Insurance Plans
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Select up to 2 plans to compare
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        {selectedQuotes.length > 0 && (
-          <div className="mb-6 flex justify-center gap-4">
-            <Button 
-              onClick={handleCompare}
-              disabled={selectedQuotes.length !== 2}
-              className="gap-2"
-              variant="outline"
-            >
-              <Eye className="w-4 h-4" />
-              Compare Selected Plans ({selectedQuotes.length}/2)
-            </Button>
-            
-            <Button 
-              onClick={handleDownloadProposal}
-              className="gap-2"
-              variant="outline"
-            >
-              <FileText className="w-4 h-4" />
-              Download Proposal
-            </Button>
-            
-            <Button 
-              onClick={handleDownloadQuotation}
-              className="gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Download Quotation
-            </Button>
+        <div className="flex items-center justify-between mb-6">
+          <div className="text-left">
+            <h2 className="text-lg font-semibold text-foreground mb-1">
+              CAR Insurance Plans
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Select up to 2 plans to compare
+            </p>
           </div>
-        )}
+
+          {/* Action Buttons */}
+          {selectedQuotes.length > 0 && (
+            <div className="flex gap-4">
+              <Button 
+                onClick={handleCompare}
+                disabled={selectedQuotes.length !== 2}
+                className="gap-2"
+                variant="outline"
+              >
+                <Eye className="w-4 h-4" />
+                Compare Selected Plans ({selectedQuotes.length}/2)
+              </Button>
+              
+              <Button 
+                onClick={handleDownloadProposal}
+                className="gap-2"
+                variant="outline"
+              >
+                <FileText className="w-4 h-4" />
+                Download Proposal
+              </Button>
+              
+              <Button 
+                onClick={handleDownloadQuotation}
+                className="gap-2 bg-white text-gray-900 border border-gray-300 hover:bg-gray-50"
+              >
+                <Download className="w-4 h-4" />
+                Download Quotation
+              </Button>
+            </div>
+          )}
+        </div>
 
 
         <div className="space-y-4">
@@ -512,23 +537,18 @@ Contact us for more details or to proceed with the application.
 
                   <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="flex items-center gap-2">
-                          <div className={`text-2xl font-bold ${isUpdated ? 'text-primary' : 'text-foreground'}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`text-lg font-semibold ${isUpdated ? 'text-primary' : 'text-foreground'}`}>
                             {formatCurrency(currentPremium)}
                           </div>
                           {isUpdated && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-800 border-green-200">
                               Updated
                             </Badge>
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Annual Premium
-                          {isUpdated && (
-                            <span className="block text-xs text-muted-foreground/70">
-                              Original: {formatCurrency(quote.annualPremium)}
-                            </span>
-                          )}
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -746,7 +766,7 @@ Contact us for more details or to proceed with the application.
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
             <DialogHeader>
               <DialogTitle className="text-xl">
-                Customize Your Coverage - {selectedQuoteForCEW?.insurerName}
+                {selectedQuoteForCEW?.insurerName}
               </DialogTitle>
             </DialogHeader>
             
@@ -763,70 +783,89 @@ Contact us for more details or to proceed with the application.
 
               {/* Premium Summary Sidebar */}
               <div className="lg:col-span-1">
-                <div className="sticky top-4 space-y-4">
+                <div className="sticky top-4 space-y-3 flex flex-col h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)]">
                   {/* Selected Plan Card */}
                   <Card className="border-primary/20 bg-primary/5">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Building className="w-5 h-5 text-primary" />
+                    <CardHeader className="pb-2 px-3 pt-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Building className="w-4 h-4 text-primary" />
                         Selected Plan
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-2 pt-0 px-3 pb-3">
                       {selectedQuoteForCEW && (
                         <>
                           <div>
-                            <h3 className="font-semibold text-lg">{selectedQuoteForCEW.insurerName}</h3>
-                            <p className="text-sm text-muted-foreground">{selectedQuoteForCEW.planName}</p>
+                            <h3 className="font-semibold text-base">{selectedQuoteForCEW.insurerName}</h3>
                           </div>
                           
                           <Separator />
                           
                           <div className="space-y-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm">Base Premium</span>
-                              <span className="font-medium">{formatCurrency(selectedQuoteForCEW.annualPremium)}</span>
-                            </div>
-                            
                              <div className="flex justify-between items-center">
-                               <span className="text-sm">Coverage Amount</span>
-                               <span className="font-medium">{formatCurrency(selectedQuoteForCEW.coverageAmount)}</span>
+                               <span className="text-xs">Base Premium</span>
+                               <span className="font-medium text-sm">{formatCurrency(selectedQuoteForCEW.annualPremium)}</span>
                              </div>
                              
                              <div className="flex justify-between items-center">
-                               <span className="text-sm">Default TPL Limit</span>
-                               <span className="font-medium">AED 1.00M</span>
+                               <span className="text-xs text-muted-foreground/60">Coverage Amount</span>
+                               <span className="text-sm text-muted-foreground/60">{formatCurrency(selectedQuoteForCEW.coverageAmount)}</span>
                              </div>
                              
                              <div className="flex justify-between items-center">
-                               <span className="text-sm">Deductible</span>
-                               <span className="font-medium">{selectedQuoteForCEW.deductible}</span>
+                               <span className="text-xs text-muted-foreground/60">Deductibles</span>
+                               <span className="text-sm text-muted-foreground/60">{selectedQuoteForCEW.deductible}</span>
                              </div>
+                             
                           </div>
                         </>
                       )}
                     </CardContent>
                   </Card>
 
+                  {/* Selected CEW Items */}
+                  {selectedCEWItems.filter(item => item.isSelected).length > 0 && (
+                    <Card className="border-border flex-shrink-0 mb-4">
+                      <CardHeader className="pb-1 px-2 pt-2">
+                        <CardTitle className="text-sm">Selected Extensions</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0 px-2 pb-2 max-h-32 overflow-y-auto">
+                        <div className="space-y-1">
+                          {selectedCEWItems.filter(item => item.isSelected).map(item => (
+                            <div key={item.id} className="flex justify-between items-center p-2 bg-muted/50 rounded text-xs">
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium truncate">{item.name}</span>
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 flex-shrink-0">{item.code}</Badge>
+                              </div>
+                              <span className="text-[9px] text-muted-foreground flex-shrink-0">
+                                {item.impact.premiumAmount > 0 ? "+" : ""}{item.impact.premiumAmount}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Premium Summary */}
-                  <Card className="border-border">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Premium Summary</CardTitle>
+                  <Card className="border-border mt-auto">
+                    <CardHeader className="pb-2 px-3 pt-3">
+                      <CardTitle className="text-base">Premium Summary</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-3">
+                    <CardContent className="space-y-2 pt-0 px-3 pb-3">
+                      <div className="space-y-2">
                          <div className="flex justify-between items-center">
-                           <span className="text-sm">Nett Premium</span>
-                           <span className="font-medium">
+                           <span className="text-xs">Nett Premium</span>
+                           <span className="font-medium text-sm">
                              {formatCurrency(22365)}
                            </span>
                          </div>
                         
                         <div className="flex justify-between items-start">
                           <div>
-                            <div className="text-sm">Broker Commission</div>
+                            <div className="text-xs">Broker Commission</div>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">{brokerCommissionPercent}%</span>
+                              <span className="text-xs font-medium">{brokerCommissionPercent}%</span>
                               <button
                                 className="text-xs font-bold text-primary hover:text-primary/80 cursor-pointer"
                                 onClick={() => {
@@ -897,8 +936,8 @@ Contact us for more details or to proceed with the application.
                         <Separator />
                         
                         <div className="flex justify-between items-center">
-                          <span className="font-semibold">Total Annual Premium</span>
-                          <span className="font-bold text-lg text-primary">
+                          <span className="font-semibold text-sm">Total Annual Premium</span>
+                          <span className="font-bold text-base text-primary">
                             {formatCurrency(calculateFinalPremium())}
                           </span>
                         </div>
@@ -907,39 +946,56 @@ Contact us for more details or to proceed with the application.
                       {/* Update Premium Button */}
                       <Button 
                         onClick={handleUpdatePremium}
-                        variant="outline"
-                        className="w-full"
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
                         Update Premium
                       </Button>
 
                     </CardContent>
                   </Card>
-
-                  {/* Selected CEW Items */}
-                  {selectedCEWItems.filter(item => item.isSelected).length > 0 && (
-                    <Card className="border-border">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Selected Extensions</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {selectedCEWItems.filter(item => item.isSelected).map(item => (
-                            <div key={item.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                              <div>
-                                <span className="text-sm font-medium">{item.name}</span>
-                                <Badge variant="outline" className="ml-2 text-xs">{item.code}</Badge>
-                              </div>
-                              <span className="text-xs text-muted-foreground">
-                                {item.impact.premiumAmount > 0 ? "+" : ""}{item.impact.premiumAmount}%
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
                 </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Extension Confirmation Dialog */}
+        <Dialog open={showExtensionConfirmDialog} onOpenChange={setShowExtensionConfirmDialog}>
+          <DialogContent className="w-[90vw] max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Confirm Default Extensions</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                You're about to select this plan with default extensions. Would you like to customize the extensions first, or proceed with the default selections?
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowExtensionConfirmDialog(false);
+                    if (pendingQuoteId) {
+                      const quote = allQuotes.find(q => q.id === pendingQuoteId);
+                      if (quote) {
+                        handleExtensionsClick(quote);
+                      }
+                    }
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  Customize Extensions
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setShowExtensionConfirmDialog(false);
+                    if (pendingQuoteId) {
+                      proceedWithSelection(pendingQuoteId);
+                    }
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  Proceed with Defaults
+                </Button>
               </div>
             </div>
           </DialogContent>

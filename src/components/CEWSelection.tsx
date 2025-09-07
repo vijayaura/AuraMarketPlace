@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ interface CEWItem {
     premium: "increase" | "decrease" | "neutral";
     premiumAmount: number;
   };
+  defaultValue: number;
 }
 
 interface CEWSelectionProps {
@@ -54,6 +55,9 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     current: 5.0
   };
 
+  // State for expanded/collapsed clauses
+  const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
+
   const [cewItems, setCEWItems] = useState<CEWItem[]>([
     {
       id: 1,
@@ -71,8 +75,7 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
           description: "Coverage extended to 18 months maintenance",
           limits: "Full project value",
           type: "percentage",
-          value: 2.5,
-          recommended: true
+          value: 2.5
         },
         {
           id: 2,
@@ -91,12 +94,13 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
           value: 6.5
         }
       ],
-      selectedOptionId: 1,
+      selectedOptionId: undefined,
       impact: {
         coverage: "Extends material damage coverage during maintenance period",
         premium: "increase",
-        premiumAmount: 2.5
-      }
+        premiumAmount: 0 // Will be calculated based on selected option
+      },
+      defaultValue: 2.5 // Default value for this clause
     },
     {
       id: 2,
@@ -107,7 +111,6 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
       description: "Covers professional liability for design and supervision errors",
       isMandatory: false,
       isSelected: false,
-      isPremium: true,
       options: [
         {
           id: 1,
@@ -123,8 +126,7 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
           description: "Professional indemnity up to AED 2 Million",
           limits: "AED 2,000,000",
           type: "amount",
-          value: 4500,
-          recommended: true
+          value: 4500
         },
         {
           id: 3,
@@ -135,12 +137,13 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
           value: 8500
         }
       ],
-      selectedOptionId: 2,
+      selectedOptionId: undefined,
       impact: {
         coverage: "Covers errors in professional services and design",
         premium: "increase",
-        premiumAmount: 4500
-      }
+        premiumAmount: 0 // Will be calculated based on selected option
+      },
+      defaultValue: 4500 // Default value for this clause
     },
     {
       id: 3,
@@ -167,10 +170,9 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
           limits: "Full sum insured",
           type: "percentage",
           value: 2.8,
-          recommended: true
         }
       ],
-      selectedOptionId: 2,
+      selectedOptionId: undefined,
       impact: {
         coverage: "Protection against terrorism and sabotage risks",
         premium: "increase",
@@ -203,15 +205,15 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
           limits: "Full sum insured",
           type: "percentage",
           value: 7.5,
-          recommended: true
         }
       ],
-      selectedOptionId: 2,
+      selectedOptionId: undefined,
       impact: {
         coverage: "Includes earthquake damage in material damage coverage",
         premium: "increase",
-        premiumAmount: 7.5
-      }
+        premiumAmount: 0 // Will be calculated based on selected option
+      },
+      defaultValue: 7.5 // Default value for this clause
     },
     {
       id: 5,
@@ -230,7 +232,6 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
           limits: "Per claim",
           type: "amount",
           value: 0,
-          recommended: true
         },
         {
           id: 2,
@@ -254,7 +255,8 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
         coverage: "Sets deductible amount for plant & equipment claims",
         premium: "neutral",
         premiumAmount: 0
-      }
+      },
+      defaultValue: 0 // Default value for this clause
     },
     {
       id: 6,
@@ -273,7 +275,6 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
           limits: "Repair/replacement costs",
           type: "percentage",
           value: 0,
-          recommended: true
         },
         {
           id: 2,
@@ -289,12 +290,32 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
         coverage: "Covers cost of repairing defective work",
         premium: "neutral",
         premiumAmount: 0
-      }
+      },
+      defaultValue: 0 // Default value for this clause
     }
   ]);
 
   const [commissionPercentage, setCommissionPercentage] = useState(brokerCommissionLimits.current);
   const [commissionError, setCommissionError] = useState("");
+
+  // Initialize mandatory items on component mount
+  useEffect(() => {
+    // Trigger selection change to notify parent about mandatory items
+    onSelectionChange?.(cewItems);
+  }, []);
+
+  // Toggle expanded state for a clause
+  const toggleClauseExpansion = (itemId: number) => {
+    setExpandedClauses(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
 
   const handleCommissionChange = (value: string) => {
     const numValue = parseFloat(value);
@@ -349,18 +370,34 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   };
 
   const updateSelection = (itemId: number, optionId: number) => {
-    const updatedItems = cewItems.map(item =>
-      item.id === itemId 
-        ? { 
-            ...item, 
+    const updatedItems = cewItems.map(item => {
+      if (item.id === itemId) {
+        // If clicking the same option that's already selected, unselect it
+        if (item.selectedOptionId === optionId) {
+          return {
+            ...item,
+            isSelected: false,
+            selectedOptionId: undefined,
+            impact: {
+              ...item.impact,
+              premiumAmount: 0
+            }
+          };
+        } else {
+          // Select new option
+          return {
+            ...item,
+            isSelected: true,
             selectedOptionId: optionId,
             impact: {
               ...item.impact,
               premiumAmount: item.options.find(opt => opt.id === optionId)?.value || 0
             }
-          } 
-        : item
-    );
+          };
+        }
+      }
+      return item;
+    });
     setCEWItems(updatedItems);
     onSelectionChange?.(updatedItems);
     
@@ -391,6 +428,19 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
       return `${sign}${selectedOption.value}%`;
     } else {
       return `+AED ${selectedOption.value.toLocaleString()}`;
+    }
+  };
+
+  const formatDefaultValue = (item: CEWItem) => {
+    if (item.defaultValue === 0) return "No impact";
+    
+    // Determine if it's percentage or amount based on the first option's type
+    const firstOption = item.options[0];
+    if (firstOption?.type === "percentage") {
+      const sign = item.defaultValue > 0 ? "+" : "";
+      return `${sign}${item.defaultValue}%`;
+    } else {
+      return `+AED ${item.defaultValue.toLocaleString()}`;
     }
   };
 
@@ -445,8 +495,8 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
       {/* TPL Limit Extensions Section */}
       <div className="space-y-3">
         <div className="space-y-1">
-          <h2 className="text-lg font-bold text-foreground">TPL Limit Extensions</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-base font-semibold text-foreground">TPL Limit Extensions</h2>
+          <p className="text-xs text-muted-foreground">
             Select your Third Party Liability coverage limit
           </p>
         </div>
@@ -498,15 +548,22 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
 
       {/* Policy Extensions & Conditions Section */}
       <div className="space-y-1">
-        <h2 className="text-lg font-bold text-foreground">Policy Extensions & Conditions</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-base font-semibold text-foreground">Policy Extensions & Conditions</h2>
+        <p className="text-xs text-muted-foreground">
           Customize your coverage with additional protections and specific terms
         </p>
       </div>
 
       {/* CEW Items List */}
       <div className="space-y-3">
-        {cewItems.map(item => (
+        {cewItems
+          .sort((a, b) => {
+            // Mandatory items first, then by name
+            if (a.isMandatory && !b.isMandatory) return -1;
+            if (!a.isMandatory && b.isMandatory) return 1;
+            return a.name.localeCompare(b.name);
+          })
+          .map(item => (
           <div
             key={item.id}
             className={`p-3 border rounded-lg transition-all ${
@@ -517,18 +574,33 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
                 : "bg-card border-border hover:border-accent/30"
             }`}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               {/* Checkbox/Status */}
-              <div className="mt-0.5">
+              <div>
                 {item.isMandatory ? (
                   <CheckCircle2 className="w-4 h-4 text-primary" />
                 ) : (
-                  <input
-                    type="checkbox"
-                    checked={item.isSelected}
-                    onChange={() => toggleSelection(item.id)}
-                    className="w-4 h-4 rounded border-2 accent-primary"
-                  />
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={item.isSelected}
+                      onChange={() => toggleSelection(item.id)}
+                      className="sr-only"
+                      id={`checkbox-${item.id}`}
+                    />
+                    <label
+                      htmlFor={`checkbox-${item.id}`}
+                      className={`w-4 h-4 rounded border-2 cursor-pointer transition-all duration-200 flex items-center justify-center ${
+                        item.isSelected
+                          ? "bg-primary border-primary text-white"
+                          : "bg-background border-gray-300 hover:border-primary/50 hover:bg-primary/5"
+                      }`}
+                    >
+                      {item.isSelected && (
+                        <CheckCircle2 className="w-3 h-3" />
+                      )}
+                    </label>
+                  </div>
                 )}
               </div>
               
@@ -536,99 +608,91 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
               <div className="flex-1 space-y-2">
                 {/* Header */}
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-sm font-semibold text-foreground">{item.name}</h3>
-                    <Badge variant="outline" className="text-xs px-1 py-0">{item.code}</Badge>
-                    <Badge 
-                      variant={item.type === "extension" ? "default" : item.type === "condition" ? "secondary" : "outline"}
-                      className="text-xs px-1 py-0"
-                    >
-                      {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-                    </Badge>
-                    {item.isMandatory && (
-                      <Badge variant="destructive" className="text-xs px-1 py-0">Mandatory</Badge>
-                    )}
-                    {item.isPremium && (
-                      <Badge variant="outline" className="text-xs border-warning/20 text-warning">Premium</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm"><strong>Coverage:</strong> {item.impact.coverage}</p>
-                </div>
-
-                {/* Options Selection */}
-                {(item.isSelected || item.isMandatory) && (
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 max-w-xs">
-                      <Select
-                        value={item.selectedOptionId?.toString()}
-                        onValueChange={(value) => updateSelection(item.id, parseInt(value))}
+                  <div className="flex items-center justify-between flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-semibold text-foreground">{item.name}</h3>
+                      <Badge variant="outline" className="text-xs px-1 py-0">{item.code}</Badge>
+                      <Badge 
+                        variant={item.type === "extension" ? "default" : item.type === "condition" ? "secondary" : "outline"}
+                        className="text-xs px-1 py-0"
                       >
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {item.options.map(option => (
-                            <SelectItem key={option.id} value={option.id.toString()}>
-                              <div className="flex items-center gap-2">
-                                {option.label}
-                                {option.recommended && (
-                                  <Badge variant="outline" className="text-xs">Recommended</Badge>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                      </Badge>
+                      {item.isMandatory && (
+                        <Badge variant="destructive" className="text-xs px-1 py-0">Mandatory</Badge>
+                      )}
                     </div>
-                    
-                    <div className="text-sm">
-                      <span className={`font-medium ${
-                        item.impact.premium === "increase" ? "text-warning" : 
-                        item.impact.premium === "decrease" ? "text-success" : "text-muted-foreground"
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium ${
+                        item.selectedOptionId 
+                          ? (item.impact.premium === "increase" ? "text-warning" : 
+                             item.impact.premium === "decrease" ? "text-success" : "text-muted-foreground")
+                          : (item.defaultValue > 0 ? "text-warning" : "text-muted-foreground")
                       }`}>
-                        {formatPremiumImpact(item)}
+                        {item.selectedOptionId ? formatPremiumImpact(item) : formatDefaultValue(item)}
                       </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleClauseExpansion(item.id)}
+                        className="text-xs h-6 px-2"
+                      >
+                        {expandedClauses.has(item.id) ? 'Hide options' : 'View options'}
+                      </Button>
                     </div>
                   </div>
-                )}
-
-                {/* Available Options List */}
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Available Options:</h4>
-                  <div className="grid gap-2">
-                    {item.options.map(option => (
-                      <div 
-                        key={option.id}
-                        className={`p-3 rounded border text-sm ${
-                          option.id === item.selectedOptionId 
-                            ? "bg-accent/20 border-accent" 
-                            : "bg-background border-border"
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium">{option.label}</span>
-                              {option.recommended && (
-                                <Badge variant="outline" className="text-xs">Recommended</Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground">{option.description}</p>
-                            <p className="text-xs mt-1"><strong>Limits:</strong> {option.limits}</p>
-                          </div>
-                          <div className="text-right ml-4">
-                            <div className="font-medium">
-                              {option.type === "percentage" 
-                                ? `${option.value > 0 ? "+" : ""}${option.value}%`
-                                : `${option.value > 0 ? "+" : ""}AED ${option.value.toLocaleString()}`
-                              }
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-sm">{item.impact.coverage}</p>
                 </div>
+
+
+                {/* Available Options Grid - Only show when expanded */}
+                {expandedClauses.has(item.id) && (
+                  <div className="space-y-2 mt-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {item.options.map(option => {
+                          const isSelected = option.id === item.selectedOptionId;
+                          return (
+                            <Card 
+                              key={option.id}
+                              className={`cursor-pointer transition-all hover:shadow-md ${
+                                isSelected 
+                                  ? "border-primary bg-primary/10 ring-1 ring-primary" 
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                              onClick={() => updateSelection(item.id, option.id)}
+                            >
+                              <CardContent className="p-3">
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-semibold text-foreground">{option.label}</h3>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground leading-tight">{option.description}</p>
+                                  <div className="flex items-center justify-between pt-1">
+                                    <span className="text-xs text-muted-foreground">Premium Impact</span>
+                                    <span className={`text-xs font-medium ${
+                                      option.value > 0 ? "text-warning" : 
+                                      option.value < 0 ? "text-success" : "text-muted-foreground"
+                                    }`}>
+                                      {option.type === "percentage" 
+                                        ? `${option.value > 0 ? "+" : ""}${option.value}%`
+                                        : `${option.value > 0 ? "+" : ""}AED ${option.value.toLocaleString()}`
+                                      }
+                                    </span>
+                                  </div>
+                                  {isSelected && (
+                                    <div className="flex items-center gap-1 pt-1">
+                                      <CheckCircle2 className="w-3 h-3 text-primary" />
+                                      <span className="text-xs text-primary">Selected</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                )}
               </div>
             </div>
           </div>

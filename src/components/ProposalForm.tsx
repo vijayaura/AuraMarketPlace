@@ -33,6 +33,14 @@ import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentUpload } from "./DocumentUpload";
 import { QuotesComparison } from "./QuotesComparison";
+import Declaration from "@/pages/Declaration";
+
+// Extend Window interface for global functions
+declare global {
+  interface Window {
+    onQuoteSelected?: (quoteId: number) => void;
+  }
+}
 
 interface ProposalFormProps {
   onStepChange?: (step: number) => void;
@@ -484,10 +492,20 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       setClaimsDisclaimerAccepted(true);
     }
     
+    // Expose quote selection function globally for QuotesComparison
+    window.onQuoteSelected = (quoteId: number) => {
+      console.log('📋 Quote selected:', quoteId);
+      // Mark plans as selected and navigate to declaration step
+      markStepCompleted('plans_selected');
+      setCurrentStep(7); // Go to declaration step
+    };
+    
     // Cleanup when component unmounts (user exits /customer/proposal)
     return () => {
       console.log('🚪 ProposalForm unmounting - clearing temporary storage');
       clearTemporaryStorage();
+      // Clean up global function
+      delete window.onQuoteSelected;
     };
   }, []);
 
@@ -1190,6 +1208,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         // Users can proceed without selecting quotes
         break;
         
+      case 7: // Declaration step
+        // For declaration step, no validation needed as it's a document upload step
+        // Users can proceed after uploading required documents
+        break;
+        
       // Add more cases for other steps as needed
       default:
         // For other steps, no validation for now
@@ -1801,6 +1824,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     id: "quotes",
     label: "Quotes Comparison",
     icon: Building
+  }, {
+    id: "declaration",
+    label: "Declaration",
+    icon: FileText
   }];
   return <section className="pt-6 pb-20 bg-background min-h-screen">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -2011,8 +2038,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         markStepCompleted('underwriting_documents');
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       } else if (currentStep === 6) {
-                        // Quotes step - mark as completed and navigate to final page
+                        // Quotes step - mark as completed and go to step 7 (Declaration)
                         markStepCompleted('coverages_selected');
+                        setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                      } else if (currentStep === 7) {
+                        // Declaration step - mark as completed and navigate to final page
+                        markStepCompleted('policy_required_documents');
                         navigate('/customer/dashboard');
                       } else {
                         // Other steps - just navigate
@@ -3142,6 +3173,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
               <TabsContent value="quotes" className="space-y-6">
                 <QuotesComparison />
+              </TabsContent>
+
+              <TabsContent value="declaration" className="space-y-6">
+                <Declaration />
               </TabsContent>
 
             </Tabs>
