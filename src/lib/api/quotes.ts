@@ -133,6 +133,22 @@ export interface SiteRisksResponse {
   message: string;
 }
 
+// Types for Cover Requirements API
+export interface CoverRequirementsRequest {
+  project_value: number;
+  contract_works: number;
+  plant_and_equipment: number;
+  temporary_works: number;
+  other_materials: number;
+  principals_property: number;
+  cross_liability_cover: string;
+}
+
+export interface CoverRequirementsResponse {
+  message: string;
+  sum_insured: number;
+}
+
 // Save insured details (POST for new)
 export const saveInsuredDetails = async (data: InsuredDetailsRequest, quoteId: number): Promise<InsuredDetailsResponse> => {
   if (!quoteId) {
@@ -191,4 +207,24 @@ export const updateSiteRisks = async (data: SiteRisksRequest, quoteId: number): 
   const endpoint = `/quotes/site-risks/${quoteId}`;
   console.log('🔄 updateSiteRisks (PATCH) called with:', { quoteId, endpoint, data });
   return apiPatch<SiteRisksResponse>(endpoint, data);
+};
+
+// Save cover requirements (POST for new)
+export const saveCoverRequirements = async (data: CoverRequirementsRequest, quoteId: number): Promise<CoverRequirementsResponse> => {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for cover requirements operations');
+  }
+  const endpoint = `/quotes/cover/${quoteId}`;
+  console.log('💾 saveCoverRequirements (POST) called with:', { quoteId, endpoint, data });
+  return apiPost<CoverRequirementsResponse>(endpoint, data);
+};
+
+// Update cover requirements (PATCH for existing)
+export const updateCoverRequirements = async (data: CoverRequirementsRequest, quoteId: number): Promise<CoverRequirementsResponse> => {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for cover requirements operations');
+  }
+  const endpoint = `/quotes/cover/${quoteId}`;
+  console.log('🔄 updateCoverRequirements (PATCH) called with:', { quoteId, endpoint, data });
+  return apiPatch<CoverRequirementsResponse>(endpoint, data);
 };

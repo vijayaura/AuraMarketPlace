@@ -28,7 +28,7 @@ import {
   type SubProjectTypeItem
 } from "@/lib/api/masters";
 import { getBroker, type Broker } from "@/lib/api/brokers";
-import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse } from "@/lib/api/quotes";
+import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 
@@ -95,6 +95,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   
   // Site Risks API State
   const [isSavingSiteRisks, setIsSavingSiteRisks] = useState(false);
+  
+  // Cover Requirements API State
+  const [isSavingCoverRequirements, setIsSavingCoverRequirements] = useState(false);
   
   // Water Body Detection State
   const [isWaterBodyAutoFilled, setIsWaterBodyAutoFilled] = useState(false);
@@ -1145,6 +1148,27 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         }
         break;
         
+      case 4: // Cover Requirements step
+        if (!formData.sumInsuredMaterial || parseFloat(formData.sumInsuredMaterial.replace(/[^0-9.]/g, '')) <= 0) {
+          errors.sumInsuredMaterial = "Valid contract works amount is required";
+        }
+        if (!formData.sumInsuredPlant || parseFloat(formData.sumInsuredPlant.replace(/[^0-9.]/g, '')) <= 0) {
+          errors.sumInsuredPlant = "Valid plant and equipment amount is required";
+        }
+        if (!formData.sumInsuredTemporary || parseFloat(formData.sumInsuredTemporary.replace(/[^0-9.]/g, '')) <= 0) {
+          errors.sumInsuredTemporary = "Valid temporary works amount is required";
+        }
+        if (!formData.otherMaterials || parseFloat(formData.otherMaterials.replace(/[^0-9.]/g, '')) <= 0) {
+          errors.otherMaterials = "Valid other materials amount is required";
+        }
+        if (!formData.principalExistingProperty || parseFloat(formData.principalExistingProperty.replace(/[^0-9.]/g, '')) <= 0) {
+          errors.principalExistingProperty = "Valid principals property amount is required";
+        }
+        if (!formData.crossLiabilityCover) {
+          errors.crossLiabilityCover = "Cross liability cover must be selected";
+        }
+        break;
+        
       // Add more cases for other steps as needed
       default:
         // For other steps, no validation for now
@@ -1553,6 +1577,86 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     }
   };
 
+  // Transform cover requirements form data to API format
+  const transformCoverRequirementsToAPI = (): CoverRequirementsRequest => {
+    return {
+      project_value: parseFloat(formData.projectValue?.replace(/[^0-9.]/g, '') || '0'),
+      contract_works: parseFloat(formData.sumInsuredMaterial?.replace(/[^0-9.]/g, '') || '0'),
+      plant_and_equipment: parseFloat(formData.sumInsuredPlant?.replace(/[^0-9.]/g, '') || '0'),
+      temporary_works: parseFloat(formData.sumInsuredTemporary?.replace(/[^0-9.]/g, '') || '0'),
+      other_materials: parseFloat(formData.otherMaterials?.replace(/[^0-9.]/g, '') || '0'),
+      principals_property: parseFloat(formData.principalExistingProperty?.replace(/[^0-9.]/g, '') || '0'),
+      cross_liability_cover: formData.crossLiabilityCover || ''
+    };
+  };
+
+  // Save cover requirements via API
+  const saveCoverRequirementsData = async (): Promise<boolean> => {
+    if (!currentQuoteId) {
+      toast({
+        title: "Error",
+        description: "Quote ID not found. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsSavingCoverRequirements(true);
+    try {
+      const apiData = transformCoverRequirementsToAPI();
+      console.log('💾 Saving cover requirements:', apiData);
+      
+      // Check if cover_requirements step is already completed to decide between POST and PATCH
+      const isCoverRequirementsCompleted = isStepCompleted('cover_requirements');
+      console.log('📊 Cover requirements completion status:', isCoverRequirementsCompleted);
+      
+      let response;
+      if (isCoverRequirementsCompleted) {
+        // Use PATCH for updates
+        console.log('🔄 Using PATCH to update existing cover requirements');
+        response = await updateCoverRequirements(apiData, currentQuoteId);
+      } else {
+        // Use POST for new cover requirements
+        console.log('💾 Using POST to create new cover requirements');
+        response = await saveCoverRequirements(apiData, currentQuoteId);
+      }
+      
+      console.log('✅ Cover requirements saved successfully:', response);
+      
+      // Mark cover_requirements step as completed
+      markStepCompleted('cover_requirements');
+      
+      toast({
+        title: "Cover Requirements Saved",
+        description: `Cover requirements have been saved successfully. Sum Insured: ${response.sum_insured?.toLocaleString() || 'N/A'}`,
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error saving cover requirements:', error);
+      
+      let errorMessage = "Failed to save cover requirements. Please try again.";
+      if (error.response?.status === 400) {
+        errorMessage = "Invalid data provided. Please check your inputs.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Authentication required. Please log in again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "You don't have permission to save cover requirements.";
+      } else if (error.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSavingCoverRequirements(false);
+    }
+  };
+
   // Effect to validate and clear completion date if it becomes invalid
   useEffect(() => {
     if (formData.startDate && formData.completionDate) {
@@ -1755,7 +1859,13 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                             soilType: 'Soil Type',
                             existingStructure: 'Existing Structure',
                             blastingExcavation: 'Blasting or Deep Excavation',
-                            siteSecurityArrangements: 'Site Security Arrangements'
+                            siteSecurityArrangements: 'Site Security Arrangements',
+                            sumInsuredMaterial: 'Contract Works',
+                            sumInsuredPlant: 'Plant and Equipment',
+                            sumInsuredTemporary: 'Temporary Works',
+                            otherMaterials: 'Other Materials',
+                            principalExistingProperty: 'Principals Property',
+                            crossLiabilityCover: 'Cross Liability Cover'
                           };
                           return fieldMap[field] || field;
                         });
@@ -1793,12 +1903,18 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         if (success) {
                           setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                         }
+                      } else if (currentStep === 4) {
+                        // Cover Requirements step
+                        const success = await saveCoverRequirementsData();
+                        if (success) {
+                          setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                        }
                       } else {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       }
                     }}
-                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isCheckingWaterBody}
+                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isCheckingWaterBody}
                   >
                     {isSavingProject ? (
                       <>
@@ -1816,6 +1932,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         Saving...
                       </>
                     ) : isSavingSiteRisks ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : isSavingCoverRequirements ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Saving...
