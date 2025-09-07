@@ -495,9 +495,14 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     // Expose quote selection function globally for QuotesComparison
     window.onQuoteSelected = (quoteId: number) => {
       console.log('📋 Quote selected:', quoteId);
+      console.log('📋 Current step before:', currentStep);
       // Mark plans as selected and navigate to declaration step
       markStepCompleted('plans_selected');
-      setCurrentStep(7); // Go to declaration step
+      // Use setTimeout to ensure state update happens after current render cycle
+      setTimeout(() => {
+        setCurrentStep(7); // Go to declaration step (index 7 = Declaration)
+        console.log('📋 Setting step to 7 (Declaration)');
+      }, 0);
     };
     
     // Cleanup when component unmounts (user exits /customer/proposal)
@@ -508,6 +513,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       delete window.onQuoteSelected;
     };
   }, []);
+
+  // Debug current step changes
+  useEffect(() => {
+    console.log('🔄 Current step changed to:', currentStep);
+  }, [currentStep]);
 
   // Handle browser navigation (back/forward/refresh) to clear storage
   useEffect(() => {
@@ -2042,9 +2052,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         markStepCompleted('coverages_selected');
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       } else if (currentStep === 7) {
-                        // Declaration step - mark as completed and navigate to final page
+                        // Declaration step - mark as completed and navigate to success page
                         markStepCompleted('policy_required_documents');
-                        navigate('/customer/dashboard');
+                        navigate('/customer/success');
                       } else {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
@@ -2082,6 +2092,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Checking water bodies...
                       </>
+                    ) : currentStep === 7 ? (
+                      'Complete'
                     ) : (
                       'Next'
                     )}
@@ -3175,7 +3187,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                 <QuotesComparison />
               </TabsContent>
 
-              <TabsContent value="declaration" className="space-y-6">
+              <TabsContent value="declaration">
                 <Declaration />
               </TabsContent>
 

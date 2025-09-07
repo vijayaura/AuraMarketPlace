@@ -457,8 +457,8 @@ Contact us for more details or to proceed with the application.
   };
 
   return (
-    <section className="py-4 lg:py-6 bg-muted/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section>
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="text-left">
             <h2 className="text-lg font-semibold text-foreground mb-1">
@@ -559,11 +559,6 @@ Contact us for more details or to proceed with the application.
                         >
                           <FileText className="w-4 h-4" />
                           Extensions
-                        </Button>
-                        <Button 
-                          onClick={() => handleSelectPlan(quote.id)}
-                        >
-                          Select Plan
                         </Button>
                       </div>
                     </div>
@@ -825,11 +820,11 @@ Contact us for more details or to proceed with the application.
 
                   {/* Selected CEW Items */}
                   {selectedCEWItems.filter(item => item.isSelected).length > 0 && (
-                    <Card className="border-border flex-shrink-0 mb-4">
+                    <Card className="border-border flex-shrink-0 mb-6">
                       <CardHeader className="pb-1 px-2 pt-2">
                         <CardTitle className="text-sm">Selected Extensions</CardTitle>
                       </CardHeader>
-                      <CardContent className="pt-0 px-2 pb-2 max-h-32 overflow-y-auto">
+                      <CardContent className="pt-0 px-2 pb-4 max-h-32 overflow-y-auto">
                         <div className="space-y-1">
                           {selectedCEWItems.filter(item => item.isSelected).map(item => (
                             <div key={item.id} className="flex justify-between items-center p-2 bg-muted/50 rounded text-xs">
@@ -943,13 +938,34 @@ Contact us for more details or to proceed with the application.
                         </div>
                       </div>
 
-                      {/* Update Premium Button */}
-                      <Button 
-                        onClick={handleUpdatePremium}
-                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                      >
-                        Update Premium
-                      </Button>
+                      {/* Action Buttons */}
+                      <div className="space-y-2">
+                        <Button 
+                          onClick={() => {
+                            handleUpdatePremium();
+                            setShowCEWDialog(false);
+                          }}
+                          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                        >
+                          Update Premium & Compare
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            setShowCEWDialog(false);
+                            // Check if we're in the proposal form context
+                            if (window.onQuoteSelected) {
+                              // We're in the proposal form, navigate to declaration step
+                              window.onQuoteSelected(selectedQuoteForCEW?.id);
+                            } else {
+                              // We're in standalone quotes page, navigate to declaration page
+                              navigate('/customer/declaration', { state: { selectedQuote: selectedQuoteForCEW?.id } });
+                            }
+                          }}
+                          className="w-full"
+                        >
+                          Select Plan
+                        </Button>
+                      </div>
 
                     </CardContent>
                   </Card>
