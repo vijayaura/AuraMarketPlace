@@ -258,11 +258,7 @@ export interface DocumentInfo {
 }
 
 export interface RequiredDocumentsRequest {
-  boq: DocumentInfo;
-  gantt_chart: DocumentInfo;
-  contract_agreement: DocumentInfo;
-  site_layout_plan: DocumentInfo;
-  other_supporting_docs: DocumentInfo;
+  [key: string]: DocumentInfo;
 }
 
 export interface RequiredDocumentsResponse {

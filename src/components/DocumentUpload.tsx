@@ -34,9 +34,10 @@ interface DocumentItem {
 interface DocumentUploadProps {
   documents?: DocumentItem[];
   onDocumentStatusChange?: (documents: DocumentItem[]) => void;
+  onDocumentTypesLoaded?: (documents: DocumentItem[]) => void;
 }
 
-export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChange }: DocumentUploadProps) => {
+export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChange, onDocumentTypesLoaded }: DocumentUploadProps) => {
   const [documents, setDocuments] = useState<DocumentItem[]>(propDocuments || []);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +82,11 @@ export const DocumentUpload = ({ documents: propDocuments, onDocumentStatusChang
           }));
         
         setDocuments(activeDocuments);
+        
+        // Notify parent about loaded document types
+        if (onDocumentTypesLoaded) {
+          onDocumentTypesLoaded(activeDocuments);
+        }
       } catch (err: any) {
         console.error('Error loading document types:', err);
         setError('Failed to load document types. Please try again.');

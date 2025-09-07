@@ -111,6 +111,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   
   // Required Documents API State
   const [isSavingDocuments, setIsSavingDocuments] = useState(false);
+  const [requiredDocumentTypes, setRequiredDocumentTypes] = useState<Array<{id: number, name: string, required: boolean}>>([]);
+  const [allDocumentTypes, setAllDocumentTypes] = useState<Array<{id: number, name: string, required: boolean, status: string, fileUrl?: string, fileName?: string}>>([]);
   
   
   // Water Body Detection State
@@ -1229,13 +1231,25 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         break;
         
       case 5: // Documents step
-        // Check if all required documents are uploaded
-        const requiredDocuments = ['boq', 'gantt_chart', 'contract_agreement', 'site_layout_plan'];
+        // Check if all required documents are uploaded based on master data
+        // This validation only applies to the Required Documents tab
         const missingDocuments: string[] = [];
         
-        requiredDocuments.forEach(docKey => {
-          if (!formData.documents[docKey as keyof typeof formData.documents]?.uploaded) {
-            missingDocuments.push(formData.documents[docKey as keyof typeof formData.documents]?.label || docKey);
+        // Only validate required documents from master data
+        requiredDocumentTypes.forEach(docType => {
+          if (docType.required) {
+            // Find the corresponding document in formData.documents
+            const docKey = Object.keys(formData.documents).find(key => {
+              const docData = formData.documents[key as keyof typeof formData.documents];
+              return docData?.label === docType.name;
+            });
+            
+            if (docKey) {
+              const docData = formData.documents[docKey as keyof typeof formData.documents];
+              if (!docData?.uploaded) {
+                missingDocuments.push(docType.name);
+              }
+            }
           }
         });
         
@@ -1679,28 +1693,21 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
   // Transform documents data to API format
   const transformDocumentsToAPI = (): RequiredDocumentsRequest => {
-    return {
-      boq: {
-        label: formData.documents.boq.label,
-        url: formData.documents.boq.url || "https://example.com/boq.pdf"
-      },
-      gantt_chart: {
-        label: formData.documents.gantt_chart.label,
-        url: formData.documents.gantt_chart.url || "https://example.com/gantt.pdf"
-      },
-      contract_agreement: {
-        label: formData.documents.contract_agreement.label,
-        url: formData.documents.contract_agreement.url || "https://example.com/contract.pdf"
-      },
-      site_layout_plan: {
-        label: formData.documents.site_layout_plan.label,
-        url: formData.documents.site_layout_plan.url || "https://example.com/site-layout.pdf"
-      },
-      other_supporting_docs: {
-        label: formData.documents.other_supporting_docs.label,
-        url: formData.documents.other_supporting_docs.url || "https://example.com/other-docs.pdf"
+    const documentsPayload: any = {};
+    
+    // Include ALL documents that have been uploaded (both required and optional)
+    allDocumentTypes.forEach(doc => {
+      if (doc.status === "uploaded" && doc.fileUrl) {
+        // Use document name as key for API request
+        const docKey = doc.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        documentsPayload[docKey] = {
+          label: doc.name,
+          url: doc.fileUrl
+        };
       }
-    };
+    });
+    
+    return documentsPayload;
   };
 
   // Save required documents via API
@@ -3310,10 +3317,24 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                   </div>
                   <DocumentUpload 
                     onDocumentStatusChange={(updatedDocuments) => {
-                      // Map the API-loaded documents back to formData structure
-                      const updatedFormData = { ...formData };
+                      // Update all document types with current status
+                      setAllDocumentTypes(prev => 
+                        prev.map(doc => {
+                          const updatedDoc = updatedDocuments.find(ud => ud.name === doc.name);
+                          if (updatedDoc) {
+                            return {
+                              ...doc,
+                              status: updatedDoc.status,
+                              fileUrl: updatedDoc.fileUrl,
+                              fileName: updatedDoc.fileName
+                            };
+                          }
+                          return doc;
+                        })
+                      );
                       
-                      // Create a mapping of document names to our formData keys
+                      // Also update formData for backward compatibility
+                      const updatedFormData = { ...formData };
                       const docNameToKey: Record<string, keyof typeof formData.documents> = {
                         'BOQ or Cost Breakdown': 'boq',
                         'Project Gantt Chart': 'gantt_chart',
@@ -3335,6 +3356,24 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       });
                       
                       setFormData(updatedFormData);
+                    }}
+                    onDocumentTypesLoaded={(documentTypes) => {
+                      // Store all document types for API requests
+                      setAllDocumentTypes(documentTypes.map(doc => ({
+                        id: doc.id,
+                        name: doc.name,
+                        required: doc.required,
+                        status: doc.status,
+                        fileUrl: doc.fileUrl,
+                        fileName: doc.fileName
+                      })));
+                      
+                      // Store the required document types for validation
+                      setRequiredDocumentTypes(documentTypes.map(doc => ({
+                        id: doc.id,
+                        name: doc.name,
+                        required: doc.required
+                      })));
                     }}
                   />
                 </div>
