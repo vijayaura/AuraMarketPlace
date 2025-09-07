@@ -1687,17 +1687,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       removalDebrisLimit: defaults.debrisRemovalLimit
     });
   };
-  const handleSubmit = () => {
-    // Validate coverage requirements before submission
-    if (currentStep === 4) {
-      // Coverage tab
-      if (!validateCoverageRequirements()) {
-        return;
-      }
-    }
-    // In a real app, you would submit the form data here
-    navigate('/customer/documents');
-  };
   const addSubcontractor = () => {
     const newId = Math.max(...formData.subContractors.map(sc => sc.id), 0) + 1;
     setFormData({
@@ -1823,8 +1812,85 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                 
                 {/* Next/Proceed Button */}
                 {currentStep === steps.length - 1 ? (
-                  <Button variant="hero" size="lg" onClick={handleSubmit}>
-                    Proceed
+                  <Button 
+                    variant="hero" 
+                    size="lg" 
+                    onClick={async () => {
+                      // Validate current step first
+                      if (!validateCurrentStep()) {
+                        const errorFields = Object.keys(validationErrors);
+                        const fieldNames = errorFields.map(field => {
+                          const fieldMap: Record<string, string> = {
+                            projectName: 'Project Name',
+                            projectType: 'Project Type',
+                            subProjectType: 'Sub Project Type',
+                            constructionType: 'Construction Type',
+                            country: 'Country',
+                            region: 'Region',
+                            zone: 'Zone',
+                            projectAddress: 'Project Address',
+                            coordinates: 'Coordinates',
+                            projectValue: 'Project Value',
+                            startDate: 'Start Date',
+                            completionDate: 'Completion Date',
+                            constructionPeriod: 'Construction Period',
+                            maintenancePeriod: 'Maintenance Period',
+                            thirdPartyLimit: 'Third Party Limit',
+                            insuredName: 'Insured Name',
+                            roleOfInsured: 'Role of Insured',
+                            mainContractor: 'Main Contractor',
+                            principalOwner: 'Principal Owner',
+                            contractType: 'Contract Type',
+                            contractNumber: 'Contract Number',
+                            experienceYears: 'Experience Years',
+                            nearWaterBody: 'Water Body Proximity',
+                            floodProneZone: 'Flood Prone Zone',
+                            withinCityCenter: 'City Center Location',
+                            soilType: 'Soil Type',
+                            existingStructure: 'Existing Structure',
+                            blastingExcavation: 'Blasting or Deep Excavation',
+                            siteSecurityArrangements: 'Site Security Arrangements',
+                            sumInsuredMaterial: 'Contract Works',
+                            sumInsuredPlant: 'Plant and Equipment',
+                            sumInsuredTemporary: 'Temporary Works',
+                            otherMaterials: 'Other Materials',
+                            principalExistingProperty: 'Principals Property',
+                            crossLiabilityCover: 'Cross Liability Cover'
+                          };
+                          return fieldMap[field] || field;
+                        });
+                        
+                        toast({
+                          title: "Validation Error",
+                          description: `Please fill in the following required fields: ${fieldNames.join(', ')}`,
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      
+                      // Save data based on current step (Cover Requirements for step 4)
+                      if (currentStep === 4) {
+                        // Cover Requirements step
+                        const success = await saveCoverRequirementsData();
+                        if (success) {
+                          // Navigate to documents page after successful save
+                          navigate('/customer/documents');
+                        }
+                      } else {
+                        // Other steps - just navigate
+                        navigate('/customer/documents');
+                      }
+                    }}
+                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isCheckingWaterBody}
+                  >
+                    {isSavingCoverRequirements ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      'Next'
+                    )}
                   </Button>
                 ) : (
                   <Button 
