@@ -28,7 +28,7 @@ import {
   type SubProjectTypeItem
 } from "@/lib/api/masters";
 import { getBroker, type Broker } from "@/lib/api/brokers";
-import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse } from "@/lib/api/quotes";
+import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 
@@ -92,6 +92,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   
   // Contract Structure API State
   const [isSavingContractStructure, setIsSavingContractStructure] = useState(false);
+  
+  // Site Risks API State
+  const [isSavingSiteRisks, setIsSavingSiteRisks] = useState(false);
   
   // Water Body Detection State
   const [isWaterBodyAutoFilled, setIsWaterBodyAutoFilled] = useState(false);
@@ -1118,6 +1121,30 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         }
         break;
         
+      case 3: // Site Risks step
+        if (!formData.nearWaterBody) {
+          errors.nearWaterBody = "Water body proximity must be selected";
+        }
+        if (!formData.floodProneZone) {
+          errors.floodProneZone = "Flood prone zone must be selected";
+        }
+        if (!formData.withinCityCenter) {
+          errors.withinCityCenter = "City center location must be selected";
+        }
+        if (!formData.soilType) {
+          errors.soilType = "Soil type must be selected";
+        }
+        if (!formData.existingStructure) {
+          errors.existingStructure = "Existing structure must be selected";
+        }
+        if (!formData.blastingExcavation) {
+          errors.blastingExcavation = "Blasting or deep excavation must be selected";
+        }
+        if (!formData.siteSecurityArrangements?.trim()) {
+          errors.siteSecurityArrangements = "Site security arrangements are required";
+        }
+        break;
+        
       // Add more cases for other steps as needed
       default:
         // For other steps, no validation for now
@@ -1446,6 +1473,86 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     }
   };
 
+  // Transform site risks form data to API format
+  const transformSiteRisksToAPI = (): SiteRisksRequest => {
+    return {
+      near_water_body: formData.nearWaterBody === "yes",
+      flood_prone_zone: formData.floodProneZone === "yes",
+      within_city_center: formData.withinCityCenter || '',
+      soil_type: formData.soilType || '',
+      existing_structure: formData.existingStructure === "yes",
+      blasting_or_deep_excavation: formData.blastingExcavation === "yes",
+      site_security_arrangements: formData.siteSecurityArrangements || ''
+    };
+  };
+
+  // Save site risks via API
+  const saveSiteRisksData = async (): Promise<boolean> => {
+    if (!currentQuoteId) {
+      toast({
+        title: "Error",
+        description: "Quote ID not found. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsSavingSiteRisks(true);
+    try {
+      const apiData = transformSiteRisksToAPI();
+      console.log('💾 Saving site risks:', apiData);
+      
+      // Check if site_risks step is already completed to decide between POST and PATCH
+      const isSiteRisksCompleted = isStepCompleted('site_risks');
+      console.log('📊 Site risks completion status:', isSiteRisksCompleted);
+      
+      let response;
+      if (isSiteRisksCompleted) {
+        // Use PATCH for updates
+        console.log('🔄 Using PATCH to update existing site risks');
+        response = await updateSiteRisks(apiData, currentQuoteId);
+      } else {
+        // Use POST for new site risks
+        console.log('💾 Using POST to create new site risks');
+        response = await saveSiteRisks(apiData, currentQuoteId);
+      }
+      
+      console.log('✅ Site risks saved successfully:', response);
+      
+      // Mark site_risks step as completed
+      markStepCompleted('site_risks');
+      
+      toast({
+        title: "Site Risks Saved",
+        description: "Site risks have been saved successfully.",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error saving site risks:', error);
+      
+      let errorMessage = "Failed to save site risks. Please try again.";
+      if (error.response?.status === 400) {
+        errorMessage = "Invalid data provided. Please check your inputs.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Authentication required. Please log in again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "You don't have permission to save site risks.";
+      } else if (error.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSavingSiteRisks(false);
+    }
+  };
+
   // Effect to validate and clear completion date if it becomes invalid
   useEffect(() => {
     if (formData.startDate && formData.completionDate) {
@@ -1641,7 +1748,14 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                             principalOwner: 'Principal Owner',
                             contractType: 'Contract Type',
                             contractNumber: 'Contract Number',
-                            experienceYears: 'Experience Years'
+                            experienceYears: 'Experience Years',
+                            nearWaterBody: 'Water Body Proximity',
+                            floodProneZone: 'Flood Prone Zone',
+                            withinCityCenter: 'City Center Location',
+                            soilType: 'Soil Type',
+                            existingStructure: 'Existing Structure',
+                            blastingExcavation: 'Blasting or Deep Excavation',
+                            siteSecurityArrangements: 'Site Security Arrangements'
                           };
                           return fieldMap[field] || field;
                         });
@@ -1673,12 +1787,18 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         if (success) {
                           setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                         }
+                      } else if (currentStep === 3) {
+                        // Site Risks step
+                        const success = await saveSiteRisksData();
+                        if (success) {
+                          setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                        }
                       } else {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       }
                     }}
-                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isCheckingWaterBody}
+                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isCheckingWaterBody}
                   >
                     {isSavingProject ? (
                       <>
@@ -1691,6 +1811,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         Saving...
                       </>
                     ) : isSavingContractStructure ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : isSavingSiteRisks ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Saving...

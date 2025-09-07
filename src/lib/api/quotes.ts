@@ -118,6 +118,21 @@ export interface ContractStructureResponse {
   message: string;
 }
 
+// Types for Site Risks API
+export interface SiteRisksRequest {
+  near_water_body: boolean;
+  flood_prone_zone: boolean;
+  within_city_center: string;
+  soil_type: string;
+  existing_structure: boolean;
+  blasting_or_deep_excavation: boolean;
+  site_security_arrangements: string;
+}
+
+export interface SiteRisksResponse {
+  message: string;
+}
+
 // Save insured details (POST for new)
 export const saveInsuredDetails = async (data: InsuredDetailsRequest, quoteId: number): Promise<InsuredDetailsResponse> => {
   if (!quoteId) {
@@ -156,4 +171,24 @@ export const updateContractStructure = async (data: ContractStructureRequest, qu
   const endpoint = `/quotes/contract/${quoteId}`;
   console.log('🔄 updateContractStructure (PATCH) called with:', { quoteId, endpoint, data });
   return apiPatch<ContractStructureResponse>(endpoint, data);
+};
+
+// Save site risks (POST for new)
+export const saveSiteRisks = async (data: SiteRisksRequest, quoteId: number): Promise<SiteRisksResponse> => {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for site risks operations');
+  }
+  const endpoint = `/quotes/site-risks/${quoteId}`;
+  console.log('💾 saveSiteRisks (POST) called with:', { quoteId, endpoint, data });
+  return apiPost<SiteRisksResponse>(endpoint, data);
+};
+
+// Update site risks (PATCH for existing)
+export const updateSiteRisks = async (data: SiteRisksRequest, quoteId: number): Promise<SiteRisksResponse> => {
+  if (!quoteId) {
+    throw new Error('Quote ID is required for site risks operations');
+  }
+  const endpoint = `/quotes/site-risks/${quoteId}`;
+  console.log('🔄 updateSiteRisks (PATCH) called with:', { quoteId, endpoint, data });
+  return apiPatch<SiteRisksResponse>(endpoint, data);
 };
