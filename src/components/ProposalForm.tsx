@@ -93,6 +93,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   // Contract Structure API State
   const [isSavingContractStructure, setIsSavingContractStructure] = useState(false);
   
+  // Water Body Detection State
+  const [isWaterBodyAutoFilled, setIsWaterBodyAutoFilled] = useState(false);
+  
   // Fresh Temporary Storage for Current Quote Session
   const [currentQuoteId, setCurrentQuoteId] = useState<number | null>(null);
   const [quoteReferenceNumber, setQuoteReferenceNumber] = useState<string | null>(null);
@@ -1182,6 +1185,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               nearWaterBody: waterBodyResult.isNearWaterBody ? "yes" : "no",
               waterBodyDistance: waterBodyResult.isNearWaterBody ? "100" : ""
             }));
+            
+            // Mark as auto-filled
+            setIsWaterBodyAutoFilled(true);
             
             if (waterBodyResult.isNearWaterBody) {
               toast({
@@ -2439,12 +2445,31 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               <TabsContent value="site" className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="nearWaterBody">Is site near water body? (Within 100 meters)*</Label>
-                    <Select value={formData.nearWaterBody || undefined} onValueChange={value => setFormData({
-                    ...formData,
-                    nearWaterBody: value
-                  })}>
-                      <SelectTrigger>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="nearWaterBody">Is site near water body? (Within 100 meters)*</Label>
+                      {isWaterBodyAutoFilled && (
+                        <div className="relative group">
+                          <div className="w-4 h-4 bg-blue-100 rounded-full flex items-center justify-center cursor-help">
+                            <svg className="w-2.5 h-2.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Auto-filled based on coordinates and found water body less than 100 meters
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <Select 
+                      value={formData.nearWaterBody || undefined} 
+                      onValueChange={value => setFormData({
+                        ...formData,
+                        nearWaterBody: value
+                      })}
+                      disabled={isWaterBodyAutoFilled}
+                    >
+                      <SelectTrigger className={isWaterBodyAutoFilled ? "bg-gray-100 cursor-not-allowed" : ""}>
                         <SelectValue placeholder="Select yes or no" />
                       </SelectTrigger>
                       <SelectContent>
@@ -2454,10 +2479,17 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     </Select>
                     {formData.nearWaterBody === "yes" && <div className="space-y-2 mt-3">
                         <Label htmlFor="waterBodyDistance">Distance from water body (meters)</Label>
-                        <Input id="waterBodyDistance" value={formData.waterBodyDistance} onChange={e => setFormData({
-                      ...formData,
-                      waterBodyDistance: e.target.value
-                    })} placeholder="Enter distance in meters" />
+                        <Input 
+                          id="waterBodyDistance" 
+                          value={formData.waterBodyDistance} 
+                          onChange={e => setFormData({
+                            ...formData,
+                            waterBodyDistance: e.target.value
+                          })} 
+                          placeholder="Enter distance in meters" 
+                          disabled={isWaterBodyAutoFilled}
+                          className={isWaterBodyAutoFilled ? "bg-gray-100 cursor-not-allowed" : ""}
+                        />
                         {formData.waterBodyDistance && parseInt(formData.waterBodyDistance) < 100 && <p className="text-xs text-destructive font-medium">⚠️ High Risk: Site is less than 100 meters from water body</p>}
                       </div>}
                   </div>
