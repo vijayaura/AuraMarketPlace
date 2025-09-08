@@ -401,6 +401,18 @@ const QuotesComparison = ({
       }
     };
 
+    // Helper function to extract pricing value from different field names
+    const extractPricingValue = (item: any) => {
+      // Check all possible field names for pricing values
+      return item.value || 
+             item.base_rate || 
+             item.loading_discount || 
+             item.base_value || 
+             item.limit_value || 
+             item.pricing_value || 
+             0;
+    };
+
     // 2. Construction/Area/Soil/Contract/Role Validation
     const validateConfigItems = () => {
       console.log('🔍 Debugging proposal data for config items:');
@@ -435,13 +447,20 @@ const QuotesComparison = ({
             const decision = item.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                             item.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
             
+            const pricingValue = extractPricingValue(item);
+            console.log(`💰 Extracted pricing value for ${mapping.field}:`, {
+              item: item,
+              extractedValue: pricingValue,
+              fieldNames: ['value', 'base_rate', 'loading_discount', 'base_value', 'limit_value', 'pricing_value']
+            });
+            
             addValidationResult(
               mapping.field,
               mapping.proposal,
               item.name || item.type,
               item.name || item.type,
               item.pricing_type || 'percentage',
-              item.value || 0,
+              pricingValue,
               item.quote_option || 'auto_quote',
               decision
             );
@@ -479,13 +498,15 @@ const QuotesComparison = ({
           const decision = loading.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           loading.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
           
+          const pricingValue = extractPricingValue(loading);
+          
           addValidationResult(
             'construction_period',
             `${constructionPeriodMonths} months`,
             `${loading.from_months || 0} - ${loading.to_months || '∞'} months`,
             `${loading.from_months || 0}-${loading.to_months || '∞'} months`,
             loading.pricing_type || 'PERCENTAGE',
-            loading.loading_discount || 0,
+            pricingValue,
             loading.quote_option || 'AUTO_QUOTE',
             decision
           );
@@ -519,13 +540,15 @@ const QuotesComparison = ({
           const decision = loading.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           loading.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
           
+          const pricingValue = extractPricingValue(loading);
+          
           addValidationResult(
             'maintenance_period',
             `${maintenanceMonths} months`,
             `${loading.from_months || 0} - ${loading.to_months || '∞'} months`,
             `${loading.from_months || 0}-${loading.to_months || '∞'} months`,
             loading.pricing_type || 'percentage',
-            loading.loading_discount || 0,
+            pricingValue,
             loading.quote_option || 'auto_quote',
             decision
           );
@@ -604,13 +627,15 @@ const QuotesComparison = ({
           const decision = option.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           option.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
           
+          const pricingValue = extractPricingValue(option);
+          
           addValidationResult(
             'cross_liability_cover',
             crossLiabilityCover || 'No',
             option.cover_option,
             option.cover_option,
             option.pricing_type || 'PERCENTAGE',
-            option.loading_discount || 0,
+            pricingValue,
             option.quote_option || 'AUTO_QUOTE',
             decision
           );
@@ -644,13 +669,15 @@ const QuotesComparison = ({
           const decision = loading.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           loading.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
           
+          const pricingValue = extractPricingValue(loading);
+          
           addValidationResult(
             'contractor_experience',
             `${experienceYears} years`,
             `${loading.from_years || 0} - ${loading.to_years || '∞'} years`,
             `${loading.from_years || 0}-${loading.to_years || '∞'} years`,
             loading.pricing_type || 'percentage',
-            loading.loading_discount || 0,
+            pricingValue,
             loading.quote_option || 'auto_quote',
             decision
           );
@@ -685,13 +712,15 @@ const QuotesComparison = ({
           const decision = loading.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           loading.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
           
+          const pricingValue = extractPricingValue(loading);
+          
           addValidationResult(
             'claims_count',
             totalClaimsCount,
             `${loading.from_claims || 0} - ${loading.to_claims || '∞'}`,
             `${loading.from_claims || 0}-${loading.to_claims || '∞'}`,
             loading.pricing_type || 'percentage',
-            loading.loading_discount || 0,
+            pricingValue,
             loading.quote_option || 'auto_quote',
             decision
           );
@@ -728,13 +757,15 @@ const QuotesComparison = ({
           const decision = category.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           category.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
           
+          const pricingValue = extractPricingValue(category);
+          
           addValidationResult(
             'claims_amount',
             totalClaimsAmount,
             `${category.from_amount || 0} - ${category.to_amount || '∞'}`,
             `${category.from_amount || 0}-${category.to_amount || '∞'}`,
             category.pricing_type || 'percentage',
-            category.loading_discount || 0,
+            pricingValue,
             category.quote_option || 'auto_quote',
             decision
           );
@@ -791,13 +822,15 @@ const QuotesComparison = ({
           const decision = loading.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           loading.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
           
+          const pricingValue = extractPricingValue(loading);
+          
           addValidationResult(
             'sub_contractors_count',
             subContractorsCount,
             `${fromField || 0} - ${toField || '∞'}`,
             `${fromField || 0}-${toField || '∞'}`,
             loading.pricing_type || 'percentage',
-            loading.loading_discount || 0,
+            pricingValue,
             loading.quote_option || 'auto_quote',
             decision
           );
@@ -867,13 +900,15 @@ const QuotesComparison = ({
           
           console.log('✅ Match found! Decision:', decision);
           
+          const pricingValue = extractPricingValue(loading);
+          
           addValidationResult(
             'consultants_count',
             consultantsCount,
             `${fromField || 0} - ${toField || '∞'}`,
             `${fromField || 0}-${toField || '∞'}`,
             loading.pricing_type || 'percentage',
-            loading.loading_discount || 0,
+            pricingValue,
             loading.quote_option || 'auto_quote',
             decision
           );
@@ -966,13 +1001,15 @@ const QuotesComparison = ({
           const decision = rate.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           rate.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
           
+          const pricingValue = extractPricingValue(rate);
+          
           addValidationResult(
             'location_hazard',
             derivedRisk,
             rate.risk_level,
             rate.risk_level,
             rate.pricing_type || 'PERCENTAGE',
-            rate.loading_discount || 0,
+            pricingValue,
             rate.quote_option || 'AUTO_QUOTE',
             decision
           );
