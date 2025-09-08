@@ -1280,9 +1280,7 @@ const SingleProductConfig = () => {
     show: "Optional",
     wording: "",
     purposeDescription: "",
-    purpose: "",
-    pricingType: "percentage", // "percentage" or "fixed"
-    pricingValue: 0
+    purpose: ""
   });
 
   // State for selected project types
@@ -5407,7 +5405,7 @@ const SingleProductConfig = () => {
   };
 
   const addNewClause = async () => {
-    if (!newClause.code || !newClause.title) {
+    if (!newClause.code || !newClause.title || !newClause.show) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -5429,8 +5427,8 @@ const SingleProductConfig = () => {
         clause_wording: newClause.purpose || newClause.wording || "",
         clause_type: newClause.type.toLowerCase(),
         show_type: newClause.show.toLowerCase(),
-        pricing_type: newClause.pricingType === "percentage" ? "loading" : "fixed",
-        pricing_value: Number(newClause.pricingValue || 0),
+        pricing_type: "loading",
+        pricing_value: 0,
       };
 
       const created = await createCewsClause(insurerId, product.id as string, payload);
@@ -5446,8 +5444,6 @@ const SingleProductConfig = () => {
           wording: created.clause_wording,
           type: (created.clause_type || '').toLowerCase() === 'exclusion' ? 'Exclusion' : (created.clause_type || '').toLowerCase() === 'warranty' ? 'Warranty' : 'Clause',
           show: (created.show_type || '').toLowerCase() === 'mandatory' ? 'Mandatory' : 'Optional',
-          pricingType: created.pricing_type === 'discount' || created.pricing_type === 'loading' ? 'percentage' : 'fixed',
-          pricingValue: Number(created.pricing_value || 0),
           displayOrder: created.display_order ?? 0,
           active: created.is_active === 1,
         } as any
@@ -5461,9 +5457,7 @@ const SingleProductConfig = () => {
       show: "Optional",
       wording: "",
       purposeDescription: "",
-      purpose: "",
-      pricingType: "percentage",
-      pricingValue: 0
+      purpose: ""
     });
     setIsAddClauseDialogOpen(false);
     
@@ -6075,7 +6069,7 @@ const SingleProductConfig = () => {
                       </div>
                     )}
                   <div className="overflow-x-auto">
-                    <Table className="min-w-[1400px]">
+                    <Table className="min-w-[1000px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[120px]">Clause Code</TableHead>
@@ -6083,8 +6077,6 @@ const SingleProductConfig = () => {
                         <TableHead className="w-[240px]">Purpose Description</TableHead>
                         <TableHead className="w-[100px]">Type</TableHead>
                         <TableHead className="w-[100px]">Show</TableHead>
-                        <TableHead className="w-[120px]">Pricing Type</TableHead>
-                        <TableHead className="w-[100px]">Value</TableHead>
                         <TableHead className="w-[200px] text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -6110,34 +6102,17 @@ const SingleProductConfig = () => {
                                 {item.show}
                               </Badge>
                             </TableCell>
-                             <TableCell className="w-[120px]">
-                               {pricingItem && pricingItem.variableOptions.length > 0 ? (
-                                 <Badge variant="outline">
-                                   {pricingItem.variableOptions[0].type === "percentage" ? "Percentage" : "Fixed Amount"}
-                                 </Badge>
-                               ) : (
-                                 <span className="text-sm text-muted-foreground">Not set</span>
-                               )}
-                             </TableCell>
-                             <TableCell className="w-[100px]">
-                               {pricingItem && pricingItem.variableOptions.length > 0 ? (
-                                 <div className="flex items-center gap-1">
-                                   <span className="text-sm font-medium">
-                                     {pricingItem.variableOptions[0].value}
-                                   </span>
-                                   <span className="text-xs text-muted-foreground">
-                                     {pricingItem.variableOptions[0].type === "percentage" ? "%" : "AED"}
-                                   </span>
-                                 </div>
-                               ) : (
-                                 <span className="text-sm text-muted-foreground">-</span>
-                               )}
-                             </TableCell>
                              <TableCell className="w-[200px] text-right">
                                <div className="inline-flex gap-3">
                                  <Button variant="outline" size="sm" onClick={() => {
                                    const firstOption = pricingItem?.variableOptions[0];
-                                   setSelectedClause({...item, pricingType: firstOption?.type || "percentage", pricingValue: firstOption?.value || 0});
+                                   setSelectedClause({
+                                     ...item, 
+                                     pricingType: firstOption?.type || "percentage", 
+                                     pricingValue: firstOption?.value || 0,
+                                     show: item.show_type === "mandatory" ? "Mandatory" : "Optional",
+                                     purpose: item.clause_wording || ""
+                                   });
                                    setIsEditClauseDialogOpen(true);
                                  }}>
                                  View/Edit
@@ -6222,35 +6197,20 @@ const SingleProductConfig = () => {
                         />
                       </div>
                       
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">Pricing Configuration</h4>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Pricing Type</Label>
-                            <Select 
-                              value={selectedClause.pricingType} 
-                              onValueChange={(value) => setSelectedClause({...selectedClause, pricingType: value})}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="percentage">Percentage (%)</SelectItem>
-                                <SelectItem value="fixed">Fixed Amount (AED)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Value</Label>
-                            <Input
-                              type="number"
-                              value={selectedClause.pricingValue}
-                              onChange={(e) => setSelectedClause({...selectedClause, pricingValue: parseFloat(e.target.value) || 0})}
-                            />
-                          </div>
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-show">Show</Label>
+                        <Select 
+                          value={selectedClause.show} 
+                          onValueChange={(value) => setSelectedClause({...selectedClause, show: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Optional">Optional</SelectItem>
+                            <SelectItem value="Mandatory">Mandatory</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div className="flex justify-end gap-2">
@@ -6271,8 +6231,8 @@ const SingleProductConfig = () => {
                               clause_wording: selectedClause.purpose || selectedClause.wording,
                               clause_type: selectedClause.type?.toUpperCase(),
                               show_type: selectedClause.show?.toUpperCase(),
-                              pricing_type: selectedClause.pricingType === 'percentage' ? 'Percentage' : 'Fixed',
-                              pricing_value: String(selectedClause.pricingValue ?? ''),
+                              pricing_type: "loading",
+                              pricing_value: "0.00",
                             };
 
                             const updated = await updateCewsClause(insurerId, product.id as string, clauseProductId as string, payload);
@@ -6398,38 +6358,20 @@ const SingleProductConfig = () => {
                         rows={3}
                       />
                     </div>
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Pricing Configuration</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="new-pricing-type">Pricing Type *</Label>
-                          <Select 
-                            value={newClause.pricingType} 
-                            onValueChange={(value) => setNewClause({...newClause, pricingType: value})}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="percentage">Percentage (%)</SelectItem>
-                              <SelectItem value="fixed">Fixed Amount (AED)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="new-pricing-value">
-                            {newClause.pricingType === "percentage" ? "Percentage Value *" : "Fixed Amount (AED) *"}
-                          </Label>
-                          <Input
-                            id="new-pricing-value"
-                            type="number"
-                            step={newClause.pricingType === "percentage" ? "0.1" : "100"}
-                            placeholder={newClause.pricingType === "percentage" ? "e.g., 2.5" : "e.g., 1500"}
-                            value={newClause.pricingValue}
-                            onChange={(e) => setNewClause({...newClause, pricingValue: parseFloat(e.target.value) || 0})}
-                          />
-                        </div>
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-show">Show *</Label>
+                      <Select 
+                        value={newClause.show} 
+                        onValueChange={(value) => setNewClause({...newClause, show: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Optional">Optional</SelectItem>
+                          <SelectItem value="Mandatory">Mandatory</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="flex justify-end gap-2">
@@ -6438,7 +6380,7 @@ const SingleProductConfig = () => {
                       </Button>
                       <Button 
                         onClick={addNewClause}
-                        disabled={!newClause.code || !newClause.title || newClause.pricingValue === 0}
+                        disabled={!newClause.code || !newClause.title || !newClause.show}
                       >
                         Add Clause
                       </Button>
