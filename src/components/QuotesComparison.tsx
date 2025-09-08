@@ -1626,7 +1626,7 @@ Contact us for more details or to proceed with the application.
     <>
       <section>
         <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6">
           <div className="text-left">
             <h2 className="text-lg font-semibold text-foreground mb-1">
               CAR Insurance Plans
