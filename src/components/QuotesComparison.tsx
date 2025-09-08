@@ -771,10 +771,13 @@ const QuotesComparison = ({
       for (let i = 0; i < consultantsLoadings.length; i++) {
         const loading = consultantsLoadings[i];
         console.log(`🔍 Processing loading ${i}:`, loading);
+        console.log('🔍 Available fields in loading:', Object.keys(loading));
+        console.log('🔍 from_contractors value:', loading.from_contractors);
+        console.log('🔍 to_contractors value:', loading.to_contractors);
         
         // Try different possible field names for consultants range
-        const fromField = loading.from_consultants || loading.from_contractors || loading.from_count || loading.from || loading.min_count || loading.min;
-        const toField = loading.to_consultants || loading.to_contractors || loading.to_count || loading.to || loading.max_count || loading.max;
+        const fromField = loading.from_contractors || loading.from_consultants || loading.from_count || loading.from || loading.min_count || loading.min || 0;
+        const toField = loading.to_contractors || loading.to_consultants || loading.to_count || loading.to || loading.max_count || loading.max;
         
         console.log('🔍 Extracted fields - from:', fromField, 'to:', toField);
         console.log('🔍 Checking range:', fromField, 'to', toField, 'for count:', consultantsCount);
