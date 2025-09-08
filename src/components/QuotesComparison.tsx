@@ -226,13 +226,13 @@ const QuotesComparison = ({
     console.log('💰 Percentage fields:', percentageFields);
     console.log('💰 Fixed amount fields:', fixedAmountFields);
     
-    // Calculate factors rate (multiply percentage values)
-    let factorsRate = 0;
+    // Calculate factors rate (additive: (1 + rate1) × (1 + rate2) × ... × (1 + raten))
+    let factorsRate = 1;
     if (percentageFields.length > 0) {
       factorsRate = percentageFields.reduce((acc, field) => {
         const rate = field.pricing_value / 100; // Convert percentage to decimal
-        return acc === 0 ? rate : acc * rate;
-      }, 0);
+        return acc * (1 + rate);
+      }, 1);
     }
     
     // Calculate factors sum (add fixed amounts)
@@ -252,7 +252,8 @@ const QuotesComparison = ({
       details: {
         percentageFields,
         fixedAmountFields,
-        calculation: `(${sumInsured} × ${factorsRate}) + ${factorsSum} = ${basePremium}`
+        calculation: `(${sumInsured} × ${factorsRate}) + ${factorsSum} = ${basePremium}`,
+        factorsRateFormula: `(1 + rate1) × (1 + rate2) × ... × (1 + raten) = ${factorsRate}`
       }
     };
   };
