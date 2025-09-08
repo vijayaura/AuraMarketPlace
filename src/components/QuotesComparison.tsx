@@ -686,11 +686,26 @@ const QuotesComparison = ({
       
       console.log('🔍 Sub-contractors validation - Count:', subContractorsCount, 'Loadings:', subContractorsLoadings);
       
+      // If no loadings configured, just display the count
+      if (subContractorsLoadings.length === 0) {
+        addValidationResult(
+          'sub_contractors_count',
+          subContractorsCount,
+          'No configuration available',
+          'N/A',
+          'percentage',
+          0,
+          'auto_quote',
+          'Value Display'
+        );
+        return;
+      }
+      
       let matched = false;
       for (const loading of subContractorsLoadings) {
         // Try different possible field names for sub-contractors range
-        const fromField = loading.from_subcontractors || loading.from_sub_contractors || loading.from_count || loading.from;
-        const toField = loading.to_subcontractors || loading.to_sub_contractors || loading.to_count || loading.to;
+        const fromField = loading.from_subcontractors || loading.from_sub_contractors || loading.from_count || loading.from || loading.min_count || loading.min;
+        const toField = loading.to_subcontractors || loading.to_sub_contractors || loading.to_count || loading.to || loading.max_count || loading.max;
         
         console.log('🔍 Checking range:', fromField, 'to', toField, 'for count:', subContractorsCount);
         
@@ -734,11 +749,26 @@ const QuotesComparison = ({
       
       console.log('🔍 Consultants validation - Count:', consultantsCount, 'Loadings:', consultantsLoadings);
       
+      // If no loadings configured, just display the count
+      if (consultantsLoadings.length === 0) {
+        addValidationResult(
+          'consultants_count',
+          consultantsCount,
+          'No configuration available',
+          'N/A',
+          'percentage',
+          0,
+          'auto_quote',
+          'Value Display'
+        );
+        return;
+      }
+      
       let matched = false;
       for (const loading of consultantsLoadings) {
         // Try different possible field names for consultants range
-        const fromField = loading.from_consultants || loading.from_contractors || loading.from_count || loading.from;
-        const toField = loading.to_consultants || loading.to_contractors || loading.to_count || loading.to;
+        const fromField = loading.from_consultants || loading.from_contractors || loading.from_count || loading.from || loading.min_count || loading.min;
+        const toField = loading.to_consultants || loading.to_contractors || loading.to_count || loading.to || loading.max_count || loading.max;
         
         console.log('🔍 Checking range:', fromField, 'to', toField, 'for count:', consultantsCount);
         
