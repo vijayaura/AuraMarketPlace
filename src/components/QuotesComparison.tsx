@@ -594,7 +594,7 @@ const QuotesComparison = ({
           'percentage',
           0,
           'auto_quote',
-          'Value Display'
+          'Auto Quote'
         );
       });
     };
@@ -804,7 +804,7 @@ const QuotesComparison = ({
           'percentage',
           0,
           'auto_quote',
-          'Value Display'
+          'Auto Quote'
         );
         return;
       }
@@ -872,7 +872,7 @@ const QuotesComparison = ({
           'percentage',
           0,
           'auto_quote',
-          'Value Display'
+          'Auto Quote'
         );
         return;
       }
@@ -1756,6 +1756,7 @@ Contact us for more details or to proceed with the application.
                               {result.pricingDetails.calculation}
                             </div>
                           )}
+                        </div>
                       )}
                       
                       {/* Validation Details Table */}
@@ -1815,7 +1816,7 @@ Contact us for more details or to proceed with the application.
           </div>
         )}
 
-        <div className="space-y-4">
+          <div className="space-y-4">
           {allQuotes.map((quote) => {
             const isUpdated = updatedQuotes[quote.id]?.isUpdated;
             const currentPremium = getCurrentPremium(quote);
@@ -2328,8 +2329,8 @@ Contact us for more details or to proceed with the application.
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-    </section>
+        </div>
+      </section>
     </>
   );
 };
