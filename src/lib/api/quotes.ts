@@ -276,7 +276,7 @@ export const saveRequiredDocuments = async (data: RequiredDocumentsRequest, quot
   if (!quoteId) {
     throw new Error('Quote ID is required for required documents operations');
   }
-  const endpoint = `/quotes/cover/${quoteId}`;
+  const endpoint = `/quotes/documents/${quoteId}`;
   console.log('💾 saveRequiredDocuments (POST) called with:', { quoteId, endpoint, data });
   return apiPost<RequiredDocumentsResponse>(endpoint, data);
 };
@@ -286,7 +286,7 @@ export const updateRequiredDocuments = async (data: RequiredDocumentsRequest, qu
   if (!quoteId) {
     throw new Error('Quote ID is required for required documents operations');
   }
-  const endpoint = `/quotes/cover/${quoteId}`;
+  const endpoint = `/quotes/documents/${quoteId}`;
   console.log('🔄 updateRequiredDocuments (PATCH) called with:', { quoteId, endpoint, data });
   return apiPatch<RequiredDocumentsResponse>(endpoint, data);
 };
