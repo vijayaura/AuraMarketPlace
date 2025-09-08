@@ -441,7 +441,7 @@ const QuotesComparison = ({
               item.name || item.type,
               item.name || item.type,
               item.pricing_type || 'percentage',
-              item.pricing_value || 0,
+              item.value || 0,
               item.quote_option || 'auto_quote',
               decision
             );
