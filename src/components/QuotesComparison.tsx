@@ -747,10 +747,13 @@ const QuotesComparison = ({
       const consultantsCount = (proposal.contract_structure?.consultants || []).length;
       const consultantsLoadings = insurerConfig.contractor_risk_factors?.contractor_number_based || [];
       
-      console.log('🔍 Consultants validation - Count:', consultantsCount, 'Loadings:', consultantsLoadings);
+      console.log('🔍 Consultants validation - Count:', consultantsCount);
+      console.log('🔍 Consultants loadings array:', consultantsLoadings);
+      console.log('🔍 Full contractor_risk_factors:', insurerConfig.contractor_risk_factors);
       
       // If no loadings configured, just display the count
       if (consultantsLoadings.length === 0) {
+        console.log('❌ No consultants loadings found');
         addValidationResult(
           'consultants_count',
           consultantsCount,
@@ -765,17 +768,24 @@ const QuotesComparison = ({
       }
       
       let matched = false;
-      for (const loading of consultantsLoadings) {
+      for (let i = 0; i < consultantsLoadings.length; i++) {
+        const loading = consultantsLoadings[i];
+        console.log(`🔍 Processing loading ${i}:`, loading);
+        
         // Try different possible field names for consultants range
         const fromField = loading.from_consultants || loading.from_contractors || loading.from_count || loading.from || loading.min_count || loading.min;
         const toField = loading.to_consultants || loading.to_contractors || loading.to_count || loading.to || loading.max_count || loading.max;
         
+        console.log('🔍 Extracted fields - from:', fromField, 'to:', toField);
         console.log('🔍 Checking range:', fromField, 'to', toField, 'for count:', consultantsCount);
+        console.log('🔍 isWithinRange result:', isWithinRange(consultantsCount, fromField, toField));
         
         if (isWithinRange(consultantsCount, fromField, toField)) {
           matched = true;
           const decision = loading.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           loading.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
+          
+          console.log('✅ Match found! Decision:', decision);
           
           addValidationResult(
             'consultants_count',
@@ -792,6 +802,7 @@ const QuotesComparison = ({
       }
 
       if (!matched) {
+        console.log('❌ No matching range found for consultants count:', consultantsCount);
         addValidationResult(
           'consultants_count',
           consultantsCount,
