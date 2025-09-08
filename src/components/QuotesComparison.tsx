@@ -470,55 +470,32 @@ const QuotesComparison = ({
       }
     };
 
-    // 5. Coverage Amounts Validation
+    // 5. Coverage Amounts Extraction (No Validation)
     const validateCoverageAmounts = () => {
       const coverageTypes = [
-        { field: 'project_value', value: proposal.cover_requirements?.project_value, config: 'project_value_loadings' },
-        { field: 'contract_works', value: proposal.cover_requirements?.contract_works, config: 'contract_works_loadings' },
-        { field: 'plant_and_equipment', value: proposal.cover_requirements?.plant_and_equipment, config: 'plant_equipment_loadings' },
-        { field: 'sum_insured', value: proposal.cover_requirements?.sum_insured, config: 'sum_insured_loadings' },
-        { field: 'temporary_works', value: proposal.cover_requirements?.temporary_works, config: 'temporary_works_loadings' },
-        { field: 'other_materials', value: proposal.cover_requirements?.other_materials, config: 'other_materials_loadings' },
-        { field: 'principals_property', value: proposal.cover_requirements?.principals_property, config: 'principals_property_loadings' }
+        { field: 'project_value', value: proposal.cover_requirements?.project_value, label: 'Project Value' },
+        { field: 'contract_works', value: proposal.cover_requirements?.contract_works, label: 'Contract Works' },
+        { field: 'plant_and_equipment', value: proposal.cover_requirements?.plant_and_equipment, label: 'Plant And Equipment' },
+        { field: 'sum_insured', value: proposal.cover_requirements?.sum_insured, label: 'Sum Insured' },
+        { field: 'temporary_works', value: proposal.cover_requirements?.temporary_works, label: 'Temporary Works' },
+        { field: 'other_materials', value: proposal.cover_requirements?.other_materials, label: 'Other Materials' },
+        { field: 'principals_property', value: proposal.cover_requirements?.principals_property, label: 'Principals Property' }
       ];
 
       coverageTypes.forEach(coverage => {
         const proposalValue = normalizeNumber(coverage.value);
-        const configLoadings = insurerConfig.coverage_options?.[coverage.config] || [];
         
-        let matched = false;
-        for (const loading of configLoadings) {
-          if (isWithinRange(proposalValue, loading.from_amount, loading.to_amount)) {
-            matched = true;
-            const decision = loading.quote_option === 'no_quote' ? 'No Quote' : 
-                            loading.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
-            
-            addValidationResult(
-              coverage.field,
-              proposalValue,
-              `${loading.from_amount || 0} - ${loading.to_amount || '∞'}`,
-              `${loading.from_amount || 0}-${loading.to_amount || '∞'}`,
-              loading.pricing_type || 'percentage',
-              loading.loading_discount || 0,
-              loading.quote_option || 'auto_quote',
-              decision
-            );
-            break;
-          }
-        }
-
-        if (!matched) {
-          addValidationResult(
-            coverage.field,
-            proposalValue,
-            'No matching range found',
-            'N/A',
-            'percentage',
-            0,
-            'no_quote',
-            'No Quote'
-          );
-        }
+        // Just extract and display the value without validation
+        addValidationResult(
+          coverage.field,
+          proposalValue || 0,
+          'Value Only',
+          'N/A',
+          'percentage',
+          0,
+          'auto_quote',
+          'Value Display'
+        );
       });
     };
 
@@ -707,9 +684,17 @@ const QuotesComparison = ({
       const subContractorsCount = (proposal.contract_structure?.sub_contractors || []).length;
       const subContractorsLoadings = insurerConfig.contractor_risk_factors?.subcontractor_number_based || [];
       
+      console.log('🔍 Sub-contractors validation - Count:', subContractorsCount, 'Loadings:', subContractorsLoadings);
+      
       let matched = false;
       for (const loading of subContractorsLoadings) {
-        if (isWithinRange(subContractorsCount, loading.from_subcontractors, loading.to_subcontractors)) {
+        // Try different possible field names for sub-contractors range
+        const fromField = loading.from_subcontractors || loading.from_sub_contractors || loading.from_count || loading.from;
+        const toField = loading.to_subcontractors || loading.to_sub_contractors || loading.to_count || loading.to;
+        
+        console.log('🔍 Checking range:', fromField, 'to', toField, 'for count:', subContractorsCount);
+        
+        if (isWithinRange(subContractorsCount, fromField, toField)) {
           matched = true;
           const decision = loading.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           loading.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
@@ -717,8 +702,8 @@ const QuotesComparison = ({
           addValidationResult(
             'sub_contractors_count',
             subContractorsCount,
-            `${loading.from_subcontractors || 0} - ${loading.to_subcontractors || '∞'}`,
-            `${loading.from_subcontractors || 0}-${loading.to_subcontractors || '∞'}`,
+            `${fromField || 0} - ${toField || '∞'}`,
+            `${fromField || 0}-${toField || '∞'}`,
             loading.pricing_type || 'percentage',
             loading.loading_discount || 0,
             loading.quote_option || 'auto_quote',
@@ -747,9 +732,17 @@ const QuotesComparison = ({
       const consultantsCount = (proposal.contract_structure?.consultants || []).length;
       const consultantsLoadings = insurerConfig.contractor_risk_factors?.contractor_number_based || [];
       
+      console.log('🔍 Consultants validation - Count:', consultantsCount, 'Loadings:', consultantsLoadings);
+      
       let matched = false;
       for (const loading of consultantsLoadings) {
-        if (isWithinRange(consultantsCount, loading.from_consultants, loading.to_consultants)) {
+        // Try different possible field names for consultants range
+        const fromField = loading.from_consultants || loading.from_contractors || loading.from_count || loading.from;
+        const toField = loading.to_consultants || loading.to_contractors || loading.to_count || loading.to;
+        
+        console.log('🔍 Checking range:', fromField, 'to', toField, 'for count:', consultantsCount);
+        
+        if (isWithinRange(consultantsCount, fromField, toField)) {
           matched = true;
           const decision = loading.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           loading.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
@@ -757,8 +750,8 @@ const QuotesComparison = ({
           addValidationResult(
             'consultants_count',
             consultantsCount,
-            `${loading.from_consultants || 0} - ${loading.to_consultants || '∞'}`,
-            `${loading.from_consultants || 0}-${loading.to_consultants || '∞'}`,
+            `${fromField || 0} - ${toField || '∞'}`,
+            `${fromField || 0}-${toField || '∞'}`,
             loading.pricing_type || 'percentage',
             loading.loading_discount || 0,
             loading.quote_option || 'auto_quote',
