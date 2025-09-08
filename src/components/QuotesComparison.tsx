@@ -705,7 +705,7 @@ const QuotesComparison = ({
     // 8. Sub-Contractors Count Validation
     const validateSubContractorsCount = () => {
       const subContractorsCount = (proposal.contract_structure?.sub_contractors || []).length;
-      const subContractorsLoadings = insurerConfig.contractor_risk_factors?.sub_contractors_count_loadings || [];
+      const subContractorsLoadings = insurerConfig.contractor_risk_factors?.subcontractor_number_based || [];
       
       let matched = false;
       for (const loading of subContractorsLoadings) {
@@ -745,7 +745,7 @@ const QuotesComparison = ({
     // 9. Consultants Count Validation
     const validateConsultantsCount = () => {
       const consultantsCount = (proposal.contract_structure?.consultants || []).length;
-      const consultantsLoadings = insurerConfig.contractor_risk_factors?.consultants_count_loadings || [];
+      const consultantsLoadings = insurerConfig.contractor_risk_factors?.contractor_number_based || [];
       
       let matched = false;
       for (const loading of consultantsLoadings) {
