@@ -2001,10 +2001,28 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       return false;
     }
 
+    // Check if already saving to prevent duplicate calls
+    if (isSavingCoverRequirements) {
+      console.log('⚠️ Cover requirements save already in progress, skipping duplicate call');
+      return false;
+    }
+
+    console.log('🚀 Starting cover requirements save process...');
+    console.log('📍 Current step when saving cover requirements:', currentStep);
+    console.log('📍 Step completion status:', stepCompletionStatus);
     setIsSavingCoverRequirements(true);
     try {
       const apiData = transformCoverRequirementsToAPI();
       console.log('💾 Saving cover requirements:', apiData);
+      console.log('📊 Form data being transformed:', {
+        projectValue: formData.projectValue,
+        sumInsuredMaterial: formData.sumInsuredMaterial,
+        sumInsuredPlant: formData.sumInsuredPlant,
+        sumInsuredTemporary: formData.sumInsuredTemporary,
+        otherMaterials: formData.otherMaterials,
+        principalExistingProperty: formData.principalExistingProperty,
+        crossLiabilityCover: formData.crossLiabilityCover
+      });
       
       // Check if cover_requirements step is already completed to decide between POST and PATCH
       const isCoverRequirementsCompleted = isStepCompleted('cover_requirements');
@@ -2280,17 +2298,14 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         return;
                       }
                       
-                      // Save data based on current step (Cover Requirements for step 4)
-                      if (currentStep === 4) {
-                        // Cover Requirements step
-                        const success = await saveCoverRequirementsData();
-                        if (success) {
-                          // Navigate to step 5 (Documents) instead of external page
-                          setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
-                        }
-                      } else {
+                      // Save data based on current step - removed duplicate Cover Requirements handling
+                      // Step 4 (Cover Requirements) is handled by the main button handler below
+                      if (currentStep !== 4) {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
+                      } else {
+                        console.log('🔵 BUTTON 1: Cover Requirements step - delegating to main handler');
+                        // Do nothing here, let the main handler (BUTTON 2) handle step 4
                       }
                     }}
                     disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody}
@@ -2383,6 +2398,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         }
                       } else if (currentStep === 4) {
                         // Cover Requirements step
+                        console.log('🟠 BUTTON 2: Cover Requirements save triggered (main handler)');
                         const success = await saveCoverRequirementsData();
                         if (success) {
                           setCurrentStep(Math.min(steps.length - 1, currentStep + 1));

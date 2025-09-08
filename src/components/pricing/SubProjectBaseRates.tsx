@@ -50,13 +50,13 @@ const getProjectTypeIcon = (value: string) => {
 const getQuoteOptionColor = (option: string) => {
   switch (option) {
     case 'quote':
-      return 'bg-success/10 text-success border-success/20';
+      return 'bg-green-500';
     case 'no-quote':
-      return 'bg-destructive/10 text-destructive border-destructive/20';
-    case 'quote-and-refer':
-      return 'bg-warning/10 text-warning border-warning/20';
+      return 'bg-red-500';
+    case 'manual-review':
+      return 'bg-yellow-500';
     default:
-      return 'bg-muted text-muted-foreground';
+      return 'bg-gray-400';
   }
 };
 
@@ -109,10 +109,11 @@ export const SubProjectBaseRates = ({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/10">
-                <TableHead className="font-medium text-muted-foreground w-[22%] px-3">Project Type</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[28%] px-3">Sub Project Type</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[18%] px-2">Pricing Type</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[16%] px-2">Minimum Premium</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[20%] px-3">Project Type</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[25%] px-3">Sub Project Type</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[15%] px-2">Pricing Type</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[14%] px-2">Base Rate</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[16%] px-2">Quote Option</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -156,6 +157,36 @@ export const SubProjectBaseRates = ({
                       className="w-full font-mono"
                       placeholder="0.00"
                     />
+                  </TableCell>
+                  <TableCell className="py-4 px-2">
+                    <Select
+                      value={entry.quoteOption}
+                      onValueChange={(value) => onSubProjectEntryChange(entry.originalIndex, 'quoteOption', value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-popover border border-border shadow-md">
+                        <SelectItem value="quote">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${getQuoteOptionColor('quote')}`}></div>
+                            Auto Quote
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="no-quote">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${getQuoteOptionColor('no-quote')}`}></div>
+                            No Quote
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="manual-review">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${getQuoteOptionColor('manual-review')}`}></div>
+                            Manual Review
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                 </TableRow>
               ))}

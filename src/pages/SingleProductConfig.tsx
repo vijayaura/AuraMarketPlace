@@ -25,7 +25,7 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, listMasterConstructionTypes, listMasterRoleTypes, listMasterContractTypes, listMasterSoilTypes, listMasterSubcontractorTypes, listMasterConsultantRoles, listMasterSecurityTypes, listMasterAreaTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, updateRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getMinimumPremiums, saveMinimumPremiums, updateMinimumPremiums, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getAreaTypesConfiguration, createAreaTypesConfiguration, updateAreaTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type GetAreaTypesResponse, type SaveAreaTypesRequest, type SaveAreaTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, updateRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getMinimumPremiums, saveMinimumPremiums, updateMinimumPremiums, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getAreaTypesConfiguration, createAreaTypesConfiguration, updateAreaTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type GetClausePricingDataResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type GetAreaTypesResponse, type SaveAreaTypesRequest, type SaveAreaTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
@@ -2219,6 +2219,12 @@ const SingleProductConfig = () => {
     try {
       const data = await getCewsClauses(insurerId, String(productId));
       setClauseMetadata(data.clauses || []);
+      
+      // If we already have pricing data, merge it with the metadata
+      if (clausePricingData && clausePricingData.clause_pricing && clausePricingData.clause_pricing.length > 0) {
+        setTimeout(() => updateClausePricingFromAPIData(clausePricingData.clause_pricing), 100);
+      }
+      
       console.log('✅ Clause metadata loaded:', data);
     } catch (err: any) {
       console.error('Clause metadata fetch error:', err);
@@ -2263,7 +2269,14 @@ const SingleProductConfig = () => {
     
     try {
       const data = await getClausePricing(insurerId, String(productId));
-      setClausePricingData(data);
+      // Store the raw API response data for POST/PATCH decision making
+      setClausePricingData({ clause_pricing: data.data as any || [] });
+      
+      // Update ratingConfig.clausesPricing with the pricing data if we have both metadata and pricing
+      if (clauseMetadata.length > 0 && data.data && data.data.length > 0) {
+        updateClausePricingFromAPIData(data.data);
+      }
+      
       console.log('✅ Clause pricing data loaded:', data);
     } catch (err: any) {
       console.error('Clause pricing fetch error:', err);
@@ -2284,6 +2297,62 @@ const SingleProductConfig = () => {
     } finally {
       setIsLoadingClausePricing(false);
     }
+  };
+
+  // Function to update clause pricing from API response data
+  const updateClausePricingFromAPIData = (pricingData: any[]) => {
+    console.log('🔄 Updating clause pricing from API data:', pricingData);
+    
+    setRatingConfig(prev => ({
+      ...prev,
+      clausesPricing: clauseMetadata.map((clause, index) => {
+        // Find matching pricing data for this clause
+        const pricingItem = pricingData.find(p => p.clause_code === clause.clause_code);
+        
+        if (pricingItem) {
+          return {
+            id: index + 1,
+            code: clause.clause_code,
+            name: clause.title,
+            enabled: Boolean(pricingItem.is_enabled),
+            isMandatory: Boolean(pricingItem.is_mandatory),
+            pricingType: (pricingItem.base_type === 'PERCENTAGE' ? 'percentage' : 'amount') as "percentage" | "amount",
+            pricingValue: parseFloat(pricingItem.base_value || '0'),
+            variableOptions: pricingItem.options.map((option: any, optIndex: number) => ({
+              id: optIndex + 1,
+              label: option.label,
+              limits: option.limit,
+              type: (option.type === 'PERCENTAGE' ? 'percentage' : 'amount') as "percentage" | "amount",
+              value: option.value
+            }))
+          };
+        } else {
+          // Use default values if no pricing data found
+          return {
+            id: index + 1,
+            code: clause.clause_code,
+            name: clause.title,
+            enabled: clause.show_type === "MANDATORY",
+            isMandatory: clause.show_type === "MANDATORY",
+            pricingType: (clause.clause_type === "CLAUSE" ? "percentage" : "amount") as "percentage" | "amount",
+            pricingValue: clause.clause_type === "CLAUSE" ? 2.5 : 500,
+            variableOptions: [
+              {
+                id: 1,
+                label: clause.show_type === "MANDATORY" ? "Standard Rate" : "Base Option",
+                limits: clause.show_type === "MANDATORY" ? "All Coverage" : "Standard Coverage",
+                type: (clause.clause_type === "CLAUSE" ? "percentage" : "amount") as "percentage" | "amount",
+                value: clause.show_type === "MANDATORY" 
+                  ? (clause.clause_type === "CLAUSE" ? 2.5 : 500)
+                  : (clause.clause_type === "CLAUSE" ? 1.5 : 300)
+              }
+            ]
+          };
+        }
+      })
+    }));
+    
+    console.log('✅ Clause pricing updated in ratingConfig');
   };
 
   // Master Data fetch handlers
@@ -2715,7 +2784,7 @@ const SingleProductConfig = () => {
 
       let response;
       
-      // Check if we have existing data (GET was successful)
+      // Check if we have existing pricing data (GET pricing API was successful and returned data)
       if (clausePricingData && clausePricingData.clause_pricing && clausePricingData.clause_pricing.length > 0) {
         console.log('📝 Updating existing clause pricing data...');
         const updatePayload: UpdateClausePricingRequest = {
@@ -2724,7 +2793,7 @@ const SingleProductConfig = () => {
         };
         
         const patchResponse = await updateClausePricing(insurerId, String(productId), updatePayload);
-        response = (patchResponse as any).data || patchResponse;
+        response = patchResponse.data?.clause_pricing || patchResponse;
         
         toast({
           title: 'Success',

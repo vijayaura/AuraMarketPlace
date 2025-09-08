@@ -237,7 +237,9 @@ export const saveCoverRequirements = async (data: CoverRequirementsRequest, quot
     throw new Error('Quote ID is required for cover requirements operations');
   }
   const endpoint = `/quotes/cover/${quoteId}`;
-  console.log('💾 saveCoverRequirements (POST) called with:', { quoteId, endpoint, data });
+  const timestamp = new Date().toISOString();
+  console.log(`🚨 [${timestamp}] saveCoverRequirements (POST) called with:`, { quoteId, endpoint, data });
+  console.trace('📍 Call stack for saveCoverRequirements POST');
   return apiPost<CoverRequirementsResponse>(endpoint, data);
 };
 
@@ -247,7 +249,9 @@ export const updateCoverRequirements = async (data: CoverRequirementsRequest, qu
     throw new Error('Quote ID is required for cover requirements operations');
   }
   const endpoint = `/quotes/cover/${quoteId}`;
-  console.log('🔄 updateCoverRequirements (PATCH) called with:', { quoteId, endpoint, data });
+  const timestamp = new Date().toISOString();
+  console.log(`🚨 [${timestamp}] updateCoverRequirements (PATCH) called with:`, { quoteId, endpoint, data });
+  console.trace('📍 Call stack for updateCoverRequirements PATCH');
   return apiPatch<CoverRequirementsResponse>(endpoint, data);
 };
 

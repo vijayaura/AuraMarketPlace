@@ -1723,7 +1723,32 @@ export async function updateCewsClause(
   );
 }
 
-// Clause Pricing Configuration - Updated structure
+// Clause Pricing Configuration - Updated to match API response
+export interface ClausePricingOptionResponse {
+  type: 'PERCENTAGE' | 'CURRENCY';
+  label: string;
+  limit: string;
+  value: number;
+  currency: string;
+  display_order: number;
+}
+
+export interface ClausePricingItemResponse {
+  id: number;
+  product_id: number;
+  clause_code: string;
+  is_enabled: number; // 0 or 1
+  is_mandatory: number; // 0 or 1
+  base_type: 'PERCENTAGE' | 'CURRENCY';
+  base_value: string;
+  base_currency: string;
+  options: ClausePricingOptionResponse[];
+  created_at: string;
+  updated_at: string;
+  insurer_id: number;
+}
+
+// Request interfaces for saving
 export interface ClausePricingOption {
   label: string;
   limit: string;
@@ -1755,14 +1780,24 @@ export interface GetClausePricingResponse {
   clause_pricing: ClausePricingItem[];
 }
 
+// Get clause pricing (separate from metadata)
+export interface GetClausePricingDataResponse {
+  data: ClausePricingItemResponse[];
+}
+
 export async function getClausePricing(
   insurerId: number | string,
   productId: number | string
-): Promise<GetClausePricingResponse> {
+): Promise<GetClausePricingDataResponse> {
   const ts = Date.now();
-  return apiGet<GetClausePricingResponse>(
-    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/clauses?t=${ts}`
+  return apiGet<GetClausePricingDataResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/pricing_clauses?t=${ts}`
   );
+}
+
+// Keep the old interface for backward compatibility
+export interface GetClausePricingResponse {
+  clause_pricing: ClausePricingItem[];
 }
 
 export interface SaveClausePricingResponse {
@@ -1776,7 +1811,7 @@ export async function saveClausePricing(
   body: SaveClausePricingRequest
 ): Promise<SaveClausePricingResponse> {
   return apiPost<SaveClausePricingResponse>(
-    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/clauses`,
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/pricing_clauses`,
     body
   );
 }
@@ -1799,7 +1834,7 @@ export async function updateClausePricing(
   body: UpdateClausePricingRequest
 ): Promise<UpdateClausePricingResponse> {
   return apiPatch<UpdateClausePricingResponse>(
-    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/clauses`,
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/pricing_clauses`,
     body
   );
 }
