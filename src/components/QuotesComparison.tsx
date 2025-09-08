@@ -149,6 +149,609 @@ const QuotesComparison = ({
       .trim();                         // Remove any remaining whitespace
   };
 
+  // Normalization helper functions
+  const normalizeString = (str: string | null | undefined): string => {
+    if (!str) return '';
+    return str.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+  };
+
+  const normalizeNumber = (value: any): number => {
+    if (value === null || value === undefined || value === '') return 0;
+    const num = parseFloat(String(value));
+    return isNaN(num) ? 0 : num;
+  };
+
+  const normalizeBoolean = (value: any): boolean => {
+    if (value === 0 || value === '0' || value === false || value === 'false') return false;
+    if (value === 1 || value === '1' || value === true || value === 'true') return true;
+    return Boolean(value);
+  };
+
+  const normalizePricingType = (pricingType: string | null | undefined): string => {
+    if (!pricingType) return 'Percentage';
+    const normalized = normalizeString(pricingType);
+    if (['percentage', 'percentage%', 'loading', 'discount'].includes(normalized)) {
+      return 'Percentage';
+    }
+    if (['fixedamount', 'fixed_amount'].includes(normalized)) {
+      return 'Fixed_Amount';
+    }
+    return 'Percentage'; // Default fallback
+  };
+
+  const isWithinRange = (value: number, from: number | null, to: number | null): boolean => {
+    const fromValue = from === null ? -Infinity : from;
+    const toValue = to === null ? Infinity : to;
+    return value >= fromValue && value <= toValue;
+  };
+
+  const calculateMonthsDifference = (startDate: string, endDate: string): number => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.ceil(diffDays / 30); // Approximate months
+  };
+
+  // Comprehensive proposal validation against insurer config
+  const validateProposalAgainstConfig = (proposal: any, insurerConfig: any, insurerId: number) => {
+    console.log('🔍 Starting proposal validation for insurer:', insurerId);
+    
+    const validationResults: Array<{
+      field_name: string;
+      proposal_value: any;
+      config_range: string;
+      config_matched_label: string;
+      pricing_type: string;
+      pricing_value: number;
+      quote_option: string;
+      decision: 'Auto Quote' | 'No Quote' | 'Manual Review';
+    }> = [];
+
+    let overallDecision: 'Auto Quote' | 'No Quote' | 'Manual Review' = 'Auto Quote';
+
+    // Helper function to add validation result
+    const addValidationResult = (
+      fieldName: string,
+      proposalValue: any,
+      configRange: string,
+      matchedLabel: string,
+      pricingType: string,
+      pricingValue: number,
+      quoteOption: string,
+      decision: 'Auto Quote' | 'No Quote' | 'Manual Review'
+    ) => {
+      validationResults.push({
+        field_name: fieldName,
+        proposal_value: proposalValue,
+        config_range: configRange,
+        config_matched_label: matchedLabel,
+        pricing_type: normalizePricingType(pricingType),
+        pricing_value: normalizeNumber(pricingValue),
+        quote_option: quoteOption,
+        decision
+      });
+
+      // Update overall decision (No Quote > Manual Review > Auto Quote)
+      if (decision === 'No Quote') {
+        overallDecision = 'No Quote';
+      } else if (decision === 'Manual Review' && overallDecision !== 'No Quote') {
+        overallDecision = 'Manual Review';
+      }
+    };
+
+    // 1. Project Type & Sub-Project Validation
+    const validateProjectType = () => {
+      const proposalProjectType = normalizeString(proposal.project?.project_type);
+      const proposalSubProjectType = normalizeString(proposal.project?.sub_project_type);
+      
+      console.log('🏗️ Validating project type:', proposalProjectType, 'sub-project:', proposalSubProjectType);
+
+      const baseRates = insurerConfig.base_rates || [];
+      let matched = false;
+
+      for (const baseRate of baseRates) {
+        const configProjectType = normalizeString(baseRate.project_type);
+        if (configProjectType === proposalProjectType) {
+          const subProjects = baseRate.sub_projects || [];
+          for (const subProject of subProjects) {
+            const configSubProject = normalizeString(subProject.name);
+            if (configSubProject === proposalSubProjectType) {
+              matched = true;
+              const decision = subProject.quote_option === 'no_quote' ? 'No Quote' : 
+                              subProject.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
+              
+              addValidationResult(
+                'project_type_sub_project',
+                `${proposal.project?.project_type} - ${proposal.project?.sub_project_type}`,
+                `${baseRate.project_type} - ${subProject.name}`,
+                subProject.name,
+                subProject.pricing_type || 'percentage',
+                subProject.pricing_value || 0,
+                subProject.quote_option || 'auto_quote',
+                decision
+              );
+              break;
+            }
+          }
+          if (matched) break;
+        }
+      }
+
+      if (!matched) {
+        addValidationResult(
+          'project_type_sub_project',
+          `${proposal.project?.project_type} - ${proposal.project?.sub_project_type}`,
+          'No matching configuration found',
+          'N/A',
+          'percentage',
+          0,
+          'no_quote',
+          'No Quote'
+        );
+      }
+    };
+
+    // 2. Construction/Area/Soil/Contract/Role Validation
+    const validateConfigItems = () => {
+      const configMappings = [
+        { field: 'construction_type', config: 'construction_types_config', proposal: proposal.project?.construction_type },
+        { field: 'area_type', config: 'area_types_config', proposal: proposal.project?.area_type },
+        { field: 'soil_type', config: 'soil_types_config', proposal: proposal.project?.soil_type },
+        { field: 'contract_type', config: 'contract_types_config', proposal: proposal.project?.contract_type },
+        { field: 'role_of_insured', config: 'role_types_config', proposal: proposal.project?.role_of_insured }
+      ];
+
+      configMappings.forEach(mapping => {
+        const proposalValue = normalizeString(mapping.proposal);
+        const configItems = insurerConfig[mapping.config]?.items || [];
+        let matched = false;
+
+        for (const item of configItems) {
+          const configValue = normalizeString(item.name || item.type);
+          if (configValue === proposalValue) {
+            matched = true;
+            const decision = item.quote_option === 'no_quote' ? 'No Quote' : 
+                            item.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
+            
+            addValidationResult(
+              mapping.field,
+              mapping.proposal,
+              item.name || item.type,
+              item.name || item.type,
+              item.pricing_type || 'percentage',
+              item.pricing_value || 0,
+              item.quote_option || 'auto_quote',
+              decision
+            );
+            break;
+          }
+        }
+
+        if (!matched) {
+          addValidationResult(
+            mapping.field,
+            mapping.proposal,
+            'No matching configuration found',
+            'N/A',
+            'percentage',
+            0,
+            'no_quote',
+            'No Quote'
+          );
+        }
+      });
+    };
+
+    // 3. Project Duration Validation
+    const validateProjectDuration = () => {
+      if (proposal.project?.start_date && proposal.project?.end_date) {
+        const durationMonths = calculateMonthsDifference(proposal.project.start_date, proposal.project.end_date);
+        const durationLoadings = insurerConfig.project_risk_factors?.project_duration_loadings || [];
+        
+        let matched = false;
+        for (const loading of durationLoadings) {
+          if (isWithinRange(durationMonths, loading.from_months, loading.to_months)) {
+            matched = true;
+            const decision = loading.quote_option === 'no_quote' ? 'No Quote' : 
+                            loading.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
+            
+            addValidationResult(
+              'project_duration',
+              `${durationMonths} months`,
+              `${loading.from_months || 0} - ${loading.to_months || '∞'} months`,
+              `${loading.from_months || 0}-${loading.to_months || '∞'} months`,
+              loading.pricing_type || 'percentage',
+              loading.loading_discount || 0,
+              loading.quote_option || 'auto_quote',
+              decision
+            );
+            break;
+          }
+        }
+
+        if (!matched) {
+          addValidationResult(
+            'project_duration',
+            `${durationMonths} months`,
+            'No matching range found',
+            'N/A',
+            'percentage',
+            0,
+            'no_quote',
+            'No Quote'
+          );
+        }
+      }
+    };
+
+    // 4. Maintenance Period Validation
+    const validateMaintenancePeriod = () => {
+      const maintenanceMonths = normalizeNumber(proposal.project?.maintenance_period_months);
+      const maintenanceLoadings = insurerConfig.project_risk_factors?.maintenance_period_loadings || [];
+      
+      let matched = false;
+      for (const loading of maintenanceLoadings) {
+        if (isWithinRange(maintenanceMonths, loading.from_months, loading.to_months)) {
+          matched = true;
+          const decision = loading.quote_option === 'no_quote' ? 'No Quote' : 
+                          loading.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
+          
+          addValidationResult(
+            'maintenance_period',
+            `${maintenanceMonths} months`,
+            `${loading.from_months || 0} - ${loading.to_months || '∞'} months`,
+            `${loading.from_months || 0}-${loading.to_months || '∞'} months`,
+            loading.pricing_type || 'percentage',
+            loading.loading_discount || 0,
+            loading.quote_option || 'auto_quote',
+            decision
+          );
+          break;
+        }
+      }
+
+      if (!matched) {
+        addValidationResult(
+          'maintenance_period',
+          `${maintenanceMonths} months`,
+          'No matching range found',
+          'N/A',
+          'percentage',
+          0,
+          'no_quote',
+          'No Quote'
+        );
+      }
+    };
+
+    // 5. Coverage Amounts Validation
+    const validateCoverageAmounts = () => {
+      const coverageTypes = [
+        { field: 'project_value', value: proposal.project?.project_value, config: 'project_value_loadings' },
+        { field: 'contract_works', value: proposal.coverage?.contract_works, config: 'contract_works_loadings' },
+        { field: 'plant_and_equipment', value: proposal.coverage?.plant_and_equipment, config: 'plant_equipment_loadings' },
+        { field: 'sum_insured', value: proposal.coverage?.sum_insured, config: 'sum_insured_loadings' }
+      ];
+
+      coverageTypes.forEach(coverage => {
+        const proposalValue = normalizeNumber(coverage.value);
+        const configLoadings = insurerConfig.coverage_options?.[coverage.config] || [];
+        
+        let matched = false;
+        for (const loading of configLoadings) {
+          if (isWithinRange(proposalValue, loading.from_amount, loading.to_amount)) {
+            matched = true;
+            const decision = loading.quote_option === 'no_quote' ? 'No Quote' : 
+                            loading.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
+            
+            addValidationResult(
+              coverage.field,
+              proposalValue,
+              `${loading.from_amount || 0} - ${loading.to_amount || '∞'}`,
+              `${loading.from_amount || 0}-${loading.to_amount || '∞'}`,
+              loading.pricing_type || 'percentage',
+              loading.loading_discount || 0,
+              loading.quote_option || 'auto_quote',
+              decision
+            );
+            break;
+          }
+        }
+
+        if (!matched) {
+          addValidationResult(
+            coverage.field,
+            proposalValue,
+            'No matching range found',
+            'N/A',
+            'percentage',
+            0,
+            'no_quote',
+            'No Quote'
+          );
+        }
+      });
+    };
+
+    // 6. Contractor Experience Validation
+    const validateContractorExperience = () => {
+      const experienceYears = normalizeNumber(proposal.contractor?.experience_years);
+      const experienceLoadings = insurerConfig.contractor_risk_factors?.experience_loadings || [];
+      
+      let matched = false;
+      for (const loading of experienceLoadings) {
+        if (isWithinRange(experienceYears, loading.from_years, loading.to_years)) {
+          matched = true;
+          const decision = loading.quote_option === 'no_quote' ? 'No Quote' : 
+                          loading.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
+          
+          addValidationResult(
+            'contractor_experience',
+            `${experienceYears} years`,
+            `${loading.from_years || 0} - ${loading.to_years || '∞'} years`,
+            `${loading.from_years || 0}-${loading.to_years || '∞'} years`,
+            loading.pricing_type || 'percentage',
+            loading.loading_discount || 0,
+            loading.quote_option || 'auto_quote',
+            decision
+          );
+          break;
+        }
+      }
+
+      if (!matched) {
+        addValidationResult(
+          'contractor_experience',
+          `${experienceYears} years`,
+          'No matching range found',
+          'N/A',
+          'percentage',
+          0,
+          'no_quote',
+          'No Quote'
+        );
+      }
+    };
+
+    // 7. Claims History Validation
+    const validateClaimsHistory = () => {
+      const claims = proposal.contractor?.claims || [];
+      const totalClaimsValue = claims.reduce((sum: number, claim: any) => sum + normalizeNumber(claim.amount), 0);
+      const claimsLoadings = insurerConfig.contractor_risk_factors?.claims_based_loadings || [];
+      
+      let matched = false;
+      for (const loading of claimsLoadings) {
+        if (isWithinRange(totalClaimsValue, loading.from_claims, loading.to_claims)) {
+          matched = true;
+          const decision = loading.quote_option === 'no_quote' ? 'No Quote' : 
+                          loading.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
+          
+          addValidationResult(
+            'claims_history',
+            totalClaimsValue,
+            `${loading.from_claims || 0} - ${loading.to_claims || '∞'}`,
+            `${loading.from_claims || 0}-${loading.to_claims || '∞'}`,
+            loading.pricing_type || 'percentage',
+            loading.loading_discount || 0,
+            loading.quote_option || 'auto_quote',
+            decision
+          );
+          break;
+        }
+      }
+
+      if (!matched) {
+        addValidationResult(
+          'claims_history',
+          totalClaimsValue,
+          'No matching range found',
+          'N/A',
+          'percentage',
+          0,
+          'no_quote',
+          'No Quote'
+        );
+      }
+    };
+
+    // 8. Sub-Contractors Count Validation
+    const validateSubContractorsCount = () => {
+      const subContractorsCount = (proposal.contract_structure?.sub_contractors || []).length;
+      const subContractorsLoadings = insurerConfig.contractor_risk_factors?.sub_contractors_count_loadings || [];
+      
+      let matched = false;
+      for (const loading of subContractorsLoadings) {
+        if (isWithinRange(subContractorsCount, loading.from_subcontractors, loading.to_subcontractors)) {
+          matched = true;
+          const decision = loading.quote_option === 'no_quote' ? 'No Quote' : 
+                          loading.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
+          
+          addValidationResult(
+            'sub_contractors_count',
+            subContractorsCount,
+            `${loading.from_subcontractors || 0} - ${loading.to_subcontractors || '∞'}`,
+            `${loading.from_subcontractors || 0}-${loading.to_subcontractors || '∞'}`,
+            loading.pricing_type || 'percentage',
+            loading.loading_discount || 0,
+            loading.quote_option || 'auto_quote',
+            decision
+          );
+          break;
+        }
+      }
+
+      if (!matched) {
+        addValidationResult(
+          'sub_contractors_count',
+          subContractorsCount,
+          'No matching range found',
+          'N/A',
+          'percentage',
+          0,
+          'no_quote',
+          'No Quote'
+        );
+      }
+    };
+
+    // 9. Consultants Count Validation
+    const validateConsultantsCount = () => {
+      const consultantsCount = (proposal.contract_structure?.consultants || []).length;
+      const consultantsLoadings = insurerConfig.contractor_risk_factors?.consultants_count_loadings || [];
+      
+      let matched = false;
+      for (const loading of consultantsLoadings) {
+        if (isWithinRange(consultantsCount, loading.from_consultants, loading.to_consultants)) {
+          matched = true;
+          const decision = loading.quote_option === 'no_quote' ? 'No Quote' : 
+                          loading.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
+          
+          addValidationResult(
+            'consultants_count',
+            consultantsCount,
+            `${loading.from_consultants || 0} - ${loading.to_consultants || '∞'}`,
+            `${loading.from_consultants || 0}-${loading.to_consultants || '∞'}`,
+            loading.pricing_type || 'percentage',
+            loading.loading_discount || 0,
+            loading.quote_option || 'auto_quote',
+            decision
+          );
+          break;
+        }
+      }
+
+      if (!matched) {
+        addValidationResult(
+          'consultants_count',
+          consultantsCount,
+          'No matching range found',
+          'N/A',
+          'percentage',
+          0,
+          'no_quote',
+          'No Quote'
+        );
+      }
+    };
+
+    // 10. Location Hazard Validation
+    const validateLocationHazard = () => {
+      const riskFactors = [
+        'near_water_body',
+        'flood_prone_zone', 
+        'within_city_center',
+        'soil_type',
+        'existing_structure',
+        'blasting_or_deep_excavation',
+        'site_security_arrangements',
+        'area_type'
+      ];
+
+      const riskDefinitions = insurerConfig.project_risk_factors?.risk_definitions || [];
+      let derivedRisk = 'low_risk';
+
+      // Determine risk level based on proposal values
+      const proposalRiskValues = riskFactors.map(factor => normalizeBoolean(proposal.project?.[factor]));
+      
+      for (const riskDef of riskDefinitions) {
+        if (riskDef.risk_level === 'very_high_risk') {
+          const factors = riskDef.factors || [];
+          const hasVeryHighRisk = factors.some((factor: any) => {
+            const factorName = normalizeString(factor.name);
+            const factorIndex = riskFactors.findIndex(rf => normalizeString(rf) === factorName);
+            return factorIndex >= 0 && proposalRiskValues[factorIndex] === normalizeBoolean(factor.value);
+          });
+          if (hasVeryHighRisk) {
+            derivedRisk = 'very_high_risk';
+            break;
+          }
+        }
+      }
+
+      // Check other risk levels if not very high
+      if (derivedRisk === 'low_risk') {
+        const riskOrder = ['high_risk', 'moderate_risk', 'low_risk'];
+        for (const riskLevel of riskOrder) {
+          const riskDef = riskDefinitions.find((rd: any) => rd.risk_level === riskLevel);
+          if (riskDef) {
+            const factors = riskDef.factors || [];
+            const hasRisk = factors.some((factor: any) => {
+              const factorName = normalizeString(factor.name);
+              const factorIndex = riskFactors.findIndex(rf => normalizeString(rf) === factorName);
+              return factorIndex >= 0 && proposalRiskValues[factorIndex] === normalizeBoolean(factor.value);
+            });
+            if (hasRisk) {
+              derivedRisk = riskLevel;
+              break;
+            }
+          }
+        }
+      }
+
+      // Find matching location hazard rate
+      const locationHazardRates = insurerConfig.project_risk_factors?.location_hazard_rates || [];
+      let matched = false;
+      
+      for (const rate of locationHazardRates) {
+        if (normalizeString(rate.risk_level) === normalizeString(derivedRisk)) {
+          matched = true;
+          const decision = rate.quote_option === 'no_quote' ? 'No Quote' : 
+                          rate.quote_option === 'manual_review' ? 'Manual Review' : 'Auto Quote';
+          
+          addValidationResult(
+            'location_hazard',
+            derivedRisk,
+            rate.risk_level,
+            rate.risk_level,
+            rate.pricing_type || 'percentage',
+            rate.loading_discount || 0,
+            rate.quote_option || 'auto_quote',
+            decision
+          );
+          break;
+        }
+      }
+
+      if (!matched) {
+        addValidationResult(
+          'location_hazard',
+          derivedRisk,
+          'No matching risk level found',
+          'N/A',
+          'percentage',
+          0,
+          'no_quote',
+          'No Quote'
+        );
+      }
+    };
+
+    // Execute all validations
+    validateProjectType();
+    validateConfigItems();
+    validateProjectDuration();
+    validateMaintenancePeriod();
+    validateCoverageAmounts();
+    validateContractorExperience();
+    validateClaimsHistory();
+    validateSubContractorsCount();
+    validateConsultantsCount();
+    validateLocationHazard();
+
+    console.log(`✅ Validation completed for insurer ${insurerId}:`, {
+      totalValidations: validationResults.length,
+      overallDecision,
+      isEligible: overallDecision === 'Auto Quote'
+    });
+
+    return {
+      values: validationResults,
+      overallDecision,
+      isEligible: overallDecision === 'Auto Quote'
+    };
+  };
+
   // Insurer validation logic
   const validateInsurerEligibility = (insurer: any): boolean => {
     console.log('🔍 Validating insurer:', insurer.insurer_name);
@@ -272,8 +875,10 @@ const QuotesComparison = ({
     return eligibleInsurers;
   };
 
-  // Get eligible insurers whenever data changes
-  const eligibleInsurers = getEligibleInsurers();
+  // Get eligible insurers whenever data changes - memoized to prevent infinite loops
+  const eligibleInsurers = React.useMemo(() => {
+    return getEligibleInsurers();
+  }, [assignedInsurers, currentProposal]);
 
   // Load pricing configs when eligible insurers are found and not already loaded
   React.useEffect(() => {
@@ -290,12 +895,70 @@ const QuotesComparison = ({
     }
   }, [eligibleInsurers, onLoadPricingConfigs, insurerPricingConfigs, isLoadingPricingConfigs]);
 
+  // Validate proposals against pricing configs when both are available
+  React.useEffect(() => {
+    if (currentProposal && insurerPricingConfigs && eligibleInsurers.length > 0) {
+      // Check if we need to validate any new insurers
+      const insurersToValidate = eligibleInsurers.filter(insurer => 
+        insurerPricingConfigs[insurer.insurer_id] && 
+        !validationCompleted.current.has(insurer.insurer_id)
+      );
+
+      if (insurersToValidate.length === 0) {
+        console.log('⏭️ All insurers already validated, skipping...');
+        return;
+      }
+
+      console.log('🔍 Starting proposal validation for new insurers:', insurersToValidate.map(i => i.insurer_name));
+      
+      setInsurerValidationResults(prevResults => {
+        const newValidationResults = { ...prevResults };
+        
+        insurersToValidate.forEach(insurer => {
+          const pricingConfig = insurerPricingConfigs[insurer.insurer_id];
+          if (pricingConfig) {
+            console.log(`📋 Validating proposal for insurer: ${insurer.insurer_name}`);
+            const validationResult = validateProposalAgainstConfig(
+              currentProposal, 
+              pricingConfig, 
+              insurer.insurer_id
+            );
+            newValidationResults[insurer.insurer_id] = validationResult;
+            validationCompleted.current.add(insurer.insurer_id);
+          }
+        });
+        
+        console.log('✅ Validation completed for new insurers:', insurersToValidate.map(i => i.insurer_name));
+        return newValidationResults;
+      });
+    }
+  }, [currentProposal, insurerPricingConfigs, eligibleInsurers]);
+
   const [tplAdjustment, setTPLAdjustment] = useState(0);
   const [cewAdjustment, setCEWAdjustment] = useState(0);
   const [brokerCommissionPercent, setBrokerCommissionPercent] = useState(10);
   const [selectedCEWItems, setSelectedCEWItems] = useState<any[]>([]);
   const [showExtensionConfirmDialog, setShowExtensionConfirmDialog] = useState(false);
   const [pendingQuoteId, setPendingQuoteId] = useState<number | null>(null);
+
+  // State for storing insurer validation results
+  const [insurerValidationResults, setInsurerValidationResults] = useState<Record<number, {
+    values: Array<{
+      field_name: string;
+      proposal_value: any;
+      config_range: string;
+      config_matched_label: string;
+      pricing_type: string;
+      pricing_value: number;
+      quote_option: string;
+      decision: 'Auto Quote' | 'No Quote' | 'Manual Review';
+    }>;
+    overallDecision: 'Auto Quote' | 'No Quote' | 'Manual Review';
+    isEligible: boolean;
+  }>>({});
+
+  // Ref to track validation completion and prevent duplicate runs
+  const validationCompleted = React.useRef<Set<number>>(new Set());
   // Store updated premiums and CEW selections per quote
   const [updatedQuotes, setUpdatedQuotes] = useState<Record<number, { 
     premium: number; 
@@ -707,6 +1370,96 @@ Contact us for more details or to proceed with the application.
             <p className="text-sm text-red-700">
               None of the assigned insurers passed the validation checks. Please check the console for detailed validation results.
             </p>
+          </div>
+        )}
+
+        {/* Validation Results Display */}
+        {Object.keys(insurerValidationResults).length > 0 && (
+          <div className="mb-6 space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">Proposal Validation Results</h3>
+            {Object.entries(insurerValidationResults).map(([insurerId, result]) => {
+              const insurer = eligibleInsurers.find(i => i.insurer_id === parseInt(insurerId));
+              if (!insurer) return null;
+
+              return (
+                <Card key={insurerId} className={`border ${
+                  result.overallDecision === 'Auto Quote' 
+                    ? 'border-green-200 bg-green-50' 
+                    : result.overallDecision === 'Manual Review'
+                    ? 'border-yellow-200 bg-yellow-50'
+                    : 'border-red-200 bg-red-50'
+                }`}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">{insurer.insurer_name}</CardTitle>
+                      <Badge variant={
+                        result.overallDecision === 'Auto Quote' ? 'default' :
+                        result.overallDecision === 'Manual Review' ? 'secondary' : 'destructive'
+                      }>
+                        {result.overallDecision}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground mb-3">
+                        {result.values.length} field validations completed
+                      </div>
+                      
+                      {/* Validation Details Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left p-2 font-medium">Field</th>
+                              <th className="text-left p-2 font-medium">Proposal Value</th>
+                              <th className="text-left p-2 font-medium">Config Range/Match</th>
+                              <th className="text-left p-2 font-medium">Pricing</th>
+                              <th className="text-left p-2 font-medium">Decision</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {result.values.map((validation, index) => (
+                              <tr key={index} className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                <td className="p-2 font-medium text-xs">
+                                  {validation.field_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                </td>
+                                <td className="p-2 text-xs">
+                                  {typeof validation.proposal_value === 'object' 
+                                    ? JSON.stringify(validation.proposal_value)
+                                    : String(validation.proposal_value)
+                                  }
+                                </td>
+                                <td className="p-2 text-xs">{validation.config_range}</td>
+                                <td className="p-2 text-xs">
+                                  <div>
+                                    <div className="font-medium">
+                                      {validation.pricing_type}: {validation.pricing_value}
+                                      {validation.pricing_type === 'Percentage' ? '%' : ''}
+                                    </div>
+                                    <div className="text-muted-foreground">
+                                      {validation.quote_option.replace(/_/g, ' ')}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-2">
+                                  <Badge variant={
+                                    validation.decision === 'Auto Quote' ? 'default' :
+                                    validation.decision === 'Manual Review' ? 'secondary' : 'destructive'
+                                  } className="text-xs">
+                                    {validation.decision}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 
