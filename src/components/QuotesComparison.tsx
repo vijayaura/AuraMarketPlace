@@ -193,6 +193,67 @@ const QuotesComparison = ({
     return Math.ceil(diffDays / 30); // Approximate months
   };
 
+  // Calculate base premium from validation results
+  const calculateBasePremium = (validationResults: any[], proposal: any) => {
+    const excludedFields = [
+      'project_type', 'project_value', 'contract_works', 'plant_and_equipment', 
+      'sum_insured', 'temporary_works', 'other_materials', 'principals_property'
+    ];
+    
+    // Filter out excluded fields and get pricing data
+    const pricingFields = validationResults.filter(result => 
+      !excludedFields.includes(result.fieldName) && 
+      result.pricingValue > 0 &&
+      result.decision === 'Auto Quote'
+    );
+    
+    console.log('💰 Pricing fields for calculation:', pricingFields);
+    
+    // Group by pricing type
+    const percentageFields = pricingFields.filter(field => 
+      field.pricingType.toLowerCase().includes('percentage') || 
+      field.pricingType.toLowerCase().includes('percent')
+    );
+    
+    const fixedAmountFields = pricingFields.filter(field => 
+      field.pricingType.toLowerCase().includes('fixed') || 
+      field.pricingType.toLowerCase().includes('amount')
+    );
+    
+    console.log('💰 Percentage fields:', percentageFields);
+    console.log('💰 Fixed amount fields:', fixedAmountFields);
+    
+    // Calculate factors rate (multiply percentage values)
+    let factorsRate = 0;
+    if (percentageFields.length > 0) {
+      factorsRate = percentageFields.reduce((acc, field) => {
+        const rate = field.pricingValue / 100; // Convert percentage to decimal
+        return acc === 0 ? rate : acc * rate;
+      }, 0);
+    }
+    
+    // Calculate factors sum (add fixed amounts)
+    const factorsSum = fixedAmountFields.reduce((acc, field) => acc + field.pricingValue, 0);
+    
+    // Get sum insured value
+    const sumInsured = proposal.cover_requirements?.sum_insured || 0;
+    
+    // Calculate base premium: (sum_insured * factors_rate) + factors_sum
+    const basePremium = (sumInsured * factorsRate) + factorsSum;
+    
+    return {
+      basePremium: Math.round(basePremium * 100) / 100, // Round to 2 decimal places
+      factorsRate,
+      factorsSum,
+      sumInsured,
+      details: {
+        percentageFields,
+        fixedAmountFields,
+        calculation: `(${sumInsured} × ${factorsRate}) + ${factorsSum} = ${basePremium}`
+      }
+    };
+  };
+
   // Comprehensive proposal validation against insurer config
   const validateProposalAgainstConfig = (proposal: any, insurerConfig: any, insurerId: number) => {
     console.log('🔍 Starting proposal validation for insurer:', insurerId);
@@ -932,16 +993,36 @@ const QuotesComparison = ({
     validateConsultantsCount();
     validateLocationHazard();
 
+    // Calculate pricing if Auto Quote
+    let basePremium = 0;
+    let pricingDetails = null;
+    
+    if (overallDecision === 'Auto Quote') {
+      const pricingResult = calculateBasePremium(validationResults, proposal);
+      basePremium = pricingResult.basePremium;
+      pricingDetails = pricingResult.details;
+      
+      console.log(`💰 Pricing calculated for insurer ${insurerId}:`, {
+        basePremium,
+        factorsRate: pricingResult.factorsRate,
+        factorsSum: pricingResult.factorsSum,
+        sumInsured: proposal.cover_requirements?.sum_insured || 0
+      });
+    }
+
     console.log(`✅ Validation completed for insurer ${insurerId}:`, {
       totalValidations: validationResults.length,
       overallDecision,
-      isEligible: overallDecision === 'Auto Quote'
+      isEligible: overallDecision === 'Auto Quote',
+      basePremium: basePremium > 0 ? basePremium : 'N/A'
     });
 
     return {
       values: validationResults,
       overallDecision,
-      isEligible: overallDecision === 'Auto Quote'
+      isEligible: overallDecision === 'Auto Quote',
+      basePremium,
+      pricingDetails
     };
   };
 
@@ -1148,6 +1229,8 @@ const QuotesComparison = ({
     }>;
     overallDecision: 'Auto Quote' | 'No Quote' | 'Manual Review';
     isEligible: boolean;
+    basePremium: number;
+    pricingDetails: any;
   }>>({});
 
   // Ref to track validation completion and prevent duplicate runs
@@ -1586,21 +1669,15 @@ Contact us for more details or to proceed with the application.
               const insurer = eligibleInsurers.find(i => i.insurer_id === parseInt(insurerId));
               if (!insurer) return null;
 
+              // Only show Auto Quote insurers
+              if (result.overallDecision !== 'Auto Quote') return null;
+
               return (
-                <Card key={insurerId} className={`border ${
-                  result.overallDecision === 'Auto Quote' 
-                    ? 'border-green-200 bg-green-50' 
-                    : result.overallDecision === 'Manual Review'
-                    ? 'border-yellow-200 bg-yellow-50'
-                    : 'border-red-200 bg-red-50'
-                }`}>
+                <Card key={insurerId} className="border border-green-200 bg-green-50">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-base">{insurer.insurer_name}</CardTitle>
-                      <Badge variant={
-                        result.overallDecision === 'Auto Quote' ? 'default' :
-                        result.overallDecision === 'Manual Review' ? 'secondary' : 'destructive'
-                      }>
+                      <Badge variant="default">
                         {result.overallDecision}
                       </Badge>
                     </div>
@@ -1609,6 +1686,24 @@ Contact us for more details or to proceed with the application.
                     <div className="space-y-2">
                       <div className="text-sm text-muted-foreground mb-3">
                         {result.values.length} field validations completed
+                      </div>
+                      
+                      {/* Base Premium Display */}
+                      {result.basePremium > 0 && (
+                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-blue-900">Base Premium</span>
+                            <span className="text-lg font-bold text-blue-900">
+                              AED {result.basePremium.toLocaleString()}
+                            </span>
+                          </div>
+                          {result.pricingDetails && (
+                            <div className="text-xs text-blue-700 mt-1">
+                              {result.pricingDetails.calculation}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       </div>
                       
                       {/* Validation Details Table */}
