@@ -1755,7 +1755,6 @@ Contact us for more details or to proceed with the application.
                               {result.pricingDetails.calculation}
                             </div>
                           )}
-                        </div>
                       )}
                       
                       {/* Validation Details Table */}
