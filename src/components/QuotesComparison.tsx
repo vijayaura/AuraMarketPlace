@@ -1704,7 +1704,6 @@ Contact us for more details or to proceed with the application.
                           )}
                         </div>
                       )}
-                      </div>
                       
                       {/* Validation Details Table */}
                       <div className="overflow-x-auto">
