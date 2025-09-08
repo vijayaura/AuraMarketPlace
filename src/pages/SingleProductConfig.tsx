@@ -6089,7 +6089,7 @@ const SingleProductConfig = () => {
                             <TableCell className="w-[220px]">{item.title}</TableCell>
                             <TableCell className="w-[240px]">
                               <span className="text-sm text-muted-foreground">
-                                {item.description || item.purpose || "No description available"}
+                                {item.purposeDescription || item.description || item.purpose || "No description available"}
                               </span>
                             </TableCell>
                             <TableCell className="w-[100px]">
@@ -6111,7 +6111,7 @@ const SingleProductConfig = () => {
                                      pricingType: firstOption?.type || "percentage", 
                                      pricingValue: firstOption?.value || 0,
                                      show: item.show_type === "mandatory" ? "Mandatory" : "Optional",
-                                     purpose: item.clause_wording || ""
+                                     wording: item.wording || item.clause_wording || ""
                                    });
                                    setIsEditClauseDialogOpen(true);
                                  }}>
@@ -6190,8 +6190,8 @@ const SingleProductConfig = () => {
                         <Label htmlFor="edit-purpose">Clause Wordings</Label>
                         <Textarea
                           id="edit-purpose"
-                          value={selectedClause.purpose || ""}
-                          onChange={(e) => setSelectedClause({...selectedClause, purpose: e.target.value})}
+                          value={selectedClause?.wording || ""}
+                          onChange={(e) => setSelectedClause({...selectedClause, wording: e.target.value})}
                           placeholder="Enter the detailed clause wordings..."
                           rows={4}
                         />
