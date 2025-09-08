@@ -195,6 +195,8 @@ const QuotesComparison = ({
 
   // Calculate base premium from validation results
   const calculateBasePremium = (validationResults: any[], proposal: any) => {
+    console.log('💰 Starting base premium calculation with validation results:', validationResults);
+    
     const excludedFields = [
       'project_type', 'project_value', 'contract_works', 'plant_and_equipment', 
       'sum_insured', 'temporary_works', 'other_materials', 'principals_property'
@@ -202,22 +204,23 @@ const QuotesComparison = ({
     
     // Filter out excluded fields and get pricing data
     const pricingFields = validationResults.filter(result => 
-      !excludedFields.includes(result.fieldName) && 
-      result.pricingValue > 0 &&
+      !excludedFields.includes(result.field_name) && 
+      result.pricing_value > 0 &&
       result.decision === 'Auto Quote'
     );
     
     console.log('💰 Pricing fields for calculation:', pricingFields);
+    console.log('💰 Excluded fields:', excludedFields);
     
     // Group by pricing type
     const percentageFields = pricingFields.filter(field => 
-      field.pricingType.toLowerCase().includes('percentage') || 
-      field.pricingType.toLowerCase().includes('percent')
+      field.pricing_type.toLowerCase().includes('percentage') || 
+      field.pricing_type.toLowerCase().includes('percent')
     );
     
     const fixedAmountFields = pricingFields.filter(field => 
-      field.pricingType.toLowerCase().includes('fixed') || 
-      field.pricingType.toLowerCase().includes('amount')
+      field.pricing_type.toLowerCase().includes('fixed') || 
+      field.pricing_type.toLowerCase().includes('amount')
     );
     
     console.log('💰 Percentage fields:', percentageFields);
@@ -227,13 +230,13 @@ const QuotesComparison = ({
     let factorsRate = 0;
     if (percentageFields.length > 0) {
       factorsRate = percentageFields.reduce((acc, field) => {
-        const rate = field.pricingValue / 100; // Convert percentage to decimal
+        const rate = field.pricing_value / 100; // Convert percentage to decimal
         return acc === 0 ? rate : acc * rate;
       }, 0);
     }
     
     // Calculate factors sum (add fixed amounts)
-    const factorsSum = fixedAmountFields.reduce((acc, field) => acc + field.pricingValue, 0);
+    const factorsSum = fixedAmountFields.reduce((acc, field) => acc + field.pricing_value, 0);
     
     // Get sum insured value
     const sumInsured = proposal.cover_requirements?.sum_insured || 0;
@@ -399,6 +402,12 @@ const QuotesComparison = ({
 
     // 2. Construction/Area/Soil/Contract/Role Validation
     const validateConfigItems = () => {
+      console.log('🔍 Debugging proposal data for config items:');
+      console.log('📋 proposal.project:', proposal.project);
+      console.log('📋 proposal.site_risks:', proposal.site_risks);
+      console.log('📋 proposal.contract_structure:', proposal.contract_structure);
+      console.log('📋 proposal.insured:', proposal.insured);
+      
       const configMappings = [
         { field: 'construction_type', config: 'construction_types_config', proposal: proposal.project?.construction_type },
         { field: 'area_type', config: 'area_types_config', proposal: proposal.site_risks?.area_type },
@@ -411,6 +420,12 @@ const QuotesComparison = ({
         const proposalValue = normalizeString(mapping.proposal);
         const configItems = insurerConfig[mapping.config]?.items || [];
         let matched = false;
+        
+        console.log(`🔍 Validating ${mapping.field}:`, {
+          rawValue: mapping.proposal,
+          normalizedValue: proposalValue,
+          configItems: configItems.length
+        });
 
         for (const item of configItems) {
           const configValue = normalizeString(item.name || item.type);
