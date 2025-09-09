@@ -115,6 +115,7 @@ export default function AddUser() {
                 <Input
                   id="userEmail"
                   type="email"
+                  autoComplete="off"
                   placeholder="Enter email address"
                   value={newUser.email}
                   onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}

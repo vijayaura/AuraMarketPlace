@@ -143,7 +143,7 @@ const MarketAdminInsurerManagement = () => {
                   <TableRow>
                     <TableHead>Insurer</TableHead>
                     <TableHead>License Number</TableHead>
-                    <TableHead>Contact Mail</TableHead>
+                    <TableHead>Admin Mail</TableHead>
                     <TableHead>Contact Number</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -164,7 +164,7 @@ const MarketAdminInsurerManagement = () => {
                         <div className="font-medium">{insurer.name}</div>
                       </TableCell>
                       <TableCell>{insurer.licenseNumber || '—'}</TableCell>
-                      <TableCell>{insurer.email || '—'}</TableCell>
+                      <TableCell>{insurer.adminEmail || '—'}</TableCell>
                       <TableCell>{insurer.phone || '—'}</TableCell>
                        <TableCell>
                          {getStatusBadge(insurer.status)}

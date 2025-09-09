@@ -656,6 +656,7 @@ const BrokerAdminDashboard = () => {
                             <Input
                               id="email"
                               type="email"
+                              autoComplete="off"
                               value={newUser.email}
                               onChange={(e) => setNewUser({...newUser, email: e.target.value})}
                               placeholder="Enter email address"
@@ -792,6 +793,7 @@ const BrokerAdminDashboard = () => {
                     <Input
                       id="editEmail"
                       type="email"
+                      autoComplete="off"
                       value={editingUser.email}
                       onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
                       placeholder="Enter email address"

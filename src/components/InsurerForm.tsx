@@ -193,7 +193,7 @@ const InsurerForm = ({ mode, initialData, onSubmit, isSubmitting = false }: Insu
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="contact@insurer.com" type="email" {...field} />
+                      <Input placeholder="contact@insurer.com" type="email" autoComplete="off" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -251,7 +251,7 @@ const InsurerForm = ({ mode, initialData, onSubmit, isSubmitting = false }: Insu
                     <FormItem>
                       <FormLabel>Admin User Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="admin@insurer.com" type="email" {...field} />
+                        <Input placeholder="admin@insurer.com" type="email" autoComplete="off" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -268,6 +268,7 @@ const InsurerForm = ({ mode, initialData, onSubmit, isSubmitting = false }: Insu
                           <Input 
                             placeholder="Enter admin password" 
                             type={showPassword ? "text" : "password"} 
+                            autoComplete="off"
                             {...field} 
                           />
                           <Button

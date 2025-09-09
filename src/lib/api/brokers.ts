@@ -39,6 +39,7 @@ export interface Broker {
   operatingZones?: { name: string; region: string; country: string }[];
   companyLogo?: string | null;
   status: 'active' | 'inactive' | string;
+  adminEmail?: string;
 }
 
 // Types for Broker Insurers API
@@ -98,6 +99,7 @@ function mapBroker(dto: BrokerDTO): Broker {
     operatingZones: dto.operating_zones ?? undefined,
     companyLogo: dto.company_logo ?? null,
     status: dto.status,
+    adminEmail: dto.admin_email ?? undefined
   };
 }
 
@@ -106,6 +108,7 @@ export async function listBrokers(): Promise<Broker[]> {
     id: number;
     broker_name: string;
     email: string | null;
+    admin_email?: string | null;
     license_no: string | null;
     status: 'active' | 'inactive' | string;
     is_active?: boolean;
@@ -134,6 +137,7 @@ export async function listBrokers(): Promise<Broker[]> {
       operatingZones: undefined,
       companyLogo: null,
       status: item.status,
+      adminEmail: item.admin_email || undefined,
     }));
   }
 

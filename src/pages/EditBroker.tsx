@@ -584,7 +584,7 @@ const EditBroker = () => {
                           <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input placeholder="contact@broker.com" type="email" {...field} />
+                              <Input placeholder="contact@broker.com" type="email" autoComplete="off" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -624,7 +624,7 @@ const EditBroker = () => {
                              <FormItem>
                                <FormLabel>Admin User Email</FormLabel>
                                <FormControl>
-                                 <Input placeholder="admin@broker.com" type="email" {...field} />
+                                 <Input placeholder="admin@broker.com" type="email" autoComplete="off" {...field} />
                                </FormControl>
                                <FormMessage />
                              </FormItem>
@@ -641,6 +641,7 @@ const EditBroker = () => {
                                    <Input 
                                      placeholder="Enter admin password" 
                                      type={showPassword ? "text" : "password"} 
+                                     autoComplete="off"
                                      {...field} 
                                      className="pr-10"
                                    />

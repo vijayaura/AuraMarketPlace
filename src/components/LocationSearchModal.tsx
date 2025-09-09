@@ -184,6 +184,7 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
                         onChange={(e) => setApiKey(e.target.value)}
                         placeholder="Enter Google Maps API key"
                         type="password"
+                        autoComplete="off"
                       />
                     </div>
                     <Button className="w-full" disabled>

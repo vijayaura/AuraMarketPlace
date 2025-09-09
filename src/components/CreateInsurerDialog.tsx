@@ -145,7 +145,7 @@ export function CreateInsurerDialog({ onInsurerCreated }: CreateInsurerDialogPro
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="contact@insurer.com" type="email" {...field} />
+                        <Input placeholder="contact@insurer.com" type="email" autoComplete="off" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

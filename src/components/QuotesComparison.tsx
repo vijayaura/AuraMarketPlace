@@ -15,7 +15,7 @@ import { CEWSelection } from "./CEWSelection";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import { type BrokerInsurersResponse } from "@/lib/api/brokers";
-import { type ProposalBundleResponse, type InsurerPricingConfigResponse } from "@/lib/api/quotes";
+import { type ProposalBundleResponse, type InsurerPricingConfigResponse, getInsurerPricingConfig } from "@/lib/api/quotes";
 
 interface QuotesComparisonProps {
   assignedInsurers?: BrokerInsurersResponse | null;
@@ -1247,6 +1247,8 @@ const QuotesComparison = ({
   const [showExtensionConfirmDialog, setShowExtensionConfirmDialog] = useState(false);
   const [pendingQuoteId, setPendingQuoteId] = useState<number | null>(null);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [productConfigBundle, setProductConfigBundle] = useState<any>(null);
+  const [isLoadingProductConfig, setIsLoadingProductConfig] = useState(false);
 
   // State for storing insurer validation results
   const [insurerValidationResults, setInsurerValidationResults] = useState<Record<number, {
@@ -1333,7 +1335,7 @@ const QuotesComparison = ({
     }
   };
 
-  const handleExtensionsClick = (quote: any) => {
+  const handleExtensionsClick = async (quote: any) => {
     console.log('Extensions button clicked for quote:', quote);
     setSelectedQuoteForCEW(quote);
     
@@ -1345,6 +1347,23 @@ const QuotesComparison = ({
     } else {
       setPremiumAdjustment(0);
       setSelectedCEWItems([]);
+    }
+    
+    // Fetch product config bundle for this insurer
+    try {
+      setIsLoadingProductConfig(true);
+      const configBundle = await getInsurerPricingConfig(quote.id);
+      console.log('📦 Product config bundle loaded:', configBundle);
+      setProductConfigBundle(configBundle);
+    } catch (error) {
+      console.error('❌ Error loading product config bundle:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load product configuration. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingProductConfig(false);
     }
     
     setShowCEWDialog(true);
@@ -1365,6 +1384,37 @@ const QuotesComparison = ({
 
   const handleCEWAdjustmentChange = (adjustment: number) => {
     setCEWAdjustment(adjustment);
+  };
+
+  const handleTPLSelectionChange = (tplOption: any) => {
+    if (tplOption) {
+      // Add TPL extension to selected items
+      const tplExtension = {
+        id: 'tpl-extension',
+        code: 'TPL',
+        name: `TPL Limit Extension - ${tplOption.label}`,
+        type: 'extension',
+        category: 'TPL Extensions',
+        description: tplOption.description || 'Third Party Liability coverage extension',
+        isMandatory: false,
+        isSelected: true,
+        impact: {
+          coverage: 'Enhanced TPL coverage',
+          premium: tplOption.premiumAdjustment > 0 ? 'increase' : 'decrease',
+          premiumAmount: Math.abs(tplOption.premiumAdjustment)
+        }
+      };
+      
+      setSelectedCEWItems(prev => {
+        // Remove existing TPL extension if any
+        const filtered = prev.filter(item => item.id !== 'tpl-extension');
+        // Add new TPL extension
+        return [...filtered, tplExtension];
+      });
+    } else {
+      // Remove TPL extension from selected items
+      setSelectedCEWItems(prev => prev.filter(item => item.id !== 'tpl-extension'));
+    }
   };
 
   const calculateFinalPremium = () => {
@@ -1959,7 +2009,7 @@ Contact us for more details or to proceed with the application.
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
             <DialogHeader>
               <DialogTitle className="text-xl">
-                {selectedQuoteForCEW?.insurerName}
+                {selectedQuoteForCEW?.insurerName} - Configure Coverages
               </DialogTitle>
             </DialogHeader>
             
@@ -1971,6 +2021,9 @@ Contact us for more details or to proceed with the application.
                   onPremiumChange={handlePremiumChange}
                   onTPLAdjustmentChange={handleTPLAdjustmentChange}
                   onCEWAdjustmentChange={handleCEWAdjustmentChange}
+                  onTPLSelectionChange={handleTPLSelectionChange}
+                  productConfigBundle={productConfigBundle}
+                  isLoadingProductConfig={isLoadingProductConfig}
                 />
               </div>
 

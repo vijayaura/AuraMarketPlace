@@ -45,9 +45,12 @@ interface CEWSelectionProps {
   onTPLAdjustmentChange?: (tplAdjustment: number) => void;
   onCEWAdjustmentChange?: (cewAdjustment: number) => void;
   onCommissionChange?: (commission: number) => void;
+  onTPLSelectionChange?: (tplOption: any) => void;
+  productConfigBundle?: any;
+  isLoadingProductConfig?: boolean;
 }
 
-export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustmentChange, onCEWAdjustmentChange, onCommissionChange }: CEWSelectionProps) => {
+export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustmentChange, onCEWAdjustmentChange, onCommissionChange, onTPLSelectionChange, productConfigBundle, isLoadingProductConfig }: CEWSelectionProps) => {
   // Broker commission constraints (mock data - in real app this would come from user context)
   const brokerCommissionLimits = {
     min: 2.5,
@@ -57,6 +60,70 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
 
   // State for expanded/collapsed clauses
   const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
+  // State for expanded descriptions
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set());
+
+  // Update cewItems when productConfigBundle changes
+  useEffect(() => {
+    if (productConfigBundle) {
+      const transformedItems = transformProductConfigToCEWItems(productConfigBundle);
+      // Auto-select mandatory items
+      const itemsWithMandatorySelected = transformedItems.map(item => ({
+        ...item,
+        isSelected: item.isMandatory || item.isSelected
+      }));
+      setCEWItems(itemsWithMandatorySelected);
+      onSelectionChange?.(itemsWithMandatorySelected);
+    }
+  }, [productConfigBundle]);
+
+  // Transform product config bundle data to CEW items
+  const transformProductConfigToCEWItems = (configBundle: any): CEWItem[] => {
+    if (!configBundle?.clause_pricing_config) return [];
+    
+    return configBundle.clause_pricing_config.map((clause: any, index: number) => ({
+      id: clause.id,
+      code: clause.clause_code,
+      name: clause.meta?.title || clause.clause_code,
+      type: clause.meta?.clause_type?.toLowerCase() === 'warranty' ? 'warranty' : 
+            clause.meta?.clause_type?.toLowerCase() === 'exclusion' ? 'condition' : 'extension',
+      category: clause.meta?.clause_type || 'Extension',
+      description: clause.meta?.purpose_description || clause.meta?.clause_wording || 'No description available',
+      isMandatory: clause.meta?.show_type === 'MANDATORY',
+      isSelected: clause.meta?.show_type === 'MANDATORY', // Auto-select mandatory items
+      isPremium: false,
+      options: clause.options?.map((option: any, optIndex: number) => ({
+        id: optIndex + 1,
+        label: option.label,
+        description: option.limit,
+        limits: option.limit,
+        type: option.type?.toLowerCase() === 'percentage' ? 'percentage' : 'amount',
+        value: option.value,
+        recommended: optIndex === 0 // First option is recommended
+      })) || [],
+      selectedOptionId: clause.meta?.show_type === 'MANDATORY' && clause.options?.length > 0 ? 1 : undefined, // Auto-select first option for mandatory items
+      impact: {
+        coverage: clause.meta?.clause_wording || 'Standard coverage',
+        premium: clause.base_value > 0 ? 'increase' : clause.base_value < 0 ? 'decrease' : 'neutral',
+        premiumAmount: Math.abs(parseFloat(clause.base_value) || 0)
+      },
+      defaultValue: parseFloat(clause.base_value) || 0
+    }));
+  };
+
+  // Transform TPL extensions from product config bundle
+  const transformTPLExtensions = (configBundle: any) => {
+    if (!configBundle?.tpl_extensions) return [];
+    
+    return configBundle.tpl_extensions.map((extension: any, index: number) => ({
+      id: extension.id,
+      label: `AED ${(parseFloat(extension.limit_value) / 1000000).toFixed(1)}M`,
+      value: parseFloat(extension.limit_value),
+      description: extension.description || extension.title,
+      premiumAdjustment: parseFloat(extension.pricing_value) || 0,
+      recommended: index === 0
+    }));
+  };
 
   const [cewItems, setCEWItems] = useState<CEWItem[]>([
     {
@@ -317,6 +384,19 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     });
   };
 
+  // Toggle expanded state for a description
+  const toggleDescriptionExpansion = (itemId: number) => {
+    setExpandedDescriptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
   const handleCommissionChange = (value: string) => {
     const numValue = parseFloat(value);
     
@@ -370,30 +450,49 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   };
 
   const updateSelection = (itemId: number, optionId: number) => {
+    const item = cewItems.find(item => item.id === itemId);
+    if (!item) return;
+    
     const updatedItems = cewItems.map(item => {
       if (item.id === itemId) {
-        // If clicking the same option that's already selected, unselect it
-        if (item.selectedOptionId === optionId) {
+        // For mandatory items, don't allow unselection, only option changes
+        if (item.isMandatory) {
+          // Select new option (mandatory items stay selected)
+          const selectedOption = item.options.find(opt => opt.id === optionId);
           return {
             ...item,
-            isSelected: false,
-            selectedOptionId: undefined,
-            impact: {
-              ...item.impact,
-              premiumAmount: 0
-            }
-          };
-        } else {
-          // Select new option
-          return {
-            ...item,
-            isSelected: true,
+            isSelected: true, // Always keep mandatory items selected
             selectedOptionId: optionId,
             impact: {
               ...item.impact,
-              premiumAmount: item.options.find(opt => opt.id === optionId)?.value || 0
+              premiumAmount: selectedOption ? (selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000) : 0
             }
           };
+        } else {
+          // For non-mandatory items, allow unselection
+          if (item.selectedOptionId === optionId) {
+            return {
+              ...item,
+              isSelected: false,
+              selectedOptionId: undefined,
+              impact: {
+                ...item.impact,
+                premiumAmount: 0
+              }
+            };
+          } else {
+            // Select new option
+            const selectedOption = item.options.find(opt => opt.id === optionId);
+            return {
+              ...item,
+              isSelected: true,
+              selectedOptionId: optionId,
+              impact: {
+                ...item.impact,
+                premiumAmount: selectedOption ? (selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000) : 0
+              }
+            };
+          }
         }
       }
       return item;
@@ -458,8 +557,8 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     return tplAdjustment + cewAdjustment;
   };
 
-  // TPL Limit options (would come from Product Configuration)
-  const tplLimitOptions = [
+  // TPL Limit options from product config bundle or default
+  const tplLimitOptions = productConfigBundle ? transformTPLExtensions(productConfigBundle) : [
     { id: 1, label: "AED 1M", value: 1000000, description: "Third Party Liability up to AED 1 Million", premiumAdjustment: -1.5 },
     { id: 2, label: "AED 2M", value: 2000000, description: "Third Party Liability up to AED 2 Million", premiumAdjustment: 0, recommended: true },
     { id: 3, label: "AED 5M", value: 5000000, description: "Third Party Liability up to AED 5 Million", premiumAdjustment: 2.5 },
@@ -470,10 +569,24 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   
   const handleTPLLimitChange = (value: string) => {
     const newTPLId = parseInt(value);
+    
+    // If clicking the same TPL limit that's already selected, deselect it
+    if (selectedTPLLimit === newTPLId) {
+      setSelectedTPLLimit(0); // 0 means no selection
+      onTPLAdjustmentChange?.(0);
+      onCEWAdjustmentChange?.(0);
+      onPremiumChange?.(0);
+      onTPLSelectionChange?.(null); // Clear TPL selection
+      return;
+    }
+    
     setSelectedTPLLimit(newTPLId);
     
+    // Get the selected TPL option
+    const selectedTPLOption = tplLimitOptions.find(opt => opt.id === newTPLId);
+    
     // Get separate adjustments
-    const tplAdjustment = tplLimitOptions.find(opt => opt.id === newTPLId)?.premiumAdjustment || 0;
+    const tplAdjustment = selectedTPLOption?.premiumAdjustment || 0;
     const cewAdjustment = cewItems
       .filter(item => item.isSelected)
       .reduce((sum, item) => {
@@ -488,14 +601,36 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     onTPLAdjustmentChange?.(tplAdjustment);
     onCEWAdjustmentChange?.(cewAdjustment);
     onPremiumChange?.(tplAdjustment + cewAdjustment);
+    onTPLSelectionChange?.(selectedTPLOption); // Pass selected TPL option
   };
+
+  // Show loading state while product config is being fetched
+  if (isLoadingProductConfig) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-sm text-muted-foreground">Loading product configuration...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* TPL Limit Extensions Section */}
       <div className="space-y-3">
         <div className="space-y-1">
-          <h2 className="text-base font-semibold text-foreground">TPL Limit Extensions</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-foreground">TPL Limit Extensions</h2>
+            {productConfigBundle?.tpl_limits?.default_limit && (
+              <div className="text-sm text-muted-foreground">
+                Default: AED {parseFloat(productConfigBundle.tpl_limits.default_limit).toLocaleString()}
+              </div>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             Select your Third Party Liability coverage limit
           </p>
@@ -578,7 +713,10 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
               {/* Checkbox/Status */}
               <div>
                 {item.isMandatory ? (
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                  <div className="flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <span className="text-xs text-primary font-medium">Required</span>
+                  </div>
                 ) : (
                   <div className="relative">
                     <input
@@ -641,6 +779,31 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
                       </Button>
                     </div>
                   </div>
+                  
+                  {/* Description with two-line truncation and view more */}
+                  <div className="mt-2">
+                    <p 
+                      className={`text-sm text-muted-foreground ${
+                        !expandedDescriptions.has(item.id) ? 'overflow-hidden' : ''
+                      }`}
+                      style={{
+                        display: !expandedDescriptions.has(item.id) ? '-webkit-box' : 'block',
+                        WebkitLineClamp: !expandedDescriptions.has(item.id) ? 2 : 'unset',
+                        WebkitBoxOrient: 'vertical'
+                      }}
+                    >
+                      {item.description}
+                    </p>
+                    {item.description.length > 100 && (
+                      <button
+                        onClick={() => toggleDescriptionExpansion(item.id)}
+                        className="text-xs text-primary hover:text-primary/80 mt-1 font-medium"
+                      >
+                        {expandedDescriptions.has(item.id) ? 'View less' : 'View more'}
+                      </button>
+                    )}
+                  </div>
+                  
                   <p className="text-sm">{item.impact.coverage}</p>
                 </div>
 

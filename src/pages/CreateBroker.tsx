@@ -332,7 +332,7 @@ const CreateBroker = () => {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="contact@broker.com" type="email" {...field} />
+                            <Input placeholder="contact@broker.com" type="email" autoComplete="off" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -372,7 +372,7 @@ const CreateBroker = () => {
                            <FormItem>
                              <FormLabel>Admin User Email</FormLabel>
                              <FormControl>
-                               <Input placeholder="admin@broker.com" type="email" {...field} />
+                               <Input placeholder="admin@broker.com" type="email" autoComplete="off" {...field} />
                              </FormControl>
                              <FormMessage />
                            </FormItem>
@@ -385,7 +385,7 @@ const CreateBroker = () => {
                            <FormItem>
                              <FormLabel>Admin User Password</FormLabel>
                              <FormControl>
-                               <Input placeholder="Enter admin password" type="password" {...field} />
+                               <Input placeholder="Enter admin password" type="password" autoComplete="off" {...field} />
                              </FormControl>
                              <FormMessage />
                            </FormItem>

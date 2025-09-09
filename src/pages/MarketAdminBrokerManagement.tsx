@@ -275,7 +275,7 @@ const MarketAdminBrokerManagement = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="min-w-[200px]">Broker Name</TableHead>
-                      <TableHead className="min-w-[250px]">Contact Email</TableHead>
+                      <TableHead className="min-w-[250px]">Admin Email</TableHead>
                       <TableHead className="min-w-[180px]">Contact Number</TableHead>
                       <TableHead className="min-w-[100px]">Status</TableHead>
                       <TableHead className="min-w-[150px]">Join Date</TableHead>
@@ -294,7 +294,7 @@ const MarketAdminBrokerManagement = () => {
                     ) : currentBrokers.map((broker) => (
                        <TableRow key={broker.id} className={broker.status === 'inactive' ? 'opacity-50 text-muted-foreground' : ''}>
                          <TableCell className="font-medium">{broker.name}</TableCell>
-                         <TableCell>{broker.email || '—'}</TableCell>
+                         <TableCell>{broker.adminEmail || '—'}</TableCell>
                          <TableCell>{broker.phone || '—'}</TableCell>
                          <TableCell>
                            <Badge className={getUserStatusColor(broker.status)}>
