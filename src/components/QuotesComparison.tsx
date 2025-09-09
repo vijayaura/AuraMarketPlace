@@ -226,34 +226,34 @@ const QuotesComparison = ({
     console.log('💰 Percentage fields:', percentageFields);
     console.log('💰 Fixed amount fields:', fixedAmountFields);
     
-    // Calculate factors rate (additive: (1 + rate1) × (1 + rate2) × ... × (1 + raten))
-    let factorsRate = 1;
+    // Calculate PRODUCT of percentage fields (Excel PRODUCT function)
+    let percentageProduct = 1;
     if (percentageFields.length > 0) {
-      factorsRate = percentageFields.reduce((acc, field) => {
+      percentageProduct = percentageFields.reduce((acc, field) => {
         const rate = field.pricing_value / 100; // Convert percentage to decimal
-        return acc * (1 + rate);
+        return acc * rate; // Direct multiplication, not (1 + rate)
       }, 1);
     }
     
-    // Calculate factors sum (add fixed amounts)
+    // Calculate SUM of fixed amount fields
     const factorsSum = fixedAmountFields.reduce((acc, field) => acc + field.pricing_value, 0);
     
     // Get sum insured value
     const sumInsured = proposal.cover_requirements?.sum_insured || 0;
     
-    // Calculate base premium: (sum_insured * factors_rate) + factors_sum
-    const basePremium = (sumInsured * factorsRate) + factorsSum;
+    // Calculate base premium: (PRODUCT(percentage fields) * Sum insured) + SUM(fixedAmountFields)
+    const basePremium = (percentageProduct * sumInsured) + factorsSum;
     
     return {
       basePremium: Math.round(basePremium * 100) / 100, // Round to 2 decimal places
-      factorsRate,
+      percentageProduct,
       factorsSum,
       sumInsured,
       details: {
         percentageFields,
         fixedAmountFields,
-        calculation: `(${sumInsured} × ${factorsRate}) + ${factorsSum} = ${basePremium}`,
-        factorsRateFormula: `(1 + rate1) × (1 + rate2) × ... × (1 + raten) = ${factorsRate}`
+        calculation: `(${percentageProduct} × ${sumInsured}) + ${factorsSum} = ${basePremium}`,
+        percentageProductFormula: `rate1 × rate2 × ... × raten = ${percentageProduct}`
       }
     };
   };
@@ -1057,7 +1057,7 @@ const QuotesComparison = ({
       
       console.log(`💰 Pricing calculated for insurer ${insurerId}:`, {
         basePremium,
-        factorsRate: pricingResult.factorsRate,
+        percentageProduct: pricingResult.percentageProduct,
         factorsSum: pricingResult.factorsSum,
         sumInsured: proposal.cover_requirements?.sum_insured || 0
       });

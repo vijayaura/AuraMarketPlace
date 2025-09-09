@@ -90,12 +90,12 @@ function calculateLicenseValidity(licenseEndDate: string | null | undefined): {
 function LicenseBadge({ licenseEndDate }: { licenseEndDate: string | null | undefined }) {
   const validity = calculateLicenseValidity(licenseEndDate);
   
-  const getBadgeClasses = () => {
+  const getButtonClasses = () => {
     switch (validity.color) {
       case 'red':
         return 'bg-red-500 hover:bg-red-600 text-white border-red-600';
       case 'yellow':
-        return 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600';
+        return 'bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300';
       case 'green':
         return 'bg-green-500 hover:bg-green-600 text-white border-green-600';
       default:
@@ -104,10 +104,14 @@ function LicenseBadge({ licenseEndDate }: { licenseEndDate: string | null | unde
   };
 
   return (
-    <Badge className={`${getBadgeClasses()} transition-colors`}>
+    <Button 
+      variant="outline" 
+      size="sm"
+      className={`${getButtonClasses()} transition-colors rounded-md px-3 py-1.5 h-auto font-medium`}
+    >
       <Calendar className="w-3 h-3 mr-1" />
       {validity.message}
-    </Badge>
+    </Button>
   );
 }
 
