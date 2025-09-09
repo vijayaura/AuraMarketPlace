@@ -798,3 +798,69 @@ export async function getInsurerPricingConfig(insurerId: number): Promise<Insure
   console.log('💰 getInsurerPricingConfig called with:', { insurerId, endpoint });
   return apiGet<InsurerPricingConfigResponse>(endpoint);
 }
+
+// Plan Selection Types
+export interface PlanSelectionRequest {
+  insurer_name: string;
+  premium_amount: number;
+  extensions: {
+    tpl_limit: {
+      label: string;
+      impact_pct: number;
+      description: string;
+    };
+    selected_extensions: Record<string, {
+      code: string;
+      label: string;
+      impact_pct?: number;
+      impact_amount?: number;
+      description: string;
+    }>;
+    selected_plan: {
+      insurer_name: string;
+      base_premium: number;
+      coverage_amount: number;
+      deductible: number;
+    };
+    premium_summary: {
+      net_premium: number;
+      broker_commission_pct: number;
+      broker_commission_amount: number;
+      broker_min_commission_pct: number;
+      broker_max_commission_pct: number;
+      broker_base_commission_pct: number;
+      cew_adjustments_pct: number;
+      cew_adjustments_amount: number;
+      total_annual_premium: number;
+    };
+  };
+}
+
+export interface PlanSelectionResponse {
+  message: string;
+  offer: {
+    id: number;
+    insurer_name: string;
+    premium_amount: number;
+    extensions: PlanSelectionRequest['extensions'];
+    created_by: {
+      user_id: number;
+      role: string;
+      insurer_id: number;
+      broker_id: number;
+    };
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+// Plan Selection API Functions
+export const createPlanSelection = async (quoteId: number, data: PlanSelectionRequest): Promise<PlanSelectionResponse> => {
+  const response = await apiPost<PlanSelectionResponse>(`/api/v1/quotes/${quoteId}/plans`, data);
+  return response;
+};
+
+export const updatePlanSelection = async (quoteId: number, data: PlanSelectionRequest): Promise<PlanSelectionResponse> => {
+  const response = await apiPatch<PlanSelectionResponse>(`/api/v1/quotes/${quoteId}/plans`, data);
+  return response;
+};

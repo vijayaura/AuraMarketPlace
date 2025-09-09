@@ -15,7 +15,7 @@ import { CEWSelection } from "./CEWSelection";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import { type BrokerInsurersResponse } from "@/lib/api/brokers";
-import { type ProposalBundleResponse, type InsurerPricingConfigResponse, getInsurerPricingConfig } from "@/lib/api/quotes";
+import { type ProposalBundleResponse, type InsurerPricingConfigResponse, getInsurerPricingConfig, createPlanSelection, updatePlanSelection, type PlanSelectionRequest } from "@/lib/api/quotes";
 
 interface QuotesComparisonProps {
   assignedInsurers?: BrokerInsurersResponse | null;
@@ -39,7 +39,7 @@ const generateRealQuotes = (insurerValidationResults: Record<number, any>, eligi
       
       // Get maximum cover from insurer's product configuration
       const pricingConfig = insurerPricingConfigs[insurer.insurer_id];
-      const maximumCover = pricingConfig?.policy_limits?.maximum_cover?.value || sumInsured;
+      const maximumCover = pricingConfig?.policy_limits_and_deductible?.policy_limits?.maximum_cover?.value || sumInsured;
       
       return {
         id: insurer.insurer_id,
@@ -141,8 +141,9 @@ const QuotesComparison = ({
   };
 
   // Calculate base premium from validation results
-  const calculateBasePremium = (validationResults: any[], proposal: any) => {
+  const calculateBasePremium = (validationResults: any[], proposal: any, insurerPricingConfig: any) => {
     console.log('💰 Starting base premium calculation with validation results:', validationResults);
+    console.log('💰 Insurer pricing config for minimum premium check:', insurerPricingConfig);
     
     const excludedFields = [
       'project_type', 'project_value', 'contract_works', 'plant_and_equipment', 
@@ -203,10 +204,57 @@ const QuotesComparison = ({
     const sumInsured = proposal.cover_requirements?.sum_insured || 0;
     
     // Calculate base premium: (percentage_product * Sum insured) + SUM(fixedAmountFields)
-    const basePremium = (percentageProduct * sumInsured) + factorsSum;
+    const calculatedBasePremium = (percentageProduct * sumInsured) + factorsSum;
+    
+    // Check minimum premium rates from insurer's product bundle
+    let minimumPremiumRate = 0;
+    let minimumPremiumMatch = null;
+    
+    if (insurerPricingConfig?.policy_limits_and_deductible?.minimum_premium_rates) {
+      const projectType = proposal.project?.project_type;
+      const subProjectType = proposal.project?.sub_project_type;
+      
+      console.log('💰 Checking minimum premium rates for:', { projectType, subProjectType });
+      console.log('💰 Available minimum premium rates:', insurerPricingConfig.policy_limits_and_deductible.minimum_premium_rates);
+      
+      // Find matching minimum premium rate
+      const matchingRate = insurerPricingConfig.policy_limits_and_deductible.minimum_premium_rates.find((rate: any) => {
+        const configProjectType = normalizeString(rate.project_type);
+        const configSubProjectType = normalizeString(rate.sub_project_type);
+        const proposalProjectType = normalizeString(projectType);
+        const proposalSubProjectType = normalizeString(subProjectType);
+        
+        return configProjectType === proposalProjectType && configSubProjectType === proposalSubProjectType;
+      });
+      
+      if (matchingRate) {
+        minimumPremiumRate = matchingRate.base_rate || 0;
+        minimumPremiumMatch = matchingRate;
+        console.log('💰 Found matching minimum premium rate:', minimumPremiumRate, 'for', matchingRate.project_type, matchingRate.sub_project_type);
+      } else {
+        console.log('💰 No matching minimum premium rate found for project type:', projectType, 'sub-project type:', subProjectType);
+      }
+    } else {
+      console.log('💰 No minimum premium rates available in insurer config');
+    }
+    
+    // Apply minimum premium protection
+    const finalBasePremium = Math.max(calculatedBasePremium, minimumPremiumRate);
+    const isMinimumPremiumApplied = finalBasePremium > calculatedBasePremium;
+    
+    console.log('💰 Premium calculation summary:', {
+      calculatedBasePremium,
+      minimumPremiumRate,
+      finalBasePremium,
+      isMinimumPremiumApplied
+    });
     
     return {
-      basePremium: Math.round(basePremium * 100) / 100, // Round to 2 decimal places
+      basePremium: Math.round(finalBasePremium * 100) / 100, // Round to 2 decimal places
+      calculatedBasePremium: Math.round(calculatedBasePremium * 100) / 100,
+      minimumPremiumRate,
+      isMinimumPremiumApplied,
+      minimumPremiumMatch,
       percentageProduct,
       factorsSum,
       sumInsured,
@@ -215,7 +263,10 @@ const QuotesComparison = ({
       details: {
         percentageFields,
         fixedAmountFields,
-        calculation: `(${percentageProduct} × ${sumInsured}) + ${factorsSum} = ${basePremium}`,
+        calculation: `(${percentageProduct} × ${sumInsured}) + ${factorsSum} = ${calculatedBasePremium}`,
+        minimumPremiumCalculation: isMinimumPremiumApplied ? 
+          `MIN(${calculatedBasePremium}, ${minimumPremiumRate}) = ${finalBasePremium}` : 
+          `No minimum premium applied`,
         percentageProductFormula: `base_rate × factor1 × factor2 × ... × factorN = ${baseRate}% × ${factors.join(' × ')} = ${percentageProduct}`,
         baseRate: `${baseRate}%`,
         factors: factors.map((factor, index) => `${otherPercentageFields[index].field_name}: ${factor}`)
@@ -1028,14 +1079,18 @@ const QuotesComparison = ({
     // Calculate pricing if Auto Quote
     let basePremium = 0;
     let pricingDetails = null;
+    let pricingResult = null;
     
     if (overallDecision === 'Auto Quote') {
-      const pricingResult = calculateBasePremium(validationResults, proposal);
+      pricingResult = calculateBasePremium(validationResults, proposal, insurerConfig);
       basePremium = pricingResult.basePremium;
       pricingDetails = pricingResult.details;
       
       console.log(`💰 Pricing calculated for insurer ${insurerId}:`, {
         basePremium,
+        calculatedBasePremium: pricingResult.calculatedBasePremium,
+        minimumPremiumRate: pricingResult.minimumPremiumRate,
+        isMinimumPremiumApplied: pricingResult.isMinimumPremiumApplied,
         percentageProduct: pricingResult.percentageProduct,
         factorsSum: pricingResult.factorsSum,
         sumInsured: proposal.cover_requirements?.sum_insured || 0
@@ -1054,6 +1109,10 @@ const QuotesComparison = ({
       overallDecision,
       isEligible: overallDecision === 'Auto Quote',
       basePremium,
+      calculatedBasePremium: pricingResult?.calculatedBasePremium || basePremium,
+      minimumPremiumRate: pricingResult?.minimumPremiumRate || 0,
+      isMinimumPremiumApplied: pricingResult?.isMinimumPremiumApplied || false,
+      minimumPremiumMatch: pricingResult?.minimumPremiumMatch || null,
       pricingDetails
     };
   };
@@ -1249,6 +1308,14 @@ const QuotesComparison = ({
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [productConfigBundle, setProductConfigBundle] = useState<any>(null);
   const [isLoadingProductConfig, setIsLoadingProductConfig] = useState(false);
+  const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
+
+  // Initialize broker commission when product config bundle loads
+  React.useEffect(() => {
+    if (productConfigBundle?.policy_limits_and_deductible?.base_broker_commission?.value) {
+      setBrokerCommissionPercent(productConfigBundle.policy_limits_and_deductible.base_broker_commission.value);
+    }
+  }, [productConfigBundle]);
 
   // State for storing insurer validation results
   const [insurerValidationResults, setInsurerValidationResults] = useState<Record<number, {
@@ -1265,6 +1332,10 @@ const QuotesComparison = ({
     overallDecision: 'Auto Quote' | 'No Quote' | 'Manual Review';
     isEligible: boolean;
     basePremium: number;
+    calculatedBasePremium?: number;
+    minimumPremiumRate?: number;
+    isMinimumPremiumApplied?: boolean;
+    minimumPremiumMatch?: any;
     pricingDetails: any;
   }>>({});
 
@@ -1420,16 +1491,25 @@ const QuotesComparison = ({
   const calculateFinalPremium = () => {
     if (!selectedQuoteForCEW) return 0;
     
-    // Get the real base premium from validation results
+    // Get the base premium from validation results
     const validationResult = selectedQuoteForCEW.validationResult;
-    const realBasePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+    const basePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
     
-    // Calculate net premium (base premium without broker commission)
-    const netPremium = realBasePremium / (1 + (brokerCommissionPercent / 100));
-    const currentBrokerCommissionAmount = (netPremium * brokerCommissionPercent) / 100;
-    const adjustmentAmount = (realBasePremium * premiumAdjustment) / 100;
+    // Extract default broker commission from product config bundle
+    const defaultBrokerCommission = productConfigBundle?.policy_limits_and_deductible?.base_broker_commission?.value || 10;
     
-    return netPremium + currentBrokerCommissionAmount + adjustmentAmount;
+    // Calculate nett premium = base premium - (base premium × default broker commission)
+    const nettPremium = basePremium - (basePremium * defaultBrokerCommission / 100);
+    
+    // Calculate adjustments as percentage of base premium
+    const tplAdjustmentAmount = (basePremium * tplAdjustment) / 100;
+    const cewAdjustmentAmount = (basePremium * cewAdjustment) / 100;
+    
+    // Calculate revised broker commission (based on base premium)
+    const revisedBrokerCommission = (basePremium * brokerCommissionPercent) / 100;
+    
+    // Final total annual premium = nett premium + revised broker commission + adjustments
+    return nettPremium + revisedBrokerCommission + tplAdjustmentAmount + cewAdjustmentAmount;
   };
 
   const handleUpdatePremium = () => {
@@ -1465,6 +1545,140 @@ const QuotesComparison = ({
         finalPremium: calculateFinalPremium()
       } 
     });
+  };
+
+  // Build plan selection request payload
+  const buildPlanSelectionPayload = (quote: any): PlanSelectionRequest => {
+    const validationResult = quote.validationResult;
+    const basePremium = validationResult?.basePremium || quote.annualPremium;
+    const defaultBrokerCommission = productConfigBundle?.policy_limits_and_deductible?.base_broker_commission?.value || 10;
+    const minBrokerCommission = productConfigBundle?.policy_limits_and_deductible?.minimum_broker_commission?.value || 5;
+    const maxBrokerCommission = productConfigBundle?.policy_limits_and_deductible?.maximum_broker_commission?.value || 15;
+    
+    // Calculate nett premium
+    const nettPremium = basePremium - (basePremium * defaultBrokerCommission / 100);
+    
+    // Calculate adjustments
+    const tplAdjustmentAmount = (basePremium * tplAdjustment) / 100;
+    const cewAdjustmentAmount = (basePremium * cewAdjustment) / 100;
+    
+    // Calculate revised broker commission
+    const revisedBrokerCommission = (basePremium * brokerCommissionPercent) / 100;
+    
+    // Build selected extensions
+    const selectedExtensions: Record<string, any> = {};
+    selectedCEWItems
+      .filter(item => item.isSelected)
+      .forEach(item => {
+        const key = item.code?.toLowerCase().replace(/[^a-z0-9]/g, '_') || `extension_${item.id}`;
+        selectedExtensions[key] = {
+          code: item.code || `EXT${item.id}`,
+          label: item.selectedOption?.label || item.name,
+          impact_pct: item.impact?.premiumAmount || 0,
+          description: item.description || item.impact?.coverage || ''
+        };
+      });
+
+    // Build TPL limit
+    const tplLimit = {
+      label: "AED 2M", // Default TPL limit
+      impact_pct: tplAdjustment,
+      description: "Third Party Liability up to AED 2 Million"
+    };
+
+    return {
+      insurer_name: quote.insurerName,
+      premium_amount: calculateFinalPremium(),
+      extensions: {
+        tpl_limit: tplLimit,
+        selected_extensions: selectedExtensions,
+        selected_plan: {
+          insurer_name: quote.insurerName,
+          base_premium: basePremium,
+          coverage_amount: quote.coverageAmount,
+          deductible: 25000 // Default deductible
+        },
+        premium_summary: {
+          net_premium: nettPremium,
+          broker_commission_pct: brokerCommissionPercent,
+          broker_commission_amount: revisedBrokerCommission,
+          broker_min_commission_pct: minBrokerCommission,
+          broker_max_commission_pct: maxBrokerCommission,
+          broker_base_commission_pct: defaultBrokerCommission,
+          cew_adjustments_pct: tplAdjustment + cewAdjustment,
+          cew_adjustments_amount: tplAdjustmentAmount + cewAdjustmentAmount,
+          total_annual_premium: calculateFinalPremium()
+        }
+      }
+    };
+  };
+
+  // Handle plan selection with API call
+  const handleSelectPlanWithAPI = async (quoteId: number) => {
+    try {
+      setIsSubmittingPlan(true);
+      
+      // Get quote ID from storage
+      const storedQuoteId = localStorage.getItem('currentQuoteId');
+      if (!storedQuoteId) {
+        throw new Error('No quote ID found in storage');
+      }
+
+      // Check storage flags
+      const coveragesSelected = localStorage.getItem('coverages_selected') === 'true';
+      const plansSelected = localStorage.getItem('plans_selected') === 'true';
+      
+      // Find the selected quote
+      const selectedQuote = realQuotes.find(q => q.id === quoteId);
+      if (!selectedQuote) {
+        throw new Error('Selected quote not found');
+      }
+
+      // Build request payload
+      const payload = buildPlanSelectionPayload(selectedQuote);
+
+      // Call appropriate API based on storage flags
+      let response;
+      if (!coveragesSelected && !plansSelected) {
+        // First time - use POST
+        response = await createPlanSelection(parseInt(storedQuoteId), payload);
+      } else {
+        // Update existing - use PATCH
+        response = await updatePlanSelection(parseInt(storedQuoteId), payload);
+      }
+
+      // Update storage flags
+      localStorage.setItem('coverages_selected', 'true');
+      localStorage.setItem('plans_selected', 'true');
+
+      // Show success message
+      toast({
+        title: "Plan Selected Successfully",
+        description: `Selected ${selectedQuote.insurerName} plan with premium ${formatCurrency(calculateFinalPremium())}`,
+      });
+
+      // Close dialog and proceed
+      setShowCEWDialog(false);
+      
+      // Check if we're in the proposal form context
+      if (window.onQuoteSelected) {
+        // We're in the proposal form, navigate to declaration step
+        window.onQuoteSelected(quoteId);
+      } else {
+        // We're in standalone quotes page, navigate to declaration page
+        navigate('/customer/declaration', { state: { selectedQuote: quoteId } });
+      }
+
+    } catch (error: any) {
+      console.error('Error selecting plan:', error);
+      toast({
+        title: "Error Selecting Plan",
+        description: error.message || "Failed to select plan. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmittingPlan(false);
+    }
   };
 
   const handleDownloadQuotation = () => {
@@ -1984,11 +2198,19 @@ Contact us for more details or to proceed with the application.
                         {comparedQuotes.map((quote) => (
                           <td key={`action-${quote.id}`} className="border border-gray-200 px-4 py-3 text-center w-1/3">
                             <Button 
-                              onClick={() => handleSelectPlan(quote.id)}
+                              onClick={() => handleSelectPlanWithAPI(quote.id)}
+                              disabled={isSubmittingPlan}
                               className="w-full"
                               size="sm"
                             >
-                              Select This Plan
+                              {isSubmittingPlan ? (
+                                <>
+                                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" />
+                                  Selecting...
+                                </>
+                              ) : (
+                                'Select This Plan'
+                              )}
                             </Button>
                           </td>
                         ))}
@@ -2055,7 +2277,23 @@ Contact us for more details or to proceed with the application.
                              
                              <div className="flex justify-between items-center">
                                <span className="text-xs text-muted-foreground/60">Coverage Amount</span>
-                               <span className="text-sm text-muted-foreground/60">{formatCurrency(selectedQuoteForCEW.coverageAmount)}</span>
+                               <span className="text-sm text-muted-foreground/60">
+                                 {(() => {
+                                   // Try to get coverage amount from multiple sources
+                                   const productConfigCoverage = productConfigBundle?.policy_limits_and_deductible?.policy_limits?.maximum_cover?.value;
+                                   const pricingConfigCoverage = insurerPricingConfigs?.[selectedQuoteForCEW?.id]?.policy_limits_and_deductible?.policy_limits?.maximum_cover?.value;
+                                   const fallbackCoverage = selectedQuoteForCEW?.coverageAmount;
+                                   
+                                   console.log('🔍 Coverage Amount Debug:', {
+                                     productConfigBundle: productConfigBundle?.policy_limits_and_deductible?.policy_limits?.maximum_cover,
+                                     pricingConfig: insurerPricingConfigs?.[selectedQuoteForCEW?.id]?.policy_limits_and_deductible?.policy_limits?.maximum_cover,
+                                     selectedQuoteCoverage: selectedQuoteForCEW?.coverageAmount,
+                                     finalValue: productConfigCoverage || pricingConfigCoverage || fallbackCoverage
+                                   });
+                                   
+                                   return formatCurrency(productConfigCoverage || pricingConfigCoverage || fallbackCoverage || 0);
+                                 })()}
+                               </span>
                              </div>
                              
                              <div className="flex justify-between items-center">
@@ -2106,8 +2344,10 @@ Contact us for more details or to proceed with the application.
                              {(() => {
                                if (!selectedQuoteForCEW) return formatCurrency(0);
                                const validationResult = selectedQuoteForCEW.validationResult;
-                               const realBasePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
-                               return formatCurrency(realBasePremium / (1 + (brokerCommissionPercent / 100)));
+                               const basePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+                               const defaultBrokerCommission = productConfigBundle?.policy_limits_and_deductible?.base_broker_commission?.value || 10;
+                               const nettPremium = basePremium - (basePremium * defaultBrokerCommission / 100);
+                               return formatCurrency(nettPremium);
                              })()}
                            </span>
                          </div>
@@ -2120,9 +2360,11 @@ Contact us for more details or to proceed with the application.
                               <button
                                 className="text-xs font-bold text-primary hover:text-primary/80 cursor-pointer"
                                 onClick={() => {
-                                  const newValue = prompt(`Enter broker commission (${5}% - ${15}%):`, brokerCommissionPercent.toString());
+                                  const minCommission = productConfigBundle?.policy_limits_and_deductible?.minimum_broker_commission?.value || 5;
+                                  const maxCommission = productConfigBundle?.policy_limits_and_deductible?.maximum_broker_commission?.value || 15;
+                                  const newValue = prompt(`Enter broker commission (${minCommission}% - ${maxCommission}%):`, brokerCommissionPercent.toString());
                                   if (newValue && !isNaN(Number(newValue))) {
-                                    const value = Math.min(15, Math.max(5, Number(newValue)));
+                                    const value = Math.min(maxCommission, Math.max(minCommission, Number(newValue)));
                                     setBrokerCommissionPercent(value);
                                   }
                                 }}
@@ -2135,9 +2377,9 @@ Contact us for more details or to proceed with the application.
                             {(() => {
                               if (!selectedQuoteForCEW) return formatCurrency(0);
                               const validationResult = selectedQuoteForCEW.validationResult;
-                              const realBasePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
-                              const netPremium = realBasePremium / (1 + (brokerCommissionPercent / 100));
-                              return formatCurrency((netPremium * brokerCommissionPercent) / 100);
+                              const basePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+                              const revisedBrokerCommission = (basePremium * brokerCommissionPercent) / 100;
+                              return formatCurrency(revisedBrokerCommission);
                             })()}
                           </span>
                         </div>
@@ -2163,8 +2405,9 @@ Contact us for more details or to proceed with the application.
                                      {tplAdjustment > 0 ? "+" : ""}{(() => {
                                        if (!selectedQuoteForCEW) return formatCurrency(0);
                                        const validationResult = selectedQuoteForCEW.validationResult;
-                                       const realBasePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
-                                       return formatCurrency((realBasePremium * tplAdjustment) / 100);
+                                       const basePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+                                       const tplAdjustmentAmount = (basePremium * tplAdjustment) / 100;
+                                       return formatCurrency(tplAdjustmentAmount);
                                      })()}
                                    </span>
                                  </div>
@@ -2190,8 +2433,9 @@ Contact us for more details or to proceed with the application.
                                      {cewAdjustment > 0 ? "+" : ""}{(() => {
                                        if (!selectedQuoteForCEW) return formatCurrency(0);
                                        const validationResult = selectedQuoteForCEW.validationResult;
-                                       const realBasePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
-                                       return formatCurrency((realBasePremium * cewAdjustment) / 100);
+                                       const basePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+                                       const cewAdjustmentAmount = (basePremium * cewAdjustment) / 100;
+                                       return formatCurrency(cewAdjustmentAmount);
                                      })()}
                                    </span>
                                  </div>
@@ -2222,20 +2466,18 @@ Contact us for more details or to proceed with the application.
                           Update Premium & Compare
                         </Button>
                         <Button 
-                          onClick={() => {
-                            setShowCEWDialog(false);
-                            // Check if we're in the proposal form context
-                            if (window.onQuoteSelected) {
-                              // We're in the proposal form, navigate to declaration step
-                              window.onQuoteSelected(selectedQuoteForCEW?.id);
-                            } else {
-                              // We're in standalone quotes page, navigate to declaration page
-                              navigate('/customer/declaration', { state: { selectedQuote: selectedQuoteForCEW?.id } });
-                            }
-                          }}
+                          onClick={() => handleSelectPlanWithAPI(selectedQuoteForCEW?.id)}
+                          disabled={isSubmittingPlan}
                           className="w-full"
                         >
-                          Select Plan
+                          {isSubmittingPlan ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                              Selecting Plan...
+                            </>
+                          ) : (
+                            'Select Plan'
+                          )}
                         </Button>
                       </div>
 
