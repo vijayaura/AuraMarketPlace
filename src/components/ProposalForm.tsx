@@ -28,6 +28,7 @@ import {
   type SubProjectTypeItem
 } from "@/lib/api/masters";
 import { getBroker, getBrokerInsurers, type Broker, type BrokerInsurersResponse } from "@/lib/api/brokers";
+import { getBrokerCompanyId } from "@/lib/auth";
 import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse, saveRequiredDocuments, updateRequiredDocuments, type RequiredDocumentsRequest, type RequiredDocumentsResponse, getProposalBundle, type ProposalBundleResponse, getInsurerPricingConfig, type InsurerPricingConfigResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
@@ -469,8 +470,14 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       console.log('🚀 Loading broker data for geographical coverage...');
       setBrokerLoading({ isLoading: true, hasError: false, errorMessage: '' });
       
-      // Fetch broker details (assuming broker ID 1 for now)
-      const broker = await getBroker(1);
+      // Get current broker ID from store
+      const brokerId = getBrokerCompanyId();
+      if (!brokerId) {
+        throw new Error('Broker ID not found. Please log in again.');
+      }
+      
+      // Fetch broker details using current broker's ID
+      const broker = await getBroker(brokerId);
       setBrokerData(broker);
       
       console.log('✅ Broker data loaded successfully:', broker);
@@ -1868,11 +1875,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
   // Load assigned insurers for broker
   const loadAssignedInsurers = async (): Promise<boolean> => {
-    const brokerId = localStorage.getItem('broker_id');
+    // Get current broker ID from store
+    const brokerId = getBrokerCompanyId();
     if (!brokerId) {
       toast({
         title: "Error",
-        description: "Broker ID not found. Please refresh and try again.",
+        description: "Broker ID not found. Please log in again.",
         variant: "destructive",
       });
       return false;
@@ -1884,7 +1892,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       // Clear existing data before loading new data
       setAssignedInsurers(null);
       
-      const response = await getBrokerInsurers(parseInt(brokerId));
+      const response = await getBrokerInsurers(brokerId);
       console.log('✅ Assigned insurers loaded successfully:', response);
       
       setAssignedInsurers(response);
