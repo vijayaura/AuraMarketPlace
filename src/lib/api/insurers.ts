@@ -1772,8 +1772,29 @@ export interface ClausePricingItem {
 }
 
 export interface SaveClausePricingRequest {
-  clause_code?: number;
-  items: ClausePricingItem[];
+  clauses: ClausePricingClauseRequest[];
+}
+
+export interface ClausePricingClauseRequest {
+  clause_code: string;
+  title: string;
+  clause_type: 'CLAUSE' | 'WARRANTY' | 'EXCLUSION';
+  show_type: 'MANDATORY' | 'OPTIONAL';
+  display_order: number;
+  is_active: boolean;
+  pricing: {
+    is_enabled: boolean;
+    pricing_type: 'PERCENTAGE' | 'CURRENCY';
+    pricing_value: number;
+    base_currency: string;
+    options: {
+      label: string;
+      limit: string;
+      type: 'PERCENTAGE' | 'CURRENCY';
+      value: number;
+      display_order: number;
+    }[];
+  };
 }
 
 export interface GetClausePricingResponse {
@@ -1782,7 +1803,27 @@ export interface GetClausePricingResponse {
 
 // Get clause pricing (separate from metadata)
 export interface GetClausePricingDataResponse {
-  data: ClausePricingItemResponse[];
+  clauses: ClausePricingClauseResponse[];
+}
+
+export interface ClausePricingClauseResponse {
+  clause_code: string;
+  pricing: {
+    is_enabled: boolean;
+    pricing_type: 'PERCENTAGE' | 'CURRENCY';
+    pricing_value: number;
+    base_currency: string;
+    options: {
+      type: 'PERCENTAGE' | 'CURRENCY';
+      label: string;
+      limit: string;
+      value: number;
+      currency: string;
+      display_order: number;
+    }[];
+  };
+  created_at: string;
+  updated_at: string;
 }
 
 export async function getClausePricing(
@@ -1802,7 +1843,7 @@ export interface GetClausePricingResponse {
 
 export interface SaveClausePricingResponse {
   message: string;
-  clause_pricing: ClausePricingItem[];
+  clauses: ClausePricingClauseResponse[];
 }
 
 export async function saveClausePricing(

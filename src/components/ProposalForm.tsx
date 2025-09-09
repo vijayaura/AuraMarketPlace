@@ -730,11 +730,30 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
   const getBrokerRegionOptions = (selectedCountry: string) => {
     if (brokerData?.operatingRegions && brokerData.operatingRegions.length > 0) {
+      console.log('🌍 Filtering regions for country:', selectedCountry);
+      console.log('🌍 Available regions:', brokerData.operatingRegions);
+      
       // Filter regions based on selected country
       const countryRegions = brokerData.operatingRegions.filter(region => {
-        // Simple matching - in real implementation, you'd have proper country-region mapping
-        return true; // For now, return all regions
+        if (typeof region === 'string') {
+          // If region is a string, we can't filter by country, so return all
+          console.log('🌍 Region is string, including:', region);
+          return true;
+        }
+        // If region is an object with country property, filter by country
+        const regionCountry = region.country?.toLowerCase().replace(/\s+/g, '-');
+        const selectedCountryNormalized = selectedCountry.toLowerCase().replace(/\s+/g, '-');
+        const matches = regionCountry === selectedCountryNormalized;
+        console.log('🌍 Region filtering:', {
+          regionName: region.name,
+          regionCountry,
+          selectedCountryNormalized,
+          matches
+        });
+        return matches;
       });
+      
+      console.log('🌍 Filtered regions:', countryRegions);
       
       return countryRegions.map((region, index) => {
         const regionName = typeof region === 'string' ? region : region.name || String(region);
@@ -752,11 +771,30 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
   const getBrokerZoneOptions = (selectedRegion: string) => {
     if (brokerData?.operatingZones && brokerData.operatingZones.length > 0) {
+      console.log('🌍 Filtering zones for region:', selectedRegion);
+      console.log('🌍 Available zones:', brokerData.operatingZones);
+      
       // Filter zones based on selected region
       const regionZones = brokerData.operatingZones.filter(zone => {
-        // Simple matching - in real implementation, you'd have proper region-zone mapping
-        return true; // For now, return all zones
+        if (typeof zone === 'string') {
+          // If zone is a string, we can't filter by region, so return all
+          console.log('🌍 Zone is string, including:', zone);
+          return true;
+        }
+        // If zone is an object with region property, filter by region
+        const zoneRegion = zone.region?.toLowerCase().replace(/\s+/g, '-');
+        const selectedRegionNormalized = selectedRegion.toLowerCase().replace(/\s+/g, '-');
+        const matches = zoneRegion === selectedRegionNormalized;
+        console.log('🌍 Zone filtering:', {
+          zoneName: zone.name,
+          zoneRegion,
+          selectedRegionNormalized,
+          matches
+        });
+        return matches;
       });
+      
+      console.log('🌍 Filtered zones:', regionZones);
       
       return regionZones.map((zone, index) => {
         const zoneName = typeof zone === 'string' ? zone : zone.name || String(zone);
@@ -786,8 +824,14 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         
         // Find regions for this country
         const countryRegions = brokerData?.operatingRegions?.filter(region => {
-          // Simple matching - in real implementation, you'd have proper country-region mapping
-          return true; // For now, include all regions
+          if (typeof region === 'string') {
+            // If region is a string, we can't filter by country, so include all
+            return true;
+          }
+          // If region is an object with country property, filter by country
+          const regionCountry = region.country?.toLowerCase().replace(/\s+/g, '-');
+          const countryNameNormalized = countryName.toLowerCase().replace(/\s+/g, '-');
+          return regionCountry === countryNameNormalized;
         }) || [];
         
         if (countryRegions.length > 0) {
@@ -796,8 +840,14 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
             
             // Find zones for this region
             const regionZones = brokerData?.operatingZones?.filter(zone => {
-              // Simple matching - in real implementation, you'd have proper region-zone mapping
-              return true; // For now, include all zones
+              if (typeof zone === 'string') {
+                // If zone is a string, we can't filter by region, so include all
+                return true;
+              }
+              // If zone is an object with region property, filter by region
+              const zoneRegion = zone.region?.toLowerCase().replace(/\s+/g, '-');
+              const regionNameNormalized = regionName.toLowerCase().replace(/\s+/g, '-');
+              return zoneRegion === regionNameNormalized;
             }) || [];
             
             if (regionZones.length > 0) {

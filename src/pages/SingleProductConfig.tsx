@@ -2220,6 +2220,29 @@ const SingleProductConfig = () => {
       const data = await getCewsClauses(insurerId, String(productId));
       setClauseMetadata(data.clauses || []);
       
+      // Initialize clausesPricing with default values from metadata
+      const defaultClausesPricing = (data.clauses || []).map((clause: any, index: number) => ({
+        id: index + 1,
+        code: clause.clause_code,
+        name: clause.title,
+        enabled: clause.show_type === "MANDATORY",
+        isMandatory: clause.show_type === "MANDATORY",
+        pricingType: (clause.clause_type === "CLAUSE" ? "percentage" : "amount") as "percentage" | "amount",
+        pricingValue: 0, // Default to 0, will be updated from API if available
+        variableOptions: [{
+          id: 1,
+          label: "Standard Rate",
+          limits: "All Coverage",
+          type: (clause.clause_type === "CLAUSE" ? "percentage" : "amount") as "percentage" | "amount",
+          value: 2
+        }]
+      }));
+      
+      setRatingConfig(prev => ({
+        ...prev,
+        clausesPricing: defaultClausesPricing
+      }));
+      
       // If we already have pricing data, merge it with the metadata
       if (clausePricingData && clausePricingData.clause_pricing && clausePricingData.clause_pricing.length > 0) {
         setTimeout(() => updateClausePricingFromAPIData(clausePricingData.clause_pricing), 100);
@@ -2269,12 +2292,14 @@ const SingleProductConfig = () => {
     
     try {
       const data = await getClausePricing(insurerId, String(productId));
+      console.log('📊 Raw clause pricing response:', data);
+      
       // Store the raw API response data for POST/PATCH decision making
-      setClausePricingData({ clause_pricing: data.data as any || [] });
+      setClausePricingData({ clause_pricing: data.clauses as any || [] });
       
       // Update ratingConfig.clausesPricing with the pricing data if we have both metadata and pricing
-      if (clauseMetadata.length > 0 && data.data && data.data.length > 0) {
-        updateClausePricingFromAPIData(data.data);
+      if (clauseMetadata.length > 0 && data.clauses && data.clauses.length > 0) {
+        updateClausePricingFromAPIData(data.clauses);
       }
       
       console.log('✅ Clause pricing data loaded:', data);
@@ -2302,6 +2327,7 @@ const SingleProductConfig = () => {
   // Function to update clause pricing from API response data
   const updateClausePricingFromAPIData = (pricingData: any[]) => {
     console.log('🔄 Updating clause pricing from API data:', pricingData);
+    console.log('🔄 Current clauseMetadata:', clauseMetadata);
     
     setRatingConfig(prev => ({
       ...prev,
@@ -2309,16 +2335,17 @@ const SingleProductConfig = () => {
         // Find matching pricing data for this clause
         const pricingItem = pricingData.find(p => p.clause_code === clause.clause_code);
         
-        if (pricingItem) {
+        if (pricingItem && pricingItem.pricing) {
+          const pricing = pricingItem.pricing;
           return {
             id: index + 1,
             code: clause.clause_code,
             name: clause.title,
-            enabled: Boolean(pricingItem.is_enabled),
-            isMandatory: Boolean(pricingItem.is_mandatory),
-            pricingType: (pricingItem.base_type === 'PERCENTAGE' ? 'percentage' : 'amount') as "percentage" | "amount",
-            pricingValue: parseFloat(pricingItem.base_value || '0'),
-            variableOptions: pricingItem.options.map((option: any, optIndex: number) => ({
+            enabled: Boolean(pricing.is_enabled),
+            isMandatory: Boolean(pricing.is_enabled), // Use is_enabled as mandatory indicator
+            pricingType: (pricing.pricing_type === 'PERCENTAGE' ? 'percentage' : 'amount') as "percentage" | "amount",
+            pricingValue: pricing.pricing_value || 0,
+            variableOptions: pricing.options.map((option: any, optIndex: number) => ({
               id: optIndex + 1,
               label: option.label,
               limits: option.limit,
@@ -2721,52 +2748,42 @@ const SingleProductConfig = () => {
       console.log('🔍 Debug - clauseMetadata:', clauseMetadata);
       console.log('🔍 Debug - ratingConfig.clausesPricing:', ratingConfig.clausesPricing);
       
-      // Use clauseMetadata if ratingConfig.clausesPricing is empty
-      const sourceData = ratingConfig.clausesPricing.length > 0 
-        ? ratingConfig.clausesPricing 
-        : clauseMetadata.map((clause, index) => ({
-            id: index + 1,
-            code: clause.clause_code,
-            name: clause.title,
-            enabled: clause.show_type === "MANDATORY" ? true : false,
-            isMandatory: clause.show_type === "MANDATORY",
-            pricingType: (clause.clause_type === "CLAUSE" ? "percentage" : "amount") as "percentage" | "amount",
-            pricingValue: clause.clause_type === "CLAUSE" ? 2.5 : 500, // Default values
-            variableOptions: [
-              {
-                id: 1,
-                label: clause.show_type === "MANDATORY" ? "Standard Rate" : "Base Option",
-                limits: clause.show_type === "MANDATORY" ? "All Coverage" : "Standard Coverage",
-                type: (clause.clause_type === "CLAUSE" ? "percentage" : "amount") as "percentage" | "amount",
-                value: clause.show_type === "MANDATORY" 
-                  ? (clause.clause_type === "CLAUSE" ? 2.5 : 500)
-                  : (clause.clause_type === "CLAUSE" ? 1.5 : 300)
-              }
-            ]
-          }));
-
-      console.log('🔍 Debug - sourceData:', sourceData);
-
-      const clausePricingItems = sourceData.map(clause => ({
-        clause_code: clause.code,
-        is_enabled: clause.enabled,
-        is_mandatory: clause.isMandatory,
-        base: {
-          type: clause.pricingType === 'percentage' ? '%' as const : 'AED' as const,
-          value: clause.pricingValue,
-          ...(clause.pricingType !== 'percentage' && { currency: 'AED' })
-        },
-        options: clause.variableOptions.map(option => ({
-          label: option.label || "Standard Rate",
-          limit: option.limits || "All Coverage",
-          type: option.type === 'percentage' ? '%' as const : 'AED' as const,
-          value: option.value,
-          ...(option.type !== 'percentage' && { currency: 'AED' })
-        }))
-      }));
+      // Transform clause metadata and pricing data to new API structure
+      const clauses = clauseMetadata.map((clause, index) => {
+        // Find pricing data for this clause
+        const pricingData = ratingConfig.clausesPricing?.find((p: any) => p.code === clause.clause_code);
+        
+        return {
+          clause_code: clause.clause_code,
+          title: clause.title,
+          clause_type: clause.clause_type as 'CLAUSE' | 'WARRANTY' | 'EXCLUSION',
+          show_type: clause.show_type as 'MANDATORY' | 'OPTIONAL',
+          display_order: clause.display_order || (index + 1) * 10,
+          is_active: pricingData?.enabled ?? (clause.show_type === "MANDATORY"),
+          pricing: {
+            is_enabled: pricingData?.enabled ?? (clause.show_type === "MANDATORY"),
+            pricing_type: (pricingData?.pricingType === 'percentage' ? 'PERCENTAGE' : 'CURRENCY') as 'PERCENTAGE' | 'CURRENCY',
+            pricing_value: pricingData?.pricingValue ?? 0,
+            base_currency: 'AED',
+            options: pricingData?.variableOptions?.map((option: any, optIndex: number) => ({
+              label: option.label || "Standard Rate",
+              limit: option.limits || "All Coverage",
+              type: (option.type === 'percentage' ? 'PERCENTAGE' : 'CURRENCY') as 'PERCENTAGE' | 'CURRENCY',
+              value: option.value || 2,
+              display_order: optIndex + 1
+            })) || [{
+              label: "Standard Rate",
+              limit: "All Coverage",
+              type: 'PERCENTAGE' as const,
+              value: 2,
+              display_order: 1
+            }]
+          }
+        };
+      });
 
       // Check if we have any clause data to save
-      if (clausePricingItems.length === 0) {
+      if (clauses.length === 0) {
         toast({
           title: 'No Clause Data',
           description: 'No clause data available to save. Please ensure clause metadata is loaded.',
@@ -2776,45 +2793,49 @@ const SingleProductConfig = () => {
       }
 
       const clausePricingPayload: SaveClausePricingRequest = {
-        clause_code: 1, // As specified in the requirements
-        items: clausePricingItems
+        clauses: clauses
       };
 
       console.log('📝 Clause pricing payload:', JSON.stringify(clausePricingPayload, null, 2));
 
-      let response;
+      // Always use POST API as per new requirements
+      console.log('📝 Saving clause pricing data...');
+      const response = await saveClausePricing(insurerId, String(productId), clausePricingPayload);
       
-      // Check if we have existing pricing data (GET pricing API was successful and returned data)
-      if (clausePricingData && clausePricingData.clause_pricing && clausePricingData.clause_pricing.length > 0) {
-        console.log('📝 Updating existing clause pricing data...');
-        const updatePayload: UpdateClausePricingRequest = {
-          clause_code: 1,
-          items: clausePricingItems
-        };
-        
-        const patchResponse = await updateClausePricing(insurerId, String(productId), updatePayload);
-        response = patchResponse.data?.clause_pricing || patchResponse;
-        
-        toast({
-          title: 'Success',
-          description: 'Clause pricing configuration updated successfully',
-        });
-      } else {
-        console.log('📝 Creating new clause pricing data...');
-        const postResponse = await saveClausePricing(insurerId, String(productId), clausePricingPayload);
-        response = postResponse.clause_pricing || postResponse;
-        
-        toast({
-          title: 'Success', 
-          description: 'Clause pricing configuration saved successfully',
-        });
-      }
-
+      console.log('✅ Clause pricing saved successfully:', response);
+      
       // Update local state with response
-      if (response) {
-        setClausePricingData({ clause_pricing: Array.isArray(response) ? response : response.clause_pricing || [] });
-        console.log('✅ Clause pricing saved successfully:', response);
+      if (response.clauses) {
+        setClausePricingData({ clause_pricing: response.clauses as any });
+        
+        // Update ratingConfig with the new pricing data
+        const updatedPricingData = response.clauses.map((clause: any) => ({
+          id: parseInt(clause.clause_code.replace(/\D/g, '')) || 1,
+          code: clause.clause_code,
+          name: clause.title,
+          enabled: Boolean(clause.pricing.is_enabled),
+          isMandatory: Boolean(clause.pricing.is_enabled),
+          pricingType: (clause.pricing.pricing_type === 'PERCENTAGE' ? 'percentage' : 'amount') as "percentage" | "amount",
+          pricingValue: Number(clause.pricing.pricing_value) || 0,
+          variableOptions: clause.pricing.options.map((option: any, index: number) => ({
+            id: index + 1,
+            label: String(option.label),
+            limits: String(option.limit),
+            type: (option.type === 'PERCENTAGE' ? 'percentage' : 'amount') as "percentage" | "amount",
+            value: Number(option.value) || 0
+          }))
+        }));
+        
+        setRatingConfig(prev => ({
+          ...prev,
+          clausesPricing: updatedPricingData
+        }));
       }
+      
+      toast({
+        title: 'Success',
+        description: response.message || 'Clause pricing configuration saved successfully',
+      });
 
     } catch (err: any) {
       console.error('Save Clause Pricing error:', err);
@@ -2822,15 +2843,35 @@ const SingleProductConfig = () => {
       const message = err?.message as string | undefined;
       
       if (status === 400) {
-        toast({ title: 'Error', description: message || 'Bad request while saving clause pricing.', variant: 'destructive' });
+        toast({
+          title: 'Bad Request',
+          description: message || 'Invalid clause pricing data provided',
+          variant: 'destructive'
+        });
       } else if (status === 401) {
-        toast({ title: 'Error', description: 'Unauthorized access.', variant: 'destructive' });
+        toast({
+          title: 'Unauthorized',
+          description: 'You are not authorized to save clause pricing',
+          variant: 'destructive'
+        });
       } else if (status === 403) {
-        toast({ title: 'Error', description: 'Forbidden access.', variant: 'destructive' });
+        toast({
+          title: 'Forbidden',
+          description: 'You do not have permission to save clause pricing',
+          variant: 'destructive'
+        });
       } else if (status === 500) {
-        toast({ title: 'Error', description: 'Server error while saving clause pricing.', variant: 'destructive' });
+        toast({
+          title: 'Server Error',
+          description: 'Server error while saving clause pricing. Please try again.',
+          variant: 'destructive'
+        });
       } else {
-        toast({ title: 'Error', description: message || 'Failed to save clause pricing.', variant: 'destructive' });
+        toast({
+          title: 'Error',
+          description: message || 'Failed to save clause pricing configuration',
+          variant: 'destructive'
+        });
       }
     } finally {
       setIsSavingClausePricing(false);

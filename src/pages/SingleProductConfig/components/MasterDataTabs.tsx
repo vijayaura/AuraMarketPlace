@@ -625,6 +625,28 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
     }
   }, [activePricingTab, areaTypesConfigData]);
 
+  // Effect to synchronize clauseRows with ratingConfig.clausesPricing
+  useEffect(() => {
+    if (ratingConfig.clausesPricing && ratingConfig.clausesPricing.length > 0) {
+      const newClauseRows: {[key: number]: any[]} = {};
+      
+      ratingConfig.clausesPricing.forEach((clause: any) => {
+        const clauseMetadataItem = clauseMetadata.find(c => c.clause_code === clause.code);
+        if (clauseMetadataItem && clause.variableOptions) {
+          newClauseRows[clauseMetadataItem.id] = clause.variableOptions.map((option: any) => ({
+            id: option.id,
+            label: option.label || "",
+            limits: option.limits || "",
+            type: option.type || "percentage",
+            value: option.value || 0
+          }));
+        }
+      });
+      
+      setClauseRows(prev => ({ ...prev, ...newClauseRows }));
+    }
+  }, [ratingConfig.clausesPricing, clauseMetadata]);
+
   // Clause Pricing functions
   if (activePricingTab === "clause-pricing") {
 
@@ -658,6 +680,23 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
         ...prev,
         [clauseId]: [...currentRows, newRow]
       }));
+      
+      // Also update ratingConfig.clausesPricing
+      setRatingConfig(prev => ({
+        ...prev,
+        clausesPricing: prev.clausesPricing?.map((p: any) => 
+          p.code === clauseMetadata.find(c => c.id === clauseId)?.clause_code
+            ? {
+                ...p,
+                variableOptions: [...(p.variableOptions || []), newRow]
+              }
+            : p
+        ) || []
+      }));
+      
+      // Expand the section when adding a new row
+      setExpandedClauses(prev => new Set([...prev, clauseId]));
+      markAsChanged();
     };
 
     const removeRow = (clauseId: number, rowId: number) => {
@@ -665,6 +704,48 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
         ...prev,
         [clauseId]: prev[clauseId]?.filter(row => row.id !== rowId) || []
       }));
+      
+      // Also update ratingConfig.clausesPricing
+      setRatingConfig(prev => ({
+        ...prev,
+        clausesPricing: prev.clausesPricing?.map((p: any) => 
+          p.code === clauseMetadata.find(c => c.id === clauseId)?.clause_code
+            ? {
+                ...p,
+                variableOptions: p.variableOptions?.filter((option: any) => option.id !== rowId) || []
+              }
+            : p
+        ) || []
+      }));
+      
+      markAsChanged();
+    };
+
+    const updateRowField = (clauseId: number, rowId: number, field: string, value: any) => {
+      // Update clauseRows state
+      setClauseRows(prev => ({
+        ...prev,
+        [clauseId]: prev[clauseId]?.map(row => 
+          row.id === rowId ? { ...row, [field]: value } : row
+        ) || []
+      }));
+      
+      // Also update ratingConfig.clausesPricing
+      setRatingConfig(prev => ({
+        ...prev,
+        clausesPricing: prev.clausesPricing?.map((p: any) => 
+          p.code === clauseMetadata.find(c => c.id === clauseId)?.clause_code
+            ? {
+                ...p,
+                variableOptions: p.variableOptions?.map((option: any) => 
+                  option.id === rowId ? { ...option, [field]: value } : option
+                ) || []
+              }
+            : p
+        ) || []
+      }));
+      
+      markAsChanged();
     };
 
     const getRowCount = (clauseId: number) => {
@@ -679,10 +760,19 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
     };
 
     const isClauseActive = (clause: any) => {
-      // Use state if available, otherwise fall back to API data
-      return activeToggles[clause.id] !== undefined 
-        ? activeToggles[clause.id] 
-        : clause.is_active === 1;
+      // Use state if available, otherwise fall back to pricing data
+      if (activeToggles[clause.id] !== undefined) {
+        return activeToggles[clause.id];
+      }
+      
+      // Check pricing data from ratingConfig
+      const pricingData = ratingConfig.clausesPricing?.find((p: any) => p.code === clause.clause_code);
+      if (pricingData) {
+        return pricingData.enabled;
+      }
+      
+      // Fall back to clause metadata
+      return clause.is_active === 1;
     };
 
     return (
@@ -732,7 +822,22 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
               {clauseMetadata && clauseMetadata.length > 0 ? (
                 clauseMetadata.map((clause: any) => {
                   const rowCount = getRowCount(clause.id);
-                  const currentRows = clauseRows[clause.id] || [{ id: 1, label: "Standard Rate", limits: "All Coverage", type: "percentage", value: 2 }];
+                  
+                  // Get pricing data for this clause
+                  const pricingData = ratingConfig.clausesPricing?.find((p: any) => p.code === clause.clause_code);
+                  
+                  // Use pricing data if available, otherwise use default rows
+                  const currentRows = clauseRows[clause.id] || (pricingData?.variableOptions?.length > 0 
+                    ? pricingData.variableOptions.map((option: any, index: number) => ({
+                        id: index + 1,
+                        label: option.label,
+                        limits: option.limits,
+                        type: option.type,
+                        value: option.value
+                      }))
+                    : [{ id: 1, label: "Standard Rate", limits: "All Coverage", type: "percentage", value: 2 }]
+                  );
+                  
                   const isActive = isClauseActive(clause);
                   
                   return (
@@ -766,19 +871,49 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                         </div>
                         
                         <div className="flex items-center gap-2">
-                          <Select defaultValue="percentage" disabled={!isActive}>
+                          <Select 
+                            value={
+                              ratingConfig.clausesPricing?.find((p: any) => p.code === clause.clause_code)?.pricingType ?? "percentage"
+                            }
+                            onValueChange={(value) => {
+                              setRatingConfig(prev => ({
+                                ...prev,
+                                clausesPricing: prev.clausesPricing?.map((p: any) => 
+                                  p.code === clause.clause_code 
+                                    ? { ...p, pricingType: value }
+                                    : p
+                                ) || []
+                              }));
+                              markAsChanged();
+                            }}
+                            disabled={!isActive}
+                          >
                             <SelectTrigger className="w-20">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="percentage">%</SelectItem>
-                              <SelectItem value="fixed">AED</SelectItem>
+                              <SelectItem value="amount">AED</SelectItem>
                             </SelectContent>
                           </Select>
                           
                           <Input 
                             type="number" 
-                            defaultValue={clause.pricing_value || "2.5"} 
+                            value={
+                              ratingConfig.clausesPricing?.find((p: any) => p.code === clause.clause_code)?.pricingValue ?? 0
+                            }
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 0;
+                              setRatingConfig(prev => ({
+                                ...prev,
+                                clausesPricing: prev.clausesPricing?.map((p: any) => 
+                                  p.code === clause.clause_code 
+                                    ? { ...p, pricingValue: value }
+                                    : p
+                                ) || []
+                              }));
+                              markAsChanged();
+                            }}
                             className="w-24 text-center"
                             placeholder="0.00"
                             disabled={!isActive}
@@ -838,20 +973,25 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                                 <TableRow key={row.id}>
                                   <TableCell>
                                     <Input 
-                                      defaultValue={row.label} 
+                                      value={row.label || ""} 
+                                      onChange={(e) => updateRowField(clause.id, row.id, 'label', e.target.value)}
                                       className="w-full"
                                       placeholder="Label"
                                     />
                                   </TableCell>
                                   <TableCell>
                                     <Input 
-                                      defaultValue={row.limits} 
+                                      value={row.limits || ""} 
+                                      onChange={(e) => updateRowField(clause.id, row.id, 'limits', e.target.value)}
                                       className="w-full"
                                       placeholder="Limits"
                                     />
                                   </TableCell>
                                   <TableCell>
-                                    <Select defaultValue={row.type}>
+                                    <Select 
+                                      value={row.type || "percentage"}
+                                      onValueChange={(value) => updateRowField(clause.id, row.id, 'type', value)}
+                                    >
                                       <SelectTrigger className="w-full">
                                         <SelectValue />
                                       </SelectTrigger>
@@ -864,7 +1004,8 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                                   <TableCell>
                                     <Input 
                                       type="number" 
-                                      defaultValue={row.value} 
+                                      value={row.value || 0} 
+                                      onChange={(e) => updateRowField(clause.id, row.id, 'value', parseFloat(e.target.value) || 0)}
                                       className="w-full text-center"
                                     />
                                   </TableCell>

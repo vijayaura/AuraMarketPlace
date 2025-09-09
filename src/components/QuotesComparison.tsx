@@ -26,100 +26,47 @@ interface QuotesComparisonProps {
   onLoadPricingConfigs?: (eligibleInsurers: any[]) => Promise<boolean>;
 }
 
-const allQuotes = [
-  // Al Buhaira Insurance - Best plan only
-  {
-    id: 1,
-    planName: "Premium Construction Plan",
-    insurerName: "Al Buhaira Insurance",
-    annualPremium: 24850,
-    coverageAmount: 2000000,
-    rating: 4.8,
-    deductible: formatCurrency(25000),
-    isRecommended: false,
-    keyCoverage: [
-      "Contract Works Insurance",
-      "Third Party Liability", 
-      "Professional Indemnity",
-      "Plant & Equipment"
-    ],
-    benefits: [
-      "24/7 Claims Support",
-      "Fast Settlement", 
-      "Risk Management Services",
-      "Free risk assessment"
-    ]
-  },
-  // Union Insurance
-  {
-    id: 3,
-    planName: "Comprehensive Builder Plan",
-    insurerName: "Union Insurance",
-    annualPremium: 26200,
-    coverageAmount: 2500000,
-    rating: 4.7,
-    deductible: formatCurrency(25000),
-    isRecommended: false,
-    keyCoverage: [
-      "Contract Works Insurance",
-      "Third Party Liability",
-      "Professional Indemnity",
-      "Advanced Loss of Profits"
-    ],
-    benefits: [
-      "Premium financing available",
-      "Construction risk consulting",
-      "24/7 emergency hotline",
-      "Mobile claims app"
-    ]
-  },
-  // AWNIC
-  {
-    id: 4,
-    planName: "National Builder Protection",
-    insurerName: "Al Wathba National Insurance Co. (AWNIC)",
-    annualPremium: 22750,
-    coverageAmount: 2000000,
-    rating: 4.6,
-    deductible: formatCurrency(30000),
-    isRecommended: false,
-    keyCoverage: [
-      "Contract Works Insurance",
-      "Third Party Liability",
-      "Professional Indemnity",
-      "Public Liability"
-    ],
-    benefits: [
-      "Local claims network",
-      "Arabic language support",
-      "Government project expertise",
-      "Quick approval process"
-    ]
-  },
-  // Sukoon Insurance
-  {
-    id: 5,
-    planName: "Sukoon Complete Coverage",
-    insurerName: "Sukoon Insurance",
-    annualPremium: 25100,
-    coverageAmount: 2200000,
-    rating: 4.7,
-    deductible: formatCurrency(25000),
-    isRecommended: false,
-    keyCoverage: [
-      "Contract Works Insurance",
-      "Third Party Liability",
-      "Professional Indemnity",
-      "Terrorism Coverage"
-    ],
-    benefits: [
-      "Flexible payment terms",
-      "Risk management workshops",
-      "Dedicated account manager",
-      "Priority claims processing"
-    ]
-  }
-];
+// Generate real quotes from validation results
+const generateRealQuotes = (insurerValidationResults: Record<number, any>, eligibleInsurers: any[], insurerPricingConfigs: Record<number, any>) => {
+  return eligibleInsurers
+    .filter(insurer => {
+      const result = insurerValidationResults[insurer.insurer_id];
+      return result && result.overallDecision === 'Auto Quote' && result.basePremium > 0;
+    })
+    .map(insurer => {
+      const result = insurerValidationResults[insurer.insurer_id];
+      const sumInsured = result.sumInsured || 0;
+      
+      // Get maximum cover from insurer's product configuration
+      const pricingConfig = insurerPricingConfigs[insurer.insurer_id];
+      const maximumCover = pricingConfig?.policy_limits?.maximum_cover?.value || sumInsured;
+      
+      return {
+        id: insurer.insurer_id,
+        planName: `${insurer.insurer_name} CAR Plan`,
+        insurerName: insurer.insurer_name,
+        annualPremium: result.basePremium,
+        coverageAmount: maximumCover, // Use insurer's maximum cover instead of sum insured
+        rating: 4.5, // Default rating, could be enhanced later
+        deductible: formatCurrency(25000), // Default deductible, could be from config
+        isRecommended: false,
+        keyCoverage: [
+          "Contract Works Insurance",
+          "Third Party Liability",
+          "Professional Indemnity",
+          "Plant & Equipment"
+        ],
+        benefits: [
+          "24/7 Claims Support",
+          "Fast Settlement",
+          "Risk Management Services",
+          "Free risk assessment"
+        ],
+        validationResult: result, // Store validation result for reference
+        pricingConfig: pricingConfig // Store pricing config for reference
+      };
+    });
+};
 
 const QuotesComparison = ({ 
   assignedInsurers, 
@@ -431,7 +378,7 @@ const QuotesComparison = ({
              0;
     };
 
-    // 2. Construction/Area/Soil/Contract/Role Validation
+    // 2. Construction/Area/Soil/Contract/Role/Geographical Validation
     const validateConfigItems = () => {
       console.log('🔍 Debugging proposal data for config items:');
       console.log('📋 proposal.project:', proposal.project);
@@ -444,7 +391,10 @@ const QuotesComparison = ({
         { field: 'area_type', config: 'area_types_config', proposal: proposal.site_risks?.area_type },
         { field: 'soil_type', config: 'soil_types_config', proposal: proposal.site_risks?.soil_type },
         { field: 'contract_type', config: 'contract_types_config', proposal: proposal.contract_structure?.details?.contract_type?.replace(/-/g, ' ') },
-        { field: 'role_of_insured', config: 'role_types_config', proposal: proposal.insured?.details?.role_of_insured }
+        { field: 'role_of_insured', config: 'role_types_config', proposal: proposal.insured?.details?.role_of_insured },
+        { field: 'country', config: 'countries_config', proposal: proposal.project?.country },
+        { field: 'region', config: 'regions_config', proposal: proposal.project?.region },
+        { field: 'zone', config: 'zones_config', proposal: proposal.project?.zone }
       ];
 
       configMappings.forEach(mapping => {
@@ -459,7 +409,18 @@ const QuotesComparison = ({
         });
 
         for (const item of configItems) {
-          const configValue = normalizeString(item.name || item.type);
+          // Handle different data structures for geographical fields
+          let configValue;
+          if (mapping.field === 'country') {
+            configValue = normalizeString(item.country || item.name);
+          } else if (mapping.field === 'region') {
+            configValue = normalizeString(item.name || item.region);
+          } else if (mapping.field === 'zone') {
+            configValue = normalizeString(item.name || item.zone);
+          } else {
+            configValue = normalizeString(item.name || item.type);
+          }
+          
           if (configValue === proposalValue) {
             matched = true;
             const decision = item.quote_option === 'NO_QUOTE' ? 'No Quote' : 
@@ -475,8 +436,8 @@ const QuotesComparison = ({
             addValidationResult(
               mapping.field,
               mapping.proposal,
-              item.name || item.type,
-              item.name || item.type,
+              item.name || item.country || item.region || item.zone || item.type,
+              item.name || item.country || item.region || item.zone || item.type,
               item.pricing_type || 'percentage',
               pricingValue,
               item.quote_option || 'auto_quote',
@@ -1285,6 +1246,7 @@ const QuotesComparison = ({
   const [selectedCEWItems, setSelectedCEWItems] = useState<any[]>([]);
   const [showExtensionConfirmDialog, setShowExtensionConfirmDialog] = useState(false);
   const [pendingQuoteId, setPendingQuoteId] = useState<number | null>(null);
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
 
   // State for storing insurer validation results
   const [insurerValidationResults, setInsurerValidationResults] = useState<Record<number, {
@@ -1332,7 +1294,7 @@ const QuotesComparison = ({
 
   const handleDownload = () => {
     // Create and download PDF comparison
-    const selectedData = allQuotes.filter(q => selectedQuotes.includes(q.id));
+    const selectedData = realQuotes.filter(q => selectedQuotes.includes(q.id));
     const content = selectedData.map(quote => 
       `${quote.planName} - ${quote.insurerName}\nPremium: ${formatCurrency(quote.annualPremium)}\nCoverage: ${formatCurrency(quote.coverageAmount)}\n\n`
     ).join('');
@@ -1407,12 +1369,15 @@ const QuotesComparison = ({
 
   const calculateFinalPremium = () => {
     if (!selectedQuoteForCEW) return 0;
-    const netPremium = 22365; // Fixed net premium
-    const defaultCommissionRate = 10; // Default commission rate
-    const basePremium = netPremium + (netPremium * defaultCommissionRate) / 100; // Base = Net + Default Commission
     
+    // Get the real base premium from validation results
+    const validationResult = selectedQuoteForCEW.validationResult;
+    const realBasePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+    
+    // Calculate net premium (base premium without broker commission)
+    const netPremium = realBasePremium / (1 + (brokerCommissionPercent / 100));
     const currentBrokerCommissionAmount = (netPremium * brokerCommissionPercent) / 100;
-    const adjustmentAmount = (basePremium * premiumAdjustment) / 100;
+    const adjustmentAmount = (realBasePremium * premiumAdjustment) / 100;
     
     return netPremium + currentBrokerCommissionAmount + adjustmentAmount;
   };
@@ -1462,7 +1427,7 @@ const QuotesComparison = ({
       return;
     }
 
-    const selectedQuoteData = allQuotes.filter(q => selectedQuotes.includes(q.id));
+    const selectedQuoteData = realQuotes.filter(q => selectedQuotes.includes(q.id));
     
     // Create quotation content
     const quotationContent = selectedQuoteData.map(quote => {
@@ -1520,7 +1485,7 @@ Contact us for more details or to proceed with the application.
       return;
     }
 
-    const selectedQuoteData = allQuotes.filter(q => selectedQuotes.includes(q.id));
+    const selectedQuoteData = realQuotes.filter(q => selectedQuotes.includes(q.id));
     
     const pdf = new jsPDF();
     let yPos = 20;
@@ -1626,7 +1591,9 @@ Contact us for more details or to proceed with the application.
     });
   };
 
-  const comparedQuotes = allQuotes.filter(q => selectedQuotes.includes(q.id));
+  // Generate real quotes from validation results
+  const realQuotes = generateRealQuotes(insurerValidationResults, eligibleInsurers, insurerPricingConfigs || {});
+  const comparedQuotes = realQuotes.filter(q => selectedQuotes.includes(q.id));
   
   // Helper function to get current premium for a quote (updated or original)
   const getCurrentPremium = (quote: any) => {
@@ -1655,36 +1622,48 @@ Contact us for more details or to proceed with the application.
           </div>
 
           {/* Action Buttons */}
-          {selectedQuotes.length > 0 && (
-            <div className="flex gap-4">
-              <Button 
-                onClick={handleCompare}
-                disabled={selectedQuotes.length !== 2}
-                className="gap-2"
-                variant="outline"
-              >
-                <Eye className="w-4 h-4" />
-                Compare Selected Plans ({selectedQuotes.length}/2)
-              </Button>
-              
-              <Button 
-                onClick={handleDownloadProposal}
-                className="gap-2"
-                variant="outline"
-              >
-                <FileText className="w-4 h-4" />
-                Download Proposal
-              </Button>
-              
-              <Button 
-                onClick={handleDownloadQuotation}
-                className="gap-2 bg-white text-gray-900 border border-gray-300 hover:bg-gray-50"
-              >
-                <Download className="w-4 h-4" />
-                Download Quotation
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-4">
+            {/* Validation Details Button */}
+            <Button 
+              onClick={() => setShowValidationDialog(true)}
+              className="gap-2"
+              variant="outline"
+            >
+              <FileText className="w-4 h-4" />
+              Validation Details
+            </Button>
+
+            {selectedQuotes.length > 0 && (
+              <>
+                <Button 
+                  onClick={handleCompare}
+                  disabled={selectedQuotes.length !== 2}
+                  className="gap-2"
+                  variant="outline"
+                >
+                  <Eye className="w-4 h-4" />
+                  Compare Selected Plans ({selectedQuotes.length}/2)
+                </Button>
+                
+                <Button 
+                  onClick={handleDownloadProposal}
+                  className="gap-2"
+                  variant="outline"
+                >
+                  <FileText className="w-4 h-4" />
+                  Download Proposal
+                </Button>
+                
+                <Button 
+                  onClick={handleDownloadQuotation}
+                  className="gap-2 bg-white text-gray-900 border border-gray-300 hover:bg-gray-50"
+                >
+                  <Download className="w-4 h-4" />
+                  Download Quotation
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
 
@@ -1721,126 +1700,9 @@ Contact us for more details or to proceed with the application.
           </div>
         )}
 
-        {/* Debug Info */}
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 className="font-semibold text-blue-800 mb-2">Debug Information</h4>
-          <div className="text-sm text-blue-700 space-y-1">
-            <div>Current Proposal: {currentProposal ? '✅ Available' : '❌ Missing'}</div>
-            <div>Insurer Pricing Configs: {insurerPricingConfigs ? `✅ ${Object.keys(insurerPricingConfigs).length} configs` : '❌ Missing'}</div>
-            <div>Eligible Insurers: {eligibleInsurers.length} insurers</div>
-            <div>Validation Results: {Object.keys(insurerValidationResults).length} results</div>
-            <div>Validation Completed: {Array.from(validationCompleted.current).join(', ') || 'None'}</div>
-          </div>
-        </div>
-
-        {/* Validation Results Display */}
-        {Object.keys(insurerValidationResults).length > 0 && (
-          <div className="mb-6 space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Proposal Validation Results</h3>
-            {Object.entries(insurerValidationResults).map(([insurerId, result]) => {
-              const insurer = eligibleInsurers.find(i => i.insurer_id === parseInt(insurerId));
-              if (!insurer) return null;
-
-              // Only show Auto Quote insurers
-              if (result.overallDecision !== 'Auto Quote') return null;
-
-              return (
-                <Card key={insurerId} className="border border-green-200 bg-green-50">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">{insurer.insurer_name}</CardTitle>
-                      <Badge variant="default">
-                        {result.overallDecision}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground mb-3">
-                        {result.values.length} field validations completed
-                      </div>
-                      
-                      {/* Base Premium Display */}
-                      {result.basePremium > 0 && (
-                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-blue-900">Base Premium</span>
-                            <span className="text-lg font-bold text-blue-900">
-                              AED {result.basePremium.toLocaleString()}
-                            </span>
-                          </div>
-                          {result.pricingDetails && (
-                            <div className="text-xs text-blue-700 mt-1 space-y-1">
-                              <div>{result.pricingDetails.calculation}</div>
-                              <div className="font-medium">Formula: {result.pricingDetails.percentageProductFormula}</div>
-                              <div className="text-xs text-blue-600">
-                                Base Rate: {result.pricingDetails.baseRate} | 
-                                Factors: {result.pricingDetails.factors.join(', ')}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* Validation Details Table */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left p-2 font-medium">Field</th>
-                              <th className="text-left p-2 font-medium">Proposal Value</th>
-                              <th className="text-left p-2 font-medium">Config Range/Match</th>
-                              <th className="text-left p-2 font-medium">Pricing</th>
-                              <th className="text-left p-2 font-medium">Decision</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {result.values.map((validation, index) => (
-                              <tr key={index} className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                <td className="p-2 font-medium text-xs">
-                                  {validation.field_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                </td>
-                                <td className="p-2 text-xs">
-                                  {typeof validation.proposal_value === 'object' 
-                                    ? JSON.stringify(validation.proposal_value)
-                                    : String(validation.proposal_value)
-                                  }
-                                </td>
-                                <td className="p-2 text-xs">{validation.config_range}</td>
-                                <td className="p-2 text-xs">
-                                  <div>
-                                    <div className="font-medium">
-                                      {validation.pricing_type}: {validation.pricing_value}
-                                      {validation.pricing_type === 'Percentage' ? '%' : ''}
-                                    </div>
-                                    <div className="text-muted-foreground">
-                                      {validation.quote_option.replace(/_/g, ' ')}
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="p-2">
-                                  <Badge variant={
-                                    validation.decision === 'Auto Quote' ? 'default' :
-                                    validation.decision === 'Manual Review' ? 'secondary' : 'destructive'
-                                  } className="text-xs">
-                                    {validation.decision}
-                                  </Badge>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
 
           <div className="space-y-4">
-          {allQuotes.map((quote) => {
+          {realQuotes.map((quote) => {
             const isUpdated = updatedQuotes[quote.id]?.isUpdated;
             const currentPremium = getCurrentPremium(quote);
             
@@ -2188,7 +2050,12 @@ Contact us for more details or to proceed with the application.
                          <div className="flex justify-between items-center">
                            <span className="text-xs">Nett Premium</span>
                            <span className="font-medium text-sm">
-                             {formatCurrency(22365)}
+                             {(() => {
+                               if (!selectedQuoteForCEW) return formatCurrency(0);
+                               const validationResult = selectedQuoteForCEW.validationResult;
+                               const realBasePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+                               return formatCurrency(realBasePremium / (1 + (brokerCommissionPercent / 100)));
+                             })()}
                            </span>
                          </div>
                         
@@ -2212,7 +2079,13 @@ Contact us for more details or to proceed with the application.
                             </div>
                           </div>
                           <span className="font-medium text-muted-foreground">
-                            {formatCurrency((22365 * brokerCommissionPercent) / 100)}
+                            {(() => {
+                              if (!selectedQuoteForCEW) return formatCurrency(0);
+                              const validationResult = selectedQuoteForCEW.validationResult;
+                              const realBasePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+                              const netPremium = realBasePremium / (1 + (brokerCommissionPercent / 100));
+                              return formatCurrency((netPremium * brokerCommissionPercent) / 100);
+                            })()}
                           </span>
                         </div>
                         
@@ -2234,7 +2107,12 @@ Contact us for more details or to proceed with the application.
                                    <span className={`font-medium ${
                                      tplAdjustment > 0 ? "text-warning" : "text-success"
                                    }`}>
-                                     {tplAdjustment > 0 ? "+" : ""}{formatCurrency((24601.5 * tplAdjustment) / 100)}
+                                     {tplAdjustment > 0 ? "+" : ""}{(() => {
+                                       if (!selectedQuoteForCEW) return formatCurrency(0);
+                                       const validationResult = selectedQuoteForCEW.validationResult;
+                                       const realBasePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+                                       return formatCurrency((realBasePremium * tplAdjustment) / 100);
+                                     })()}
                                    </span>
                                  </div>
                                </>
@@ -2256,7 +2134,12 @@ Contact us for more details or to proceed with the application.
                                    <span className={`font-medium ${
                                      cewAdjustment > 0 ? "text-warning" : "text-success"
                                    }`}>
-                                     {cewAdjustment > 0 ? "+" : ""}{formatCurrency((24601.5 * cewAdjustment) / 100)}
+                                     {cewAdjustment > 0 ? "+" : ""}{(() => {
+                                       if (!selectedQuoteForCEW) return formatCurrency(0);
+                                       const validationResult = selectedQuoteForCEW.validationResult;
+                                       const realBasePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+                                       return formatCurrency((realBasePremium * cewAdjustment) / 100);
+                                     })()}
                                    </span>
                                  </div>
                                </>
@@ -2327,7 +2210,7 @@ Contact us for more details or to proceed with the application.
                   onClick={() => {
                     setShowExtensionConfirmDialog(false);
                     if (pendingQuoteId) {
-                      const quote = allQuotes.find(q => q.id === pendingQuoteId);
+                      const quote = realQuotes.find(q => q.id === pendingQuoteId);
                       if (quote) {
                         handleExtensionsClick(quote);
                       }
@@ -2349,6 +2232,152 @@ Contact us for more details or to proceed with the application.
                   Proceed with Defaults
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Validation Details Dialog */}
+        <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+          <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Proposal Validation Results & Debug Information</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 mt-6">
+              {/* Debug Information */}
+              <Card className="border-blue-200 bg-blue-50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base text-blue-800">Debug Information</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="text-sm text-blue-700 space-y-1">
+                    <div>Current Proposal: {currentProposal ? '✅ Available' : '❌ Missing'}</div>
+                    <div>Insurer Pricing Configs: {insurerPricingConfigs ? `✅ ${Object.keys(insurerPricingConfigs).length} configs` : '❌ Missing'}</div>
+                    <div>Eligible Insurers: {eligibleInsurers.length} insurers</div>
+                    <div>Validation Results: {Object.keys(insurerValidationResults).length} results</div>
+                    <div>Validation Completed: {Array.from(validationCompleted.current).join(', ') || 'None'}</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Validation Results */}
+              {Object.keys(insurerValidationResults).length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground">Proposal Validation Results</h3>
+                  {Object.entries(insurerValidationResults).map(([insurerId, result]) => {
+                    const insurer = eligibleInsurers.find(i => i.insurer_id === parseInt(insurerId));
+                    if (!insurer) return null;
+
+                    return (
+                      <Card key={insurerId} className={`border ${
+                        result.overallDecision === 'Auto Quote' ? 'border-green-200 bg-green-50' :
+                        result.overallDecision === 'Manual Review' ? 'border-yellow-200 bg-yellow-50' :
+                        'border-red-200 bg-red-50'
+                      }`}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-base">{insurer.insurer_name}</CardTitle>
+                            <Badge variant={
+                              result.overallDecision === 'Auto Quote' ? 'default' :
+                              result.overallDecision === 'Manual Review' ? 'secondary' : 'destructive'
+                            }>
+                              {result.overallDecision}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-2">
+                            <div className="text-sm text-muted-foreground mb-3">
+                              {result.values.length} field validations completed
+                            </div>
+                            
+                            {/* Base Premium Display */}
+                            {result.basePremium > 0 && (
+                              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-blue-900">Base Premium</span>
+                                  <span className="text-lg font-bold text-blue-900">
+                                    AED {result.basePremium.toLocaleString()}
+                                  </span>
+                                </div>
+                                {result.pricingDetails && (
+                                  <div className="text-xs text-blue-700 mt-1 space-y-1">
+                                    <div>{result.pricingDetails.calculation}</div>
+                                    <div className="font-medium">Formula: {result.pricingDetails.percentageProductFormula}</div>
+                                    <div className="text-xs text-blue-600">
+                                      Base Rate: {result.pricingDetails.baseRate} | 
+                                      Factors: {result.pricingDetails.factors.join(', ')}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Validation Details Table */}
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs border-collapse">
+                                <thead>
+                                  <tr className="border-b">
+                                    <th className="text-left p-2 font-medium">Field</th>
+                                    <th className="text-left p-2 font-medium">Proposal Value</th>
+                                    <th className="text-left p-2 font-medium">Config Range/Match</th>
+                                    <th className="text-left p-2 font-medium">Pricing</th>
+                                    <th className="text-left p-2 font-medium">Decision</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {result.values.map((validation, index) => (
+                                    <tr key={index} className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                      <td className="p-2 font-medium text-xs">
+                                        {validation.field_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                      </td>
+                                      <td className="p-2 text-xs">
+                                        {typeof validation.proposal_value === 'object' 
+                                          ? JSON.stringify(validation.proposal_value)
+                                          : String(validation.proposal_value)
+                                        }
+                                      </td>
+                                      <td className="p-2 text-xs">{validation.config_range}</td>
+                                      <td className="p-2 text-xs">
+                                        <div>
+                                          <div className="font-medium">
+                                            {validation.pricing_type}: {validation.pricing_value}
+                                            {validation.pricing_type === 'Percentage' ? '%' : ''}
+                                          </div>
+                                          <div className="text-muted-foreground">
+                                            {validation.quote_option.replace(/_/g, ' ')}
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="p-2">
+                                        <Badge variant={
+                                          validation.decision === 'Auto Quote' ? 'default' :
+                                          validation.decision === 'Manual Review' ? 'secondary' : 'destructive'
+                                        } className="text-xs">
+                                          {validation.decision}
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* No Validation Results */}
+              {Object.keys(insurerValidationResults).length === 0 && (
+                <Card className="border-gray-200 bg-gray-50">
+                  <CardContent className="p-6 text-center">
+                    <p className="text-muted-foreground">No validation results available yet. Please wait for the validation process to complete.</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </DialogContent>
         </Dialog>
