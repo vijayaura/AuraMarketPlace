@@ -226,22 +226,36 @@ const QuotesComparison = ({
     console.log('💰 Percentage fields:', percentageFields);
     console.log('💰 Fixed amount fields:', fixedAmountFields);
     
-    // Calculate PRODUCT of percentage fields (Excel PRODUCT function)
-    let percentageProduct = 1;
-    if (percentageFields.length > 0) {
-      percentageProduct = percentageFields.reduce((acc, field) => {
-        const rate = field.pricing_value / 100; // Convert percentage to decimal
-        return acc * rate; // Direct multiplication, not (1 + rate)
-      }, 1);
+    // Find the base rate from Sub Project Type
+    const subProjectTypeField = percentageFields.find(field => field.field_name === 'sub_project_type');
+    const baseRate = subProjectTypeField ? subProjectTypeField.pricing_value : 0;
+    
+    console.log('💰 Base rate from Sub Project Type:', baseRate);
+    
+    // Calculate factors for all other percentage fields (excluding sub_project_type)
+    const otherPercentageFields = percentageFields.filter(field => field.field_name !== 'sub_project_type');
+    const factors = otherPercentageFields.map(field => {
+      const factor = 1 + (field.pricing_value / 100); // Convert percentage to decimal and add 1
+      console.log(`💰 Factor for ${field.field_name}: 1 + ${field.pricing_value}% = ${factor}`);
+      return factor;
+    });
+    
+    // Calculate final percentage product: base_rate × factor1 × factor2 × ... × factorN
+    let percentageProduct = baseRate / 100; // Convert base rate to decimal
+    if (factors.length > 0) {
+      percentageProduct = factors.reduce((acc, factor) => acc * factor, percentageProduct);
     }
     
+    console.log('💰 Final percentage product:', percentageProduct);
+    console.log('💰 Calculation: base_rate × factors =', baseRate, '×', factors.join(' × '), '=', percentageProduct);
+
     // Calculate SUM of fixed amount fields
     const factorsSum = fixedAmountFields.reduce((acc, field) => acc + field.pricing_value, 0);
     
     // Get sum insured value
     const sumInsured = proposal.cover_requirements?.sum_insured || 0;
     
-    // Calculate base premium: (PRODUCT(percentage fields) * Sum insured) + SUM(fixedAmountFields)
+    // Calculate base premium: (percentage_product * Sum insured) + SUM(fixedAmountFields)
     const basePremium = (percentageProduct * sumInsured) + factorsSum;
     
     return {
@@ -249,11 +263,15 @@ const QuotesComparison = ({
       percentageProduct,
       factorsSum,
       sumInsured,
+      baseRate,
+      factors,
       details: {
         percentageFields,
         fixedAmountFields,
         calculation: `(${percentageProduct} × ${sumInsured}) + ${factorsSum} = ${basePremium}`,
-        percentageProductFormula: `rate1 × rate2 × ... × raten = ${percentageProduct}`
+        percentageProductFormula: `base_rate × factor1 × factor2 × ... × factorN = ${baseRate}% × ${factors.join(' × ')} = ${percentageProduct}`,
+        baseRate: `${baseRate}%`,
+        factors: factors.map((factor, index) => `${otherPercentageFields[index].field_name}: ${factor}`)
       }
     };
   };
@@ -1752,8 +1770,13 @@ Contact us for more details or to proceed with the application.
                             </span>
                           </div>
                           {result.pricingDetails && (
-                            <div className="text-xs text-blue-700 mt-1">
-                              {result.pricingDetails.calculation}
+                            <div className="text-xs text-blue-700 mt-1 space-y-1">
+                              <div>{result.pricingDetails.calculation}</div>
+                              <div className="font-medium">Formula: {result.pricingDetails.percentageProductFormula}</div>
+                              <div className="text-xs text-blue-600">
+                                Base Rate: {result.pricingDetails.baseRate} | 
+                                Factors: {result.pricingDetails.factors.join(', ')}
+                              </div>
                             </div>
                           )}
                         </div>
