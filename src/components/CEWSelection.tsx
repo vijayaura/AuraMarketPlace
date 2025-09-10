@@ -82,17 +82,39 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   // Update cewItems when productConfigBundle changes
   useEffect(() => {
     if (productConfigBundle) {
+      console.log('🔧 Product config bundle received:', productConfigBundle);
       const transformedItems = transformProductConfigToCEWItems(productConfigBundle);
+      console.log('🔧 Transformed items:', transformedItems);
+      
       // Auto-select mandatory items from product config
       const itemsWithMandatorySelected = transformedItems.map(item => ({
         ...item,
         isSelected: item.isMandatory || item.isSelected
       }));
       
+      console.log('🔧 Items with mandatory selected:', itemsWithMandatorySelected);
       setCEWItems(itemsWithMandatorySelected);
       onSelectionChange?.(itemsWithMandatorySelected);
     }
   }, [productConfigBundle]);
+
+  // Calculate initial adjustments when CEW items change
+  useEffect(() => {
+    if (cewItems.length > 0) {
+      console.log('🔧 CEW Items for adjustment calculation:', cewItems);
+      const selectedItems = cewItems.filter(item => item.isSelected);
+      console.log('🔧 Selected CEW Items:', selectedItems);
+      
+      const cewAdjustment = selectedItems.reduce((sum, item) => {
+        const impact = calculateItemPremiumImpact(item);
+        console.log(`🔧 Item ${item.name} (${item.code}): impact = ${impact}, isSelected = ${item.isSelected}, isMandatory = ${item.isMandatory}`);
+        return sum + impact;
+      }, 0);
+      
+      console.log('🔧 Total CEW Adjustment calculated:', cewAdjustment);
+      onCEWAdjustmentChange?.(cewAdjustment);
+    }
+  }, [cewItems]);
 
   // Transform product config bundle data to CEW items
   const transformProductConfigToCEWItems = (configBundle: any): CEWItem[] => {

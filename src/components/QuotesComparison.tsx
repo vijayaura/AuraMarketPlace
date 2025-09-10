@@ -162,13 +162,17 @@ const QuotesComparison = ({
     
     // Group by pricing type
     const percentageFields = pricingFields.filter(field => 
-      field.pricing_type.toLowerCase().includes('percentage') || 
-      field.pricing_type.toLowerCase().includes('percent')
+      field.pricing_type && (
+        field.pricing_type.toLowerCase().includes('percentage') || 
+        field.pricing_type.toLowerCase().includes('percent')
+      )
     );
     
     const fixedAmountFields = pricingFields.filter(field => 
-      field.pricing_type.toLowerCase().includes('fixed') || 
-      field.pricing_type.toLowerCase().includes('amount')
+      field.pricing_type && (
+        field.pricing_type.toLowerCase().includes('fixed') || 
+        field.pricing_type.toLowerCase().includes('amount')
+      )
     );
     
     console.log('💰 Percentage fields:', percentageFields);
@@ -1416,15 +1420,11 @@ const QuotesComparison = ({
     console.log('Extensions button clicked for quote:', quote);
     setSelectedQuoteForCEW(quote);
     
-    // Load existing CEW selections and premium if available
-    const existingData = updatedQuotes[quote.id];
-    if (existingData) {
-      setPremiumAdjustment(((existingData.premium - quote.annualPremium) / quote.annualPremium) * 100);
-      setSelectedCEWItems(existingData.cewItems);
-    } else {
-      setPremiumAdjustment(0);
-      setSelectedCEWItems([]);
-    }
+    // Reset to default state when opening dialog (but keep adjustments for mandatory items)
+    setPremiumAdjustment(0);
+    setSelectedCEWItems([]);
+    setTPLAdjustment(0);
+    // Don't reset cewAdjustment - let it be calculated from mandatory items
     
     // Fetch product config bundle for this insurer
     try {
@@ -1576,7 +1576,9 @@ const QuotesComparison = ({
     selectedCEWItems
       .filter(item => item.isSelected)
       .forEach(item => {
-        const key = item.code?.toLowerCase().replace(/[^a-z0-9]/g, '_') || `extension_${item.id}`;
+        const key = (item.code && typeof item.code === 'string') 
+          ? item.code.toLowerCase().replace(/[^a-z0-9]/g, '_') 
+          : `extension_${item.id}`;
         selectedExtensions[key] = {
           code: item.code || `EXT${item.id}`,
           label: item.selectedOption?.label || item.name,
@@ -2149,7 +2151,7 @@ Contact us for more details or to proceed with the application.
                                         </div>
                                       </div>
                                       <div className="text-xs text-muted-foreground leading-relaxed text-left break-words">
-                                        This extension provides additional coverage for {item.name.toLowerCase()} as per the policy terms and conditions. The coverage includes all standard exclusions and limitations as outlined in the main policy document.
+                                        This extension provides additional coverage for {(item.name && typeof item.name === 'string') ? item.name.toLowerCase() : item.name} as per the policy terms and conditions. The coverage includes all standard exclusions and limitations as outlined in the main policy document.
                                       </div>
                                     </div>
                                   ) : (
@@ -2245,6 +2247,7 @@ Contact us for more details or to proceed with the application.
               {/* CEW Selection */}
               <div className="lg:col-span-2">
                 <CEWSelection 
+                  key={`cew-${selectedQuoteForCEW?.id}-${showCEWDialog}`}
                   onSelectionChange={handleCEWSelectionChange}
                   onPremiumChange={handlePremiumChange}
                   onTPLAdjustmentChange={handleTPLAdjustmentChange}
