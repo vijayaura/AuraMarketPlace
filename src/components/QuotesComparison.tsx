@@ -1475,6 +1475,21 @@ const QuotesComparison = ({
     console.log('🔧 selectedCEWItems selected count:', selectedCEWItems.filter(item => item.isSelected).length);
   }, [selectedCEWItems]);
 
+  // Validate mandatory CEW items
+  const validateMandatoryCEWItems = () => {
+    const unselectedMandatoryItems = selectedCEWItems.filter(item => item.isMandatory && !item.isSelected);
+    if (unselectedMandatoryItems.length > 0) {
+      const itemNames = unselectedMandatoryItems.map(item => item.name).join(', ');
+      toast({
+        title: "Mandatory Items Required",
+        description: `Please select the following mandatory Policy Extensions & Conditions: ${itemNames}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleTPLSelectionChange = (tplOption: any) => {
     if (tplOption) {
       // Add TPL extension to selected items
@@ -1532,6 +1547,11 @@ const QuotesComparison = ({
 
   const handleUpdatePremium = () => {
     if (!selectedQuoteForCEW) return;
+    
+    // Validate mandatory CEW items
+    if (!validateMandatoryCEWItems()) {
+      return;
+    }
     
     const finalPremium = calculateFinalPremium();
     
@@ -1637,6 +1657,12 @@ const QuotesComparison = ({
   const handleSelectPlanWithAPI = async (quoteId: number) => {
     try {
       setIsSubmittingPlan(true);
+      
+      // Validate mandatory CEW items
+      if (!validateMandatoryCEWItems()) {
+        setIsSubmittingPlan(false);
+        return;
+      }
       
       // Get quote ID from storage
       const storedQuoteId = localStorage.getItem('currentQuoteId');

@@ -86,15 +86,9 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
       const transformedItems = transformProductConfigToCEWItems(productConfigBundle);
       console.log('🔧 Transformed items:', transformedItems);
       
-      // Auto-select mandatory items from product config
-      const itemsWithMandatorySelected = transformedItems.map(item => ({
-        ...item,
-        isSelected: item.isMandatory || item.isSelected
-      }));
-      
-      console.log('🔧 Items with mandatory selected:', itemsWithMandatorySelected);
-      setCEWItems(itemsWithMandatorySelected);
-      onSelectionChange?.(itemsWithMandatorySelected);
+      // Don't auto-select mandatory items - let user select them
+      setCEWItems(transformedItems);
+      onSelectionChange?.(transformedItems);
     }
   }, [productConfigBundle]);
 
@@ -129,7 +123,7 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
       category: clause.meta?.clause_type || 'Extension',
       description: clause.meta?.purpose_description || clause.meta?.clause_wording || 'No description available',
       isMandatory: clause.meta?.show_type === 'MANDATORY',
-      isSelected: clause.meta?.show_type === 'MANDATORY', // Auto-select mandatory items from config
+      isSelected: false, // Don't auto-select mandatory items - let user select them
       isPremium: false,
       options: clause.options?.map((option: any, optIndex: number) => ({
         id: optIndex + 1,
@@ -245,8 +239,6 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   };
 
   const toggleSelection = (itemId: number) => {
-    if (cewItems.find(item => item.id === itemId)?.isMandatory) return;
-    
     const updatedItems = cewItems.map(item =>
       item.id === itemId ? { ...item, isSelected: !item.isSelected } : item
     );
@@ -577,7 +569,9 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
               <div>
                 {item.isMandatory ? (
                   <div className="flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <div className="w-4 h-4 rounded border-2 border-destructive bg-destructive/10 flex items-center justify-center">
+                      <span className="text-xs font-bold text-destructive">!</span>
+                    </div>
                   </div>
                 ) : (
                   <div className="relative">
