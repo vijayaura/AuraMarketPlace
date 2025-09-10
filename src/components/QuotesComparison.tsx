@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { formatCurrency, formatNumber } from "@/lib/utils";
@@ -1426,6 +1426,8 @@ const QuotesComparison = ({
     setTPLAdjustment(0);
     // Don't reset cewAdjustment - let it be calculated from mandatory items
     
+    console.log('🔧 Dialog opening - selectedCEWItems reset to:', []);
+    
     // Fetch product config bundle for this insurer
     try {
       setIsLoadingProductConfig(true);
@@ -1449,7 +1451,9 @@ const QuotesComparison = ({
 
   const handleCEWSelectionChange = (selectedItems: any[]) => {
     console.log('🔧 handleCEWSelectionChange called with:', selectedItems);
+    console.log('🔧 Previous selectedCEWItems:', selectedCEWItems);
     setSelectedCEWItems(selectedItems);
+    console.log('🔧 selectedCEWItems will be updated to:', selectedItems);
   };
 
   const handlePremiumChange = (adjustment: number) => {
@@ -1463,6 +1467,13 @@ const QuotesComparison = ({
   const handleCEWAdjustmentChange = (adjustment: number) => {
     setCEWAdjustment(adjustment);
   };
+
+  // Debug selectedCEWItems changes
+  useEffect(() => {
+    console.log('🔧 selectedCEWItems state changed to:', selectedCEWItems);
+    console.log('🔧 selectedCEWItems length:', selectedCEWItems.length);
+    console.log('🔧 selectedCEWItems selected count:', selectedCEWItems.filter(item => item.isSelected).length);
+  }, [selectedCEWItems]);
 
   const handleTPLSelectionChange = (tplOption: any) => {
     if (tplOption) {
