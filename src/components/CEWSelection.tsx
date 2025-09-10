@@ -86,6 +86,13 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
       const transformedItems = transformProductConfigToCEWItems(productConfigBundle);
       console.log('🔧 Transformed items:', transformedItems);
       
+      // Check if any mandatory items are being auto-selected
+      const mandatoryItems = transformedItems.filter(item => item.isMandatory);
+      const selectedMandatoryItems = mandatoryItems.filter(item => item.isSelected);
+      console.log('🔧 Mandatory items found:', mandatoryItems.length);
+      console.log('🔧 Selected mandatory items:', selectedMandatoryItems.length);
+      console.log('🔧 Mandatory items details:', mandatoryItems.map(item => ({ name: item.name, isSelected: item.isSelected, isMandatory: item.isMandatory })));
+      
       // Don't auto-select mandatory items - let user select them
       setCEWItems(transformedItems);
       onSelectionChange?.(transformedItems);
@@ -262,13 +269,13 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     
     const updatedItems = cewItems.map(item => {
       if (item.id === itemId) {
-        // For mandatory items, allow option deselection but keep item selected
+        // For mandatory items, allow option selection but don't force item selection
         if (item.isMandatory) {
           // If clicking the same option, deselect it (use base value)
           if (item.selectedOptionId === optionId) {
             return {
               ...item,
-              isSelected: true, // Keep mandatory item selected
+              isSelected: item.isSelected, // Keep current selection state
               selectedOptionId: undefined, // Deselect option (use base value)
               impact: {
                 ...item.impact,
@@ -280,7 +287,7 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
             const selectedOption = item.options.find(opt => opt.id === optionId);
             return {
               ...item,
-              isSelected: true, // Always keep mandatory items selected
+              isSelected: item.isSelected, // Keep current selection state
               selectedOptionId: optionId,
               impact: {
                 ...item.impact,
