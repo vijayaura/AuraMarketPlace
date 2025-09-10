@@ -46,6 +46,7 @@ type PricingConfiguratorProps = {
   removeMaintenancePeriodLoading: (id: any) => void;
   updateProjectRiskFactor: (section: string, key: string, value: any) => void;
   SoilTypeMultiSelect: React.ComponentType<any>;
+  soilTypesData: any[];
   isLoadingProjectRiskFactors: boolean;
   isSavingProjectRiskFactors: boolean;
   projectRiskFactorsError: string | null;
@@ -495,6 +496,7 @@ const PricingConfigurator: React.FC<PricingConfiguratorProps> = ({
                 removeMaintenancePeriodLoading={removeMaintenancePeriodLoading}
                 updateProjectRiskFactor={updateProjectRiskFactor}
                 SoilTypeMultiSelect={SoilTypeMultiSelect}
+                soilTypesData={soilTypesData}
                 isLoading={isLoadingProjectRiskFactors}
                 isSaving={isSavingProjectRiskFactors}
                 error={projectRiskFactorsError}

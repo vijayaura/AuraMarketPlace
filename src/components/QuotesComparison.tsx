@@ -1002,7 +1002,13 @@ const QuotesComparison = ({
             } else if (factorName.includes('city') && proposalRiskValues.within_city_center) {
               if (riskValue === 'yes') matchesRiskLevel = true;
             } else if (factorName.includes('soil') && proposalRiskValues.soil_type) {
-              const soilTypes = riskValue.toLowerCase().split(', ');
+              // Handle soil types as array (new API format) or comma-separated string (legacy format)
+              let soilTypes: string[];
+              if (Array.isArray(riskValue)) {
+                soilTypes = riskValue.map((type: string) => type.toLowerCase());
+              } else {
+                soilTypes = riskValue.toLowerCase().split(', ');
+              }
               if (soilTypes.includes(proposalRiskValues.soil_type.toLowerCase())) matchesRiskLevel = true;
             } else if (factorName.includes('existing') && proposalRiskValues.existing_structure) {
               if (riskValue === 'yes') matchesRiskLevel = true;
@@ -2315,17 +2321,24 @@ Contact us for more details or to proceed with the application.
                       </CardHeader>
                       <CardContent className="pt-0 px-2 pb-4 max-h-32 overflow-y-auto">
                         <div className="space-y-1">
-                          {selectedCEWItems.filter(item => item.isSelected).map(item => (
-                            <div key={item.id} className="flex justify-between items-center p-2 bg-muted/50 rounded text-xs">
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium truncate">{item.name}</span>
-                                <Badge variant="outline" className="text-[9px] px-1 py-0 flex-shrink-0">{item.code}</Badge>
+                          {selectedCEWItems.filter(item => item.isSelected).map(item => {
+                            const selectedOption = item.options?.find(opt => opt.id === item.selectedOptionId);
+                            const displayValue = selectedOption ? 
+                              `${selectedOption.label}: ${selectedOption.type === "percentage" ? `${selectedOption.value > 0 ? "+" : ""}${selectedOption.value}%` : `+AED ${selectedOption.value.toLocaleString()}`}` :
+                              `${item.impact.premiumAmount > 0 ? "+" : ""}${item.impact.premiumAmount}%`;
+                            
+                            return (
+                              <div key={item.id} className="flex justify-between items-center p-2 bg-muted/50 rounded text-xs">
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium truncate">{item.name}</span>
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 flex-shrink-0">{item.code}</Badge>
+                                </div>
+                                <span className="text-[9px] text-muted-foreground flex-shrink-0">
+                                  {displayValue}
+                                </span>
                               </div>
-                              <span className="text-[9px] text-muted-foreground flex-shrink-0">
-                                {item.impact.premiumAmount > 0 ? "+" : ""}{item.impact.premiumAmount}%
-                              </span>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </CardContent>
                     </Card>

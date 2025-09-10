@@ -1919,6 +1919,18 @@ export interface ProjectRiskFactorsRequest {
   };
 }
 
+export interface ProjectRiskFactorsUpdateRequest {
+  insurer_id: number;
+  project_risk_factors: {
+    project_duration_loadings: ProjectRiskDurationItem[];
+    maintenance_period_loadings: ProjectRiskDurationItem[];
+    location_hazard_loadings: {
+      risk_definition: { factors: ProjectRiskLocationFactorRow[] };
+      location_hazard_rates: ProjectRiskHazardRateItem[];
+    };
+  };
+}
+
 export interface ProjectRiskFactorsResponse {
   message?: string;
   data?: any;
@@ -1955,7 +1967,7 @@ export async function createProjectRiskFactors(
 export async function updateProjectRiskFactors(
   insurerId: number | string,
   productId: number | string,
-  body: ProjectRiskFactorsRequest
+  body: ProjectRiskFactorsUpdateRequest
 ): Promise<ProjectRiskFactorsResponse> {
   return apiPatch<ProjectRiskFactorsResponse>(
     `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/project-risk-factors`,
@@ -2070,6 +2082,9 @@ export interface CoverageOptionsResponse {
   project_value_loadings: CoverageOptionLoading[];
   contract_works_loadings: CoverageOptionLoading[];
   plant_equipment_loadings: CoverageOptionLoading[];
+  temporay_work?: CoverageOptionLoading[];
+  other_materials?: CoverageOptionLoading[];
+  Principal_Existing_Surrounding_Property?: CoverageOptionLoading[];
 }
 
 export async function getCoverageOptions(insurerId: number | string, productId: number | string): Promise<CoverageOptionsResponse> {
@@ -2083,6 +2098,9 @@ export interface SaveCoverageOptionsRequest {
     project_value_loadings: CoverageOptionLoading[];
     contract_works_loadings: CoverageOptionLoading[];
     plant_equipment_loadings: CoverageOptionLoading[];
+    temporay_work?: CoverageOptionLoading[];
+    other_materials?: CoverageOptionLoading[];
+    Principal_Existing_Surrounding_Property?: CoverageOptionLoading[];
     cross_liability_cover: CrossLiabilityCover[];
   };
 }
@@ -2114,6 +2132,9 @@ export interface UpdateCoverageOptionsRequest {
     project_value_loadings: Omit<CoverageOptionLoading, 'currency'>[];
     contract_works_loadings?: Omit<CoverageOptionLoading, 'currency'>[];
     plant_equipment_loadings?: Omit<CoverageOptionLoading, 'currency'>[];
+    temporay_work?: Omit<CoverageOptionLoading, 'currency'>[];
+    other_materials?: Omit<CoverageOptionLoading, 'currency'>[];
+    Principal_Existing_Surrounding_Property?: Omit<CoverageOptionLoading, 'currency'>[];
     cross_liability_cover?: CrossLiabilityCover[];
   };
 }
@@ -2125,6 +2146,9 @@ export interface UpdateCoverageOptionsResponse {
     project_value_loadings: CoverageOptionLoading[];
     contract_works_loadings?: CoverageOptionLoading[];
     plant_equipment_loadings?: CoverageOptionLoading[];
+    temporay_work?: CoverageOptionLoading[];
+    other_materials?: CoverageOptionLoading[];
+    Principal_Existing_Surrounding_Property?: CoverageOptionLoading[];
     cross_liability_cover?: CrossLiabilityCover[];
   };
 }

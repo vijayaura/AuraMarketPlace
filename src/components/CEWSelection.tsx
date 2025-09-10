@@ -83,11 +83,12 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   useEffect(() => {
     if (productConfigBundle) {
       const transformedItems = transformProductConfigToCEWItems(productConfigBundle);
-      // Auto-select mandatory items
+      // Auto-select mandatory items from product config
       const itemsWithMandatorySelected = transformedItems.map(item => ({
         ...item,
         isSelected: item.isMandatory || item.isSelected
       }));
+      
       setCEWItems(itemsWithMandatorySelected);
       onSelectionChange?.(itemsWithMandatorySelected);
     }
@@ -101,29 +102,34 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
       id: clause.id,
       code: clause.clause_code,
       name: clause.meta?.title || clause.clause_code,
-      type: clause.meta?.clause_type?.toLowerCase() === 'warranty' ? 'warranty' : 
-            clause.meta?.clause_type?.toLowerCase() === 'exclusion' ? 'condition' : 'extension',
+      type: (clause.meta?.clause_type && typeof clause.meta.clause_type === 'string' && clause.meta.clause_type.toLowerCase() === 'warranty') ? 'warranty' : 
+            (clause.meta?.clause_type && typeof clause.meta.clause_type === 'string' && clause.meta.clause_type.toLowerCase() === 'exclusion') ? 'condition' : 'extension',
       category: clause.meta?.clause_type || 'Extension',
       description: clause.meta?.purpose_description || clause.meta?.clause_wording || 'No description available',
       isMandatory: clause.meta?.show_type === 'MANDATORY',
-      isSelected: clause.meta?.show_type === 'MANDATORY', // Auto-select mandatory items
+      isSelected: clause.meta?.show_type === 'MANDATORY', // Auto-select mandatory items from config
       isPremium: false,
       options: clause.options?.map((option: any, optIndex: number) => ({
         id: optIndex + 1,
         label: option.label,
         description: option.limit,
         limits: option.limit,
-        type: option.type?.toLowerCase() === 'percentage' ? 'percentage' : 'amount',
+        type: (option.type && typeof option.type === 'string' && option.type.toLowerCase() === 'percentage') ? 'percentage' : 'amount',
         value: option.value,
         recommended: optIndex === 0 // First option is recommended
       })) || [],
       selectedOptionId: undefined, // Don't auto-select options for mandatory items
       impact: {
         coverage: clause.meta?.clause_wording || 'Standard coverage',
-        premium: clause.base_value > 0 ? 'increase' : clause.base_value < 0 ? 'decrease' : 'neutral',
-        premiumAmount: Math.abs(parseFloat(clause.base_value) || 0)
+        premium: clause.pricing_value > 0 ? 'increase' : clause.pricing_value < 0 ? 'decrease' : 'neutral',
+        premiumAmount: Math.abs(parseFloat(clause.pricing_value) || 0)
       },
-      defaultValue: parseFloat(clause.base_value) || 0
+      // Use the base rate from pricing configuration
+      defaultValue: (() => {
+        const value = clause.pricing_type === 'PERCENTAGE' ? parseFloat(clause.pricing_value) || 0 : parseFloat(clause.pricing_value) || 0;
+        console.log('🔧 transformProductConfigToCEWItems - clause:', clause.clause_code, 'pricing_value:', clause.pricing_value, 'pricing_type:', clause.pricing_type, 'defaultValue:', value);
+        return value;
+      })()
     }));
   };
 
@@ -141,249 +147,14 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     }));
   };
 
-  const [cewItems, setCEWItems] = useState<CEWItem[]>([
-    {
-      id: 1,
-      code: "CEW01",
-      name: "Maintenance Extension",
-      type: "extension",
-      category: "Period Extensions",
-      description: "Extends coverage into the maintenance period beyond standard 12 months",
-      isMandatory: false,
-      isSelected: false,
-      options: [
-        {
-          id: 1,
-          label: "18 Months",
-          description: "Coverage extended to 18 months maintenance",
-          limits: "Full project value",
-          type: "percentage",
-          value: 2.5
-        },
-        {
-          id: 2,
-          label: "24 Months",
-          description: "Coverage extended to 24 months maintenance",
-          limits: "Full project value",
-          type: "percentage",
-          value: 4.0
-        },
-        {
-          id: 3,
-          label: "36 Months",
-          description: "Coverage extended to 36 months maintenance",
-          limits: "Full project value",
-          type: "percentage",
-          value: 6.5
-        }
-      ],
-      selectedOptionId: undefined,
-      impact: {
-        coverage: "Extends material damage coverage during maintenance period",
-        premium: "increase",
-        premiumAmount: 0 // Will be calculated based on selected option
-      },
-      defaultValue: 2.5 // Default value for this clause
-    },
-    {
-      id: 2,
-      code: "CEW02",
-      name: "Professional Indemnity",
-      type: "extension",
-      category: "Liability Extensions",
-      description: "Covers professional liability for design and supervision errors",
-      isMandatory: false,
-      isSelected: false,
-      options: [
-        {
-          id: 1,
-          label: "AED 1M Limit",
-          description: "Professional indemnity up to AED 1 Million",
-          limits: "AED 1,000,000",
-          type: "amount",
-          value: 2500
-        },
-        {
-          id: 2,
-          label: "AED 2M Limit",
-          description: "Professional indemnity up to AED 2 Million",
-          limits: "AED 2,000,000",
-          type: "amount",
-          value: 4500
-        },
-        {
-          id: 3,
-          label: "AED 5M Limit",
-          description: "Professional indemnity up to AED 5 Million",
-          limits: "AED 5,000,000",
-          type: "amount",
-          value: 8500
-        }
-      ],
-      selectedOptionId: undefined,
-      impact: {
-        coverage: "Covers errors in professional services and design",
-        premium: "increase",
-        premiumAmount: 0 // Will be calculated based on selected option
-      },
-      defaultValue: 4500 // Default value for this clause
-    },
-    {
-      id: 3,
-      code: "CEW03",
-      name: "Terrorism Coverage",
-      type: "extension",
-      category: "Special Perils",
-      description: "Extends coverage to include acts of terrorism and sabotage",
-      isMandatory: false,
-      isSelected: false,
-      options: [
-        {
-          id: 1,
-          label: "Basic Coverage",
-          description: "Covers certified acts of terrorism",
-          limits: "Up to 50% of sum insured",
-          type: "percentage",
-          value: 1.2
-        },
-        {
-          id: 2,
-          label: "Enhanced Coverage",
-          description: "Covers all acts of terrorism and sabotage",
-          limits: "Full sum insured",
-          type: "percentage",
-          value: 2.8,
-        }
-      ],
-      selectedOptionId: undefined,
-      impact: {
-        coverage: "Protection against terrorism and sabotage risks",
-        premium: "increase",
-        premiumAmount: 2.8
-      }
-    },
-    {
-      id: 4,
-      code: "CEW04",
-      name: "Earthquake Exclusion Waiver",
-      type: "condition",
-      category: "Natural Catastrophe",
-      description: "Removes earthquake exclusion for enhanced natural disaster coverage",
-      isMandatory: false,
-      isSelected: false,
-      isPremium: true,
-      options: [
-        {
-          id: 1,
-          label: "Zone 1-2 Coverage",
-          description: "Coverage for low to moderate seismic zones",
-          limits: "Full sum insured",
-          type: "percentage",
-          value: 3.5
-        },
-        {
-          id: 2,
-          label: "Zone 3-4 Coverage",
-          description: "Coverage for high seismic risk zones",
-          limits: "Full sum insured",
-          type: "percentage",
-          value: 7.5,
-        }
-      ],
-      selectedOptionId: undefined,
-      impact: {
-        coverage: "Includes earthquake damage in material damage coverage",
-        premium: "increase",
-        premiumAmount: 0 // Will be calculated based on selected option
-      },
-      defaultValue: 7.5 // Default value for this clause
-    },
-    {
-      id: 5,
-      code: "CEW05",
-      name: "Contractors Plant Deductible",
-      type: "condition",
-      category: "Deductibles",
-      description: "Modify deductible levels for contractors plant and equipment",
-      isMandatory: true,
-      isSelected: true,
-      options: [
-        {
-          id: 1,
-          label: "AED 2,500",
-          description: "Standard deductible for plant & equipment",
-          limits: "Per claim",
-          type: "amount",
-          value: 0,
-        },
-        {
-          id: 2,
-          label: "AED 5,000",
-          description: "Higher deductible for reduced premium",
-          limits: "Per claim",
-          type: "percentage",
-          value: -1.5
-        },
-        {
-          id: 3,
-          label: "AED 10,000",
-          description: "Highest deductible for maximum premium reduction",
-          limits: "Per claim",
-          type: "percentage",
-          value: -3.0
-        }
-      ],
-      selectedOptionId: 1,
-      impact: {
-        coverage: "Sets deductible amount for plant & equipment claims",
-        premium: "neutral",
-        premiumAmount: 0
-      },
-      defaultValue: 0 // Default value for this clause
-    },
-    {
-      id: 6,
-      code: "CEW06",
-      name: "Defects Liability",
-      type: "warranty",
-      category: "Quality Warranties",
-      description: "Warranty against defects in materials and workmanship",
-      isMandatory: true,
-      isSelected: true,
-      options: [
-        {
-          id: 1,
-          label: "12 Months",
-          description: "Standard defects liability period",
-          limits: "Repair/replacement costs",
-          type: "percentage",
-          value: 0,
-        },
-        {
-          id: 2,
-          label: "24 Months",
-          description: "Extended defects liability period",
-          limits: "Repair/replacement costs",
-          type: "percentage",
-          value: 1.8
-        }
-      ],
-      selectedOptionId: 1,
-      impact: {
-        coverage: "Covers cost of repairing defective work",
-        premium: "neutral",
-        premiumAmount: 0
-      },
-      defaultValue: 0 // Default value for this clause
-    }
-  ]);
+  const [cewItems, setCEWItems] = useState<CEWItem[]>([]);
 
   const [commissionPercentage, setCommissionPercentage] = useState(brokerCommissionLimits.current);
   const [commissionError, setCommissionError] = useState("");
 
-  // Initialize mandatory items on component mount
+  // Initialize empty state on component mount
   useEffect(() => {
-    // Trigger selection change to notify parent about mandatory items
+    // Trigger selection change to notify parent about initial empty state
     onSelectionChange?.(cewItems);
   }, []);
 
@@ -546,13 +317,26 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     onPremiumChange?.(tplAdjustment + cewAdjustment);
   };
 
+  // Helper function to get potential impact regardless of selection status
+  const getPotentialImpact = (item: CEWItem): number => {
+    const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
+    if (selectedOption) {
+      return selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000;
+    } else {
+      return item.defaultValue;
+    }
+  };
+
   const formatPremiumImpact = (item: CEWItem) => {
     const premiumImpact = calculateItemPremiumImpact(item);
     if (premiumImpact === 0) return "No impact";
     
-    // Determine if it's percentage or amount based on the first option's type
+    // Determine if it's percentage or amount based on the first option's type or item's default type
     const firstOption = item.options[0];
-    if (firstOption?.type === "percentage") {
+    const isPercentage = firstOption?.type === "percentage" || 
+                        (item.options.length === 0 && item.defaultValue !== 0 && Math.abs(item.defaultValue) <= 100);
+    
+    if (isPercentage) {
       const sign = premiumImpact > 0 ? "+" : "";
       return `${sign}${premiumImpact}%`;
     } else {
@@ -560,13 +344,53 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     }
   };
 
+  const formatPotentialImpact = (item: CEWItem) => {
+    // Show base rate from pricing configuration when no option is selected
+    if (!item.selectedOptionId) {
+      const baseRate = item.defaultValue;
+      console.log('🔧 formatPotentialImpact - item:', item.name, 'baseRate:', baseRate, 'selectedOptionId:', item.selectedOptionId);
+      
+      // Determine if it's percentage or amount based on the first option's type or item's default type
+      const firstOption = item.options[0];
+      const isPercentage = firstOption?.type === "percentage" || 
+                          (item.options.length === 0 && Math.abs(baseRate) <= 100);
+      
+      console.log('🔧 formatPotentialImpact - firstOption:', firstOption, 'isPercentage:', isPercentage);
+      
+      if (isPercentage) {
+        const sign = baseRate > 0 ? "+" : "";
+        return `${sign}${baseRate}%`;
+      } else {
+        return `+AED ${baseRate.toLocaleString()}`;
+      }
+    }
+    
+    // Show selected option impact when an option is selected
+    const potentialImpact = getPotentialImpact(item);
+    
+    // Determine if it's percentage or amount based on the first option's type or item's default type
+    const firstOption = item.options[0];
+    const isPercentage = firstOption?.type === "percentage" || 
+                        (item.options.length === 0 && Math.abs(item.defaultValue) <= 100);
+    
+    if (isPercentage) {
+      const sign = potentialImpact > 0 ? "+" : "";
+      return `${sign}${potentialImpact}%`;
+    } else {
+      return `+AED ${potentialImpact.toLocaleString()}`;
+    }
+  };
+
   const formatDefaultValue = (item: CEWItem) => {
     const premiumImpact = calculateItemPremiumImpact(item);
     if (premiumImpact === 0) return "No impact";
     
-    // Determine if it's percentage or amount based on the first option's type
+    // Determine if it's percentage or amount based on the first option's type or item's default type
     const firstOption = item.options[0];
-    if (firstOption?.type === "percentage") {
+    const isPercentage = firstOption?.type === "percentage" || 
+                        (item.options.length === 0 && item.defaultValue !== 0 && Math.abs(item.defaultValue) <= 100);
+    
+    if (isPercentage) {
       const sign = premiumImpact > 0 ? "+" : "";
       return `${sign}${premiumImpact}%`;
     } else {
@@ -778,10 +602,10 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-medium ${
-                        calculateItemPremiumImpact(item) > 0 ? "text-warning" : 
-                        calculateItemPremiumImpact(item) < 0 ? "text-success" : "text-muted-foreground"
+                        getPotentialImpact(item) > 0 ? "text-warning" : 
+                        getPotentialImpact(item) < 0 ? "text-success" : "text-muted-foreground"
                       }`}>
-                        {formatPremiumImpact(item)}
+                        {formatPotentialImpact(item)}
                       </span>
                       <Button
                         variant="outline"

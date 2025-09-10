@@ -6,8 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-type SoilTypeMultiSelectProps = { defaultValues: any[]; onValueChange?: (vals: any[]) => void };
+type SoilTypeMultiSelectProps = { 
+  defaultValues: any[]; 
+  onValueChange?: (vals: any[]) => void;
+  soilTypesData?: any[];
+};
 
 type ProjectRiskFactorsProps = {
   ratingConfig: any;
@@ -20,6 +25,8 @@ type ProjectRiskFactorsProps = {
   removeMaintenancePeriodLoading: (id: any) => void;
   updateProjectRiskFactor: (section: string, key: string, value: any) => void;
   SoilTypeMultiSelect: React.ComponentType<SoilTypeMultiSelectProps>;
+  soilTypesData?: any[];
+  securityTypesData?: any[];
   isLoading?: boolean;
   error?: string | null;
   isSaving?: boolean;
@@ -36,10 +43,60 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
   removeMaintenancePeriodLoading,
   updateProjectRiskFactor,
   SoilTypeMultiSelect,
+  soilTypesData = [],
+  securityTypesData = [],
   isLoading = false,
   error = null,
   isSaving = false,
 }) => {
+  const { toast } = useToast();
+
+  // Validation function to check for duplicate soil type selections
+  const validateSoilTypeSelections = () => {
+    const soilTypeSelections = {
+      lowRisk: ratingConfig.projectRisk?.riskDefinition?.soilType?.lowRisk || [],
+      moderateRisk: ratingConfig.projectRisk?.riskDefinition?.soilType?.moderateRisk || [],
+      highRisk: ratingConfig.projectRisk?.riskDefinition?.soilType?.highRisk || [],
+      veryHighRisk: ratingConfig.projectRisk?.riskDefinition?.soilType?.veryHighRisk || []
+    };
+
+    // Collect all selected soil types with their risk levels
+    const allSelections: { soilType: string; riskLevel: string }[] = [];
+    Object.entries(soilTypeSelections).forEach(([riskLevel, selections]) => {
+      selections.forEach((soilType: string) => {
+        allSelections.push({ soilType, riskLevel });
+      });
+    });
+
+    // Check for duplicates
+    const duplicates = allSelections.reduce((acc, selection) => {
+      const count = allSelections.filter(s => s.soilType === selection.soilType).length;
+      if (count > 1 && !acc.find(d => d.soilType === selection.soilType)) {
+        acc.push(selection);
+      }
+      return acc;
+    }, [] as { soilType: string; riskLevel: string }[]);
+
+    if (duplicates.length > 0) {
+      const duplicateSoilTypes = duplicates.map(d => d.soilType).join(', ');
+      const riskLevels = duplicates.map(d => d.riskLevel).join(', ');
+      
+      toast({
+        title: "Validation Error",
+        description: `The following soil types are selected in multiple risk factors: ${duplicateSoilTypes}. Each soil type can only be assigned to one risk factor. Please remove duplicates before saving.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSave = () => {
+    if (validateSoilTypeSelections()) {
+      onSave();
+    }
+  };
   return (
     <Card className="h-full">
       <CardHeader>
@@ -48,7 +105,7 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
             <CardTitle>Project Risk Factors</CardTitle>
             <CardDescription>Configure risk adjustments based on project characteristics</CardDescription>
           </div>
-          <Button onClick={onSave} size="sm" disabled={isLoading || isSaving}>
+          <Button onClick={handleSave} size="sm" disabled={isLoading || isSaving}>
             {isLoading || isSaving ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
             ) : (
@@ -567,24 +624,28 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                         <SoilTypeMultiSelect 
                           defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.lowRisk || []} 
                           onValueChange={(values) => updateProjectRiskFactor('riskDefinition', 'soilType.lowRisk', values)}
+                          soilTypesData={soilTypesData}
                         />
                       </TableCell>
                       <TableCell>
                         <SoilTypeMultiSelect 
                           defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.moderateRisk || []} 
                           onValueChange={(values) => updateProjectRiskFactor('riskDefinition', 'soilType.moderateRisk', values)}
+                          soilTypesData={soilTypesData}
                         />
                       </TableCell>
                       <TableCell>
                         <SoilTypeMultiSelect 
                           defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.highRisk || []} 
                           onValueChange={(values) => updateProjectRiskFactor('riskDefinition', 'soilType.highRisk', values)}
+                          soilTypesData={soilTypesData}
                         />
                       </TableCell>
                       <TableCell>
                         <SoilTypeMultiSelect 
                           defaultValues={ratingConfig.projectRisk?.riskDefinition?.soilType?.veryHighRisk || []} 
                           onValueChange={(values) => updateProjectRiskFactor('riskDefinition', 'soilType.veryHighRisk', values)}
+                          soilTypesData={soilTypesData}
                         />
                       </TableCell>
                     </TableRow>
@@ -710,57 +771,101 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                       <TableCell className="font-medium text-xs">Security arrangements</TableCell>
                       <TableCell>
                         <Select 
-                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.lowRisk || "no"}
+                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.lowRisk || ""}
                           onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'securityArrangements.lowRisk', value)}
                         >
                           <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
+                            <SelectValue placeholder="Select security type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="no">No</SelectItem>
-                            <SelectItem value="yes">Yes</SelectItem>
+                            {securityTypesData.length > 0 ? (
+                              securityTypesData.map((securityType) => (
+                                <SelectItem key={securityType.id} value={securityType.label}>
+                                  {securityType.label}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <>
+                                <SelectItem value="24/7 Guarded">24/7 Guarded</SelectItem>
+                                <SelectItem value="CCTV">CCTV</SelectItem>
+                                <SelectItem value="None">None</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       </TableCell>
                       <TableCell>
                         <Select 
-                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.moderateRisk || "no"}
+                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.moderateRisk || ""}
                           onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'securityArrangements.moderateRisk', value)}
                         >
                           <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
+                            <SelectValue placeholder="Select security type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="no">No</SelectItem>
-                            <SelectItem value="yes">Yes</SelectItem>
+                            {securityTypesData.length > 0 ? (
+                              securityTypesData.map((securityType) => (
+                                <SelectItem key={securityType.id} value={securityType.label}>
+                                  {securityType.label}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <>
+                                <SelectItem value="24/7 Guarded">24/7 Guarded</SelectItem>
+                                <SelectItem value="CCTV">CCTV</SelectItem>
+                                <SelectItem value="None">None</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       </TableCell>
                       <TableCell>
                         <Select 
-                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.highRisk || "no"}
+                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.highRisk || ""}
                           onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'securityArrangements.highRisk', value)}
                         >
                           <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
+                            <SelectValue placeholder="Select security type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="no">No</SelectItem>
-                            <SelectItem value="yes">Yes</SelectItem>
+                            {securityTypesData.length > 0 ? (
+                              securityTypesData.map((securityType) => (
+                                <SelectItem key={securityType.id} value={securityType.label}>
+                                  {securityType.label}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <>
+                                <SelectItem value="24/7 Guarded">24/7 Guarded</SelectItem>
+                                <SelectItem value="CCTV">CCTV</SelectItem>
+                                <SelectItem value="None">None</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       </TableCell>
                       <TableCell>
                         <Select 
-                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.veryHighRisk || "no"}
+                          value={ratingConfig.projectRisk?.riskDefinition?.securityArrangements?.veryHighRisk || ""}
                           onValueChange={(value) => updateProjectRiskFactor('riskDefinition', 'securityArrangements.veryHighRisk', value)}
                         >
                           <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
+                            <SelectValue placeholder="Select security type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="no">No</SelectItem>
-                            <SelectItem value="yes">Yes</SelectItem>
+                            {securityTypesData.length > 0 ? (
+                              securityTypesData.map((securityType) => (
+                                <SelectItem key={securityType.id} value={securityType.label}>
+                                  {securityType.label}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <>
+                                <SelectItem value="24/7 Guarded">24/7 Guarded</SelectItem>
+                                <SelectItem value="CCTV">CCTV</SelectItem>
+                                <SelectItem value="None">None</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       </TableCell>
@@ -789,42 +894,51 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
                       { key: 'moderate', label: 'Moderate Risk' },
                       { key: 'high', label: 'High Risk' },
                       { key: 'veryHigh', label: 'Very High Risk' },
-                    ].map((risk) => (
-                      <TableRow key={risk.key}>
-                        <TableCell className="font-medium">{risk.label}</TableCell>
-                        <TableCell>
-                          <Select defaultValue="percentage">
-                            <SelectTrigger className="w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="percentage">Percentage</SelectItem>
-                              <SelectItem value="fixed">Fixed Amount</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={ratingConfig.projectRisk.locationHazardLoadings[risk.key as keyof typeof ratingConfig.projectRisk.locationHazardLoadings]}
-                            onChange={(e) => updateProjectRiskFactor('locationHazardLoadings', risk.key, parseFloat(e.target.value) || 0)}
-                            className="w-full"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Select defaultValue="quote">
-                            <SelectTrigger className="w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="quote">Auto Quote</SelectItem>
-                              <SelectItem value="no-quote">No Quote</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    ].map((risk) => {
+                      const riskData = ratingConfig.projectRisk?.locationHazardRates?.[risk.key] || {};
+                      return (
+                        <TableRow key={risk.key}>
+                          <TableCell className="font-medium">{risk.label}</TableCell>
+                          <TableCell>
+                            <Select 
+                              value={riskData.pricingType || 'percentage'}
+                              onValueChange={(value) => updateProjectRiskFactor('locationHazardRates', `${risk.key}.pricingType`, value)}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="percentage">Percentage</SelectItem>
+                                <SelectItem value="fixed">Fixed Amount</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={riskData.loadingDiscount || 0}
+                              onChange={(e) => updateProjectRiskFactor('locationHazardRates', `${risk.key}.loadingDiscount`, parseFloat(e.target.value) || 0)}
+                              className="w-full"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Select 
+                              value={riskData.quoteOption || 'quote'}
+                              onValueChange={(value) => updateProjectRiskFactor('locationHazardRates', `${risk.key}.quoteOption`, value)}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="quote">Auto Quote</SelectItem>
+                                <SelectItem value="no-quote">No Quote</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

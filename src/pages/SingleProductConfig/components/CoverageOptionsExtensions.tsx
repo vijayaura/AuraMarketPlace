@@ -97,6 +97,48 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
         });
       }
 
+      // Map temporay_work to temporaryWorks entries
+      if (coverageOptionsData.temporay_work && ratingConfig.coverRequirements?.temporaryWorks) {
+        coverageOptionsData.temporay_work.forEach((apiEntry, index) => {
+          if (ratingConfig.coverRequirements.temporaryWorks[index]) {
+            const entry = ratingConfig.coverRequirements.temporaryWorks[index];
+            updateCoverRequirementEntry('temporaryWorks', entry.id, 'from', apiEntry.from_amount);
+            updateCoverRequirementEntry('temporaryWorks', entry.id, 'to', apiEntry.to_amount);
+            updateCoverRequirementEntry('temporaryWorks', entry.id, 'pricingType', apiEntry.pricing_type.toLowerCase());
+            updateCoverRequirementEntry('temporaryWorks', entry.id, 'loadingDiscount', apiEntry.loading_discount);
+            updateCoverRequirementEntry('temporaryWorks', entry.id, 'quoteOption', apiEntry.quote_option === 'AUTO_QUOTE' ? 'quote' : 'no-quote');
+          }
+        });
+      }
+
+      // Map other_materials to otherMaterials entries
+      if (coverageOptionsData.other_materials && ratingConfig.coverRequirements?.otherMaterials) {
+        coverageOptionsData.other_materials.forEach((apiEntry, index) => {
+          if (ratingConfig.coverRequirements.otherMaterials[index]) {
+            const entry = ratingConfig.coverRequirements.otherMaterials[index];
+            updateCoverRequirementEntry('otherMaterials', entry.id, 'from', apiEntry.from_amount);
+            updateCoverRequirementEntry('otherMaterials', entry.id, 'to', apiEntry.to_amount);
+            updateCoverRequirementEntry('otherMaterials', entry.id, 'pricingType', apiEntry.pricing_type.toLowerCase());
+            updateCoverRequirementEntry('otherMaterials', entry.id, 'loadingDiscount', apiEntry.loading_discount);
+            updateCoverRequirementEntry('otherMaterials', entry.id, 'quoteOption', apiEntry.quote_option === 'AUTO_QUOTE' ? 'quote' : 'no-quote');
+          }
+        });
+      }
+
+      // Map Principal_Existing_Surrounding_Property to principalExistingProperty entries
+      if (coverageOptionsData.Principal_Existing_Surrounding_Property && ratingConfig.coverRequirements?.principalExistingProperty) {
+        coverageOptionsData.Principal_Existing_Surrounding_Property.forEach((apiEntry, index) => {
+          if (ratingConfig.coverRequirements.principalExistingProperty[index]) {
+            const entry = ratingConfig.coverRequirements.principalExistingProperty[index];
+            updateCoverRequirementEntry('principalExistingProperty', entry.id, 'from', apiEntry.from_amount);
+            updateCoverRequirementEntry('principalExistingProperty', entry.id, 'to', apiEntry.to_amount);
+            updateCoverRequirementEntry('principalExistingProperty', entry.id, 'pricingType', apiEntry.pricing_type.toLowerCase());
+            updateCoverRequirementEntry('principalExistingProperty', entry.id, 'loadingDiscount', apiEntry.loading_discount);
+            updateCoverRequirementEntry('principalExistingProperty', entry.id, 'quoteOption', apiEntry.quote_option === 'AUTO_QUOTE' ? 'quote' : 'no-quote');
+          }
+        });
+      }
+
       // Map cross_liability_cover to crossLiabilityCover
       if (coverageOptionsData.cross_liability_cover && ratingConfig.coverRequirements?.crossLiabilityCover) {
         coverageOptionsData.cross_liability_cover.forEach((apiEntry) => {
@@ -105,7 +147,7 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
         });
       }
     }
-  }, [coverageOptionsData, ratingConfig, updateCoverRequirementEntry, updateCoverRequirement]);
+  }, [coverageOptionsData, ratingConfig]);
 
   // Reset mapping flag when new API data arrives
   useEffect(() => {
@@ -554,6 +596,312 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeCoverRequirementEntry('plantEquipment', entry.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            Remove
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )) || []}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Temporary Works */}
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm">Temporary Works</CardTitle>
+                  <p className="text-xs text-muted-foreground">Rate based on temporary works value ranges (AED)</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => addCoverRequirementEntry('temporaryWorks')}
+                  >
+                    Add Row
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-1/6">From (AED)</TableHead>
+                      <TableHead className="w-1/6">To (AED)</TableHead>
+                      <TableHead className="w-1/5">Pricing Type</TableHead>
+                      <TableHead className="w-1/5">Loading/Discount</TableHead>
+                      <TableHead className="w-1/5">Quote Option</TableHead>
+                      <TableHead className="w-16">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ratingConfig.coverRequirements?.temporaryWorks?.map((entry: any) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={entry.from}
+                            onChange={(e) => updateCoverRequirementEntry('temporaryWorks', entry.id, 'from', parseFloat(e.target.value) || 0)}
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={entry.to}
+                            onChange={(e) => updateCoverRequirementEntry('temporaryWorks', entry.id, 'to', parseFloat(e.target.value) || 0)}
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select 
+                            value={entry.pricingType} 
+                            onValueChange={(value) => updateCoverRequirementEntry('temporaryWorks', entry.id, 'pricingType', value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="percentage">Percentage</SelectItem>
+                              <SelectItem value="fixed">Fixed Amount</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={entry.loadingDiscount}
+                            onChange={(e) => updateCoverRequirementEntry('temporaryWorks', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select 
+                            value={entry.quoteOption} 
+                            onValueChange={(value) => updateCoverRequirementEntry('temporaryWorks', entry.id, 'quoteOption', value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="quote">Auto Quote</SelectItem>
+                              <SelectItem value="no-quote">No Quote</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeCoverRequirementEntry('temporaryWorks', entry.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            Remove
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )) || []}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Other Materials */}
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm">Other Materials</CardTitle>
+                  <p className="text-xs text-muted-foreground">Rate based on other materials value ranges (AED)</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => addCoverRequirementEntry('otherMaterials')}
+                  >
+                    Add Row
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-1/6">From (AED)</TableHead>
+                      <TableHead className="w-1/6">To (AED)</TableHead>
+                      <TableHead className="w-1/5">Pricing Type</TableHead>
+                      <TableHead className="w-1/5">Loading/Discount</TableHead>
+                      <TableHead className="w-1/5">Quote Option</TableHead>
+                      <TableHead className="w-16">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ratingConfig.coverRequirements?.otherMaterials?.map((entry: any) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={entry.from}
+                            onChange={(e) => updateCoverRequirementEntry('otherMaterials', entry.id, 'from', parseFloat(e.target.value) || 0)}
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={entry.to}
+                            onChange={(e) => updateCoverRequirementEntry('otherMaterials', entry.id, 'to', parseFloat(e.target.value) || 0)}
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select 
+                            value={entry.pricingType} 
+                            onValueChange={(value) => updateCoverRequirementEntry('otherMaterials', entry.id, 'pricingType', value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="percentage">Percentage</SelectItem>
+                              <SelectItem value="fixed">Fixed Amount</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={entry.loadingDiscount}
+                            onChange={(e) => updateCoverRequirementEntry('otherMaterials', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select 
+                            value={entry.quoteOption} 
+                            onValueChange={(value) => updateCoverRequirementEntry('otherMaterials', entry.id, 'quoteOption', value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="quote">Auto Quote</SelectItem>
+                              <SelectItem value="no-quote">No Quote</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeCoverRequirementEntry('otherMaterials', entry.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            Remove
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )) || []}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Principal's Existing/Surrounding Property */}
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm">Principal's Existing/Surrounding Property</CardTitle>
+                  <p className="text-xs text-muted-foreground">Rate based on principal's existing/surrounding property value ranges (AED)</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => addCoverRequirementEntry('principalExistingProperty')}
+                  >
+                    Add Row
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-1/6">From (AED)</TableHead>
+                      <TableHead className="w-1/6">To (AED)</TableHead>
+                      <TableHead className="w-1/5">Pricing Type</TableHead>
+                      <TableHead className="w-1/5">Loading/Discount</TableHead>
+                      <TableHead className="w-1/5">Quote Option</TableHead>
+                      <TableHead className="w-16">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ratingConfig.coverRequirements?.principalExistingProperty?.map((entry: any) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={entry.from}
+                            onChange={(e) => updateCoverRequirementEntry('principalExistingProperty', entry.id, 'from', parseFloat(e.target.value) || 0)}
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={entry.to}
+                            onChange={(e) => updateCoverRequirementEntry('principalExistingProperty', entry.id, 'to', parseFloat(e.target.value) || 0)}
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select 
+                            value={entry.pricingType} 
+                            onValueChange={(value) => updateCoverRequirementEntry('principalExistingProperty', entry.id, 'pricingType', value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="percentage">Percentage</SelectItem>
+                              <SelectItem value="fixed">Fixed Amount</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={entry.loadingDiscount}
+                            onChange={(e) => updateCoverRequirementEntry('principalExistingProperty', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select 
+                            value={entry.quoteOption} 
+                            onValueChange={(value) => updateCoverRequirementEntry('principalExistingProperty', entry.id, 'quoteOption', value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="quote">Auto Quote</SelectItem>
+                              <SelectItem value="no-quote">No Quote</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeCoverRequirementEntry('principalExistingProperty', entry.id)}
                             className="text-destructive hover:text-destructive"
                           >
                             Remove

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +25,7 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, listMasterConstructionTypes, listMasterRoleTypes, listMasterContractTypes, listMasterSoilTypes, listMasterSubcontractorTypes, listMasterConsultantRoles, listMasterSecurityTypes, listMasterAreaTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, updateRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getMinimumPremiums, saveMinimumPremiums, updateMinimumPremiums, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getAreaTypesConfiguration, createAreaTypesConfiguration, updateAreaTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type GetClausePricingDataResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type GetAreaTypesResponse, type SaveAreaTypesRequest, type SaveAreaTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, updateRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getMinimumPremiums, saveMinimumPremiums, updateMinimumPremiums, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getAreaTypesConfiguration, createAreaTypesConfiguration, updateAreaTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type ProjectRiskFactorsUpdateRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type GetClausePricingDataResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type GetAreaTypesResponse, type SaveAreaTypesRequest, type SaveAreaTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
@@ -63,14 +63,22 @@ interface ClausePricing {
 }
 
 // Multi-select soil type component
-const SoilTypeMultiSelect = ({ defaultValues = [], onValueChange }: { 
+const SoilTypeMultiSelect = ({ 
+  defaultValues = [], 
+  onValueChange, 
+  soilTypesData = []
+}: { 
   defaultValues?: string[], 
-  onValueChange?: (values: string[]) => void 
+  onValueChange?: (values: string[]) => void,
+  soilTypesData?: any[]
 }) => {
   const [selectedValues, setSelectedValues] = useState<string[]>(defaultValues);
   const [isOpen, setIsOpen] = useState(false);
   
-  const soilTypes = ["Rock", "Clay", "Sandy", "Mixed", "Unknown"];
+  // Use master data from API, fallback to hardcoded values
+  const soilTypes = soilTypesData.length > 0 
+    ? soilTypesData.map(item => item.name || item.title || item.label || item)
+    : ["Rock", "Clay", "Sandy", "Mixed", "Unknown"];
   
   const handleToggle = (value: string) => {
     const newValues = selectedValues.includes(value)
@@ -695,7 +703,11 @@ const SingleProductConfig = () => {
         ? data.location_hazard_loadings.location_hazard_rates.reduce((acc: any, r: any) => {
             const txt = String(r?.risk_level || '').toLowerCase();
             const key = txt.includes('very') ? 'veryHigh' : txt.includes('high') && !txt.includes('very') ? 'high' : txt.includes('moderate') ? 'moderate' : 'low';
-            acc[key] = Number(r?.loading_discount ?? 0);
+            acc[key] = {
+              pricingType: String(r?.pricing_type || '').toLowerCase() === 'fixed_amount' ? 'fixed' : 'percentage',
+              loadingDiscount: Number(r?.loading_discount ?? 0),
+              quoteOption: String(r?.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote'
+            };
             return acc;
           }, {} as any)
         : {};
@@ -740,10 +752,10 @@ const SingleProductConfig = () => {
           veryHighRisk: 'no'
         },
         securityArrangements: {
-          lowRisk: 'no',
-          moderateRisk: 'no',
-          highRisk: 'no',
-          veryHighRisk: 'no'
+          lowRisk: '',
+          moderateRisk: '',
+          highRisk: '',
+          veryHighRisk: ''
         }
       };
       
@@ -774,13 +786,12 @@ const SingleProductConfig = () => {
               veryHighRisk: String(factor.very_high_risk || 'no').toLowerCase()
             };
           } else if (factorName.includes('soil type') || factorName.includes('soil')) {
-            // For soil type, we might need to parse the values differently
-            // For now, keep as empty arrays - this might need adjustment based on API format
+            // For soil type, handle array values from API
             mappedRiskDefinition.soilType = {
-              lowRisk: [],
-              moderateRisk: [],
-              highRisk: [],
-              veryHighRisk: []
+              lowRisk: Array.isArray(factor.low_risk) ? factor.low_risk : [],
+              moderateRisk: Array.isArray(factor.moderate_risk) ? factor.moderate_risk : [],
+              highRisk: Array.isArray(factor.high_risk) ? factor.high_risk : [],
+              veryHighRisk: Array.isArray(factor.very_high_risk) ? factor.very_high_risk : []
             };
           } else if (factorName.includes('existing structure') || factorName.includes('existing structure on site')) {
             mappedRiskDefinition.existingStructure = {
@@ -798,10 +809,10 @@ const SingleProductConfig = () => {
             };
           } else if (factorName.includes('security') || factorName.includes('security arrangements')) {
             mappedRiskDefinition.securityArrangements = {
-              lowRisk: String(factor.low_risk || 'no').toLowerCase(),
-              moderateRisk: String(factor.moderate_risk || 'no').toLowerCase(),
-              highRisk: String(factor.high_risk || 'no').toLowerCase(),
-              veryHighRisk: String(factor.very_high_risk || 'no').toLowerCase()
+              lowRisk: String(factor.low_risk || ''),
+              moderateRisk: String(factor.moderate_risk || ''),
+              highRisk: String(factor.high_risk || ''),
+              veryHighRisk: String(factor.very_high_risk || '')
             };
           }
         });
@@ -815,10 +826,7 @@ const SingleProductConfig = () => {
           ...prev.projectRisk,
           ...(mapDur ? { durationLoadings: mapDur } : {}),
           ...(mapMaint ? { maintenancePeriodLoadings: mapMaint } : {}),
-          locationHazardLoadings: {
-            ...prev.projectRisk.locationHazardLoadings,
-            ...hazardRates,
-          },
+          locationHazardRates: hazardRates,
           riskDefinition: mappedRiskDefinition,
         },
       }));
@@ -875,60 +883,60 @@ const SingleProductConfig = () => {
                 return [
                   {
                     factor: "Near water body",
-                    low_risk: riskDef?.nearWaterBody?.lowRisk || "no",
-                    moderate_risk: riskDef?.nearWaterBody?.moderateRisk || "no", 
-                    high_risk: riskDef?.nearWaterBody?.highRisk || "no",
-                    very_high_risk: riskDef?.nearWaterBody?.veryHighRisk || "no"
+                    low_risk: riskDef?.nearWaterBody?.lowRisk === "yes" ? "Yes" : "No",
+                    moderate_risk: riskDef?.nearWaterBody?.moderateRisk === "yes" ? "Yes" : "No", 
+                    high_risk: riskDef?.nearWaterBody?.highRisk === "yes" ? "Yes" : "No",
+                    very_high_risk: riskDef?.nearWaterBody?.veryHighRisk === "yes" ? "Yes" : "No"
                   },
                   {
                     factor: "Flood-prone zone",
-                    low_risk: riskDef?.floodProneZone?.lowRisk || "no",
-                    moderate_risk: riskDef?.floodProneZone?.moderateRisk || "no",
-                    high_risk: riskDef?.floodProneZone?.highRisk || "no", 
-                    very_high_risk: riskDef?.floodProneZone?.veryHighRisk || "no"
+                    low_risk: riskDef?.floodProneZone?.lowRisk === "yes" ? "Yes" : "No",
+                    moderate_risk: riskDef?.floodProneZone?.moderateRisk === "yes" ? "Yes" : "No",
+                    high_risk: riskDef?.floodProneZone?.highRisk === "yes" ? "Yes" : "No", 
+                    very_high_risk: riskDef?.floodProneZone?.veryHighRisk === "yes" ? "Yes" : "No"
                   },
                   {
                     factor: "City center",
-                    low_risk: riskDef?.cityCenter?.lowRisk || "no",
-                    moderate_risk: riskDef?.cityCenter?.moderateRisk || "no",
-                    high_risk: riskDef?.cityCenter?.highRisk || "no",
-                    very_high_risk: riskDef?.cityCenter?.veryHighRisk || "no"
+                    low_risk: riskDef?.cityCenter?.lowRisk === "yes" ? "Yes" : "No",
+                    moderate_risk: riskDef?.cityCenter?.moderateRisk === "yes" ? "Yes" : "No",
+                    high_risk: riskDef?.cityCenter?.highRisk === "yes" ? "Yes" : "No",
+                    very_high_risk: riskDef?.cityCenter?.veryHighRisk === "yes" ? "Yes" : "No"
                   },
                   {
                     factor: "Soil type",
                     low_risk: Array.isArray(riskDef?.soilType?.lowRisk) 
-                      ? riskDef.soilType.lowRisk.join(', ') 
-                      : "none",
+                      ? riskDef.soilType.lowRisk 
+                      : [],
                     moderate_risk: Array.isArray(riskDef?.soilType?.moderateRisk) 
-                      ? riskDef.soilType.moderateRisk.join(', ') 
-                      : "none",
+                      ? riskDef.soilType.moderateRisk 
+                      : [],
                     high_risk: Array.isArray(riskDef?.soilType?.highRisk) 
-                      ? riskDef.soilType.highRisk.join(', ') 
-                      : "none",
+                      ? riskDef.soilType.highRisk 
+                      : [],
                     very_high_risk: Array.isArray(riskDef?.soilType?.veryHighRisk) 
-                      ? riskDef.soilType.veryHighRisk.join(', ') 
-                      : "none"
+                      ? riskDef.soilType.veryHighRisk 
+                      : []
                   },
                   {
                     factor: "Existing structure on site",
-                    low_risk: riskDef?.existingStructure?.lowRisk || "no",
-                    moderate_risk: riskDef?.existingStructure?.moderateRisk || "no",
-                    high_risk: riskDef?.existingStructure?.highRisk || "no",
-                    very_high_risk: riskDef?.existingStructure?.veryHighRisk || "no"
+                    low_risk: riskDef?.existingStructure?.lowRisk === "yes" ? "Yes" : "No",
+                    moderate_risk: riskDef?.existingStructure?.moderateRisk === "yes" ? "Yes" : "No",
+                    high_risk: riskDef?.existingStructure?.highRisk === "yes" ? "Yes" : "No",
+                    very_high_risk: riskDef?.existingStructure?.veryHighRisk === "yes" ? "Yes" : "No"
                   },
                   {
                     factor: "Blasting/Deep excavation",
-                    low_risk: riskDef?.blastingExcavation?.lowRisk || "no",
-                    moderate_risk: riskDef?.blastingExcavation?.moderateRisk || "no",
-                    high_risk: riskDef?.blastingExcavation?.highRisk || "no",
-                    very_high_risk: riskDef?.blastingExcavation?.veryHighRisk || "no"
+                    low_risk: riskDef?.blastingExcavation?.lowRisk === "yes" ? "Yes" : "No",
+                    moderate_risk: riskDef?.blastingExcavation?.moderateRisk === "yes" ? "Yes" : "No",
+                    high_risk: riskDef?.blastingExcavation?.highRisk === "yes" ? "Yes" : "No",
+                    very_high_risk: riskDef?.blastingExcavation?.veryHighRisk === "yes" ? "Yes" : "No"
                   },
                   {
                     factor: "Security arrangements",
-                    low_risk: riskDef?.securityArrangements?.lowRisk || "no",
-                    moderate_risk: riskDef?.securityArrangements?.moderateRisk || "no",
-                    high_risk: riskDef?.securityArrangements?.highRisk || "no",
-                    very_high_risk: riskDef?.securityArrangements?.veryHighRisk || "no"
+                    low_risk: riskDef?.securityArrangements?.lowRisk || "",
+                    moderate_risk: riskDef?.securityArrangements?.moderateRisk || "",
+                    high_risk: riskDef?.securityArrangements?.highRisk || "",
+                    very_high_risk: riskDef?.securityArrangements?.veryHighRisk || ""
                   }
                 ];
               })()
@@ -937,25 +945,25 @@ const SingleProductConfig = () => {
               {
                 risk_level: "Low Risk",
                 pricing_type: "PERCENTAGE",
-                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings.low || 0),
+                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings?.low || 0),
                 quote_option: "AUTO_QUOTE"
               },
               {
                 risk_level: "Moderate Risk", 
                 pricing_type: "PERCENTAGE",
-                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings.moderate || 0),
+                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings?.moderate || 0),
                 quote_option: "AUTO_QUOTE"
               },
               {
                 risk_level: "High Risk",
                 pricing_type: "PERCENTAGE", 
-                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings.high || 0),
+                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings?.high || 0),
                 quote_option: "AUTO_QUOTE"
               },
               {
                 risk_level: "Very High Risk",
                 pricing_type: "PERCENTAGE",
-                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings.veryHigh || 0),
+                loading_discount: Number(ratingConfig.projectRisk.locationHazardLoadings?.veryHigh || 0),
                 quote_option: "AUTO_QUOTE"
               }
             ]
@@ -969,7 +977,7 @@ const SingleProductConfig = () => {
 
       // Use POST if no data from GET API, PATCH if data exists
       const resp = hasProjectRiskFactorsData
-        ? await updateProjectRiskFactors(insurerId, String(pid), body)
+        ? await updateProjectRiskFactors(insurerId, String(pid), { insurer_id: insurerId, ...body })
         : await createProjectRiskFactors(insurerId, String(pid), body);
       
       toast({ title: 'Saved', description: resp?.message || 'Project risk factors saved successfully.' });
@@ -1882,31 +1890,31 @@ const SingleProductConfig = () => {
         { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       projectValue: [
-        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 2, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       contractWorks: [
-        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 3, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       plantEquipment: [
-        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 4, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       temporaryWorks: [
-        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 5, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       otherMaterials: [
-        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 6, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       principalExistingProperty: [
-        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 7, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       tplLimit: [
-        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 8, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       ],
       subLimits: [
-        { id: 1, title: '', description: '', pricingType: 'percentage-sum-insured', value: 0 },
+        { id: 9, title: '', description: '', pricingType: 'percentage-sum-insured', value: 0 },
       ],
       deductibles: [
-        { id: 1, deductibleType: 'fixed', value: 0, loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 10, deductibleType: 'fixed', value: 0, loadingDiscount: 0, quoteOption: 'quote' },
       ],
       crossLiabilityCover: {
         yes: 0,
@@ -3126,6 +3134,30 @@ const SingleProductConfig = () => {
           quote_option: (entry.quoteOption === 'quote' ? 'AUTO_QUOTE' : 'MANUAL_QUOTE') as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
         })) || [];
 
+        const temporaryWorksLoadings = ratingConfig.coverRequirements?.temporaryWorks?.map(entry => ({
+          from_amount: entry.from || 0,
+          to_amount: entry.to || 0,
+          pricing_type: (entry.pricingType?.toUpperCase() || 'PERCENTAGE') as 'PERCENTAGE' | 'AMOUNT',
+          loading_discount: entry.loadingDiscount || 0,
+          quote_option: (entry.quoteOption === 'quote' ? 'AUTO_QUOTE' : 'MANUAL_QUOTE') as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+        })) || [];
+
+        const otherMaterialsLoadings = ratingConfig.coverRequirements?.otherMaterials?.map(entry => ({
+          from_amount: entry.from || 0,
+          to_amount: entry.to || 0,
+          pricing_type: (entry.pricingType?.toUpperCase() || 'PERCENTAGE') as 'PERCENTAGE' | 'AMOUNT',
+          loading_discount: entry.loadingDiscount || 0,
+          quote_option: (entry.quoteOption === 'quote' ? 'AUTO_QUOTE' : 'MANUAL_QUOTE') as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+        })) || [];
+
+        const principalExistingPropertyLoadings = ratingConfig.coverRequirements?.principalExistingProperty?.map(entry => ({
+          from_amount: entry.from || 0,
+          to_amount: entry.to || 0,
+          pricing_type: (entry.pricingType?.toUpperCase() || 'PERCENTAGE') as 'PERCENTAGE' | 'AMOUNT',
+          loading_discount: entry.loadingDiscount || 0,
+          quote_option: (entry.quoteOption === 'quote' ? 'AUTO_QUOTE' : 'MANUAL_QUOTE') as 'AUTO_QUOTE' | 'MANUAL_QUOTE'
+        })) || [];
+
         const crossLiabilityCover = [
           {
             cover_option: 'Yes (Included)',
@@ -3146,21 +3178,33 @@ const SingleProductConfig = () => {
           projectValueLoadings,
           contractWorksLoadings,
           plantEquipmentLoadings,
+          temporaryWorksLoadings,
+          otherMaterialsLoadings,
+          principalExistingPropertyLoadings,
           crossLiabilityCover
         };
       };
 
       const mappedData = mapUIDataToAPI();
+      
+      console.log('🔍 Mapped data for new sections:', {
+        temporaryWorksLoadings: mappedData.temporaryWorksLoadings,
+        otherMaterialsLoadings: mappedData.otherMaterialsLoadings,
+        principalExistingPropertyLoadings: mappedData.principalExistingPropertyLoadings
+      });
 
       if (hasExistingData) {
         // Use PATCH to update existing data
         const updateData: UpdateCoverageOptionsRequest = {
-        insurer_id: Number(insurerId),
+          insurer_id: Number(insurerId),
           coverage_options: {
             sum_insured_loadings: mappedData.sumInsuredLoadings,
             project_value_loadings: mappedData.projectValueLoadings,
             contract_works_loadings: mappedData.contractWorksLoadings,
             plant_equipment_loadings: mappedData.plantEquipmentLoadings,
+            temporay_work: mappedData.temporaryWorksLoadings.length > 0 ? mappedData.temporaryWorksLoadings : [{ from_amount: 0, to_amount: 0, pricing_type: 'PERCENTAGE', loading_discount: 0, quote_option: 'AUTO_QUOTE' }],
+            other_materials: mappedData.otherMaterialsLoadings.length > 0 ? mappedData.otherMaterialsLoadings : [{ from_amount: 0, to_amount: 0, pricing_type: 'PERCENTAGE', loading_discount: 0, quote_option: 'AUTO_QUOTE' }],
+            Principal_Existing_Surrounding_Property: mappedData.principalExistingPropertyLoadings.length > 0 ? mappedData.principalExistingPropertyLoadings : [{ from_amount: 0, to_amount: 0, pricing_type: 'PERCENTAGE', loading_discount: 0, quote_option: 'AUTO_QUOTE' }],
             cross_liability_cover: mappedData.crossLiabilityCover
           }
         };
@@ -3180,6 +3224,9 @@ const SingleProductConfig = () => {
           project_value_loadings: response.data.project_value_loadings,
           contract_works_loadings: response.data.contract_works_loadings || [],
           plant_equipment_loadings: response.data.plant_equipment_loadings || [],
+          temporay_work: response.data.temporay_work || [],
+          other_materials: response.data.other_materials || [],
+          Principal_Existing_Surrounding_Property: response.data.Principal_Existing_Surrounding_Property || [],
           cross_liability_cover: response.data.cross_liability_cover || []
         });
         
@@ -3191,6 +3238,9 @@ const SingleProductConfig = () => {
             project_value_loadings: mappedData.projectValueLoadings.map(item => ({ ...item, currency: 'AED' })),
             contract_works_loadings: mappedData.contractWorksLoadings.map(item => ({ ...item, currency: 'AED' })),
             plant_equipment_loadings: mappedData.plantEquipmentLoadings.map(item => ({ ...item, currency: 'AED' })),
+            temporay_work: mappedData.temporaryWorksLoadings.length > 0 ? mappedData.temporaryWorksLoadings.map(item => ({ ...item, currency: 'AED' })) : [{ from_amount: 0, to_amount: 0, pricing_type: 'PERCENTAGE', loading_discount: 0, currency: 'AED', quote_option: 'AUTO_QUOTE' }],
+            other_materials: mappedData.otherMaterialsLoadings.length > 0 ? mappedData.otherMaterialsLoadings.map(item => ({ ...item, currency: 'AED' })) : [{ from_amount: 0, to_amount: 0, pricing_type: 'PERCENTAGE', loading_discount: 0, currency: 'AED', quote_option: 'AUTO_QUOTE' }],
+            Principal_Existing_Surrounding_Property: mappedData.principalExistingPropertyLoadings.length > 0 ? mappedData.principalExistingPropertyLoadings.map(item => ({ ...item, currency: 'AED' })) : [{ from_amount: 0, to_amount: 0, pricing_type: 'PERCENTAGE', loading_discount: 0, currency: 'AED', quote_option: 'AUTO_QUOTE' }],
             cross_liability_cover: mappedData.crossLiabilityCover
           }
         };
@@ -5270,6 +5320,22 @@ const SingleProductConfig = () => {
             riskDefinition: updatedRiskDefinition,
           },
         };
+      } else if (category === 'locationHazardRates') {
+        // Handle nested location hazard rates updates
+        const projectRisk = newConfig.projectRisk as any;
+        if (!projectRisk.locationHazardRates) {
+          projectRisk.locationHazardRates = {};
+        }
+        const updatedLocationHazardRates = { ...projectRisk.locationHazardRates };
+        setNestedProperty(updatedLocationHazardRates, key, value);
+        
+        return {
+          ...newConfig,
+          projectRisk: {
+            ...newConfig.projectRisk,
+            locationHazardRates: updatedLocationHazardRates,
+          },
+        };
       } else {
         // Handle regular category updates (existing functionality)
         return {
@@ -5474,7 +5540,7 @@ const SingleProductConfig = () => {
     });
   };
 
-  const updateCoverRequirement = (category: string, key: string, value: number) => {
+  const updateCoverRequirement = useCallback((category: string, key: string, value: number) => {
     setRatingConfig(prev => ({
       ...prev,
       coverRequirements: {
@@ -5485,9 +5551,9 @@ const SingleProductConfig = () => {
         },
       },
     }));
-  };
+  }, []);
 
-  const updateCoverRequirementEntry = (category: string, id: number, field: string, value: any) => {
+  const updateCoverRequirementEntry = useCallback((category: string, id: number, field: string, value: any) => {
     setRatingConfig(prev => {
       const categoryData = prev.coverRequirements[category as keyof typeof prev.coverRequirements];
       // Only update if it's an array (new format)
@@ -5504,14 +5570,17 @@ const SingleProductConfig = () => {
       }
       return prev;
     });
-  };
-  const addCoverRequirementEntry = (category: string) => {
+  }, []);
+  const addCoverRequirementEntry = useCallback((category: string) => {
     setRatingConfig(prev => {
       const categoryData = prev.coverRequirements[category as keyof typeof prev.coverRequirements];
       // Only add if it's an array (new format)
       if (Array.isArray(categoryData)) {
         const currentEntries = categoryData as any[];
-        const newId = Math.max(...currentEntries.map((entry: any) => entry.id)) + 1;
+        // Generate unique ID across all categories to prevent conflicts
+        const allEntries = Object.values(prev.coverRequirements).flat().filter(Array.isArray).flat();
+        const maxId = allEntries.length > 0 ? Math.max(...allEntries.map((entry: any) => entry.id || 0)) : 0;
+        const newId = maxId + 1;
         
         let newEntry: any;
         
@@ -5552,9 +5621,9 @@ const SingleProductConfig = () => {
       }
       return prev;
     });
-  };
+  }, []);
 
-  const removeCoverRequirementEntry = (category: string, id: number) => {
+  const removeCoverRequirementEntry = useCallback((category: string, id: number) => {
     setConfirmDialog({
       isOpen: true,
       title: "Remove Entry",
@@ -5577,7 +5646,7 @@ const SingleProductConfig = () => {
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
       }
     });
-  };
+  }, []);
 
   const updateLimits = (key: string, value: number) => {
     setRatingConfig(prev => ({
@@ -5865,6 +5934,8 @@ const SingleProductConfig = () => {
                               } else if (section.id === 'minimum-premiums') {
                                 await fetchMinimumPremiumsMasters();
                               } else if (section.id === 'project-risk') {
+                                await fetchSoilTypes();
+                                await fetchSecurityTypes();
                                 await fetchProjectRiskFactors();
                               } else if (section.id === 'contractor-risk') {
                                 await fetchContractorRiskFactors();
@@ -6007,6 +6078,8 @@ const SingleProductConfig = () => {
                           removeMaintenancePeriodLoading={removeMaintenancePeriodLoading}
                           updateProjectRiskFactor={updateProjectRiskFactor}
                           SoilTypeMultiSelect={SoilTypeMultiSelect}
+                          soilTypesData={soilTypesData}
+                          securityTypesData={securityTypesData}
                           isLoading={isLoadingProjectRiskFactors}
                           error={projectRiskFactorsError}
                           isSaving={isSavingProjectRiskFactors}

@@ -182,6 +182,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     localStorage.removeItem('stepCompletionStatus');
     localStorage.removeItem('projectDataExists');
     localStorage.removeItem('claimsDisclaimerAccepted');
+    localStorage.removeItem('coverages_selected');
+    localStorage.removeItem('plans_selected');
+    localStorage.removeItem('broker_id');
   };
 
   // Clear temporary storage when exiting proposal form
@@ -211,6 +214,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     localStorage.removeItem('stepCompletionStatus');
     localStorage.removeItem('projectDataExists');
     localStorage.removeItem('claimsDisclaimerAccepted');
+    localStorage.removeItem('coverages_selected');
+    localStorage.removeItem('plans_selected');
+    localStorage.removeItem('broker_id');
   };
 
   // Mark a step as completed
