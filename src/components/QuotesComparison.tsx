@@ -1448,6 +1448,7 @@ const QuotesComparison = ({
 
 
   const handleCEWSelectionChange = (selectedItems: any[]) => {
+    console.log('🔧 handleCEWSelectionChange called with:', selectedItems);
     setSelectedCEWItems(selectedItems);
   };
 
@@ -2317,7 +2318,13 @@ Contact us for more details or to proceed with the application.
                   </Card>
 
                   {/* Selected CEW Items */}
-                  {selectedCEWItems.filter(item => item.isSelected).length > 0 && (
+                  {(() => {
+                    const selectedItems = selectedCEWItems.filter(item => item.isSelected);
+                    console.log('🔧 Selected Extensions check - selectedCEWItems:', selectedCEWItems);
+                    console.log('🔧 Selected Extensions check - selectedItems:', selectedItems);
+                    console.log('🔧 Selected Extensions check - length:', selectedItems.length);
+                    return selectedItems.length > 0;
+                  })() && (
                     <Card className="border-border flex-shrink-0 mb-6">
                       <CardHeader className="pb-1 px-2 pt-2">
                         <CardTitle className="text-sm">Selected Extensions</CardTitle>
