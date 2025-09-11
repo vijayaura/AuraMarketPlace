@@ -955,3 +955,160 @@ export const getPolicyDetails = async (quoteId: number): Promise<PolicyDetailsRe
   const response = await apiGet<PolicyDetailsResponse>(`/quotes/${quoteId}/policy-details`);
   return response;
 };
+
+// Proposal Bundle Types
+export interface ProposalBundleResponse {
+  project_id: number;
+  quote_meta: {
+    quote_id: number;
+    insurer_id: number;
+    status: string;
+    validity_date: string;
+    created_at: string;
+    updated_at: string;
+  };
+  project: {
+    id: number;
+    project_id: string;
+    broker_id: number;
+    broker_company_id: number;
+    broker_company_name: string;
+    broker_user_id: number;
+    broker_user_name: string;
+    broker_user_role: string;
+    broker_user_type: string;
+    client_name: string;
+    project_name: string;
+    project_type: string;
+    sub_project_type: string;
+    construction_type: string;
+    address: string;
+    country: string;
+    region: string;
+    zone: string;
+    latitude: string;
+    longitude: string;
+    sum_insured: string;
+    start_date: string;
+    completion_date: string;
+    construction_period_months: number;
+    maintenance_period_months: number;
+    created_at: string;
+    updated_at: string;
+  };
+  insured: {
+    details: {
+      id: number;
+      project_id: number;
+      insured_name: string;
+      role_of_insured: string;
+      had_losses_last_5yrs: number;
+      created_at: string;
+      updated_at: string;
+    };
+    claims: Array<{
+      claim_year: number;
+      count_of_claims: number;
+      amount_of_claims: string;
+      description: string;
+    }>;
+  };
+  contract_structure: {
+    details: {
+      id: number;
+      project_id: number;
+      main_contractor: string;
+      principal_owner: string;
+      contract_type: string;
+      contract_number: string;
+      experience_years: number;
+      created_at: string;
+      updated_at: string;
+    };
+    sub_contractors: Array<{
+      name: string;
+      contract_type: string;
+      contract_number: string;
+    }>;
+    consultants: Array<{
+      name: string;
+      role: string;
+      license_number: string;
+    }>;
+  };
+  site_risks: {
+    id: number;
+    project_id: number;
+    near_water_body: number;
+    flood_prone_zone: number;
+    within_city_center: string;
+    soil_type: string;
+    existing_structure: number;
+    blasting_or_deep_excavation: number;
+    site_security_arrangements: string;
+    area_type: string;
+    describe_existing_structure: string;
+    created_at: string;
+    updated_at: string;
+  };
+  cover_requirements: {
+    id: number;
+    project_id: number;
+    project_value: string;
+    contract_works: string;
+    plant_and_equipment: string;
+    temporary_works: string;
+    other_materials: string;
+    principals_property: string;
+    cross_liability_cover: string;
+    sum_insured: string;
+    created_at: string;
+    updated_at: string;
+    computed_sum_insured: number;
+  };
+  required_documents: Record<string, {
+    url: string;
+    label: string;
+  }>;
+  plans: Array<{
+    id: number;
+    created_at: string;
+    created_by: {
+      role: string;
+      user_id: number;
+      broker_id: number;
+      insurer_id: number;
+    };
+    extensions: {
+      tpl_limit: {
+        label: string;
+        impact_pct: number;
+        description: string;
+      };
+      selected_plan: {
+        deductible: number;
+        base_premium: number;
+        insurer_name: string;
+        coverage_amount: number;
+      };
+      selected_extensions: Record<string, {
+        code: string;
+        label: string;
+        impact_pct: number;
+        description: string;
+      }>;
+    };
+    insurer_id: number;
+    updated_at: string;
+    insurer_name: string;
+    premium_amount: number;
+    minimum_premium_value: number;
+    is_minimum_premium_applied: boolean;
+  }>;
+  required_documents_for_policy_issue: any;
+}
+
+export const getProposalBundle = async (quoteId: number): Promise<ProposalBundleResponse> => {
+  const response = await apiGet<ProposalBundleResponse>(`/quotes/getProposalBundle/${quoteId}`);
+  return response;
+};

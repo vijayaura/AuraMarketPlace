@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileText, Download, CheckCircle, Calendar, Building, DollarSign, Shield, AlertCircle } from "lucide-react";
-import { getPolicyDetails, PolicyDetailsResponse } from "@/lib/api/quotes";
+import { getProposalBundle, ProposalBundleResponse } from "@/lib/api/quotes";
 import { getPolicyWordings, PolicyWording } from "@/lib/api/insurers";
 import { toast } from "@/components/ui/sonner";
 
 const Success = () => {
   const location = useLocation();
-  const [policyDetails, setPolicyDetails] = useState<PolicyDetailsResponse | null>(null);
+  const [proposalBundle, setProposalBundle] = useState<ProposalBundleResponse | null>(null);
   const [policyWordings, setPolicyWordings] = useState<PolicyWording[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,12 +38,12 @@ const Success = () => {
           throw new Error('Quote ID not found. Please start the process again.');
         }
 
-        // Get policy details
-        const policyData = await getPolicyDetails(parseInt(quoteId));
-        setPolicyDetails(policyData);
+        // Get proposal bundle with all data
+        const bundleData = await getProposalBundle(parseInt(quoteId));
+        setProposalBundle(bundleData);
 
         // Get policy wordings
-        const wordingsData = await getPolicyWordings(policyData.insurer_id, policyData.product_id);
+        const wordingsData = await getPolicyWordings(bundleData.quote_meta.insurer_id, 1); // Using product_id = 1 as per the API
         setPolicyWordings(wordingsData.wordings);
 
       } catch (err: any) {
@@ -136,7 +136,7 @@ const Success = () => {
           </div>
 
           {/* Policy Details */}
-          {policyDetails && (
+          {proposalBundle && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -147,51 +147,51 @@ const Success = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Policy Number</label>
-                    <p className="text-lg font-semibold">{policyDetails.policy_number}</p>
+                    <label className="text-sm font-medium text-muted-foreground">Quote ID</label>
+                    <p className="text-lg font-semibold">{proposalBundle.quote_meta.quote_id}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Status</label>
                     <div className="mt-1">
                       <Badge variant="default" className="bg-green-100 text-green-800">
-                        {policyDetails.status}
+                        {proposalBundle.quote_meta.status || 'Active'}
                       </Badge>
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Insurer</label>
-                    <p className="text-lg font-semibold">{policyDetails.insurer_name}</p>
+                    <p className="text-lg font-semibold">{proposalBundle.plans[0]?.insurer_name || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Product</label>
-                    <p className="text-lg font-semibold">{policyDetails.product_name}</p>
+                    <label className="text-sm font-medium text-muted-foreground">Project Name</label>
+                    <p className="text-lg font-semibold">{proposalBundle.project.project_name}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Premium Amount</label>
                     <p className="text-lg font-semibold flex items-center gap-1">
                       <DollarSign className="h-4 w-4" />
-                      {policyDetails.premium_amount.toLocaleString()}
+                      {proposalBundle.plans[0]?.premium_amount?.toLocaleString() || 'N/A'}
                     </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Sum Insured</label>
                     <p className="text-lg font-semibold flex items-center gap-1">
                       <DollarSign className="h-4 w-4" />
-                      {policyDetails.sum_insured.toLocaleString()}
+                      {parseFloat(proposalBundle.project.sum_insured).toLocaleString()}
                     </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Start Date</label>
                     <p className="text-lg font-semibold flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      {new Date(policyDetails.start_date).toLocaleDateString()}
+                      {new Date(proposalBundle.project.start_date).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">End Date</label>
+                    <label className="text-sm font-medium text-muted-foreground">Completion Date</label>
                     <p className="text-lg font-semibold flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      {new Date(policyDetails.end_date).toLocaleDateString()}
+                      {new Date(proposalBundle.project.completion_date).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -199,8 +199,48 @@ const Success = () => {
             </Card>
           )}
 
+          {/* Project Details */}
+          {proposalBundle && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  Project Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Client Name</label>
+                    <p className="text-lg font-semibold">{proposalBundle.project.client_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Project Type</label>
+                    <p className="text-lg font-semibold capitalize">{proposalBundle.project.project_type}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Construction Type</label>
+                    <p className="text-lg font-semibold capitalize">{proposalBundle.project.construction_type}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Location</label>
+                    <p className="text-lg font-semibold">{proposalBundle.project.address}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Construction Period</label>
+                    <p className="text-lg font-semibold">{proposalBundle.project.construction_period_months} months</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Maintenance Period</label>
+                    <p className="text-lg font-semibold">{proposalBundle.project.maintenance_period_months} months</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Submitted Documents */}
-          {policyDetails && Object.keys(policyDetails.documents).length > 0 && (
+          {proposalBundle && Object.keys(proposalBundle.required_documents).length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -210,14 +250,14 @@ const Success = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {Object.entries(policyDetails.documents).map(([key, doc]) => (
+                  {Object.entries(proposalBundle.required_documents).map(([key, doc]) => (
                     <div key={key} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                       <div className="flex items-center gap-3">
                         <FileText className="h-5 w-5 text-muted-foreground" />
                         <div>
                           <p className="font-medium">{doc.label}</p>
                           <p className="text-sm text-muted-foreground">
-                            Uploaded on {new Date(doc.uploaded_at).toLocaleDateString()}
+                            Document uploaded successfully
                           </p>
                         </div>
                       </div>
