@@ -270,6 +270,11 @@ export default function BrokerDashboard() {
       setLoadError(null);
       const data = await getBrokerDashboardQuotes();
       console.log('✅ Broker dashboard data fetched successfully:', data);
+      console.log('📊 API Response details:', {
+        totalQuotes: data.totalQuotes,
+        recentQuotesCount: data.recentQuotes?.length || 0,
+        sampleQuote: data.recentQuotes?.[0] || null
+      });
       setQuotesData(data);
     } catch (err: any) {
       console.error('❌ Error fetching broker dashboard data:', err);
@@ -337,7 +342,7 @@ export default function BrokerDashboard() {
     createdDate: q.created_at?.slice(0,10),
     validUntil: q.validity_date?.slice(0,10),
     sumInsured: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
-    insurer: q.insurer_name || '-',
+    insurer: '-', // API doesn't include insurer_name field
     quoteId: q.quote_id,
   }));
   // Temporarily disable filtering to see all quotes for debugging
