@@ -1,8 +1,29 @@
 import { useEffect, useState } from "react";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Building2, LayoutDashboard, Users, Shield, Settings, Bell, TrendingUp, LogOut, AlertTriangle, Upload, Plus, Calendar } from "lucide-react";
-import brokerLogo from "@/assets/broker-logo.png";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar";
+
+// Company logo component with fallback to shield icon
+function CompanyLogoWithFallback({ logoUrl }: { logoUrl?: string | null }) {
+  const [imageError, setImageError] = useState(false);
+  
+  if (!logoUrl || imageError) {
+    return (
+      <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+        <Shield className="w-5 h-5 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={logoUrl} 
+      alt="Company Logo" 
+      className="w-8 h-8 object-contain rounded" 
+      onError={() => setImageError(true)}
+    />
+  );
+}
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -188,7 +209,7 @@ function BrokerSidebar() {
             {companyLoading ? (
               <Skeleton className="h-8 w-8" />
             ) : (
-              <img src={company?.logo || brokerLogo} alt="Broker Logo" className="w-8 h-8 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).src = brokerLogo; }} />
+              <CompanyLogoWithFallback logoUrl={company?.logo} />
             )}
           </div>
           <div>
