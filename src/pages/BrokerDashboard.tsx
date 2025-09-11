@@ -678,46 +678,48 @@ export default function BrokerDashboard() {
                 </div>
                 
                 {/* Pagination for Quotes */}
-                <div className="px-6 py-4 border-t">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious 
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (currentQuotePage > 1) setCurrentQuotePage(currentQuotePage - 1);
-                          }}
-                          className={currentQuotePage === 1 ? "pointer-events-none opacity-50" : ""}
-                        />
-                      </PaginationItem>
-                      {[...Array(totalQuotePages)].map((_, i) => (
-                        <PaginationItem key={i + 1}>
-                          <PaginationLink
+                {totalQuotePages > 1 && (
+                  <div className="px-6 py-4 border-t">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
                             href="#"
-                            isActive={currentQuotePage === i + 1}
                             onClick={(e) => {
                               e.preventDefault();
-                              setCurrentQuotePage(i + 1);
+                              if (currentQuotePage > 1) setCurrentQuotePage(currentQuotePage - 1);
                             }}
-                          >
-                            {i + 1}
-                          </PaginationLink>
+                            className={currentQuotePage === 1 ? "pointer-events-none opacity-50" : ""}
+                          />
                         </PaginationItem>
-                      ))}
-                      <PaginationItem>
-                        <PaginationNext 
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (currentQuotePage < totalQuotePages) setCurrentQuotePage(currentQuotePage + 1);
-                          }}
-                          className={currentQuotePage === totalQuotePages ? "pointer-events-none opacity-50" : ""}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
+                        {[...Array(totalQuotePages)].map((_, i) => (
+                          <PaginationItem key={i + 1}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentQuotePage === i + 1}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentQuotePage(i + 1);
+                              }}
+                            >
+                              {i + 1}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                          <PaginationNext 
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentQuotePage < totalQuotePages) setCurrentQuotePage(currentQuotePage + 1);
+                            }}
+                            className={currentQuotePage === totalQuotePages ? "pointer-events-none opacity-50" : ""}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
