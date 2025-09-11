@@ -213,21 +213,21 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
         
         // Update document with uploaded file info
         setDocuments(prevDocs => {
-          const updated = prevDocs.map(doc => 
-            doc.id === docId 
-              ? { 
-                  ...doc, 
-                  status: "uploaded" as const,
-                  uploadedFile: {
-                    name: uploadedFile.original_name,
-                    size: `${fileSizeInMB} MB`,
-                    uploadDate: new Date().toISOString().split('T')[0],
-                    url: uploadedFile.url
-                  }
-                }
-              : doc
-          );
-          return updated;
+          const newDocs = [...prevDocs];
+          const docIndex = newDocs.findIndex(doc => doc.id === docId);
+          if (docIndex !== -1) {
+            newDocs[docIndex] = {
+              ...newDocs[docIndex],
+              status: "uploaded" as const,
+              uploadedFile: {
+                name: uploadedFile.original_name,
+                size: `${fileSizeInMB} MB`,
+                uploadDate: new Date().toISOString().split('T')[0],
+                url: uploadedFile.url
+              }
+            };
+          }
+          return newDocs;
         });
         
         toast.success('File Uploaded', {
