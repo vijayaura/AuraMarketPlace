@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { formatCurrency, formatNumber } from "@/lib/utils";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Building, ArrowLeft, Download, Eye, FileText, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
@@ -1315,10 +1315,34 @@ const QuotesComparison = ({
   const [selectedCEWItems, setSelectedCEWItems] = useState<any[]>([]);
   const [showExtensionConfirmDialog, setShowExtensionConfirmDialog] = useState(false);
   const [pendingQuoteId, setPendingQuoteId] = useState<number | null>(null);
+  const [isApplyingStoredData, setIsApplyingStoredData] = useState(false);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [premiumRecalculationTrigger, setPremiumRecalculationTrigger] = useState(0);
+
+  // Reset the stored data flag after a longer delay to allow stored data to be applied
+  useEffect(() => {
+    if (isApplyingStoredData) {
+      const timer = setTimeout(() => {
+        console.log('🔧 Resetting isApplyingStoredData flag');
+        setIsApplyingStoredData(false);
+      }, 2000); // 2 second delay to allow stored data to be applied
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isApplyingStoredData]);
+
+  // Trigger premium recalculation when broker commission changes
+  useEffect(() => {
+    if (brokerCommissionPercent !== undefined) {
+      console.log('🔧 Broker commission changed, triggering premium recalculation:', brokerCommissionPercent);
+      setPremiumRecalculationTrigger(prev => prev + 1);
+    }
+  }, [brokerCommissionPercent]);
   const [productConfigBundle, setProductConfigBundle] = useState<any>(null);
   const [isLoadingProductConfig, setIsLoadingProductConfig] = useState(false);
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
+  const [showPlanConfirmationDialog, setShowPlanConfirmationDialog] = useState(false);
+  const [pendingPlanSelection, setPendingPlanSelection] = useState<number | null>(null);
 
   // Initialize broker commission when product config bundle loads
   React.useEffect(() => {
@@ -1420,13 +1444,9 @@ const QuotesComparison = ({
     console.log('Extensions button clicked for quote:', quote);
     setSelectedQuoteForCEW(quote);
     
-    // Reset to default state when opening dialog (but keep adjustments for mandatory items)
-    setPremiumAdjustment(0);
-    setSelectedCEWItems([]);
-    setTPLAdjustment(0);
-    // Don't reset cewAdjustment - let it be calculated from mandatory items
-    
-    console.log('🔧 Dialog opening - selectedCEWItems reset to:', []);
+    // Check for stored request data for this specific insurer
+    const storedRequest = getStoredRequestForInsurer(quote.id);
+    console.log('🔍 Checking for stored request data for insurer', quote.id, ':', storedRequest);
     
     // Fetch product config bundle for this insurer
     try {
@@ -1434,6 +1454,33 @@ const QuotesComparison = ({
       const configBundle = await getInsurerPricingConfig(quote.id);
       console.log('📦 Product config bundle loaded:', configBundle);
       setProductConfigBundle(configBundle);
+      
+      // Check if we have stored data for this quote
+      if (storedRequest) {
+        console.log('🔄 Found stored data for quote', quote.id, ':', storedRequest);
+
+        // Set flag to prevent parent state updates during stored data application
+        setIsApplyingStoredData(true);
+
+        // Restore adjustments to component state
+        setTPLAdjustment(storedRequest.tplAdjustment || 0);
+        setCEWAdjustment(storedRequest.cewAdjustment || 0);
+        setBrokerCommissionPercent(storedRequest.brokerCommissionPercent || 10);
+
+        toast({
+          title: "Previous Selections Found",
+          description: "Your previous selections will be restored when the dialog loads.",
+        });
+      } else {
+        // Reset to default state when opening dialog for the first time for this quote
+        console.log('🔧 No stored data for quote', quote.id, '- resetting to default state');
+        setPremiumAdjustment(0);
+        setSelectedCEWItems([]);
+        setTPLAdjustment(0);
+        setCEWAdjustment(0);
+        setBrokerCommissionPercent(10); // Reset to default broker commission
+        console.log('🔧 Dialog opening - selectedCEWItems reset to:', []);
+      }
     } catch (error) {
       console.error('❌ Error loading product config bundle:', error);
       toast({
@@ -1452,8 +1499,12 @@ const QuotesComparison = ({
   const handleCEWSelectionChange = (selectedItems: any[]) => {
     console.log('🔧 handleCEWSelectionChange called with:', selectedItems);
     console.log('🔧 Previous selectedCEWItems:', selectedCEWItems);
+    console.log('🔧 isApplyingStoredData:', isApplyingStoredData);
+    console.log('🔧 selectedItems selected count:', selectedItems.filter(item => item.isSelected).length);
+    
+    // Always update selectedCEWItems to ensure stored data is properly applied
     setSelectedCEWItems(selectedItems);
-    console.log('🔧 selectedCEWItems will be updated to:', selectedItems);
+    console.log('🔧 selectedCEWItems updated to:', selectedItems);
   };
 
   const handlePremiumChange = (adjustment: number) => {
@@ -1476,6 +1527,102 @@ const QuotesComparison = ({
     console.log('🔧 selectedCEWItems length:', selectedCEWItems.length);
     console.log('🔧 selectedCEWItems selected count:', selectedCEWItems.filter(item => item.isSelected).length);
   }, [selectedCEWItems]);
+
+  // Clear stored data when component mounts (new quote flow)
+  useEffect(() => {
+    const shouldClear = shouldClearStoredData();
+    
+    console.log('🔍 Should clear stored data:', shouldClear);
+    console.log('🔍 Current URL:', window.location.href);
+    
+    if (shouldClear) {
+      console.log('🆕 New quote flow detected - clearing all stored data for clean state');
+      resetStateForNewQuote();
+    } else {
+      console.log('🔄 Existing quote flow - preserving stored data');
+      // Just reset component state but keep stored data
+      setSelectedQuotes([]);
+      setUpdatedQuotes({});
+      setSelectedCEWItems([]);
+      setTPLAdjustment(0);
+      setCEWAdjustment(0);
+      setBrokerCommissionPercent(10);
+      setPremiumAdjustment(0);
+      setShowCEWDialog(false);
+      setProductConfigBundle(null);
+    }
+    
+    // Clear the flag
+    localStorage.removeItem('is_new_quote');
+  }, []);
+
+  // Load stored request data for comparison table
+  const loadStoredRequestData = () => {
+    const storedRequests = JSON.parse(localStorage.getItem('stored_plan_requests') || '{}');
+    console.log('📖 Loaded stored requests:', storedRequests);
+    return storedRequests;
+  };
+
+  // Get stored request data for a specific insurer
+  const getStoredRequestForInsurer = (insurerId: number) => {
+    const storedRequests = loadStoredRequestData();
+    return storedRequests[insurerId] || null;
+  };
+
+  // Clear stored data for a specific insurer
+  const clearStoredDataForInsurer = (insurerId: number) => {
+    const storedRequests = loadStoredRequestData();
+    if (storedRequests[insurerId]) {
+      delete storedRequests[insurerId];
+      localStorage.setItem('stored_plan_requests', JSON.stringify(storedRequests));
+      console.log('🗑️ Cleared stored data for insurer', insurerId);
+    }
+  };
+
+  // Clear all stored data (for new quote flow)
+  const clearAllStoredData = () => {
+    localStorage.removeItem('stored_plan_requests');
+    console.log('🗑️ Cleared all stored plan requests');
+  };
+
+  // Set flag for new quote flow
+  const startNewQuote = () => {
+    localStorage.setItem('is_new_quote', 'true');
+    console.log('🆕 New quote flag set');
+  };
+
+  // Check if we should clear stored data (only for truly new quotes)
+  const shouldClearStoredData = () => {
+    const isNewQuote = localStorage.getItem('is_new_quote') === 'true';
+    const isNewProposal = window.location.search.includes('new=true');
+    const isProposalPage = window.location.pathname.includes('/customer/proposal');
+    const hasStoredData = Object.keys(JSON.parse(localStorage.getItem('stored_plan_requests') || '{}')).length > 0;
+    
+    // Only clear if it's explicitly a new quote or new proposal
+    return isNewQuote || (isProposalPage && isNewProposal);
+  };
+
+  // Reset all state for new quote
+  const resetStateForNewQuote = () => {
+    console.log('🔄 Resetting state for new quote');
+    setSelectedQuotes([]);
+    setUpdatedQuotes({});
+    setSelectedCEWItems([]);
+    setTPLAdjustment(0);
+    setCEWAdjustment(0);
+    setBrokerCommissionPercent(10);
+    setPremiumAdjustment(0);
+    setShowCEWDialog(false);
+    setProductConfigBundle(null);
+    clearAllStoredData();
+    
+    // Also clear any other related localStorage items
+    localStorage.removeItem('coverages_selected');
+    localStorage.removeItem('plans_selected');
+    localStorage.removeItem('selected_plan_id');
+    localStorage.removeItem('selected_plan_data');
+    console.log('🗑️ Cleared all related localStorage items');
+  };
 
   // Validate mandatory CEW items
   const validateMandatoryCEWItems = () => {
@@ -1550,16 +1697,42 @@ const QuotesComparison = ({
     return nettPremium + revisedBrokerCommission;
   };
 
+  // Memoized premium calculation that updates when trigger changes
+  const finalPremium = useMemo(() => {
+    console.log('🔧 Recalculating final premium, trigger:', premiumRecalculationTrigger);
+    return calculateFinalPremium();
+  }, [selectedQuoteForCEW, tplAdjustment, cewAdjustment, brokerCommissionPercent, productConfigBundle, premiumRecalculationTrigger]);
+
   const handleUpdatePremium = () => {
     if (!selectedQuoteForCEW) return;
     
-    const finalPremium = calculateFinalPremium();
+    const finalPremiumValue = calculateFinalPremium();
+    
+    // Build complete request payload for storage
+    const completeRequestPayload = buildPlanSelectionPayload(selectedQuoteForCEW);
+    
+    // Store the complete request with insurer ID reference
+    const storedRequests = JSON.parse(localStorage.getItem('stored_plan_requests') || '{}');
+    storedRequests[selectedQuoteForCEW.id] = {
+      ...completeRequestPayload,
+      premium_amount: finalPremiumValue, // Use the calculated final premium value
+      lastUpdated: new Date().toISOString(),
+      tplAdjustment,
+      cewAdjustment,
+      brokerCommissionPercent,
+      selectedCEWItems: selectedCEWItems.filter(item => item.isSelected),
+      // Store complete CEW items with all their data for proper restoration
+      completeCEWItems: selectedCEWItems
+    };
+    localStorage.setItem('stored_plan_requests', JSON.stringify(storedRequests));
+    
+    console.log('💾 Stored plan request for insurer', selectedQuoteForCEW.id, ':', storedRequests[selectedQuoteForCEW.id]);
     
     // Update the quotes data with new premium and CEW selections
     setUpdatedQuotes(prev => ({
       ...prev,
       [selectedQuoteForCEW.id]: {
-        premium: finalPremium,
+        premium: finalPremiumValue,
         cewItems: selectedCEWItems.filter(item => item.isSelected),
         isUpdated: true
       }
@@ -1567,7 +1740,7 @@ const QuotesComparison = ({
     
     toast({
       title: "Premium Updated",
-      description: `New annual premium: ${formatCurrency(finalPremium)}`,
+      description: `New annual premium: ${formatCurrency(finalPremiumValue)}`,
     });
     
     // Close the dialog
@@ -1580,7 +1753,7 @@ const QuotesComparison = ({
       state: { 
         selectedQuote: selectedQuoteForCEW?.id,
         cewSelections: selectedCEWItems,
-        finalPremium: calculateFinalPremium()
+        finalPremium: finalPremium
       } 
     });
   };
@@ -1606,7 +1779,11 @@ const QuotesComparison = ({
     // Calculate revised broker commission (based on final premium including adjustments)
     const revisedBrokerCommission = (finalPremium * brokerCommissionPercent) / 100;
     
-    // Build selected extensions
+    // Check if minimum premium was applied
+    const isMinimumPremiumApplied = validationResult?.isMinimumPremiumApplied || false;
+    const minimumPremiumValue = validationResult?.minimumPremiumValue || 0;
+    
+    // Build selected extensions with proper structure
     const selectedExtensions: Record<string, any> = {};
     selectedCEWItems
       .filter(item => item.isSelected)
@@ -1614,24 +1791,49 @@ const QuotesComparison = ({
         const key = (item.code && typeof item.code === 'string') 
           ? item.code.toLowerCase().replace(/[^a-z0-9]/g, '_') 
           : `extension_${item.id}`;
-        selectedExtensions[key] = {
+        
+        const selectedOption = item.selectedOptionId ? 
+          item.options?.find(opt => opt.id === item.selectedOptionId) : null;
+        
+        const extensionData: any = {
           code: item.code || `EXT${item.id}`,
-          label: item.selectedOption?.label || item.name,
-          impact_pct: item.impact?.premiumAmount || 0,
+          label: selectedOption?.label || item.name,
           description: item.description || item.impact?.coverage || ''
         };
+        
+        // Add impact based on pricing type
+        if (selectedOption) {
+          if (selectedOption.type === 'percentage') {
+            extensionData.impact_pct = selectedOption.value;
+          } else {
+            extensionData.impact_amount = selectedOption.value;
+          }
+        } else {
+          // Use base rate - determine if it's percentage or fixed
+          const isPercentage = Math.abs(item.defaultValue) <= 100;
+          if (isPercentage) {
+            extensionData.impact_pct = item.defaultValue;
+          } else {
+            extensionData.impact_amount = item.defaultValue;
+          }
+        }
+        
+        selectedExtensions[key] = extensionData;
       });
 
     // Build TPL limit
     const tplLimit = {
-      label: "AED 2M", // Default TPL limit
+      label: `AED ${(quote.coverageAmount / 1000000).toFixed(0)}M`,
       impact_pct: tplAdjustment,
-      description: "Third Party Liability up to AED 2 Million"
+      description: `Third Party Liability up to AED ${(quote.coverageAmount / 1000000).toFixed(0)} Million`
     };
 
     return {
       insurer_name: quote.insurerName,
-      premium_amount: calculateFinalPremium(),
+      insurer_id: quote.id,
+      premium_amount: finalPremium,
+      is_minimum_premium_applied: isMinimumPremiumApplied,
+      minimum_premium_value: minimumPremiumValue,
       extensions: {
         tpl_limit: tplLimit,
         selected_extensions: selectedExtensions,
@@ -1640,20 +1842,41 @@ const QuotesComparison = ({
           base_premium: basePremium,
           coverage_amount: quote.coverageAmount,
           deductible: 25000 // Default deductible
-        },
-        premium_summary: {
-          net_premium: nettPremium,
-          broker_commission_pct: brokerCommissionPercent,
-          broker_commission_amount: revisedBrokerCommission,
-          broker_min_commission_pct: minBrokerCommission,
-          broker_max_commission_pct: maxBrokerCommission,
-          broker_base_commission_pct: defaultBrokerCommission,
-          cew_adjustments_pct: tplAdjustment + cewAdjustment,
-          cew_adjustments_amount: tplAdjustmentAmount + cewAdjustmentAmount,
-          total_annual_premium: calculateFinalPremium()
         }
+      },
+      premium_summary: {
+        net_premium: nettPremium,
+        broker_commission_pct: brokerCommissionPercent,
+        broker_commission_amount: revisedBrokerCommission,
+        broker_min_commission_pct: minBrokerCommission,
+        broker_max_commission_pct: maxBrokerCommission,
+        broker_base_commission_pct: defaultBrokerCommission,
+        cew_adjustments_pct: tplAdjustment + cewAdjustment,
+        cew_adjustments_amount: tplAdjustmentAmount + cewAdjustmentAmount,
+        total_annual_premium: finalPremium
       }
     };
+  };
+
+  // Handle plan selection confirmation
+  const handleSelectPlanClick = (quoteId: number) => {
+    setPendingPlanSelection(quoteId);
+    setShowPlanConfirmationDialog(true);
+  };
+
+  // Confirm plan selection
+  const confirmPlanSelection = () => {
+    if (pendingPlanSelection) {
+      setShowPlanConfirmationDialog(false);
+      handleSelectPlanWithAPI(pendingPlanSelection);
+      setPendingPlanSelection(null);
+    }
+  };
+
+  // Cancel plan selection
+  const cancelPlanSelection = () => {
+    setShowPlanConfirmationDialog(false);
+    setPendingPlanSelection(null);
   };
 
   // Handle plan selection with API call
@@ -1670,7 +1893,7 @@ const QuotesComparison = ({
       // Get quote ID from storage
       const storedQuoteId = localStorage.getItem('currentQuoteId');
       if (!storedQuoteId) {
-        throw new Error('No quote ID found in storage');
+        throw new Error('Quote ID not found in storage. Please refresh the page and try again.');
       }
 
       // Check storage flags
@@ -1680,30 +1903,73 @@ const QuotesComparison = ({
       // Find the selected quote
       const selectedQuote = realQuotes.find(q => q.id === quoteId);
       if (!selectedQuote) {
-        throw new Error('Selected quote not found');
+        throw new Error('Selected quote not found. Please refresh the page and try again.');
+      }
+
+      // Validate required data
+      if (!selectedQuote.insurerName || !selectedQuote.coverageAmount) {
+        throw new Error('Invalid quote data. Please refresh the page and try again.');
       }
 
       // Build request payload
       const payload = buildPlanSelectionPayload(selectedQuote);
+      
+      // Log payload for debugging
+      console.log('🚀 Plan Selection Payload:', payload);
 
       // Call appropriate API based on storage flags
       let response;
-      if (!coveragesSelected && !plansSelected) {
-        // First time - use POST
-        response = await createPlanSelection(parseInt(storedQuoteId), payload);
-      } else {
-        // Update existing - use PATCH
-        response = await updatePlanSelection(parseInt(storedQuoteId), payload);
+      const isFirstTime = !coveragesSelected && !plansSelected;
+      
+      try {
+        if (isFirstTime) {
+          // First time - use POST
+          console.log('📤 Creating new plan selection...');
+          response = await createPlanSelection(parseInt(storedQuoteId), payload);
+        } else {
+          // Update existing - use PATCH
+          console.log('📤 Updating existing plan selection...');
+          response = await updatePlanSelection(parseInt(storedQuoteId), payload);
+        }
+        
+        console.log('✅ Plan selection API response:', response);
+      } catch (apiError: any) {
+        console.error('❌ API Error:', apiError);
+        
+        // Enhanced error handling
+        if (apiError.response?.status === 400) {
+          throw new Error('Invalid data provided. Please check your selections and try again.');
+        } else if (apiError.response?.status === 401) {
+          throw new Error('Session expired. Please log in again.');
+        } else if (apiError.response?.status === 403) {
+          throw new Error('You do not have permission to select this plan.');
+        } else if (apiError.response?.status === 404) {
+          throw new Error('Quote not found. Please refresh the page and try again.');
+        } else if (apiError.response?.status >= 500) {
+          throw new Error('Server error. Please try again in a few minutes.');
+        } else if (apiError.code === 'NETWORK_ERROR' || !navigator.onLine) {
+          throw new Error('Network error. Please check your internet connection and try again.');
+        } else {
+          throw new Error(apiError.message || 'Failed to select plan. Please try again.');
+        }
       }
 
-      // Update storage flags
+      // Update storage flags and save selection data
       localStorage.setItem('coverages_selected', 'true');
       localStorage.setItem('plans_selected', 'true');
+      localStorage.setItem('selected_plan_id', quoteId.toString());
+      localStorage.setItem('selected_plan_data', JSON.stringify({
+        quoteId,
+        insurerName: selectedQuote.insurerName,
+        premium: finalPremium,
+        selectedAt: new Date().toISOString(),
+        payload
+      }));
 
       // Show success message
       toast({
         title: "Plan Selected Successfully",
-        description: `Selected ${selectedQuote.insurerName} plan with premium ${formatCurrency(calculateFinalPremium())}`,
+        description: `Selected ${selectedQuote.insurerName} plan with premium ${formatCurrency(finalPremium)}`,
       });
 
       // Close dialog and proceed
@@ -1712,18 +1978,45 @@ const QuotesComparison = ({
       // Check if we're in the proposal form context
       if (window.onQuoteSelected) {
         // We're in the proposal form, navigate to declaration step
+        console.log('📋 Navigating to declaration step in proposal form...');
         window.onQuoteSelected(quoteId);
       } else {
         // We're in standalone quotes page, navigate to declaration page
-        navigate('/customer/declaration', { state: { selectedQuote: quoteId } });
+        console.log('📋 Navigating to declaration page...');
+        navigate('/customer/declaration', { 
+          state: { 
+            selectedQuote: quoteId,
+            planData: {
+              insurerName: selectedQuote.insurerName,
+              premium: finalPremium,
+              coverageAmount: selectedQuote.coverageAmount,
+              selectedExtensions: selectedCEWItems.filter(item => item.isSelected),
+              tplAdjustment,
+              cewAdjustment,
+              brokerCommissionPercent
+            }
+          } 
+        });
       }
 
     } catch (error: any) {
-      console.error('Error selecting plan:', error);
+      console.error('❌ Error selecting plan:', error);
+      
+      // Show user-friendly error message
       toast({
         title: "Error Selecting Plan",
         description: error.message || "Failed to select plan. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleSelectPlanWithAPI(quoteId)}
+            className="ml-2"
+          >
+            Retry
+          </Button>
+        )
       });
     } finally {
       setIsSubmittingPlan(false);
@@ -1910,14 +2203,37 @@ Contact us for more details or to proceed with the application.
   
   // Helper function to get current premium for a quote (updated or original)
   const getCurrentPremium = (quote: any) => {
+    // First check if there's stored request data for this specific quote
+    const storedRequest = getStoredRequestForInsurer(quote.id);
+    if (storedRequest) {
+      console.log('💰 Using stored premium for quote', quote.id, ':', storedRequest.premium_amount);
+      return storedRequest.premium_amount;
+    }
+    
+    // Fallback to updated quotes
     const updatedData = updatedQuotes[quote.id];
-    return updatedData ? updatedData.premium : quote.annualPremium;
+    if (updatedData) {
+      console.log('💰 Using updated premium for quote', quote.id, ':', updatedData.premium);
+      return updatedData.premium;
+    }
+    
+    // Default to original premium
+    console.log('💰 Using original premium for quote', quote.id, ':', quote.annualPremium);
+    return quote.annualPremium;
   };
   
   // Helper function to get CEW items for a quote
   const getCEWItems = (quoteId: number) => {
     const updatedData = updatedQuotes[quoteId];
     return updatedData ? updatedData.cewItems : [];
+  };
+
+  // Helper function to check if a quote has stored data
+  const hasStoredData = (quoteId: number) => {
+    const storedRequest = getStoredRequestForInsurer(quoteId);
+    const hasData = storedRequest !== null;
+    console.log('🔍 Checking stored data for quote', quoteId, ':', hasData);
+    return hasData;
   };
 
   return (
@@ -2017,13 +2333,14 @@ Contact us for more details or to proceed with the application.
           <div className="space-y-4">
           {realQuotes.map((quote) => {
             const isUpdated = updatedQuotes[quote.id]?.isUpdated;
+            const hasStored = hasStoredData(quote.id);
             const currentPremium = getCurrentPremium(quote);
             
             return (
             <Card 
               key={quote.id} 
               className={`border transition-all duration-200 ${
-                isUpdated 
+                isUpdated || hasStored
                   ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20' 
                   : 'border-border hover:shadow-md'
               }`}
@@ -2042,7 +2359,14 @@ Contact us for more details or to proceed with the application.
                     </div>
                     
                     <div>
-                      <h3 className="font-semibold text-lg">{quote.insurerName}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">{quote.insurerName}</h3>
+                        {hasStored && (
+                          <Badge variant="secondary" className="text-xs">
+                            Customized
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -2247,7 +2571,7 @@ Contact us for more details or to proceed with the application.
                         {comparedQuotes.map((quote) => (
                           <td key={`action-${quote.id}`} className="border border-gray-200 px-4 py-3 text-center w-1/3">
                             <Button 
-                              onClick={() => handleSelectPlanWithAPI(quote.id)}
+                              onClick={() => handleSelectPlanClick(quote.id)}
                               disabled={isSubmittingPlan}
                               className="w-full"
                               size="sm"
@@ -2296,6 +2620,16 @@ Contact us for more details or to proceed with the application.
                   onTPLSelectionChange={handleTPLSelectionChange}
                   productConfigBundle={productConfigBundle}
                   isLoadingProductConfig={isLoadingProductConfig}
+                  storedSelections={(() => {
+                    const stored = selectedQuoteForCEW ? getStoredRequestForInsurer(selectedQuoteForCEW.id)?.completeCEWItems || [] : [];
+                    console.log('🔧 Passing storedSelections to CEWSelection:', stored);
+                    console.log('🔧 storedSelections length:', stored.length);
+                    console.log('🔧 storedSelections selected count:', stored.filter(item => item.isSelected).length);
+                    return stored;
+                  })()}
+                  storedTPLAdjustment={selectedQuoteForCEW ? getStoredRequestForInsurer(selectedQuoteForCEW.id)?.tplAdjustment : undefined}
+                  storedCEWAdjustment={selectedQuoteForCEW ? getStoredRequestForInsurer(selectedQuoteForCEW.id)?.cewAdjustment : undefined}
+                  storedBrokerCommission={selectedQuoteForCEW ? getStoredRequestForInsurer(selectedQuoteForCEW.id)?.brokerCommissionPercent : undefined}
                 />
               </div>
 
@@ -2524,7 +2858,7 @@ Contact us for more details or to proceed with the application.
                         <div className="flex justify-between items-center">
                           <span className="font-semibold text-sm">Total Annual Premium</span>
                           <span className="font-bold text-base text-primary">
-                            {formatCurrency(calculateFinalPremium())}
+                            {formatCurrency(finalPremium)}
                           </span>
                         </div>
                       </div>
@@ -2545,7 +2879,7 @@ Contact us for more details or to proceed with the application.
                           Update Premium & Compare
                         </Button>
                         <Button 
-                          onClick={() => handleSelectPlanWithAPI(selectedQuoteForCEW?.id)}
+                          onClick={() => handleSelectPlanClick(selectedQuoteForCEW?.id)}
                           disabled={isSubmittingPlan}
                           className="w-full"
                         >
@@ -2757,6 +3091,81 @@ Contact us for more details or to proceed with the application.
         </Dialog>
         </div>
       </section>
+
+      {/* Plan Selection Confirmation Dialog */}
+      {showPlanConfirmationDialog && (
+        <Dialog open={showPlanConfirmationDialog} onOpenChange={setShowPlanConfirmationDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirm Plan Selection</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to select this insurance plan? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {pendingPlanSelection && (() => {
+              const selectedQuote = realQuotes.find(q => q.id === pendingPlanSelection);
+              if (!selectedQuote) return null;
+              
+              return (
+                <div className="space-y-4">
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-sm mb-2">Selected Plan Details:</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Insurer:</span>
+                        <span className="font-medium">{selectedQuote.insurerName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Coverage Amount:</span>
+                        <span className="font-medium">{formatCurrency(selectedQuote.coverageAmount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Annual Premium:</span>
+                        <span className="font-medium text-primary">{formatCurrency(finalPremium)}</span>
+                      </div>
+                      {selectedCEWItems.filter(item => item.isSelected).length > 0 && (
+                        <div className="flex justify-between">
+                          <span>Selected Extensions:</span>
+                          <span className="font-medium">{selectedCEWItems.filter(item => item.isSelected).length}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground">
+                    By selecting this plan, you agree to proceed to the document submission phase.
+                  </div>
+                </div>
+              );
+            })()}
+            
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button 
+                variant="outline" 
+                onClick={cancelPlanSelection}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={confirmPlanSelection}
+                className="w-full sm:w-auto"
+                disabled={isSubmittingPlan}
+              >
+                {isSubmittingPlan ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Selecting Plan...
+                  </>
+                ) : (
+                  'Confirm Selection'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 };

@@ -44,19 +44,28 @@ interface CEWSelectionProps {
   onPremiumChange?: (totalAdjustment: number) => void;
   onTPLAdjustmentChange?: (tplAdjustment: number) => void;
   onCEWAdjustmentChange?: (cewAdjustment: number) => void;
-  onCommissionChange?: (commission: number) => void;
   onTPLSelectionChange?: (tplOption: any) => void;
   productConfigBundle?: any;
   isLoadingProductConfig?: boolean;
+  storedSelections?: CEWItem[];
+  storedTPLAdjustment?: number;
+  storedCEWAdjustment?: number;
+  storedBrokerCommission?: number;
 }
 
-export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustmentChange, onCEWAdjustmentChange, onCommissionChange, onTPLSelectionChange, productConfigBundle, isLoadingProductConfig }: CEWSelectionProps) => {
-  // Broker commission constraints (mock data - in real app this would come from user context)
-  const brokerCommissionLimits = {
-    min: 2.5,
-    max: 8.0,
-    current: 5.0
-  };
+export const CEWSelection = ({ 
+  onSelectionChange, 
+  onPremiumChange, 
+  onTPLAdjustmentChange, 
+  onCEWAdjustmentChange, 
+  onTPLSelectionChange, 
+  productConfigBundle, 
+  isLoadingProductConfig,
+  storedSelections,
+  storedTPLAdjustment,
+  storedCEWAdjustment,
+  storedBrokerCommission
+}: CEWSelectionProps) => {
 
   // State for expanded/collapsed clauses
   const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
@@ -67,6 +76,7 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
 
   // CEW items state
   const [cewItems, setCEWItems] = useState<CEWItem[]>([]);
+  const [hasAppliedStoredData, setHasAppliedStoredData] = useState(false);
 
   // Helper function to calculate premium impact for an item
   const calculateItemPremiumImpact = (item: CEWItem): { value: number; type: 'percentage' | 'fixed' } => {
@@ -116,8 +126,97 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
       // Don't auto-select mandatory items - let user select them
       setCEWItems(transformedItems);
       onSelectionChange?.(transformedItems);
+      
+      // Reset the stored data flag when new product config is loaded
+      setHasAppliedStoredData(false);
+      
+      // If we have stored selections, apply them now that we have the transformed items
+      if (storedSelections && storedSelections.length > 0) {
+        console.log('🔄 Applying stored selections after product config load:', storedSelections);
+        applyStoredSelections(transformedItems, storedSelections);
+        setHasAppliedStoredData(true);
+      }
     }
   }, [productConfigBundle]);
+
+  // Function to apply stored selections to transformed items
+  const applyStoredSelections = (transformedItems: CEWItem[], storedSelections: CEWItem[]) => {
+    console.log('🔄 Applying stored selections to transformed items:', storedSelections);
+    console.log('🔄 Transformed items before restoration:', transformedItems);
+    console.log('🔄 Stored selections selected count:', storedSelections.filter(item => item.isSelected).length);
+    
+    if (!storedSelections || storedSelections.length === 0) {
+      console.log('🔄 No stored selections to apply');
+      return;
+    }
+    
+    // Update transformedItems with stored selections
+    const updatedItems = transformedItems.map(item => {
+      const storedItem = storedSelections.find(stored => stored.id === item.id);
+      if (storedItem) {
+        console.log('🔄 Restoring item:', item.name, 'with stored data:', {
+          isSelected: storedItem.isSelected,
+          selectedOptionId: storedItem.selectedOptionId,
+          premiumAmount: storedItem.premiumAmount
+        });
+        
+        return {
+          ...item,
+          isSelected: storedItem.isSelected,
+          selectedOptionId: storedItem.selectedOptionId,
+          premiumAmount: storedItem.premiumAmount,
+          // Also restore the selected option object if available
+          selectedOption: storedItem.selectedOption || (storedItem.selectedOptionId ? 
+            item.options?.find(opt => opt.id === storedItem.selectedOptionId) : null)
+        };
+      }
+      return item;
+    });
+    
+    console.log('🔄 Updated items after restoration:', updatedItems);
+    console.log('🔄 Updated items selected count:', updatedItems.filter(item => item.isSelected).length);
+    
+    setCEWItems(updatedItems);
+    onSelectionChange?.(updatedItems);
+    
+    // Apply stored adjustments
+    if (storedTPLAdjustment !== undefined) {
+      console.log('🔄 Restoring TPL adjustment:', storedTPLAdjustment);
+      onTPLAdjustmentChange?.(storedTPLAdjustment);
+    }
+    if (storedCEWAdjustment !== undefined) {
+      console.log('🔄 Restoring CEW adjustment:', storedCEWAdjustment);
+      onCEWAdjustmentChange?.(storedCEWAdjustment);
+    }
+    if (storedBrokerCommission !== undefined) {
+      console.log('🔄 Restoring broker commission:', storedBrokerCommission);
+      // Note: Broker commission restoration is handled by parent component
+    }
+  };
+
+  // Debug storedSelections changes
+  useEffect(() => {
+    console.log('🔧 storedSelections prop changed to:', storedSelections);
+    console.log('🔧 storedSelections length:', storedSelections?.length || 0);
+    if (storedSelections && storedSelections.length > 0) {
+      console.log('🔧 storedSelections selected count:', storedSelections.filter(item => item.isSelected).length);
+    }
+  }, [storedSelections]);
+
+  // Apply stored selections when they change (separate from product config loading)
+  useEffect(() => {
+    if (storedSelections && storedSelections.length > 0 && cewItems.length > 0) {
+      console.log('🔄 Applying stored selections due to prop change:', storedSelections);
+      console.log('🔄 hasAppliedStoredData:', hasAppliedStoredData);
+      
+      // Reset the flag to allow reapplication of stored data
+      setHasAppliedStoredData(false);
+      
+      // Apply stored selections
+      applyStoredSelections(cewItems, storedSelections);
+      setHasAppliedStoredData(true);
+    }
+  }, [storedSelections, cewItems]);
 
   // Calculate initial adjustments when CEW items change
   useEffect(() => {
@@ -226,8 +325,6 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   };
 
 
-  const [commissionPercentage, setCommissionPercentage] = useState(brokerCommissionLimits.current);
-  const [commissionError, setCommissionError] = useState("");
 
   // Initialize empty state on component mount
   useEffect(() => {
@@ -274,30 +371,6 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     });
   };
 
-  const handleCommissionChange = (value: string) => {
-    const numValue = parseFloat(value);
-    
-    if (isNaN(numValue)) {
-      setCommissionError("Please enter a valid number");
-      return;
-    }
-    
-    if (numValue < brokerCommissionLimits.min) {
-      setCommissionError(`Commission cannot be less than ${brokerCommissionLimits.min}%`);
-      setCommissionPercentage(numValue);
-      return;
-    }
-    
-    if (numValue > brokerCommissionLimits.max) {
-      setCommissionError(`Commission cannot exceed ${brokerCommissionLimits.max}%`);
-      setCommissionPercentage(numValue);
-      return;
-    }
-    
-    setCommissionError("");
-    setCommissionPercentage(numValue);
-    onCommissionChange?.(numValue);
-  };
 
   const toggleSelection = (itemId: number) => {
     const updatedItems = cewItems.map(item =>

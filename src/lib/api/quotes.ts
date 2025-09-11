@@ -802,7 +802,10 @@ export async function getInsurerPricingConfig(insurerId: number): Promise<Insure
 // Plan Selection Types
 export interface PlanSelectionRequest {
   insurer_name: string;
+  insurer_id: number;
   premium_amount: number;
+  is_minimum_premium_applied: boolean;
+  minimum_premium_value: number;
   extensions: {
     tpl_limit: {
       label: string;
@@ -822,17 +825,17 @@ export interface PlanSelectionRequest {
       coverage_amount: number;
       deductible: number;
     };
-    premium_summary: {
-      net_premium: number;
-      broker_commission_pct: number;
-      broker_commission_amount: number;
-      broker_min_commission_pct: number;
-      broker_max_commission_pct: number;
-      broker_base_commission_pct: number;
-      cew_adjustments_pct: number;
-      cew_adjustments_amount: number;
-      total_annual_premium: number;
-    };
+  };
+  premium_summary: {
+    net_premium: number;
+    broker_commission_pct: number;
+    broker_commission_amount: number;
+    broker_min_commission_pct: number;
+    broker_max_commission_pct: number;
+    broker_base_commission_pct: number;
+    cew_adjustments_pct: number;
+    cew_adjustments_amount: number;
+    total_annual_premium: number;
   };
 }
 
