@@ -189,6 +189,9 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('Starting file upload for document ID:', docId);
+    console.log('Current documents state before upload:', documents);
+
     // Clear the input so the same file can be selected again
     event.target.value = '';
 
@@ -213,8 +216,11 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
         const fileSizeInMB = (uploadedFile.size_bytes / (1024 * 1024)).toFixed(1);
         
         // Update document with uploaded file info
-        setDocuments(prevDocs => 
-          prevDocs.map(doc => 
+        setDocuments(prevDocs => {
+          console.log('Updating document with upload info - docId:', docId);
+          console.log('Previous documents:', prevDocs);
+          
+          const updated = prevDocs.map(doc => 
             doc.id === docId 
               ? {
                   ...doc,
@@ -227,8 +233,11 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
                   }
                 }
               : doc
-          )
-        );
+          );
+          
+          console.log('Updated documents:', updated);
+          return updated;
+        });
         
         toast.success('File Uploaded Successfully', {
           description: `${uploadedFile.original_name} has been uploaded successfully.`
