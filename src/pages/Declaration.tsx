@@ -344,8 +344,19 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     
     documents.forEach(doc => {
       if (doc.uploadedFile && doc.status === 'uploaded') {
-        // Create a key from the document label (lowercase, replace spaces with underscores)
-        const key = doc.display_label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        // Map specific document labels to the required API keys
+        let key: string;
+        const label = doc.display_label.toLowerCase();
+        
+        if (label.includes('kyc')) {
+          key = 'kyc';
+        } else if (label.includes('signed') && label.includes('proposal')) {
+          key = 'signed_proposal';
+        } else {
+          // Fallback: create a key from the document label (lowercase, replace spaces with underscores)
+          key = doc.display_label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        }
+        
         console.log('🔧 Adding document to payload:', { 
           originalLabel: doc.display_label, 
           key, 
