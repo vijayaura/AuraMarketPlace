@@ -194,39 +194,57 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('Uploading file for document ID:', docId);
+    console.log('Current documents before upload:', documents);
+
     try {
       // Add to uploading set
       setUploadingDocs(prev => new Set(prev).add(docId));
       
       // Update document status to uploading
-      setDocuments(prevDocs => prevDocs.map(doc => 
-        doc.id === docId 
-          ? { ...doc, status: "uploading" as const }
-          : doc
-      ));
+      setDocuments(prevDocs => {
+        console.log('Updating to uploading status, prevDocs:', prevDocs);
+        return prevDocs.map(doc => 
+          doc.id === docId 
+            ? { ...doc, status: "uploading" as const }
+            : doc
+        );
+      });
       
       // Upload file using the API
       const uploadResponse = await uploadFile(file);
+      console.log('Upload response:', uploadResponse);
       
       if (uploadResponse.files && uploadResponse.files.length > 0) {
         const uploadedFile = uploadResponse.files[0];
         const fileSizeInMB = (uploadedFile.size_bytes / (1024 * 1024)).toFixed(1);
         
+        console.log('Upload successful, updating document with file info:', {
+          docId,
+          uploadedFile,
+          fileSizeInMB
+        });
+        
         // Update document with uploaded file info
-        setDocuments(prevDocs => prevDocs.map(doc => 
-          doc.id === docId 
-            ? { 
-                ...doc, 
-                status: "uploaded" as const,
-                uploadedFile: {
-                  name: uploadedFile.original_name,
-                  size: `${fileSizeInMB} MB`,
-                  uploadDate: new Date().toISOString().split('T')[0],
-                  url: uploadedFile.url
+        setDocuments(prevDocs => {
+          console.log('Updating to uploaded status, prevDocs:', prevDocs);
+          const updated = prevDocs.map(doc => 
+            doc.id === docId 
+              ? { 
+                  ...doc, 
+                  status: "uploaded" as const,
+                  uploadedFile: {
+                    name: uploadedFile.original_name,
+                    size: `${fileSizeInMB} MB`,
+                    uploadDate: new Date().toISOString().split('T')[0],
+                    url: uploadedFile.url
+                  }
                 }
-              }
-            : doc
-        ));
+              : doc
+          );
+          console.log('Updated documents:', updated);
+          return updated;
+        });
         
         toast.success('File Uploaded', {
           description: `${uploadedFile.original_name} has been uploaded successfully.`
