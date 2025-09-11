@@ -254,7 +254,7 @@ export default function BrokerDashboard() {
   const [activeTab, setActiveTab] = useState("quotes");
   const [currentQuotePage, setCurrentQuotePage] = useState(1);
   const [currentPolicyPage, setCurrentPolicyPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10; // Increased from 5 to 10 to show more quotes per page
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [quotesData, setQuotesData] = useState<BrokerDashboardQuotesResponse | null>(null);
@@ -350,8 +350,15 @@ export default function BrokerDashboard() {
     filteredQuotes: filteredQuotes.length,
     totalPages: Math.ceil(filteredQuotes.length / itemsPerPage),
     currentPage: currentQuotePage,
-    itemsPerPage
+    itemsPerPage,
+    currentQuotes: currentQuotes.length,
+    quotesData: quotesData?.recentQuotes?.length || 0
   });
+  
+  // Log sample quotes for debugging
+  if (recentQuotes.length > 0) {
+    console.log('📋 Sample quotes:', recentQuotes.slice(0, 3));
+  }
 
   // Map policies data
   const recentPolicies = (policiesData?.issuedPolicies || []).map(p => ({
@@ -659,6 +666,11 @@ export default function BrokerDashboard() {
                   </TableBody>
                 </Table>
                 )}
+                
+                {/* Debug Info - Remove after fixing */}
+                <div className="px-6 py-2 bg-yellow-100 text-sm">
+                  Debug: Total quotes: {recentQuotes.length}, Filtered: {filteredQuotes.length}, Pages: {totalQuotePages}, Current: {currentQuotePage}
+                </div>
                 
                 {/* Pagination for Quotes */}
                 <div className="px-6 py-4 border-t">
