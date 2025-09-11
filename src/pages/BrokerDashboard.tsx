@@ -303,25 +303,17 @@ export default function BrokerDashboard() {
     projectName: q.project_name,
     projectType: q.project_type,
     status: q.status as any,
-    premium: q.total_premium,
+    premium: q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
     createdDate: q.created_at?.slice(0,10),
     validUntil: q.validity_date?.slice(0,10),
-    sumInsured: '-',
-    insurer: '',
+    sumInsured: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
+    insurer: q.insurer_name || '-',
     quoteId: q.quote_id,
   }));
   const activeQuotes = filterActiveQuotes(recentQuotes);
 
   // Configure filters for quotes
   const quoteFilters: FilterConfig[] = [
-    {
-      key: 'insurer',
-      label: 'Insurer',
-      type: 'select',
-      options: [
-        // Insurer not provided in response; keep filter stub empty
-      ]
-    },
     {
       key: 'status',
       label: 'Status',
@@ -381,7 +373,7 @@ export default function BrokerDashboard() {
     clearFilters: clearQuoteFilters
   } = useTableSearch({
     data: activeQuotes,
-    searchableFields: ['quoteId', 'clientName', 'projectName', 'insurer'],
+    searchableFields: ['quoteId', 'projectName'],
     initialFilters: {}
   });
 
@@ -394,7 +386,7 @@ export default function BrokerDashboard() {
     clearFilters: clearPolicyFilters
   } = useTableSearch({
     data: mockPolicies,
-    searchableFields: ['policyNumber', 'clientName', 'projectName', 'insurer'],
+    searchableFields: ['policyNumber', 'projectName', 'insurer'],
     initialFilters: {}
   });
 
@@ -563,16 +555,14 @@ export default function BrokerDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Quote ID</TableHead>
-                      <TableHead>Client Name</TableHead>
-                      <TableHead>Project Name</TableHead>
-                      <TableHead>Insurer</TableHead>
-                      <TableHead>Sum Insured</TableHead>
-                      <TableHead>Premium</TableHead>
-                      <TableHead>Quote Status</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Quote Validity</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="w-[120px]">Quote ID</TableHead>
+                      <TableHead className="w-[200px]">Project Name</TableHead>
+                      <TableHead className="w-[140px]">Sum Insured</TableHead>
+                      <TableHead className="w-[120px]">Premium</TableHead>
+                      <TableHead className="w-[130px]">Quote Status</TableHead>
+                      <TableHead className="w-[100px]">Created</TableHead>
+                      <TableHead className="w-[120px]">Quote Validity</TableHead>
+                      <TableHead className="w-[100px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -582,17 +572,15 @@ export default function BrokerDashboard() {
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => navigate(`/broker/quote/${quote.id}`)}
                       >
-                        <TableCell className="font-medium">{quote.quoteId}</TableCell>
-                        <TableCell>{quote.clientName}</TableCell>
-                        <TableCell>{quote.projectName}</TableCell>
-                        <TableCell className="font-medium">{quote.insurer}</TableCell>
-                        <TableCell className="font-medium">{quote.sumInsured}</TableCell>
-                        <TableCell className="font-medium text-primary">{quote.premium}</TableCell>
-                        <TableCell>
+                        <TableCell className="font-medium w-[120px]">{quote.quoteId}</TableCell>
+                        <TableCell className="w-[200px] truncate" title={quote.projectName}>{quote.projectName}</TableCell>
+                        <TableCell className="font-medium w-[140px]">{quote.sumInsured}</TableCell>
+                        <TableCell className="font-medium text-primary w-[120px]">{quote.premium}</TableCell>
+                        <TableCell className="w-[130px]">
                           <QuoteStatusDot status={quote.status} />
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{quote.createdDate}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{quote.validUntil}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground w-[100px]">{quote.createdDate}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground w-[120px]">{quote.validUntil}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
                             <Button
@@ -697,16 +685,15 @@ export default function BrokerDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Policy Number</TableHead>
-                      <TableHead>Client Name</TableHead>
-                      <TableHead>Project Name</TableHead>
-                      <TableHead>Insurer</TableHead>
-                      <TableHead>Sum Insured</TableHead>
-                      <TableHead>Premium</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>End Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="w-[140px]">Policy Number</TableHead>
+                      <TableHead className="w-[200px]">Project Name</TableHead>
+                      <TableHead className="w-[150px]">Insurer</TableHead>
+                      <TableHead className="w-[140px]">Sum Insured</TableHead>
+                      <TableHead className="w-[120px]">Premium</TableHead>
+                      <TableHead className="w-[100px]">Start Date</TableHead>
+                      <TableHead className="w-[100px]">End Date</TableHead>
+                      <TableHead className="w-[100px]">Status</TableHead>
+                      <TableHead className="w-[100px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -716,15 +703,14 @@ export default function BrokerDashboard() {
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => navigate(`/broker/policy/${policy.id}`)}
                       >
-                        <TableCell className="font-medium">{policy.policyNumber}</TableCell>
-                        <TableCell>{policy.clientName}</TableCell>
-                        <TableCell>{policy.projectName}</TableCell>
-                        <TableCell className="font-medium">{policy.insurer}</TableCell>
-                        <TableCell className="font-medium">{policy.sumInsured}</TableCell>
-                        <TableCell className="font-medium text-primary">{policy.premium}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{policy.startDate}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{policy.endDate}</TableCell>
-                        <TableCell>
+                        <TableCell className="font-medium w-[140px]">{policy.policyNumber}</TableCell>
+                        <TableCell className="w-[200px] truncate" title={policy.projectName}>{policy.projectName}</TableCell>
+                        <TableCell className="font-medium w-[150px]">{policy.insurer}</TableCell>
+                        <TableCell className="font-medium w-[140px]">{policy.sumInsured}</TableCell>
+                        <TableCell className="font-medium text-primary w-[120px]">{policy.premium}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground w-[100px]">{policy.startDate}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground w-[100px]">{policy.endDate}</TableCell>
+                        <TableCell className="w-[100px]">
                           <Badge variant="outline" className="text-success border-success/20">
                             {policy.status.charAt(0).toUpperCase() + policy.status.slice(1)}
                           </Badge>
