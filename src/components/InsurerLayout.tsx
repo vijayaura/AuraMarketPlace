@@ -39,6 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logout, type LogoutResponse } from "@/lib/api/auth";
 import { getRefreshToken, clearAuth, getInsurerCompany, getInsurerCompanyId, setInsurerCompany, getAuthUser } from "@/lib/auth";
 import { getInsurer } from "@/lib/api";
+import { uploadFile } from "@/lib/api/quotes";
 import type { AuthUser } from "@/lib/api/auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UnsavedChangesProvider } from "@/hooks/use-unsaved-changes";
@@ -242,29 +243,117 @@ export function InsurerLayout() {
     licenseNumber: "",
     validityFrom: "",
     validityTo: "",
-    licenseImage: null as File | null
+    licenseImage: null as File | null,
+    licenseImageUrl: null as string | null
   });
-  const handleLicenseUpdate = () => {
-    // In real app, this would upload the license data to the backend
-    toast({
-      title: "License updated successfully",
-      description: "Your insurer license has been updated and is under review."
-    });
-    setLicenseDialogOpen(false);
-    setLicenseData({
-      licenseNumber: "",
-      validityFrom: "",
-      validityTo: "",
-      licenseImage: null
-    });
+  const [isUploadingLicense, setIsUploadingLicense] = useState(false);
+  const handleLicenseUpdate = async () => {
+    // Validate required fields
+    if (!licenseData.licenseNumber || !licenseData.validityFrom || !licenseData.validityTo) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!licenseData.licenseImageUrl) {
+      toast({
+        title: "No License Document",
+        description: "Please upload a license document.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Here you would normally call an API to update insurer license
+      // For now, we'll just show success since we have the uploaded URL
+      console.log('License update data:', {
+        licenseNumber: licenseData.licenseNumber,
+        validityFrom: licenseData.validityFrom,
+        validityTo: licenseData.validityTo,
+        licenseDocumentUrl: licenseData.licenseImageUrl
+      });
+
+      toast({
+        title: "License updated successfully",
+        description: "Your insurer license has been updated and is under review."
+      });
+      setLicenseDialogOpen(false);
+      setLicenseData({
+        licenseNumber: "",
+        validityFrom: "",
+        validityTo: "",
+        licenseImage: null,
+        licenseImageUrl: null
+      });
+    } catch (error: any) {
+      console.error('License update error:', error);
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update license. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setLicenseData(prev => ({
-        ...prev,
-        licenseImage: file
-      }));
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload an image or PDF file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload a file smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingLicense(true);
+
+    try {
+      // Upload file using the API
+      const uploadResponse = await uploadFile(file);
+      
+      if (uploadResponse.files && uploadResponse.files.length > 0) {
+        const uploadedFile = uploadResponse.files[0];
+        
+        // Update license data with both file and URL
+        setLicenseData(prev => ({
+          ...prev,
+          licenseImage: file,
+          licenseImageUrl: uploadedFile.url
+        }));
+
+        toast({
+          title: "File Uploaded Successfully",
+          description: `${uploadedFile.original_name} has been uploaded successfully.`,
+        });
+      } else {
+        throw new Error('No file data returned from upload');
+      }
+    } catch (error: any) {
+      console.error('License upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload license document. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingLicense(false);
     }
   };
   return <UnsavedChangesProvider>

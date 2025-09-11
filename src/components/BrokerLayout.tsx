@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logout, type LogoutResponse } from "@/lib/api/auth";
 import { getRefreshToken, clearAuth, getBrokerCompany, getBrokerCompanyId, setBrokerCompany, getAuthUser } from "@/lib/auth";
 import { getBroker } from "@/lib/api";
+import { uploadFile } from "@/lib/api/quotes";
 import type { AuthUser } from "@/lib/api/auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 const sidebarItems = [{
@@ -309,32 +310,120 @@ export function BrokerLayout() {
     licenseNumber: "",
     validityFrom: "",
     validityTo: "",
-    licenseImage: null as File | null
+    licenseImage: null as File | null,
+    licenseImageUrl: null as string | null
   });
+  const [isUploadingLicense, setIsUploadingLicense] = useState(false);
   
   // Get broker company data for license information
   const company = getBrokerCompany();
-  const handleLicenseUpdate = () => {
-    // In real app, this would upload the license data to the backend
-    toast({
-      title: "License updated successfully",
-      description: "Your broker license has been updated and is under review."
-    });
-    setLicenseDialogOpen(false);
-    setLicenseData({
-      licenseNumber: "",
-      validityFrom: "",
-      validityTo: "",
-      licenseImage: null
-    });
+  const handleLicenseUpdate = async () => {
+    // Validate required fields
+    if (!licenseData.licenseNumber || !licenseData.validityFrom || !licenseData.validityTo) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!licenseData.licenseImageUrl) {
+      toast({
+        title: "No License Document",
+        description: "Please upload a license document.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Here you would normally call an API to update broker license
+      // For now, we'll just show success since we have the uploaded URL
+      console.log('License update data:', {
+        licenseNumber: licenseData.licenseNumber,
+        validityFrom: licenseData.validityFrom,
+        validityTo: licenseData.validityTo,
+        licenseDocumentUrl: licenseData.licenseImageUrl
+      });
+
+      toast({
+        title: "License updated successfully",
+        description: "Your broker license has been updated and is under review."
+      });
+      setLicenseDialogOpen(false);
+      setLicenseData({
+        licenseNumber: "",
+        validityFrom: "",
+        validityTo: "",
+        licenseImage: null,
+        licenseImageUrl: null
+      });
+    } catch (error: any) {
+      console.error('License update error:', error);
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update license. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setLicenseData(prev => ({
-        ...prev,
-        licenseImage: file
-      }));
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload an image or PDF file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload a file smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingLicense(true);
+
+    try {
+      // Upload file using the API
+      const uploadResponse = await uploadFile(file);
+      
+      if (uploadResponse.files && uploadResponse.files.length > 0) {
+        const uploadedFile = uploadResponse.files[0];
+        
+        // Update license data with both file and URL
+        setLicenseData(prev => ({
+          ...prev,
+          licenseImage: file,
+          licenseImageUrl: uploadedFile.url
+        }));
+
+        toast({
+          title: "File Uploaded Successfully",
+          description: `${uploadedFile.original_name} has been uploaded successfully.`,
+        });
+      } else {
+        throw new Error('No file data returned from upload');
+      }
+    } catch (error: any) {
+      console.error('License upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload license document. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingLicense(false);
     }
   };
   return <SidebarProvider>
@@ -389,14 +478,37 @@ export function BrokerLayout() {
                       <Label htmlFor="licenseImage">License Document</Label>
                       <div className="flex items-center gap-2">
                         <Input id="licenseImage" type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
-                        <Button variant="outline" onClick={() => document.getElementById('licenseImage')?.click()} className="w-full gap-2">
-                          <Upload className="w-4 h-4" />
-                          {licenseData.licenseImage ? licenseData.licenseImage.name : "Upload License Document"}
+                        <Button 
+                          variant="outline" 
+                          onClick={() => document.getElementById('licenseImage')?.click()} 
+                          className="w-full gap-2"
+                          disabled={isUploadingLicense}
+                        >
+                          {isUploadingLicense ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4" />
+                              {licenseData.licenseImage ? licenseData.licenseImage.name : "Upload License Document"}
+                            </>
+                          )}
                         </Button>
                       </div>
-                      {licenseData.licenseImage && <p className="text-sm text-muted-foreground">
-                          Selected: {licenseData.licenseImage.name}
-                        </p>}
+                      {licenseData.licenseImage && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">
+                            Selected: {licenseData.licenseImage.name}
+                          </p>
+                          {licenseData.licenseImageUrl && (
+                            <p className="text-xs text-green-600">
+                              ✓ Uploaded successfully
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <DialogFooter>

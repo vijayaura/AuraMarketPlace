@@ -20,6 +20,7 @@ import { ArrowLeft, Building2, MapPin, Calendar, Upload, X, UserPlus } from "luc
 import { listMasterCountries, listMasterRegions, listMasterZones, type Country, type Region, type Zone } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { createBroker, type CreateBrokerRequest } from "@/lib/api";
+import { uploadFile } from "@/lib/api/quotes";
 import FormSkeleton from "@/components/loaders/FormSkeleton";
 
 const createBrokerSchema = z.object({
@@ -53,6 +54,8 @@ const CreateBroker = () => {
   const [mastersError, setMastersError] = useState<string | null>(null);
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoFileUrl, setLogoFileUrl] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
   useEffect(() => {
     let mounted = true;
@@ -173,7 +176,7 @@ const CreateBroker = () => {
         license_start_date: values.validityStartDate || null,
         license_end_date: values.validityEndDate || null,
         license_doc: licenseFile ? licenseFile.name : null,
-        company_logo: logoFile ? logoFile.name : null,
+        company_logo: logoFileUrl || null,
         operating_countries: countriesLabels.length ? countriesLabels : null,
         operating_regions: selectedRegionObjects.length ? selectedRegionObjects : null,
         operating_zones: selectedZoneObjects.length ? selectedZoneObjects : null,
@@ -238,23 +241,54 @@ const CreateBroker = () => {
     }
   };
 
-  const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast({ title: 'Invalid File Type', description: 'Please upload an image file', variant: 'destructive' });
-        return;
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid File Type', description: 'Please upload an image file', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File Too Large', description: 'Please upload an image smaller than 5MB', variant: 'destructive' });
+      return;
+    }
+
+    setIsUploadingLogo(true);
+
+    try {
+      // Upload file using the API
+      const uploadResponse = await uploadFile(file);
+      
+      if (uploadResponse.files && uploadResponse.files.length > 0) {
+        const uploadedFile = uploadResponse.files[0];
+        
+        // Update state with both file and URL
+        setLogoFile(file);
+        setLogoFileUrl(uploadedFile.url);
+
+        toast({
+          title: "Logo Uploaded Successfully",
+          description: `${uploadedFile.original_name} has been uploaded successfully.`,
+        });
+      } else {
+        throw new Error('No file data returned from upload');
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast({ title: 'File Too Large', description: 'Please upload an image smaller than 5MB', variant: 'destructive' });
-        return;
-      }
-      setLogoFile(file);
+    } catch (error: any) {
+      console.error('Logo upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload logo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingLogo(false);
     }
   };
 
   const removeLogoFile = () => {
     setLogoFile(null);
+    setLogoFileUrl(null);
     const fileInput = document.getElementById('logo-file') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   };
@@ -512,9 +546,16 @@ const CreateBroker = () => {
                             <div className="mt-4">
                               <label htmlFor="logo-file" className="cursor-pointer">
                                 <span className="text-sm font-medium text-primary hover:text-primary/80">
-                                  Upload company logo
+                                  {isUploadingLogo ? "Uploading..." : "Upload company logo"}
                                 </span>
-                                <input id="logo-file" type="file" className="sr-only" accept="image/*" onChange={handleLogoFileChange} />
+                                <input 
+                                  id="logo-file" 
+                                  type="file" 
+                                  className="sr-only" 
+                                  accept="image/*" 
+                                  onChange={handleLogoFileChange}
+                                  disabled={isUploadingLogo}
+                                />
                               </label>
                               <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 5MB</p>
                             </div>
@@ -529,6 +570,9 @@ const CreateBroker = () => {
                             <div>
                               <p className="text-sm font-medium">{logoFile.name}</p>
                               <p className="text-xs text-muted-foreground">{(logoFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                              {logoFileUrl && (
+                                <p className="text-xs text-green-600">✓ Uploaded successfully</p>
+                              )}
                             </div>
                           </div>
                           <Button type="button" variant="ghost" size="sm" onClick={removeLogoFile} className="text-muted-foreground hover:text-destructive">
