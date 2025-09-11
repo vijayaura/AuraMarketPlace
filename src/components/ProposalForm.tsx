@@ -2299,18 +2299,17 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                 }} />
               </div>
               
-              {/* Navigation Buttons - hide for declaration step */}
-              {currentStep !== 7 && (
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  {/* Previous Button */}
-                  {currentStep > 0 && (
-                    <Button variant="outline" onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}>
-                      Previous
-                    </Button>
-                  )}
-                  
-                  {/* Next/Proceed Button */}
-                  {currentStep === steps.length - 1 ? (
+              {/* Navigation Buttons */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {/* Previous Button */}
+                {currentStep > 0 && (
+                  <Button variant="outline" onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}>
+                    Previous
+                  </Button>
+                )}
+                
+                {/* Next/Proceed Button - hide for declaration step since it has its own Complete button */}
+                {currentStep === steps.length - 1 && currentStep !== 7 ? (
                   <Button 
                     variant="hero" 
                     size="lg" 
@@ -3766,7 +3765,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               <Declaration 
                 ref={declarationRef} 
                 onSubmissionStateChange={setIsSubmittingDocuments}
-                onPrevious={() => setCurrentStep(Math.max(0, currentStep - 1))}
               />
             </div>
 
