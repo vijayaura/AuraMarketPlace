@@ -10,6 +10,7 @@ import { FileText, Download, CheckCircle, Calendar, Building, DollarSign, Shield
 import { getProposalBundle, ProposalBundleResponse } from "@/lib/api/quotes";
 import { getPolicyWordings, PolicyWording } from "@/lib/api/insurers";
 import { toast } from "@/components/ui/sonner";
+import { generatePolicyPDF } from "@/utils/pdfGenerator";
 
 const Success = () => {
   const location = useLocation();
@@ -77,6 +78,27 @@ const Success = () => {
       console.error('Download error:', error);
       toast.error('Download Failed', {
         description: 'Failed to download document. Please try again.'
+      });
+    }
+  };
+
+  const handlePrintPolicy = () => {
+    if (!proposalBundle) {
+      toast.error('Error', {
+        description: 'Policy data not available for printing.'
+      });
+      return;
+    }
+
+    try {
+      generatePolicyPDF(proposalBundle);
+      toast.success('PDF Generated', {
+        description: 'Policy PDF has been generated and downloaded.'
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('PDF Generation Failed', {
+        description: 'Failed to generate PDF. Please try again.'
       });
     }
   };
@@ -323,7 +345,7 @@ const Success = () => {
           {/* Action Buttons */}
           <div className="flex justify-center gap-4">
             <Button
-              onClick={() => window.print()}
+              onClick={handlePrintPolicy}
               variant="outline"
               size="lg"
             >
