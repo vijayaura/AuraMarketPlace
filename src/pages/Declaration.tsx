@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,11 @@ interface DeclarationProps {
   onSubmissionStateChange?: (isSubmitting: boolean) => void;
 }
 
-const Declaration = ({ onSubmissionStateChange }: DeclarationProps) => {
+export interface DeclarationRef {
+  handleSubmitDocuments: () => Promise<boolean>;
+}
+
+const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmissionStateChange }, ref) => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<DocumentWithUpload[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +36,11 @@ const Declaration = ({ onSubmissionStateChange }: DeclarationProps) => {
   const [retrying, setRetrying] = useState(false);
   const [uploadingDocs, setUploadingDocs] = useState<Set<number>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Expose handleSubmitDocuments function to parent component
+  useImperativeHandle(ref, () => ({
+    handleSubmitDocuments
+  }), []);
 
   // Get insurer and product IDs from localStorage or URL params
   const getInsurerAndProductIds = () => {
@@ -337,6 +346,7 @@ const Declaration = ({ onSubmissionStateChange }: DeclarationProps) => {
   const handleSubmitDocuments = async (): Promise<boolean> => {
     try {
       setIsSubmitting(true);
+      onSubmissionStateChange?.(true);
       
       // Validate required documents
       if (!validateRequiredDocuments()) {
@@ -412,6 +422,7 @@ const Declaration = ({ onSubmissionStateChange }: DeclarationProps) => {
       return false;
     } finally {
       setIsSubmitting(false);
+      onSubmissionStateChange?.(false);
     }
   };
 
@@ -595,6 +606,8 @@ const Declaration = ({ onSubmissionStateChange }: DeclarationProps) => {
       </div>
     </div>
   );
-};
+});
+
+Declaration.displayName = 'Declaration';
 
 export default Declaration;

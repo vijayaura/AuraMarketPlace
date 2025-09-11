@@ -927,3 +927,31 @@ export const updateDocumentSubmission = async (quoteId: number, data: DocumentSu
   const response = await apiPatch<DocumentSubmissionResponse>(`/quotes/${quoteId}/docs-required`, data);
   return response;
 };
+
+// Policy Details API
+export interface PolicyDetailsResponse {
+  policy_id: string;
+  policy_number: string;
+  insurer_name: string;
+  insurer_id: number;
+  product_name: string;
+  product_id: number;
+  premium_amount: number;
+  sum_insured: number;
+  start_date: string;
+  end_date: string;
+  status: string;
+  created_at: string;
+  documents: {
+    [key: string]: {
+      label: string;
+      url: string;
+      uploaded_at: string;
+    };
+  };
+}
+
+export const getPolicyDetails = async (quoteId: number): Promise<PolicyDetailsResponse> => {
+  const response = await apiGet<PolicyDetailsResponse>(`/quotes/${quoteId}/policy-details`);
+  return response;
+};

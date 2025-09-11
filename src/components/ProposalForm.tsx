@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +34,7 @@ import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentUpload } from "./DocumentUpload";
 import { QuotesComparison } from "./QuotesComparison";
-import Declaration from "@/pages/Declaration";
+import Declaration, { DeclarationRef } from "@/pages/Declaration";
 
 // Extend Window interface for global functions
 declare global {
@@ -114,6 +114,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const [isSavingDocuments, setIsSavingDocuments] = useState(false);
   const [requiredDocumentTypes, setRequiredDocumentTypes] = useState<Array<{id: number, name: string, required: boolean}>>([]);
   const [allDocumentTypes, setAllDocumentTypes] = useState<Array<{id: number, name: string, required: boolean, status: string, fileUrl?: string, fileName?: string}>>([]);
+  
+  // Declaration submission state
+  const [isSubmittingDocuments, setIsSubmittingDocuments] = useState(false);
+  const declarationRef = useRef<DeclarationRef>(null);
   
   // Assigned Insurers State
   const [assignedInsurers, setAssignedInsurers] = useState<BrokerInsurersResponse | null>(null);
@@ -2372,7 +2376,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         // Do nothing here, let the main handler (BUTTON 2) handle step 4
                       }
                     }}
-                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody}
+                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody || isSubmittingDocuments}
                   >
                     {isSavingCoverRequirements ? (
                       <>
@@ -2480,15 +2484,24 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         markStepCompleted('coverages_selected');
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       } else if (currentStep === 7) {
-                        // Declaration step - mark as completed and navigate to success page
-                        markStepCompleted('policy_required_documents');
-                        navigate('/customer/success');
+                        // Declaration step - submit documents first, then navigate to success page
+                        if (declarationRef.current && declarationRef.current.handleSubmitDocuments) {
+                          const success = await declarationRef.current.handleSubmitDocuments();
+                          if (success) {
+                            markStepCompleted('policy_required_documents');
+                            navigate('/customer/success');
+                          }
+                        } else {
+                          // Fallback if ref is not available
+                          markStepCompleted('policy_required_documents');
+                          navigate('/customer/success');
+                        }
                       } else {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       }
                     }}
-                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody}
+                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody || isSubmittingDocuments}
                   >
                     {isSavingProject ? (
                       <>
@@ -2524,6 +2537,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Checking water bodies...
+                      </>
+                    ) : isSubmittingDocuments ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Submitting Documents...
                       </>
                     ) : currentStep === 7 ? (
                       'Complete'
@@ -3702,7 +3720,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               </TabsContent>
 
               <TabsContent value="declaration">
-                <Declaration />
+                <Declaration ref={declarationRef} onSubmissionStateChange={setIsSubmittingDocuments} />
               </TabsContent>
 
             </Tabs>
