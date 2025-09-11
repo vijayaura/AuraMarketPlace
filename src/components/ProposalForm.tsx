@@ -2314,6 +2314,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     variant="hero" 
                     size="lg" 
                     onClick={async () => {
+                      console.log('🔍 Last step Next button clicked, currentStep:', currentStep);
+                      console.log('🔍 Steps length:', steps.length);
+                      console.log('🔍 Is last step?', currentStep === steps.length - 1);
+                      
                       // Validate current step first
                       if (!validateCurrentStep()) {
                         const errorFields = Object.keys(validationErrors);
@@ -2366,9 +2370,30 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         return;
                       }
                       
-                      // Save data based on current step - removed duplicate Cover Requirements handling
-                      // Step 4 (Cover Requirements) is handled by the main button handler below
-                      if (currentStep !== 4) {
+                      // Handle declaration step (step 7) in the hero button
+                      if (currentStep === 7) {
+                        console.log('🔍 Declaration step - Hero button clicked');
+                        console.log('🔍 declarationRef.current:', declarationRef.current);
+                        
+                        if (declarationRef.current && declarationRef.current.handleSubmitDocuments) {
+                          console.log('🔍 Calling handleSubmitDocuments from hero button...');
+                          try {
+                            const success = await declarationRef.current.handleSubmitDocuments();
+                            console.log('🔍 handleSubmitDocuments result:', success);
+                            if (success) {
+                              markStepCompleted('policy_required_documents');
+                              navigate('/customer/success');
+                            }
+                          } catch (error) {
+                            console.error('🔍 Error calling handleSubmitDocuments:', error);
+                          }
+                        } else {
+                          console.log('🔍 Ref not available, using fallback');
+                          // Fallback if ref is not available
+                          markStepCompleted('policy_required_documents');
+                          navigate('/customer/success');
+                        }
+                      } else if (currentStep !== 4) {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       } else {
@@ -2383,6 +2408,13 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Saving...
                       </>
+                    ) : isSubmittingDocuments ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Submitting Documents...
+                      </>
+                    ) : currentStep === 7 ? (
+                      'Complete'
                     ) : (
                       'Next'
                     )}
@@ -2390,6 +2422,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                 ) : (
                   <Button 
                     onClick={async () => {
+                      console.log('🔍 Next button clicked, currentStep:', currentStep);
+                      console.log('🔍 Steps length:', steps.length);
+                      console.log('🔍 Is last step?', currentStep === steps.length - 1);
+                      
                       // Validate current step first
                       if (!validateCurrentStep()) {
                         const errorFields = Object.keys(validationErrors);
