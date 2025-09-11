@@ -199,12 +199,11 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       setUploadingDocs(prev => new Set(prev).add(docId));
       
       // Update document status to uploading
-      const updatedDocuments = documents.map(doc => 
+      setDocuments(prevDocs => prevDocs.map(doc => 
         doc.id === docId 
           ? { ...doc, status: "uploading" as const }
           : doc
-      );
-      setDocuments(updatedDocuments);
+      ));
       
       // Upload file using the API
       const uploadResponse = await uploadFile(file);
@@ -214,7 +213,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
         const fileSizeInMB = (uploadedFile.size_bytes / (1024 * 1024)).toFixed(1);
         
         // Update document with uploaded file info
-        const finalDocuments = documents.map(doc => 
+        setDocuments(prevDocs => prevDocs.map(doc => 
           doc.id === docId 
             ? { 
                 ...doc, 
@@ -227,8 +226,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
                 }
               }
             : doc
-        );
-        setDocuments(finalDocuments);
+        ));
         
         toast.success('File Uploaded', {
           description: `${uploadedFile.original_name} has been uploaded successfully.`
@@ -240,12 +238,11 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       console.error('File upload error:', error);
       
       // Revert to pending status on error
-      const errorDocuments = documents.map(doc => 
+      setDocuments(prevDocs => prevDocs.map(doc => 
         doc.id === docId 
           ? { ...doc, status: "pending" as const }
           : doc
-      );
-      setDocuments(errorDocuments);
+      ));
       
       toast.error('Upload Failed', {
         description: error.message || "Failed to upload file. Please try again."
