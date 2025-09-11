@@ -333,21 +333,32 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       product_id: productId
     };
     
+    // Check if we have any documents at all
+    if (documents.length === 0) {
+      console.warn('No documents available for submission');
+      return payload;
+    }
+    
     // Add all uploaded documents to the payload
-    documents.forEach(doc => {
-      if (doc.uploadedFile && doc.status === 'uploaded') {
-        // Create a key from the document label (lowercase, replace spaces with underscores, remove special chars)
-        const key = doc.display_label.toLowerCase()
-          .replace(/\s+/g, '_')
-          .replace(/[^a-z0-9_]/g, '')
-          .replace(/_+/g, '_') // Replace multiple underscores with single
-          .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
-        
-        payload[key] = {
-          label: doc.display_label,
-          url: doc.uploadedFile.url || ''
-        };
-      }
+    const uploadedDocs = documents.filter(doc => doc.uploadedFile && doc.status === 'uploaded');
+    
+    if (uploadedDocs.length === 0) {
+      console.warn('No uploaded documents found');
+      return payload;
+    }
+    
+    uploadedDocs.forEach(doc => {
+      // Create a key from the document label (lowercase, replace spaces with underscores, remove special chars)
+      const key = doc.display_label.toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_]/g, '')
+        .replace(/_+/g, '_') // Replace multiple underscores with single
+        .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+      
+      payload[key] = {
+        label: doc.display_label,
+        url: doc.uploadedFile.url || ''
+      };
     });
     
     return payload;

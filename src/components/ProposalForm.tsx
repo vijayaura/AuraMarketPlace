@@ -3754,11 +3754,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               <TabsContent value="declaration">
                 {currentStep === 7 ? (
                   <>
-                    <Declaration ref={declarationRef} onSubmissionStateChange={setIsSubmittingDocuments} />
-                    {/* Debug info */}
-                    <div className="mt-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
-                      Debug: Current step is {currentStep}, declarationRef.current: {declarationRef.current ? 'Available' : 'Not available'}
-                    </div>
+                      <Declaration ref={declarationRef} onSubmissionStateChange={setIsSubmittingDocuments} />
                   </>
                 ) : (
                   <div className="p-8 text-center text-muted-foreground">
