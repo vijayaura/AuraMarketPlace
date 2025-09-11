@@ -28,6 +28,7 @@ import { listMasterProjectTypes, listMasterSubProjectTypes, listMasterConstructi
 import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, updateRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getMinimumPremiums, saveMinimumPremiums, updateMinimumPremiums, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getAreaTypesConfiguration, createAreaTypesConfiguration, updateAreaTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type ProjectRiskFactorsUpdateRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type GetClausePricingDataResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type GetAreaTypesResponse, type SaveAreaTypesRequest, type SaveAreaTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
 import { api } from "@/lib/api/client";
+import { uploadFile } from "@/lib/api/quotes";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
 import QuoteFormat from "./SingleProductConfig/components/QuoteFormat";
 import CEWsConfiguration from "./SingleProductConfig/components/CEWsConfiguration";
@@ -1267,7 +1268,8 @@ const SingleProductConfig = () => {
   // Required Documents state
   const [requiredDocuments, setRequiredDocuments] = useState([]);
   const [editingDocument, setEditingDocument] = useState<any>(null);
-  const [newDocument, setNewDocument] = useState<any>({ label: "", description: "", required: false, active: true, template: null });
+  const [newDocument, setNewDocument] = useState<any>({ label: "", description: "", required: false, active: true, template: null, templateUrl: null });
+  const [isUploadingTemplate, setIsUploadingTemplate] = useState(false);
   
   // Confirmation dialog states
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -5201,27 +5203,71 @@ const SingleProductConfig = () => {
   };
 
   // Handle template upload
-  const handleTemplateUpload = (event: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
+  const handleTemplateUpload = async (event: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const template = {
-        name: file.name,
-        uploadDate: new Date().toISOString().split('T')[0],
-        size: `${Math.round(file.size / 1024)} KB`
-      };
-      
-      if (isEdit && editingDocument) {
-        setEditingDocument({ ...editingDocument, template });
-      } else {
-        setNewDocument({ ...newDocument, template });
-      }
-      
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.includes('pdf') && !file.type.includes('document') && !file.type.includes('msword')) {
       toast({
-        title: "Template Uploaded",
-        description: `Template "${file.name}" has been uploaded successfully.`,
+        title: "Invalid File Type",
+        description: "Please upload a PDF or Word document.",
+        variant: "destructive",
       });
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload a file smaller than 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingTemplate(true);
+
+    try {
+      // Upload file using the API
+      const uploadResponse = await uploadFile(file);
+      
+      if (uploadResponse.files && uploadResponse.files.length > 0) {
+        const uploadedFile = uploadResponse.files[0];
+        
+        const template = {
+          name: file.name,
+          uploadDate: new Date().toISOString().split('T')[0],
+          size: `${Math.round(file.size / 1024)} KB`,
+          url: uploadedFile.url
+        };
+        
+        if (isEdit && editingDocument) {
+          setEditingDocument({ ...editingDocument, template, templateUrl: uploadedFile.url });
+        } else {
+          setNewDocument({ ...newDocument, template, templateUrl: uploadedFile.url });
+        }
+
+        toast({
+          title: "Template Uploaded Successfully",
+          description: `Template "${uploadedFile.original_name}" has been uploaded successfully.`,
+        });
+      } else {
+        throw new Error('No file data returned from upload');
+      }
+    } catch (error: any) {
+      console.error('Template upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload template. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingTemplate(false);
     }
   };
+
 
   // Remove template
   const removeTemplate = (isEdit: boolean = false) => {
@@ -7353,17 +7399,32 @@ const SingleProductConfig = () => {
                                 variant="outline"
                                 onClick={() => document.getElementById('doc-template')?.click()}
                                 className="w-full"
+                                disabled={isUploadingTemplate}
                               >
-                                <Upload className="w-4 h-4 mr-2" />
-                                {newDocument.template ? "Change Template" : "Upload Template"}
+                                {isUploadingTemplate ? (
+                                  <>
+                                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin mr-2"></div>
+                                    Uploading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    {newDocument.template ? "Change Template" : "Upload Template"}
+                                  </>
+                                )}
                               </Button>
                             </div>
                             {newDocument.template && (
                               <div className="flex items-center justify-between bg-muted p-2 rounded">
                                 <div className="flex items-center gap-2">
                                   <FileText className="w-4 h-4" />
-                                  <span className="text-sm">{newDocument.template.name}</span>
-                                  <span className="text-xs text-muted-foreground">({newDocument.template.size})</span>
+                                  <div>
+                                    <span className="text-sm">{newDocument.template.name}</span>
+                                    <span className="text-xs text-muted-foreground">({newDocument.template.size})</span>
+                                    {newDocument.templateUrl && (
+                                      <p className="text-xs text-green-600">✓ Uploaded successfully</p>
+                                    )}
+                                  </div>
                                 </div>
                                 <Button
                                   type="button"
@@ -7556,17 +7617,32 @@ const SingleProductConfig = () => {
                                              variant="outline"
                                              onClick={() => document.getElementById('edit-doc-template')?.click()}
                                              className="w-full"
+                                             disabled={isUploadingTemplate}
                                            >
-                                             <Upload className="w-4 h-4 mr-2" />
-                                             {editingDocument.template ? "Change Template" : "Upload Template"}
+                                             {isUploadingTemplate ? (
+                                               <>
+                                                 <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin mr-2"></div>
+                                                 Uploading...
+                                               </>
+                                             ) : (
+                                               <>
+                                                 <Upload className="w-4 h-4 mr-2" />
+                                                 {editingDocument.template ? "Change Template" : "Upload Template"}
+                                               </>
+                                             )}
                                            </Button>
                                          </div>
                                          {editingDocument.template && (
                                            <div className="flex items-center justify-between bg-muted p-2 rounded">
                                              <div className="flex items-center gap-2">
                                                <FileText className="w-4 h-4" />
-                                               <span className="text-sm">{editingDocument.template.name}</span>
-                                               <span className="text-xs text-muted-foreground">({editingDocument.template.size})</span>
+                                               <div>
+                                                 <span className="text-sm">{editingDocument.template.name}</span>
+                                                 <span className="text-xs text-muted-foreground">({editingDocument.template.size})</span>
+                                                 {editingDocument.templateUrl && (
+                                                   <p className="text-xs text-green-600">✓ Uploaded successfully</p>
+                                                 )}
+                                               </div>
                                              </div>
                                              <Button
                                                type="button"
