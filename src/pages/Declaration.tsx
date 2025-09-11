@@ -96,7 +96,6 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       }));
 
       setDocuments(transformedDocs);
-      console.log('✅ Required documents loaded:', transformedDocs);
       
     } catch (err) {
       console.error('❌ Error fetching required documents:', err);
@@ -194,40 +193,26 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log('Uploading file for document ID:', docId);
-    console.log('Current documents before upload:', documents);
-
     try {
       // Add to uploading set
       setUploadingDocs(prev => new Set(prev).add(docId));
       
       // Update document status to uploading
-      setDocuments(prevDocs => {
-        console.log('Updating to uploading status, prevDocs:', prevDocs);
-        return prevDocs.map(doc => 
-          doc.id === docId 
-            ? { ...doc, status: "uploading" as const }
-            : doc
-        );
-      });
+      setDocuments(prevDocs => prevDocs.map(doc => 
+        doc.id === docId 
+          ? { ...doc, status: "uploading" as const }
+          : doc
+      ));
       
       // Upload file using the API
       const uploadResponse = await uploadFile(file);
-      console.log('Upload response:', uploadResponse);
       
       if (uploadResponse.files && uploadResponse.files.length > 0) {
         const uploadedFile = uploadResponse.files[0];
         const fileSizeInMB = (uploadedFile.size_bytes / (1024 * 1024)).toFixed(1);
         
-        console.log('Upload successful, updating document with file info:', {
-          docId,
-          uploadedFile,
-          fileSizeInMB
-        });
-        
         // Update document with uploaded file info
         setDocuments(prevDocs => {
-          console.log('Updating to uploaded status, prevDocs:', prevDocs);
           const updated = prevDocs.map(doc => 
             doc.id === docId 
               ? { 
@@ -242,7 +227,6 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
                 }
               : doc
           );
-          console.log('Updated documents:', updated);
           return updated;
         });
         
@@ -383,10 +367,6 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     try {
       setIsSubmitting(true);
       onSubmissionStateChange?.(true);
-      
-      // Debug: Log current documents state
-      console.log('Current documents state:', documents);
-      console.log('Documents with uploads:', documents.filter(d => d.uploadedFile && d.status === 'uploaded'));
       
       // Validate required documents
       if (!validateRequiredDocuments()) {
