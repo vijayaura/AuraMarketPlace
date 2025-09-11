@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import insurerLogo from "@/assets/insurer-logo.png";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { TableSearchFilter, FilterConfig } from "@/components/TableSearchFilter"
 import { useTableSearch } from "@/hooks/useTableSearch";
 import { useToast } from "@/hooks/use-toast";
 import { getInsurerDashboard, type GetInsurerDashboardResponse, type DashboardQuoteRequest } from "@/lib/api/insurers";
+import { getInsurerDashboardQuotes, getInsurerDashboardPolicies, type BrokerDashboardQuotesResponse, type BrokerDashboardPoliciesResponse } from "@/lib/api";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import * as XLSX from 'xlsx';
@@ -301,6 +302,14 @@ const InsurerDashboard = () => {
   const [isLoadingDashboard, setIsLoadingDashboard] = useState<boolean>(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
 
+  // Quotes and Policies API state
+  const [quotesData, setQuotesData] = useState<BrokerDashboardQuotesResponse | null>(null);
+  const [policiesData, setPoliciesData] = useState<BrokerDashboardPoliciesResponse | null>(null);
+  const [quotesLoading, setQuotesLoading] = useState<boolean>(false);
+  const [policiesLoading, setPoliciesLoading] = useState<boolean>(false);
+  const [quotesError, setQuotesError] = useState<string | null>(null);
+  const [policiesError, setPoliciesError] = useState<string | null>(null);
+
   // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
@@ -336,9 +345,39 @@ const InsurerDashboard = () => {
     }
   };
 
+  // Fetch quotes data
+  const fetchQuotesData = async () => {
+    try {
+      setQuotesLoading(true);
+      setQuotesError(null);
+      const data = await getInsurerDashboardQuotes();
+      setQuotesData(data);
+    } catch (err: any) {
+      setQuotesError(err?.message || 'Failed to load quotes');
+    } finally {
+      setQuotesLoading(false);
+    }
+  };
+
+  // Fetch policies data
+  const fetchPoliciesData = async () => {
+    try {
+      setPoliciesLoading(true);
+      setPoliciesError(null);
+      const data = await getInsurerDashboardPolicies();
+      setPoliciesData(data);
+    } catch (err: any) {
+      setPoliciesError(err?.message || 'Failed to load policies');
+    } finally {
+      setPoliciesLoading(false);
+    }
+  };
+
   // Fetch dashboard data when component mounts (since default tab is "quotes")
   useEffect(() => {
     fetchDashboardData();
+    fetchQuotesData();
+    fetchPoliciesData();
   }, []);
 
   // Fetch dashboard data when quotes tab is selected
@@ -349,8 +388,55 @@ const InsurerDashboard = () => {
     }
   }, [activeTab]);
 
-  // Filter active quotes (exclude converted policies)
-  const activeQuotes = filterActiveQuotes(mockQuotes);
+  // Map quotes data from API
+  const activeQuotes = useMemo(() => {
+    try {
+      if (!quotesData?.recentQuotes || !Array.isArray(quotesData.recentQuotes)) {
+        console.log('No quotes data available or invalid structure:', quotesData);
+        return [];
+      }
+      return quotesData.recentQuotes.map(q => ({
+        id: q.id.toString(),
+        customerName: q.client_name || '',
+        companyName: q.project_name || '',
+        brokerName: q.broker_name || '',
+        projectType: q.project_type || '',
+        projectValue: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
+        premium: q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
+        submittedDate: q.created_at ? q.created_at.slice(0, 10) : '',
+        status: q.status || '',
+        validityDate: q.validity_date ? q.validity_date.slice(0, 10) : '',
+      }));
+    } catch (error) {
+      console.error('Error mapping quotes data:', error);
+      return [];
+    }
+  }, [quotesData]);
+
+  // Map policies data from API
+  const recentPolicies = useMemo(() => {
+    try {
+      if (!policiesData?.issuedPolicies || !Array.isArray(policiesData.issuedPolicies)) {
+        console.log('No policies data available or invalid structure:', policiesData);
+        return [];
+      }
+      return policiesData.issuedPolicies.map(p => ({
+        id: p.policy_id || `Q${p.quote_id}`,
+        policyNumber: p.policy_id || `Q${p.quote_id}`,
+        customerName: p.client_name || '',
+        companyName: p.project_name || '',
+        projectType: 'Construction', // Default since not provided in API
+        sumInsured: p.total_premium ? `AED ${Number(p.total_premium).toLocaleString()}` : '-',
+        premium: p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
+        startDate: p.start_date ? p.start_date.slice(0, 10) : '',
+        endDate: p.end_date ? p.end_date.slice(0, 10) : '',
+        status: p.status || '',
+      }));
+    } catch (error) {
+      console.error('Error mapping policies data:', error);
+      return [];
+    }
+  }, [policiesData]);
 
   // Configure filters for quotes
   const quoteFilters: FilterConfig[] = [{
@@ -705,34 +791,40 @@ const InsurerDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {isLoadingDashboard ? (
+                  {quotesLoading ? (
                     <TableSkeleton rowCount={5} colCount={8} />
-                  ) : dashboardData?.quoteRequests && dashboardData.quoteRequests.length > 0 ? (
-                    dashboardData.quoteRequests.slice(startQuoteIndex, endQuoteIndex).map(quote => (
+                  ) : quotesError ? (
+                    <tr>
+                      <td colSpan={8} className="p-4 text-center text-destructive">
+                        {quotesError}
+                      </td>
+                    </tr>
+                  ) : filteredQuotes.length > 0 ? (
+                    filteredQuotes.slice(startQuoteIndex, endQuoteIndex).map(quote => (
                       <tr key={quote.id} className="border-b hover:bg-muted/30 transition-colors">
                         <td className="p-4">
-                          <p className="font-medium text-foreground">{quote.quote_id}</p>
+                          <p className="font-medium text-foreground">{quote.id}</p>
                         </td>
                         <td className="p-4">
                           <div>
-                            <p className="font-medium text-foreground">{quote.client_name}</p>
-                            <p className="text-sm text-muted-foreground">{quote.project_name}</p>
+                            <p className="font-medium text-foreground">{quote.customerName}</p>
+                            <p className="text-sm text-muted-foreground">{quote.companyName}</p>
                           </div>
                         </td>
                         <td className="p-4">
-                          <p className="font-medium text-foreground">{quote.broker_name}</p>
+                          <p className="font-medium text-foreground">{quote.brokerName}</p>
                         </td>
                         <td className="p-4">
-                          <p className="font-medium text-foreground">Construction Project</p>
+                          <p className="font-medium text-foreground">{quote.projectType}</p>
                         </td>
                         <td className="p-4">
-                          <p className="font-medium text-foreground">AED {parseFloat(quote.base_premium).toLocaleString()}</p>
+                          <p className="font-medium text-foreground">{quote.projectValue}</p>
                         </td>
                         <td className="p-4">
-                          <p className="font-medium text-foreground">AED {parseFloat(quote.total_premium).toLocaleString()}</p>
+                          <p className="font-medium text-foreground">{quote.premium}</p>
                         </td>
                         <td className="p-4">
-                          <p className="text-sm text-foreground">{new Date(quote.created_at).toLocaleDateString()}</p>
+                          <p className="text-sm text-foreground">{quote.submittedDate}</p>
                         </td>
                         <td className="p-4">
                           <Button size="sm" variant="outline" onClick={() => navigate(`/insurer/quote/${quote.id}`)}>
@@ -852,7 +944,16 @@ const InsurerDashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {currentPolicies.map(policy => <tr key={policy.id} className="border-b hover:bg-muted/30 transition-colors">
+                        {policiesLoading ? (
+                          <TableSkeleton rowCount={5} colCount={9} />
+                        ) : policiesError ? (
+                          <tr>
+                            <td colSpan={9} className="p-4 text-center text-destructive">
+                              {policiesError}
+                            </td>
+                          </tr>
+                        ) : filteredPolicies.length > 0 ? (
+                          filteredPolicies.slice(startPolicyIndex, endPolicyIndex).map(policy => <tr key={policy.id} className="border-b hover:bg-muted/30 transition-colors">
                             <td className="p-4">
                               <p className="font-medium text-foreground">{policy.policyNumber}</p>
                             </td>
@@ -890,7 +991,14 @@ const InsurerDashboard = () => {
                                 View Policy
                               </Button>
                             </td>
-                          </tr>)}
+                          </tr>)
+                        ) : (
+                          <tr>
+                            <td colSpan={9} className="p-4 text-center text-muted-foreground">
+                              No policies found
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                      </table>
                    </div>

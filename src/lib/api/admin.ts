@@ -90,4 +90,22 @@ export async function getBrokerDashboardPolicies(): Promise<BrokerDashboardPolic
   return apiGet<BrokerDashboardPoliciesResponse>('/broker/dashboard/policies');
 }
 
+// Admin Dashboard APIs
+export async function getAdminDashboardQuotes(): Promise<AdminDashboardQuotesResponse> {
+  return apiGet<AdminDashboardQuotesResponse>('/admin/dashboard/quotes');
+}
+
+export async function getAdminDashboardPolicies(): Promise<BrokerDashboardPoliciesResponse> {
+  return apiGet<BrokerDashboardPoliciesResponse>('/admin/dashboard/policies');
+}
+
+// Insurer Dashboard APIs
+export async function getInsurerDashboardQuotes(): Promise<BrokerDashboardQuotesResponse> {
+  return apiGet<BrokerDashboardQuotesResponse>('/insurer/dashboard/quotes');
+}
+
+export async function getInsurerDashboardPolicies(): Promise<BrokerDashboardPoliciesResponse> {
+  return apiGet<BrokerDashboardPoliciesResponse>('/insurer/dashboard/policies');
+}
+
 

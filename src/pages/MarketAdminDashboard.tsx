@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, FileText, Shield, Eye, Search, Filter, BarChart3, TrendingUp, Calendar, Clock } from "lucide-react";
-import { getAdminDashboardQuotes, type AdminDashboardQuotesResponse } from "@/lib/api";
+import { getAdminDashboardQuotes, getAdminDashboardPolicies, type AdminDashboardQuotesResponse, type BrokerDashboardPoliciesResponse } from "@/lib/api";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { QUOTE_STATUSES, getQuoteStatusLabel, getQuoteStatusColor, filterActiveQuotes } from "@/lib/quote-status";
 import { QuoteStatusDot } from "@/components/QuoteStatusDot";
@@ -842,8 +842,11 @@ const MarketAdminDashboard = () => {
   const [gwpViewType, setGwpViewType] = useState<"day" | "month">("day");
   const itemsPerPage = 5;
   const [quotesData, setQuotesData] = useState<AdminDashboardQuotesResponse | null>(null);
+  const [policiesData, setPoliciesData] = useState<BrokerDashboardPoliciesResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [policiesLoading, setPoliciesLoading] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [policiesError, setPoliciesError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -859,6 +862,28 @@ const MarketAdminDashboard = () => {
         setLoadError(err?.message || 'Failed to load dashboard quotes');
       } finally {
         if (mounted) setIsLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Load policies data
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setPoliciesLoading(true);
+        setPoliciesError(null);
+        const data = await getAdminDashboardPolicies();
+        if (!mounted) return;
+        setPoliciesData(data);
+      } catch (err: any) {
+        if (!mounted) return;
+        setPoliciesError(err?.message || 'Failed to load dashboard policies');
+      } finally {
+        if (mounted) setPoliciesLoading(false);
       }
     })();
     return () => {
@@ -892,8 +917,35 @@ const MarketAdminDashboard = () => {
     return matchesSearch && matchesBroker && matchesInsurer && matchesStatus && matchesDateRange;
   });
 
+  // Map policies data from API
+  const recentPolicies = useMemo(() => {
+    try {
+      if (!policiesData?.issuedPolicies || !Array.isArray(policiesData.issuedPolicies)) {
+        console.log('No policies data available or invalid structure:', policiesData);
+        return [];
+      }
+      return policiesData.issuedPolicies.map(p => ({
+        id: p.policy_id || `Q${p.quote_id}`,
+        policyNumber: p.policy_id || `Q${p.quote_id}`,
+        projectName: p.project_name || '',
+        projectType: 'Construction', // Default since not provided in API
+        insurer: 'Insurer', // Default since not provided in API
+        sumInsured: p.total_premium ? `AED ${Number(p.total_premium).toLocaleString()}` : '-',
+        premium: p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
+        startDate: p.start_date ? p.start_date.slice(0, 10) : '',
+        endDate: p.end_date ? p.end_date.slice(0, 10) : '',
+        status: p.status || '',
+        clientName: p.client_name || '-',
+        broker: 'Admin', // Default for admin view
+      }));
+    } catch (error) {
+      console.error('Error mapping policies data:', error);
+      return [];
+    }
+  }, [policiesData]);
+
   // Filter policies based on search and filters
-  const filteredPolicies = mockAllPolicies.filter(policy => {
+  const filteredPolicies = recentPolicies.filter(policy => {
     const matchesSearch = !searchTerm || 
       policy.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       policy.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1451,6 +1503,11 @@ const MarketAdminDashboard = () => {
                   </div>
 
                   <div className="mt-8">
+                    {policiesLoading ? (
+                      <TableSkeleton />
+                    ) : policiesError ? (
+                      <div className="rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">{policiesError}</div>
+                    ) : (
                     <Table>
                        <TableHeader>
                          <TableRow>
@@ -1502,6 +1559,7 @@ const MarketAdminDashboard = () => {
                         ))}
                       </TableBody>
                     </Table>
+                    )}
                     
                     {/* Policies Pagination */}
                     <div className="px-6 py-4 border-t">
