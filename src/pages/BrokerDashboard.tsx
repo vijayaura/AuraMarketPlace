@@ -454,14 +454,14 @@ export default function BrokerDashboard() {
     initialFilters: {}
   });
 
-  // Pagination for quotes
-  const totalQuotePages = Math.ceil(filteredQuotes.length / itemsPerPage);
+  // Pagination for quotes - limit to max 3 pages
+  const totalQuotePages = Math.min(3, Math.ceil(filteredQuotes.length / itemsPerPage));
   const startQuoteIndex = (currentQuotePage - 1) * itemsPerPage;
   const endQuoteIndex = startQuoteIndex + itemsPerPage;
   const currentQuotes = filteredQuotes.slice(startQuoteIndex, endQuoteIndex);
 
-  // Pagination for policies
-  const totalPolicyPages = Math.ceil(filteredPolicies.length / itemsPerPage);
+  // Pagination for policies - limit to max 3 pages
+  const totalPolicyPages = Math.min(3, Math.ceil(filteredPolicies.length / itemsPerPage));
   const startPolicyIndex = (currentPolicyPage - 1) * itemsPerPage;
   const endPolicyIndex = startPolicyIndex + itemsPerPage;
   const currentPolicies = filteredPolicies.slice(startPolicyIndex, endPolicyIndex);
@@ -673,7 +673,10 @@ export default function BrokerDashboard() {
                 <div className="px-6 py-4 border-t">
                   <div className="flex justify-between items-center mb-4">
                     <div className="text-sm text-muted-foreground">
-                      Showing {currentQuotes.length} of {filteredQuotes.length} quotes (Page {currentQuotePage} of {totalQuotePages})
+                      Showing {currentQuotes.length} of {Math.min(filteredQuotes.length, totalQuotePages * itemsPerPage)} quotes (Page {currentQuotePage} of {totalQuotePages})
+                      {filteredQuotes.length > totalQuotePages * itemsPerPage && (
+                        <span className="ml-2 text-amber-600">• Showing first {totalQuotePages * itemsPerPage} results</span>
+                      )}
                     </div>
                   </div>
                   <Pagination>
@@ -816,7 +819,10 @@ export default function BrokerDashboard() {
                 <div className="px-6 py-4 border-t">
                   <div className="flex justify-between items-center mb-4">
                     <div className="text-sm text-muted-foreground">
-                      Showing {currentPolicies.length} of {filteredPolicies.length} policies (Page {currentPolicyPage} of {totalPolicyPages})
+                      Showing {currentPolicies.length} of {Math.min(filteredPolicies.length, totalPolicyPages * itemsPerPage)} policies (Page {currentPolicyPage} of {totalPolicyPages})
+                      {filteredPolicies.length > totalPolicyPages * itemsPerPage && (
+                        <span className="ml-2 text-amber-600">• Showing first {totalPolicyPages * itemsPerPage} results</span>
+                      )}
                     </div>
                   </div>
                   <Pagination>
