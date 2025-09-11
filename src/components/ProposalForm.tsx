@@ -3752,21 +3752,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               </TabsContent>
 
               <TabsContent value="declaration">
-                {currentStep === 7 ? (
-                  <>
-                      <Declaration ref={declarationRef} onSubmissionStateChange={setIsSubmittingDocuments} />
-                  </>
-                ) : (
-                  <div className="p-8 text-center text-muted-foreground">
-                    Declaration step will be shown here
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Always render Declaration component for ref access, but hide when not active */}
-              <div style={{ display: 'none' }}>
                 <Declaration ref={declarationRef} onSubmissionStateChange={setIsSubmittingDocuments} />
-              </div>
+              </TabsContent>
 
             </Tabs>
 

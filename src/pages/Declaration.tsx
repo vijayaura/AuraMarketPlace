@@ -368,6 +368,14 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       setIsSubmitting(true);
       onSubmissionStateChange?.(true);
       
+      // Ensure documents are loaded
+      if (documents.length === 0) {
+        console.warn('No documents loaded, fetching required documents...');
+        await fetchRequiredDocuments();
+        // Wait a bit for state to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
       // Validate required documents
       if (!validateRequiredDocuments()) {
         return false;
