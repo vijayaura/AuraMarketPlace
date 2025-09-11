@@ -392,6 +392,9 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       
       // Get quote ID from storage
       const storedQuoteId = localStorage.getItem('currentQuoteId');
+      console.log('Declaration - localStorage currentQuoteId:', storedQuoteId);
+      console.log('Declaration - all localStorage keys:', Object.keys(localStorage));
+      
       if (!storedQuoteId) {
         throw new Error('Quote ID not found in storage. Please refresh the page and try again.');
       }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { getPolicyWordings, PolicyWording } from "@/lib/api/insurers";
 import { toast } from "@/components/ui/sonner";
 
 const Success = () => {
+  const location = useLocation();
   const [policyDetails, setPolicyDetails] = useState<PolicyDetailsResponse | null>(null);
   const [policyWordings, setPolicyWordings] = useState<PolicyWording[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,8 +24,16 @@ const Success = () => {
         setLoading(true);
         setError(null);
 
-        // Get quote ID from localStorage
-        const quoteId = localStorage.getItem('currentQuoteId');
+        // Get quote ID from navigation state first, then localStorage
+        const quoteIdFromState = location.state?.quoteId;
+        const quoteIdFromStorage = localStorage.getItem('currentQuoteId');
+        const quoteId = quoteIdFromState || quoteIdFromStorage;
+        
+        console.log('Success page - quoteId from state:', quoteIdFromState);
+        console.log('Success page - quoteId from localStorage:', quoteIdFromStorage);
+        console.log('Success page - final quoteId:', quoteId);
+        console.log('Success page - all localStorage keys:', Object.keys(localStorage));
+        
         if (!quoteId) {
           throw new Error('Quote ID not found. Please start the process again.');
         }

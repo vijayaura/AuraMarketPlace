@@ -3768,7 +3768,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       const success = await declarationRef.current.handleSubmitDocuments();
                       if (success) {
                         markStepCompleted('policy_required_documents');
-                        navigate('/customer/success');
+                        const quoteId = localStorage.getItem('currentQuoteId');
+                        navigate('/customer/success', { state: { quoteId } });
                       }
                     } catch (error) {
                       console.error('Error calling handleSubmitDocuments:', error);
