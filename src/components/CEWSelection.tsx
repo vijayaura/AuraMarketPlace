@@ -205,18 +205,15 @@ export const CEWSelection = ({
 
   // Apply stored selections when they change (separate from product config loading)
   useEffect(() => {
-    if (storedSelections && storedSelections.length > 0 && cewItems.length > 0) {
+    if (storedSelections && storedSelections.length > 0 && cewItems.length > 0 && !hasAppliedStoredData) {
       console.log('🔄 Applying stored selections due to prop change:', storedSelections);
       console.log('🔄 hasAppliedStoredData:', hasAppliedStoredData);
-      
-      // Reset the flag to allow reapplication of stored data
-      setHasAppliedStoredData(false);
       
       // Apply stored selections
       applyStoredSelections(cewItems, storedSelections);
       setHasAppliedStoredData(true);
     }
-  }, [storedSelections, cewItems]);
+  }, [storedSelections]);
 
   // Calculate initial adjustments when CEW items change
   useEffect(() => {

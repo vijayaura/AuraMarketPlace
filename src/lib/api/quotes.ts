@@ -859,11 +859,11 @@ export interface PlanSelectionResponse {
 
 // Plan Selection API Functions
 export const createPlanSelection = async (quoteId: number, data: PlanSelectionRequest): Promise<PlanSelectionResponse> => {
-  const response = await apiPost<PlanSelectionResponse>(`/api/v1/quotes/${quoteId}/plans`, data);
+  const response = await apiPost<PlanSelectionResponse>(`/quotes/${quoteId}/plans`, data);
   return response;
 };
 
-export const updatePlanSelection = async (quoteId: number, data: PlanSelectionRequest): Promise<PlanSelectionResponse> => {
-  const response = await apiPatch<PlanSelectionResponse>(`/api/v1/quotes/${quoteId}/plans`, data);
+export const updatePlanSelection = async (quoteId: number, planId: string, data: PlanSelectionRequest): Promise<PlanSelectionResponse> => {
+  const response = await apiPatch<PlanSelectionResponse>(`/quotes/${quoteId}/plans/${planId}`, data);
   return response;
 };

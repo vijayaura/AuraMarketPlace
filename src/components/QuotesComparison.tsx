@@ -1521,12 +1521,6 @@ const QuotesComparison = ({
     setCEWAdjustment(percentageAdjustment + fixedAdjustment);
   };
 
-  // Debug selectedCEWItems changes
-  useEffect(() => {
-    console.log('🔧 selectedCEWItems state changed to:', selectedCEWItems);
-    console.log('🔧 selectedCEWItems length:', selectedCEWItems.length);
-    console.log('🔧 selectedCEWItems selected count:', selectedCEWItems.filter(item => item.isSelected).length);
-  }, [selectedCEWItems]);
 
   // Clear stored data when component mounts (new quote flow)
   useEffect(() => {
@@ -1926,10 +1920,20 @@ const QuotesComparison = ({
           // First time - use POST
           console.log('📤 Creating new plan selection...');
           response = await createPlanSelection(parseInt(storedQuoteId), payload);
+          
+          // Store the plan ID for future updates
+          if (response && response.offer && response.offer.id) {
+            localStorage.setItem('selected_plan_id', response.offer.id.toString());
+            console.log('💾 Stored plan ID:', response.offer.id);
+          }
         } else {
           // Update existing - use PATCH
           console.log('📤 Updating existing plan selection...');
-          response = await updatePlanSelection(parseInt(storedQuoteId), payload);
+          const storedPlanId = localStorage.getItem('selected_plan_id');
+          if (!storedPlanId) {
+            throw new Error('Plan ID not found. Please refresh the page and try again.');
+          }
+          response = await updatePlanSelection(parseInt(storedQuoteId), storedPlanId, payload);
         }
         
         console.log('✅ Plan selection API response:', response);
@@ -1957,7 +1961,7 @@ const QuotesComparison = ({
       // Update storage flags and save selection data
       localStorage.setItem('coverages_selected', 'true');
       localStorage.setItem('plans_selected', 'true');
-      localStorage.setItem('selected_plan_id', quoteId.toString());
+      // Note: selected_plan_id is already set above when storing the API response
       localStorage.setItem('selected_plan_data', JSON.stringify({
         quoteId,
         insurerName: selectedQuote.insurerName,
