@@ -556,7 +556,7 @@ export default function BrokerDashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[120px]">Quote ID</TableHead>
-                      <TableHead className="w-[200px]">Project Name</TableHead>
+                      <TableHead className="w-[150px]">Project Name</TableHead>
                       <TableHead className="w-[140px]">Sum Insured</TableHead>
                       <TableHead className="w-[120px]">Premium</TableHead>
                       <TableHead className="w-[130px]">Quote Status</TableHead>
@@ -573,7 +573,7 @@ export default function BrokerDashboard() {
                         onClick={() => navigate(`/broker/quote/${quote.id}`)}
                       >
                         <TableCell className="font-medium w-[120px]">{quote.quoteId}</TableCell>
-                        <TableCell className="w-[200px] truncate" title={quote.projectName}>{quote.projectName}</TableCell>
+                        <TableCell className="w-[150px] truncate" title={quote.projectName}>{quote.projectName}</TableCell>
                         <TableCell className="font-medium w-[140px]">{quote.sumInsured}</TableCell>
                         <TableCell className="font-medium text-primary w-[120px]">{quote.premium}</TableCell>
                         <TableCell className="w-[130px]">
@@ -686,7 +686,7 @@ export default function BrokerDashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[140px]">Policy Number</TableHead>
-                      <TableHead className="w-[200px]">Project Name</TableHead>
+                      <TableHead className="w-[150px]">Project Name</TableHead>
                       <TableHead className="w-[150px]">Insurer</TableHead>
                       <TableHead className="w-[140px]">Sum Insured</TableHead>
                       <TableHead className="w-[120px]">Premium</TableHead>
@@ -704,7 +704,7 @@ export default function BrokerDashboard() {
                         onClick={() => navigate(`/broker/policy/${policy.id}`)}
                       >
                         <TableCell className="font-medium w-[140px]">{policy.policyNumber}</TableCell>
-                        <TableCell className="w-[200px] truncate" title={policy.projectName}>{policy.projectName}</TableCell>
+                        <TableCell className="w-[150px] truncate" title={policy.projectName}>{policy.projectName}</TableCell>
                         <TableCell className="font-medium w-[150px]">{policy.insurer}</TableCell>
                         <TableCell className="font-medium w-[140px]">{policy.sumInsured}</TableCell>
                         <TableCell className="font-medium text-primary w-[120px]">{policy.premium}</TableCell>
