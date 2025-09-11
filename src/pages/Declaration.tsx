@@ -335,27 +335,29 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       product_id: productId
     };
     
-    // Check if we have any documents at all
-    if (documents.length === 0) {
-      console.warn('No documents available for submission');
-      return payload;
-    }
-    
-    // Add all uploaded documents to the payload
+    // Get all uploaded documents
     const uploadedDocs = documents.filter(doc => doc.uploadedFile && doc.status === 'uploaded');
     
-    if (uploadedDocs.length === 0) {
-      console.warn('No uploaded documents found');
-      return payload;
-    }
+    console.log('Building payload - Total documents:', documents.length);
+    console.log('Building payload - Uploaded documents:', uploadedDocs.length);
+    console.log('Building payload - Documents state:', documents);
     
-    uploadedDocs.forEach(doc => {
-      // Create a key from the document label (lowercase, replace spaces with underscores, remove special chars)
-      const key = doc.display_label.toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '')
+    // Add each uploaded document to the payload with a dynamic key
+    uploadedDocs.forEach((doc, index) => {
+      // Create a clean key from the document label
+      let key = doc.display_label
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '') // Remove special characters except spaces
+        .replace(/\s+/g, '_') // Replace spaces with underscores
         .replace(/_+/g, '_') // Replace multiple underscores with single
         .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+      
+      // If key is empty or too short, use a fallback
+      if (!key || key.length < 2) {
+        key = `document_${index + 1}`;
+      }
+      
+      console.log(`Adding document: "${doc.display_label}" -> key: "${key}"`);
       
       payload[key] = {
         label: doc.display_label,
@@ -363,6 +365,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       };
     });
     
+    console.log('Final payload:', payload);
     return payload;
   };
 
