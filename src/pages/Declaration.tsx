@@ -258,12 +258,11 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
   };
 
   const removeUploadedFile = (docId: number) => {
-    const updatedDocs = documents.map(doc => 
+    setDocuments(prevDocs => prevDocs.map(doc => 
       doc.id === docId 
         ? { ...doc, uploadedFile: undefined, status: "pending" as const }
         : doc
-    );
-    setDocuments(updatedDocs);
+    ));
     
     toast.success('File Removed', {
       description: 'Uploaded file has been removed.'
@@ -366,6 +365,10 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     try {
       setIsSubmitting(true);
       onSubmissionStateChange?.(true);
+      
+      // Debug: Log current documents state
+      console.log('Current documents state:', documents);
+      console.log('Documents with uploads:', documents.filter(d => d.uploadedFile && d.status === 'uploaded'));
       
       // Validate required documents
       if (!validateRequiredDocuments()) {
