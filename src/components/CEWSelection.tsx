@@ -69,17 +69,28 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   const [cewItems, setCEWItems] = useState<CEWItem[]>([]);
 
   // Helper function to calculate premium impact for an item
-  const calculateItemPremiumImpact = (item: CEWItem): number => {
+  const calculateItemPremiumImpact = (item: CEWItem): { value: number; type: 'percentage' | 'fixed' } => {
     // Rule 4: If card is not selected, no impact
-    if (!item.isSelected) return 0;
+    if (!item.isSelected) return { value: 0, type: 'percentage' };
     
     const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
     if (selectedOption) {
-      // Rule 2: Card selected + option selected = use selected option's value
-      return selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000;
+      // Rule 2: Card selected + option selected = use selected option's value and type
+      return {
+        value: selectedOption.value,
+        type: selectedOption.type === "percentage" ? 'percentage' : 'fixed'
+      };
     } else {
       // Rule 1: Card selected + no option selected = use base rate
-      return item.defaultValue;
+      // Determine if base rate is percentage or fixed based on the first option's type or clause pricing type
+      const firstOption = item.options[0];
+      const isPercentage = firstOption?.type === "percentage" || 
+                          (item.options.length === 0 && Math.abs(item.defaultValue) <= 100);
+      
+      return {
+        value: item.defaultValue,
+        type: isPercentage ? 'percentage' : 'fixed'
+      };
     }
   };
 
@@ -115,11 +126,20 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
       const selectedItems = cewItems.filter(item => item.isSelected);
       console.log('🔧 Selected CEW Items:', selectedItems);
       
-      const cewAdjustment = selectedItems.reduce((sum, item) => {
+      // Calculate percentage and fixed adjustments separately
+      let percentageAdjustment = 0;
+      let fixedAdjustment = 0;
+      
+      selectedItems.forEach(item => {
         const impact = calculateItemPremiumImpact(item);
-        console.log(`🔧 Item ${item.name} (${item.code}): impact = ${impact}, isSelected = ${item.isSelected}, isMandatory = ${item.isMandatory}`);
-        return sum + impact;
-      }, 0);
+        console.log(`🔧 Item ${item.name} (${item.code}): impact = ${impact.value} (${impact.type}), isSelected = ${item.isSelected}, isMandatory = ${item.isMandatory}`);
+        
+        if (impact.type === 'percentage') {
+          percentageAdjustment += impact.value;
+        } else {
+          fixedAdjustment += impact.value;
+        }
+      });
       
       // Check specifically for mandatory items
       const mandatoryItems = cewItems.filter(item => item.isMandatory);
@@ -130,8 +150,11 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
         defaultValue: item.defaultValue
       })));
       
-      console.log('🔧 Total CEW Adjustment calculated:', cewAdjustment);
-      onCEWAdjustmentChange?.(cewAdjustment);
+      console.log('🔧 CEW Percentage Adjustment:', percentageAdjustment);
+      console.log('🔧 CEW Fixed Adjustment:', fixedAdjustment);
+      
+      // Pass both adjustments to parent component
+      onCEWAdjustmentChange?.(percentageAdjustment, fixedAdjustment);
     }
   }, [cewItems]);
 
@@ -285,13 +308,22 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     
     // Calculate total premium adjustment including TPL
     const tplAdjustment = tplLimitOptions.find(opt => opt.id === selectedTPLLimit)?.premiumAdjustment || 0;
-    const cewAdjustment = updatedItems
-      .reduce((sum, item) => sum + calculateItemPremiumImpact(item), 0);
+    let cewPercentageAdjustment = 0;
+    let cewFixedAdjustment = 0;
+    
+    updatedItems.forEach(item => {
+      const impact = calculateItemPremiumImpact(item);
+      if (impact.type === 'percentage') {
+        cewPercentageAdjustment += impact.value;
+      } else {
+        cewFixedAdjustment += impact.value;
+      }
+    });
     
     // Call separate callbacks
     onTPLAdjustmentChange?.(tplAdjustment);
-    onCEWAdjustmentChange?.(cewAdjustment);
-    onPremiumChange?.(tplAdjustment + cewAdjustment);
+    onCEWAdjustmentChange?.(cewPercentageAdjustment, cewFixedAdjustment);
+    onPremiumChange?.(tplAdjustment + cewPercentageAdjustment + cewFixedAdjustment);
   };
 
   const updateSelection = (itemId: number, optionId: number) => {
@@ -333,13 +365,22 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     
     // Recalculate premium adjustment including TPL
     const tplAdjustment = tplLimitOptions.find(opt => opt.id === selectedTPLLimit)?.premiumAdjustment || 0;
-    const cewAdjustment = updatedItems
-      .reduce((sum, item) => sum + calculateItemPremiumImpact(item), 0);
+    let cewPercentageAdjustment = 0;
+    let cewFixedAdjustment = 0;
+    
+    updatedItems.forEach(item => {
+      const impact = calculateItemPremiumImpact(item);
+      if (impact.type === 'percentage') {
+        cewPercentageAdjustment += impact.value;
+      } else {
+        cewFixedAdjustment += impact.value;
+      }
+    });
     
     // Call separate callbacks
     onTPLAdjustmentChange?.(tplAdjustment);
-    onCEWAdjustmentChange?.(cewAdjustment);
-    onPremiumChange?.(tplAdjustment + cewAdjustment);
+    onCEWAdjustmentChange?.(cewPercentageAdjustment, cewFixedAdjustment);
+    onPremiumChange?.(tplAdjustment + cewPercentageAdjustment + cewFixedAdjustment);
   };
 
   // Helper function to get potential impact only for selected items
@@ -356,65 +397,64 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
 
   const formatPremiumImpact = (item: CEWItem) => {
     const premiumImpact = calculateItemPremiumImpact(item);
-    if (premiumImpact === 0) return "No impact";
+    if (premiumImpact.value === 0) return "No impact";
     
-    // Determine if it's percentage or amount based on the first option's type or item's default type
-    const firstOption = item.options[0];
-    const isPercentage = firstOption?.type === "percentage" || 
-                        (item.options.length === 0 && item.defaultValue !== 0 && Math.abs(item.defaultValue) <= 100);
-    
-    if (isPercentage) {
-      const sign = premiumImpact > 0 ? "+" : "";
-      return `${sign}${premiumImpact}%`;
+    if (premiumImpact.type === 'percentage') {
+      const sign = premiumImpact.value > 0 ? "+" : "";
+      return `${sign}${premiumImpact.value}%`;
     } else {
-      return `+AED ${premiumImpact.toLocaleString()}`;
+      return `+AED ${premiumImpact.value.toLocaleString()}`;
     }
   };
 
   const formatPotentialImpact = (item: CEWItem) => {
-    // Show the actual impact that will be applied based on selection state
-    const impact = calculateItemPremiumImpact(item);
+    // Always show the base rate in the card display, regardless of selection status
+    const baseRate = item.defaultValue;
     
-    if (impact === 0) {
+    if (baseRate === 0) {
       return "No impact";
     }
     
-    // Determine if it's percentage or amount based on the selected option or base rate
-    const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
-    const isPercentage = selectedOption ? selectedOption.type === "percentage" : 
-                        (item.options.length > 0 && item.options[0].type === "percentage") ||
-                        (item.options.length === 0 && Math.abs(item.defaultValue) <= 100);
+    // Determine if it's percentage or amount based on the first option's type or base rate
+    const firstOption = item.options[0];
+    const isPercentage = firstOption?.type === "percentage" || 
+                        (item.options.length === 0 && Math.abs(baseRate) <= 100);
     
     if (isPercentage) {
-      const sign = impact > 0 ? "+" : "";
-      return `${sign}${impact}%`;
+      const sign = baseRate > 0 ? "+" : "";
+      return `${sign}${baseRate}%`;
     } else {
-      return `+AED ${impact.toLocaleString()}`;
+      return `+AED ${baseRate.toLocaleString()}`;
     }
   };
 
   const formatDefaultValue = (item: CEWItem) => {
     const premiumImpact = calculateItemPremiumImpact(item);
-    if (premiumImpact === 0) return "No impact";
+    if (premiumImpact.value === 0) return "No impact";
     
-    // Determine if it's percentage or amount based on the first option's type or item's default type
-    const firstOption = item.options[0];
-    const isPercentage = firstOption?.type === "percentage" || 
-                        (item.options.length === 0 && item.defaultValue !== 0 && Math.abs(item.defaultValue) <= 100);
-    
-    if (isPercentage) {
-      const sign = premiumImpact > 0 ? "+" : "";
-      return `${sign}${premiumImpact}%`;
+    if (premiumImpact.type === 'percentage') {
+      const sign = premiumImpact.value > 0 ? "+" : "";
+      return `${sign}${premiumImpact.value}%`;
     } else {
-      return `+AED ${premiumImpact.toLocaleString()}`;
+      return `+AED ${premiumImpact.value.toLocaleString()}`;
     }
   };
 
   const getTotalPremiumAdjustment = () => {
     const tplAdjustment = tplLimitOptions.find(opt => opt.id === selectedTPLLimit)?.premiumAdjustment || 0;
-    const cewAdjustment = cewItems
-      .reduce((sum, item) => sum + calculateItemPremiumImpact(item), 0);
-    return tplAdjustment + cewAdjustment;
+    let cewPercentageAdjustment = 0;
+    let cewFixedAdjustment = 0;
+    
+    cewItems.forEach(item => {
+      const impact = calculateItemPremiumImpact(item);
+      if (impact.type === 'percentage') {
+        cewPercentageAdjustment += impact.value;
+      } else {
+        cewFixedAdjustment += impact.value;
+      }
+    });
+    
+    return tplAdjustment + cewPercentageAdjustment + cewFixedAdjustment;
   };
 
   // TPL Limit options from product config bundle or default
@@ -447,13 +487,22 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     
     // Get separate adjustments
     const tplAdjustment = selectedTPLOption?.premiumAdjustment || 0;
-    const cewAdjustment = cewItems
-      .reduce((sum, item) => sum + calculateItemPremiumImpact(item), 0);
+    let cewPercentageAdjustment = 0;
+    let cewFixedAdjustment = 0;
+    
+    cewItems.forEach(item => {
+      const impact = calculateItemPremiumImpact(item);
+      if (impact.type === 'percentage') {
+        cewPercentageAdjustment += impact.value;
+      } else {
+        cewFixedAdjustment += impact.value;
+      }
+    });
     
     // Call separate callbacks
     onTPLAdjustmentChange?.(tplAdjustment);
-    onCEWAdjustmentChange?.(cewAdjustment);
-    onPremiumChange?.(tplAdjustment + cewAdjustment);
+    onCEWAdjustmentChange?.(cewPercentageAdjustment, cewFixedAdjustment);
+    onPremiumChange?.(tplAdjustment + cewPercentageAdjustment + cewFixedAdjustment);
     onTPLSelectionChange?.(selectedTPLOption); // Pass selected TPL option
   };
 

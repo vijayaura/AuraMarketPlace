@@ -1464,8 +1464,10 @@ const QuotesComparison = ({
     setTPLAdjustment(adjustment);
   };
 
-  const handleCEWAdjustmentChange = (adjustment: number) => {
-    setCEWAdjustment(adjustment);
+  const handleCEWAdjustmentChange = (percentageAdjustment: number, fixedAdjustment: number = 0) => {
+    // Store both adjustments separately for proper calculation
+    // For now, we'll combine them, but in the future we might need to handle them separately
+    setCEWAdjustment(percentageAdjustment + fixedAdjustment);
   };
 
   // Debug selectedCEWItems changes
@@ -1531,27 +1533,25 @@ const QuotesComparison = ({
     // Extract default broker commission from product config bundle
     const defaultBrokerCommission = productConfigBundle?.policy_limits_and_deductible?.base_broker_commission?.value || 10;
     
-    // Calculate nett premium = base premium - (base premium × default broker commission)
-    const nettPremium = basePremium - (basePremium * defaultBrokerCommission / 100);
-    
     // Calculate adjustments as percentage of base premium
     const tplAdjustmentAmount = (basePremium * tplAdjustment) / 100;
     const cewAdjustmentAmount = (basePremium * cewAdjustment) / 100;
     
-    // Calculate revised broker commission (based on base premium)
-    const revisedBrokerCommission = (basePremium * brokerCommissionPercent) / 100;
+    // Calculate final premium = base premium + adjustments
+    const finalPremium = basePremium + tplAdjustmentAmount + cewAdjustmentAmount;
     
-    // Final total annual premium = nett premium + revised broker commission + adjustments
-    return nettPremium + revisedBrokerCommission + tplAdjustmentAmount + cewAdjustmentAmount;
+    // Calculate nett premium = final premium - (final premium × default broker commission)
+    const nettPremium = finalPremium - (finalPremium * defaultBrokerCommission / 100);
+    
+    // Calculate revised broker commission (based on final premium including adjustments)
+    const revisedBrokerCommission = (finalPremium * brokerCommissionPercent) / 100;
+    
+    // Final total annual premium = nett premium + revised broker commission
+    return nettPremium + revisedBrokerCommission;
   };
 
   const handleUpdatePremium = () => {
     if (!selectedQuoteForCEW) return;
-    
-    // Validate mandatory CEW items
-    if (!validateMandatoryCEWItems()) {
-      return;
-    }
     
     const finalPremium = calculateFinalPremium();
     
@@ -1593,15 +1593,18 @@ const QuotesComparison = ({
     const minBrokerCommission = productConfigBundle?.policy_limits_and_deductible?.minimum_broker_commission?.value || 5;
     const maxBrokerCommission = productConfigBundle?.policy_limits_and_deductible?.maximum_broker_commission?.value || 15;
     
-    // Calculate nett premium
-    const nettPremium = basePremium - (basePremium * defaultBrokerCommission / 100);
-    
     // Calculate adjustments
     const tplAdjustmentAmount = (basePremium * tplAdjustment) / 100;
     const cewAdjustmentAmount = (basePremium * cewAdjustment) / 100;
     
-    // Calculate revised broker commission
-    const revisedBrokerCommission = (basePremium * brokerCommissionPercent) / 100;
+    // Calculate final premium = base premium + adjustments
+    const finalPremium = basePremium + tplAdjustmentAmount + cewAdjustmentAmount;
+    
+    // Calculate nett premium = final premium - (final premium × default broker commission)
+    const nettPremium = finalPremium - (finalPremium * defaultBrokerCommission / 100);
+    
+    // Calculate revised broker commission (based on final premium including adjustments)
+    const revisedBrokerCommission = (finalPremium * brokerCommissionPercent) / 100;
     
     // Build selected extensions
     const selectedExtensions: Record<string, any> = {};
@@ -2398,52 +2401,6 @@ Contact us for more details or to proceed with the application.
                     </CardHeader>
                     <CardContent className="space-y-2 pt-0 px-3 pb-3">
                       <div className="space-y-2">
-                         <div className="flex justify-between items-center">
-                           <span className="text-xs">Nett Premium</span>
-                           <span className="font-medium text-sm">
-                             {(() => {
-                               if (!selectedQuoteForCEW) return formatCurrency(0);
-                               const validationResult = selectedQuoteForCEW.validationResult;
-                               const basePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
-                               const defaultBrokerCommission = productConfigBundle?.policy_limits_and_deductible?.base_broker_commission?.value || 10;
-                               const nettPremium = basePremium - (basePremium * defaultBrokerCommission / 100);
-                               return formatCurrency(nettPremium);
-                             })()}
-                           </span>
-                         </div>
-                        
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="text-xs">Broker Commission</div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium">{brokerCommissionPercent}%</span>
-                              <button
-                                className="text-xs font-bold text-primary hover:text-primary/80 cursor-pointer"
-                                onClick={() => {
-                                  const minCommission = productConfigBundle?.policy_limits_and_deductible?.minimum_broker_commission?.value || 5;
-                                  const maxCommission = productConfigBundle?.policy_limits_and_deductible?.maximum_broker_commission?.value || 15;
-                                  const newValue = prompt(`Enter broker commission (${minCommission}% - ${maxCommission}%):`, brokerCommissionPercent.toString());
-                                  if (newValue && !isNaN(Number(newValue))) {
-                                    const value = Math.min(maxCommission, Math.max(minCommission, Number(newValue)));
-                                    setBrokerCommissionPercent(value);
-                                  }
-                                }}
-                              >
-                                Edit
-                              </button>
-                            </div>
-                          </div>
-                          <span className="font-medium text-muted-foreground">
-                            {(() => {
-                              if (!selectedQuoteForCEW) return formatCurrency(0);
-                              const validationResult = selectedQuoteForCEW.validationResult;
-                              const basePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
-                              const revisedBrokerCommission = (basePremium * brokerCommissionPercent) / 100;
-                              return formatCurrency(revisedBrokerCommission);
-                            })()}
-                          </span>
-                        </div>
-                        
                          {(tplAdjustment !== 0 || cewAdjustment !== 0) && (
                            <>
                              {tplAdjustment !== 0 && (
@@ -2504,6 +2461,64 @@ Contact us for more details or to proceed with the application.
                            </>
                          )}
                         
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs">Nett Premium</span>
+                          <span className="font-medium text-sm">
+                            {(() => {
+                              if (!selectedQuoteForCEW) return formatCurrency(0);
+                              const validationResult = selectedQuoteForCEW.validationResult;
+                              const basePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+                              const defaultBrokerCommission = productConfigBundle?.policy_limits_and_deductible?.base_broker_commission?.value || 10;
+                              // Calculate adjustments
+                              const tplAdjustmentAmount = (basePremium * tplAdjustment) / 100;
+                              const cewAdjustmentAmount = (basePremium * cewAdjustment) / 100;
+                              // Calculate final premium = base premium + adjustments
+                              const finalPremium = basePremium + tplAdjustmentAmount + cewAdjustmentAmount;
+                              // Calculate nett premium = final premium - (final premium × default broker commission)
+                              const nettPremium = finalPremium - (finalPremium * defaultBrokerCommission / 100);
+                              return formatCurrency(nettPremium);
+                            })()}
+                          </span>
+                        </div>
+                        
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="text-xs">Broker Commission</div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium">{brokerCommissionPercent}%</span>
+                              <button
+                                className="text-xs font-bold text-primary hover:text-primary/80 cursor-pointer"
+                                onClick={() => {
+                                  const minCommission = productConfigBundle?.policy_limits_and_deductible?.minimum_broker_commission?.value || 5;
+                                  const maxCommission = productConfigBundle?.policy_limits_and_deductible?.maximum_broker_commission?.value || 15;
+                                  const newValue = prompt(`Enter broker commission (${minCommission}% - ${maxCommission}%):`, brokerCommissionPercent.toString());
+                                  if (newValue && !isNaN(Number(newValue))) {
+                                    const value = Math.min(maxCommission, Math.max(minCommission, Number(newValue)));
+                                    setBrokerCommissionPercent(value);
+                                  }
+                                }}
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </div>
+                          <span className="font-medium text-muted-foreground">
+                            {(() => {
+                              if (!selectedQuoteForCEW) return formatCurrency(0);
+                              const validationResult = selectedQuoteForCEW.validationResult;
+                              const basePremium = validationResult?.basePremium || selectedQuoteForCEW.annualPremium;
+                              // Calculate adjustments
+                              const tplAdjustmentAmount = (basePremium * tplAdjustment) / 100;
+                              const cewAdjustmentAmount = (basePremium * cewAdjustment) / 100;
+                              // Calculate final premium = base premium + adjustments
+                              const finalPremium = basePremium + tplAdjustmentAmount + cewAdjustmentAmount;
+                              // Calculate revised broker commission (based on final premium including adjustments)
+                              const revisedBrokerCommission = (finalPremium * brokerCommissionPercent) / 100;
+                              return formatCurrency(revisedBrokerCommission);
+                            })()}
+                          </span>
+                        </div>
+                        
                         <Separator />
                         
                         <div className="flex justify-between items-center">
@@ -2518,8 +2533,12 @@ Contact us for more details or to proceed with the application.
                       <div className="space-y-2">
                         <Button 
                           onClick={() => {
-                            handleUpdatePremium();
-                            setShowCEWDialog(false);
+                            // Only proceed if validation passes
+                            if (validateMandatoryCEWItems()) {
+                              handleUpdatePremium();
+                              setShowCEWDialog(false);
+                            }
+                            // If validation fails, just show the error toast (dialog stays open)
                           }}
                           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                         >
