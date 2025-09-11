@@ -2403,8 +2403,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Submitting Documents...
                       </>
-                    ) : currentStep === 7 ? (
-                      'Complete'
                     ) : (
                       'Next'
                     )}
@@ -2583,7 +2581,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                   </Button>
                 ) : null}
                 </div>
-              )}
             </div>
           </CardHeader>
 
@@ -3765,6 +3762,19 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               <Declaration 
                 ref={declarationRef} 
                 onSubmissionStateChange={setIsSubmittingDocuments}
+                onSubmitComplete={async () => {
+                  if (declarationRef.current && declarationRef.current.handleSubmitDocuments) {
+                    try {
+                      const success = await declarationRef.current.handleSubmitDocuments();
+                      if (success) {
+                        markStepCompleted('policy_required_documents');
+                        navigate('/customer/success');
+                      }
+                    } catch (error) {
+                      console.error('Error calling handleSubmitDocuments:', error);
+                    }
+                  }
+                }}
               />
             </div>
 

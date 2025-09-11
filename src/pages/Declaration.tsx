@@ -22,13 +22,14 @@ interface DocumentWithUpload extends RequiredDocument {
 
 interface DeclarationProps {
   onSubmissionStateChange?: (isSubmitting: boolean) => void;
+  onSubmitComplete?: () => Promise<void>;
 }
 
 export interface DeclarationRef {
   handleSubmitDocuments: () => Promise<boolean>;
 }
 
-const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmissionStateChange }, ref) => {
+const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmissionStateChange, onSubmitComplete }, ref) => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<DocumentWithUpload[]>([]);
   const [loading, setLoading] = useState(true);
@@ -639,7 +640,13 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
         <Button
           variant="hero"
           size="lg"
-          onClick={handleSubmitDocuments}
+          onClick={async () => {
+            if (onSubmitComplete) {
+              await onSubmitComplete();
+            } else {
+              await handleSubmitDocuments();
+            }
+          }}
           disabled={isSubmitting}
           className="px-8"
         >
