@@ -2381,8 +2381,13 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                             const success = await declarationRef.current.handleSubmitDocuments();
                             console.log('🔍 handleSubmitDocuments result:', success);
                             if (success) {
+                              console.log('🔍 Document submission successful, marking step completed...');
                               markStepCompleted('policy_required_documents');
+                              console.log('🔍 Step marked completed, navigating to success page...');
                               navigate('/customer/success');
+                              console.log('🔍 Navigation called');
+                            } else {
+                              console.log('🔍 Document submission failed, not navigating');
                             }
                           } catch (error) {
                             console.error('🔍 Error calling handleSubmitDocuments:', error);
@@ -2391,7 +2396,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           console.log('🔍 Ref not available, using fallback');
                           // Fallback if ref is not available
                           markStepCompleted('policy_required_documents');
+                          console.log('🔍 Fallback: marking step completed and navigating...');
                           navigate('/customer/success');
+                          console.log('🔍 Fallback: navigation called');
                         }
                       } else if (currentStep !== 4) {
                         // Other steps - just navigate
