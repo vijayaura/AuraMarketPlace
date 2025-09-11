@@ -70,14 +70,15 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
 
   // Helper function to calculate premium impact for an item
   const calculateItemPremiumImpact = (item: CEWItem): number => {
+    // Rule 4: If card is not selected, no impact
     if (!item.isSelected) return 0;
     
     const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
     if (selectedOption) {
-      // Use selected option's value
+      // Rule 2: Card selected + option selected = use selected option's value
       return selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000;
     } else {
-      // Use base rate when no option is selected
+      // Rule 1: Card selected + no option selected = use base rate
       return item.defaultValue;
     }
   };
@@ -138,7 +139,14 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   const transformProductConfigToCEWItems = (configBundle: any): CEWItem[] => {
     if (!configBundle?.clause_pricing_config) return [];
     
-    return configBundle.clause_pricing_config.map((clause: any, index: number) => {
+    // Filter only enabled clauses (is_enabled: 1)
+    const enabledClauses = configBundle.clause_pricing_config.filter((clause: any) => clause.is_enabled === 1);
+    
+    console.log(`🔧 Total clauses in bundle: ${configBundle.clause_pricing_config.length}`);
+    console.log(`🔧 Enabled clauses: ${enabledClauses.length}`);
+    console.log(`🔧 Disabled clauses: ${configBundle.clause_pricing_config.length - enabledClauses.length}`);
+    
+    return enabledClauses.map((clause: any, index: number) => {
       const isMandatory = clause.meta?.show_type === 'MANDATORY';
       const isSelected = false; // NEVER auto-select any items
       
@@ -292,57 +300,30 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     
     const updatedItems = cewItems.map(item => {
       if (item.id === itemId) {
-        // For mandatory items, allow normal selection behavior
-        if (item.isMandatory) {
-          // If clicking the same option, deselect it (use base value)
-          if (item.selectedOptionId === optionId) {
-            return {
-              ...item,
-              isSelected: item.isSelected, // Keep current selection state
-              selectedOptionId: undefined, // Deselect option (use base value)
-              impact: {
-                ...item.impact,
-                premiumAmount: item.isSelected ? item.defaultValue : 0 // Use base value if selected, 0 if not
-              }
-            };
-          } else {
-            // Select new option
-            const selectedOption = item.options.find(opt => opt.id === optionId);
-            return {
-              ...item,
-              isSelected: item.isSelected, // Keep current selection state
-              selectedOptionId: optionId,
-              impact: {
-                ...item.impact,
-                premiumAmount: item.isSelected ? (selectedOption ? (selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000) : item.defaultValue) : 0
-              }
-            };
-          }
+        // For all items (mandatory and non-mandatory), use the same logic
+        // If clicking the same option, deselect it (go back to base rate)
+        if (item.selectedOptionId === optionId) {
+          return {
+            ...item,
+            selectedOptionId: undefined, // Deselect option (Rule 3: back to base rate)
+            impact: {
+              ...item.impact,
+              premiumAmount: item.isSelected ? item.defaultValue : 0 // Use base rate if card selected, 0 if not
+            }
+          };
         } else {
-          // For non-mandatory items, allow unselection
-          if (item.selectedOptionId === optionId) {
-            return {
-              ...item,
-              isSelected: false,
-              selectedOptionId: undefined,
-              impact: {
-                ...item.impact,
-                premiumAmount: 0
-              }
-            };
-          } else {
-            // Select new option
-            const selectedOption = item.options.find(opt => opt.id === optionId);
-            return {
-              ...item,
-              isSelected: true,
-              selectedOptionId: optionId,
-              impact: {
-                ...item.impact,
-                premiumAmount: selectedOption ? (selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000) : item.defaultValue
-              }
-            };
-          }
+          // Select new option (Rule 2: use selected option's value)
+          // If card is not selected, automatically select it when option is clicked
+          const selectedOption = item.options.find(opt => opt.id === optionId);
+          return {
+            ...item,
+            isSelected: true, // Auto-select card when option is clicked
+            selectedOptionId: optionId,
+            impact: {
+              ...item.impact,
+              premiumAmount: selectedOption ? (selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000) : item.defaultValue
+            }
+          };
         }
       }
       return item;
@@ -391,22 +372,24 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   };
 
   const formatPotentialImpact = (item: CEWItem) => {
-    // Always show base rate from pricing configuration
-    const baseRate = item.defaultValue;
-    console.log('🔧 formatPotentialImpact - item:', item.name, 'baseRate:', baseRate, 'selectedOptionId:', item.selectedOptionId);
+    // Show the actual impact that will be applied based on selection state
+    const impact = calculateItemPremiumImpact(item);
     
-    // Determine if it's percentage or amount based on the first option's type or item's default type
-    const firstOption = item.options[0];
-    const isPercentage = firstOption?.type === "percentage" || 
-                        (item.options.length === 0 && Math.abs(baseRate) <= 100);
+    if (impact === 0) {
+      return "No impact";
+    }
     
-    console.log('🔧 formatPotentialImpact - firstOption:', firstOption, 'isPercentage:', isPercentage);
+    // Determine if it's percentage or amount based on the selected option or base rate
+    const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
+    const isPercentage = selectedOption ? selectedOption.type === "percentage" : 
+                        (item.options.length > 0 && item.options[0].type === "percentage") ||
+                        (item.options.length === 0 && Math.abs(item.defaultValue) <= 100);
     
     if (isPercentage) {
-      const sign = baseRate > 0 ? "+" : "";
-      return `${sign}${baseRate}%`;
+      const sign = impact > 0 ? "+" : "";
+      return `${sign}${impact}%`;
     } else {
-      return `+AED ${baseRate.toLocaleString()}`;
+      return `+AED ${impact.toLocaleString()}`;
     }
   };
 
