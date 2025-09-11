@@ -627,34 +627,34 @@ const InsurerDashboard = () => {
   const endPolicyIndex = startPolicyIndex + itemsPerPage;
   const currentPolicies = filteredPolicies.slice(startPolicyIndex, endPolicyIndex);
   const exportQuotesToExcel = () => {
-    const exportData = quotes.map(quote => ({
-      'Quote ID': quote.id,
-      'Customer Name': quote.customerName,
-      'Company Name': quote.companyName,
-      'Broker Name': quote.brokerName,
-      'Project Type': quote.projectType,
-      'Project Value': quote.projectValue,
-      'Premium': quote.premium,
-      'Status': getQuoteStatusLabel(quote.status),
-      'Submitted Date': quote.submittedDate
-    }));
+    const exportData = quotesData?.recentQuotes?.map((q: any) => ({
+      'Quote ID': q.quote_id,
+      'Customer Name': q.client_name,
+      'Company Name': q.project_name,
+      'Broker Name': q.broker_name,
+      'Project Type': q.project_type,
+      'Project Value': q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
+      'Premium': q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
+      'Status': q.status,
+      'Submitted Date': q.created_at ? q.created_at.slice(0, 10) : '-'
+    })) || [];
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Quotes');
     XLSX.writeFile(wb, 'insurer-quotes.xlsx');
   };
   const exportPoliciesToExcel = () => {
-    const exportData = policies.map(policy => ({
-      'Policy Number': policy.policyNumber,
-      'Customer Name': policy.customerName,
-      'Company Name': policy.companyName,
-      'Project Type': policy.projectType,
-      'Sum Insured': policy.sumInsured,
-      'Premium': policy.premium,
-      'Start Date': policy.startDate,
-      'End Date': policy.endDate,
-      'Status': policy.status.charAt(0).toUpperCase() + policy.status.slice(1)
-    }));
+    const exportData = policiesData?.issuedPolicies?.map((p: any) => ({
+      'Policy Number': p.policy_id || `Q${p.quote_id}`,
+      'Customer Name': p.client_name,
+      'Company Name': p.project_name,
+      'Project Type': 'Construction',
+      'Sum Insured': p.total_premium ? `AED ${Number(p.total_premium).toLocaleString()}` : '-',
+      'Premium': p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
+      'Start Date': p.start_date ? p.start_date.slice(0, 10) : '-',
+      'End Date': p.end_date ? p.end_date.slice(0, 10) : '-',
+      'Status': p.status
+    })) || [];
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Policies');
@@ -986,7 +986,7 @@ const InsurerDashboard = () => {
                             </td>
                             <td className="p-4">
                               <Badge variant="outline" className="text-success border-success/20">
-                                {policy.status.charAt(0).toUpperCase() + policy.status.slice(1)}
+                                {policy.status && policy.status !== '' ? policy.status.charAt(0).toUpperCase() + policy.status.slice(1) : 'Policy_status'}
                               </Badge>
                             </td>
                             <td className="p-4">

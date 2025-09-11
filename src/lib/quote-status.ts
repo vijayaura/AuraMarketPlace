@@ -28,6 +28,11 @@ export const filterActiveQuotes = (quotes: any[]) => {
 };
 
 export const getQuoteStatusLabel = (status: QuoteStatus | string): string => {
+  // Handle null, undefined, or empty string
+  if (!status || status === '') {
+    return "Quote_status";
+  }
+  
   switch (status) {
     case QUOTE_STATUSES.QUOTE_GENERATED:
       return "Quote Generated";
@@ -47,6 +52,11 @@ export const getQuoteStatusLabel = (status: QuoteStatus | string): string => {
 };
 
 export const getQuoteStatusColor = (status: QuoteStatus | string): string => {
+  // Handle null, undefined, or empty string
+  if (!status || status === '') {
+    return "text-muted-foreground";
+  }
+  
   switch (status) {
     case QUOTE_STATUSES.QUOTE_GENERATED:
       return "text-primary";
@@ -66,6 +76,11 @@ export const getQuoteStatusColor = (status: QuoteStatus | string): string => {
 };
 
 export const getQuoteStatusDotColor = (status: QuoteStatus | string): string => {
+  // Handle null, undefined, or empty string
+  if (!status || status === '') {
+    return "bg-muted-foreground";
+  }
+  
   switch (status) {
     case QUOTE_STATUSES.QUOTE_GENERATED:
       return "bg-primary";

@@ -163,15 +163,15 @@ const QuotesComparison = ({
     // Group by pricing type
     const percentageFields = pricingFields.filter(field => 
       field.pricing_type && (
-        field.pricing_type.toLowerCase().includes('percentage') || 
-        field.pricing_type.toLowerCase().includes('percent')
+      field.pricing_type.toLowerCase().includes('percentage') || 
+      field.pricing_type.toLowerCase().includes('percent')
       )
     );
     
     const fixedAmountFields = pricingFields.filter(field => 
       field.pricing_type && (
-        field.pricing_type.toLowerCase().includes('fixed') || 
-        field.pricing_type.toLowerCase().includes('amount')
+      field.pricing_type.toLowerCase().includes('fixed') || 
+      field.pricing_type.toLowerCase().includes('amount')
       )
     );
     
@@ -1837,16 +1837,16 @@ const QuotesComparison = ({
           coverage_amount: quote.coverageAmount,
           deductible: 25000 // Default deductible
         }
-      },
-      premium_summary: {
-        net_premium: nettPremium,
-        broker_commission_pct: brokerCommissionPercent,
-        broker_commission_amount: revisedBrokerCommission,
-        broker_min_commission_pct: minBrokerCommission,
-        broker_max_commission_pct: maxBrokerCommission,
-        broker_base_commission_pct: defaultBrokerCommission,
-        cew_adjustments_pct: tplAdjustment + cewAdjustment,
-        cew_adjustments_amount: tplAdjustmentAmount + cewAdjustmentAmount,
+        },
+        premium_summary: {
+          net_premium: nettPremium,
+          broker_commission_pct: brokerCommissionPercent,
+          broker_commission_amount: revisedBrokerCommission,
+          broker_min_commission_pct: minBrokerCommission,
+          broker_max_commission_pct: maxBrokerCommission,
+          broker_base_commission_pct: defaultBrokerCommission,
+          cew_adjustments_pct: tplAdjustment + cewAdjustment,
+          cew_adjustments_amount: tplAdjustmentAmount + cewAdjustmentAmount,
         total_annual_premium: finalPremium
       }
     };
@@ -1917,17 +1917,17 @@ const QuotesComparison = ({
       
       try {
         if (isFirstTime) {
-          // First time - use POST
+        // First time - use POST
           console.log('📤 Creating new plan selection...');
-          response = await createPlanSelection(parseInt(storedQuoteId), payload);
+        response = await createPlanSelection(parseInt(storedQuoteId), payload);
           
           // Store the plan ID for future updates
           if (response && response.offer && response.offer.id) {
             localStorage.setItem('selected_plan_id', response.offer.id.toString());
             console.log('💾 Stored plan ID:', response.offer.id);
           }
-        } else {
-          // Update existing - use PATCH
+      } else {
+        // Update existing - use PATCH
           console.log('📤 Updating existing plan selection...');
           const storedPlanId = localStorage.getItem('selected_plan_id');
           if (!storedPlanId) {
@@ -2364,7 +2364,7 @@ Contact us for more details or to proceed with the application.
                     
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg">{quote.insurerName}</h3>
+                      <h3 className="font-semibold text-lg">{quote.insurerName}</h3>
                         {hasStored && (
                           <Badge variant="secondary" className="text-xs">
                             Customized
@@ -2716,15 +2716,15 @@ Contact us for more details or to proceed with the application.
                               `${item.impact.premiumAmount > 0 ? "+" : ""}${item.impact.premiumAmount}%`;
                             
                             return (
-                              <div key={item.id} className="flex justify-between items-center p-2 bg-muted/50 rounded text-xs">
-                                <div className="flex items-center gap-1">
-                                  <span className="font-medium truncate">{item.name}</span>
-                                  <Badge variant="outline" className="text-[9px] px-1 py-0 flex-shrink-0">{item.code}</Badge>
-                                </div>
-                                <span className="text-[9px] text-muted-foreground flex-shrink-0">
-                                  {displayValue}
-                                </span>
+                            <div key={item.id} className="flex justify-between items-center p-2 bg-muted/50 rounded text-xs">
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium truncate">{item.name}</span>
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 flex-shrink-0">{item.code}</Badge>
                               </div>
+                              <span className="text-[9px] text-muted-foreground flex-shrink-0">
+                                  {displayValue}
+                              </span>
+                            </div>
                             );
                           })}
                         </div>
@@ -2873,8 +2873,8 @@ Contact us for more details or to proceed with the application.
                           onClick={() => {
                             // Only proceed if validation passes
                             if (validateMandatoryCEWItems()) {
-                              handleUpdatePremium();
-                              setShowCEWDialog(false);
+                            handleUpdatePremium();
+                            setShowCEWDialog(false);
                             }
                             // If validation fails, just show the error toast (dialog stays open)
                           }}

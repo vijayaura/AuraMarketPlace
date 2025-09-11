@@ -235,15 +235,38 @@ const mockPolicies = [
   }
 ];
 
-const exportQuotesToExcel = () => {
-  const worksheet = XLSX.utils.json_to_sheet(mockQuotes);
+const exportQuotesToExcel = (quotesData: any) => {
+  const exportData = quotesData?.recentQuotes?.map((q: any) => ({
+    'Quote ID': q.quote_id,
+    'Project Name': q.project_name,
+    'Client Name': q.client_name,
+    'Project Type': q.project_type,
+    'Sum Insured': q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
+    'Premium': q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
+    'Status': q.status,
+    'Created Date': q.created_at ? q.created_at.slice(0, 10) : '-',
+    'Validity Date': q.validity_date ? q.validity_date.slice(0, 10) : '-',
+  })) || [];
+  
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Quotes");
   XLSX.writeFile(workbook, "broker_quotes.xlsx");
 };
 
-const exportPoliciesToExcel = () => {
-  const worksheet = XLSX.utils.json_to_sheet(recentPolicies);
+const exportPoliciesToExcel = (policiesData: any) => {
+  const exportData = policiesData?.issuedPolicies?.map((p: any) => ({
+    'Policy Number': p.policy_id || `Q${p.quote_id}`,
+    'Project Name': p.project_name,
+    'Client Name': p.client_name,
+    'Sum Insured': p.total_premium ? `AED ${Number(p.total_premium).toLocaleString()}` : '-',
+    'Premium': p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
+    'Start Date': p.start_date ? p.start_date.slice(0, 10) : '-',
+    'End Date': p.end_date ? p.end_date.slice(0, 10) : '-',
+    'Status': p.status,
+  })) || [];
+  
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Policies");
   XLSX.writeFile(workbook, "broker_policies.xlsx");
@@ -590,7 +613,7 @@ export default function BrokerDashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={exportQuotesToExcel}
+                    onClick={() => exportQuotesToExcel(quotesData)}
                     className="gap-2"
                   >
                     <Download className="w-4 h-4" />
@@ -738,7 +761,7 @@ export default function BrokerDashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={exportPoliciesToExcel}
+                    onClick={() => exportPoliciesToExcel(policiesData)}
                     className="gap-2"
                   >
                     <Download className="w-4 h-4" />

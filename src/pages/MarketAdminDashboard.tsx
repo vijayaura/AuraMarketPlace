@@ -8,12 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText, Shield, Eye, Search, Filter, BarChart3, TrendingUp, Calendar, Clock } from "lucide-react";
+import { Plus, FileText, Shield, Eye, Search, Filter, BarChart3, TrendingUp, Calendar, Clock, Download } from "lucide-react";
 import { getAdminDashboardQuotes, getAdminDashboardPolicies, type AdminDashboardQuotesResponse, type BrokerDashboardPoliciesResponse } from "@/lib/api";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { QUOTE_STATUSES, getQuoteStatusLabel, getQuoteStatusColor, filterActiveQuotes } from "@/lib/quote-status";
 import { QuoteStatusDot } from "@/components/QuoteStatusDot";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import * as XLSX from 'xlsx';
 
 // Mock data for all quotes across brokers
 const mockAllQuotes = [
@@ -827,6 +828,45 @@ const monthWiseGWPData = [
   { period: "Jun", gwp: 2100000, commission: 63000 },
 ];
 
+// Export functions
+const exportQuotesToExcel = (quotesData: any) => {
+  const exportData = quotesData?.recentQuotes?.map((q: any) => ({
+    'Quote ID': q.quote_id,
+    'Broker': q.broker_name,
+    'Project Name': q.project_name,
+    'Client Name': q.client_name,
+    'Project Type': q.project_type,
+    'Sum Insured': q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
+    'Premium': q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
+    'Status': q.status,
+    'Created Date': q.created_at ? q.created_at.slice(0, 10) : '-',
+    'Validity Date': q.validity_date ? q.validity_date.slice(0, 10) : '-',
+  })) || [];
+  
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Quotes");
+  XLSX.writeFile(workbook, "admin_quotes.xlsx");
+};
+
+const exportPoliciesToExcel = (policiesData: any) => {
+  const exportData = policiesData?.issuedPolicies?.map((p: any) => ({
+    'Policy Number': p.policy_id || `Q${p.quote_id}`,
+    'Project Name': p.project_name,
+    'Client Name': p.client_name,
+    'Sum Insured': p.total_premium ? `AED ${Number(p.total_premium).toLocaleString()}` : '-',
+    'Premium': p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
+    'Start Date': p.start_date ? p.start_date.slice(0, 10) : '-',
+    'End Date': p.end_date ? p.end_date.slice(0, 10) : '-',
+    'Status': p.status,
+  })) || [];
+  
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Policies");
+  XLSX.writeFile(workbook, "admin_policies.xlsx");
+};
+
 const MarketAdminDashboard = () => {
   const navigate = useNavigate();
   const [currentQuotePage, setCurrentQuotePage] = useState(1);
@@ -907,14 +947,13 @@ const MarketAdminDashboard = () => {
       quote.inusrer_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesBroker = selectedBroker === "all-brokers" || quote.broker_name === selectedBroker;
-    const matchesInsurer = selectedInsurer === "all-insurers" || quote.inusrer_name === selectedInsurer;
     const matchesStatus = selectedStatus === "all-statuses" || quote.status === selectedStatus;
     
     const createdDate = quote.created_at?.slice(0,10);
     const matchesDateRange = (!dateFrom || createdDate >= dateFrom) && 
                             (!dateTo || createdDate <= dateTo);
     
-    return matchesSearch && matchesBroker && matchesInsurer && matchesStatus && matchesDateRange;
+    return matchesSearch && matchesBroker && matchesStatus && matchesDateRange;
   });
 
   // Map policies data from API
@@ -966,10 +1005,9 @@ const MarketAdminDashboard = () => {
   const mappedQuotes = filteredQuotes.map(q => ({
     id: q.id,
     broker: q.broker_name,
-    insurer: q.inusrer_name,
     projectName: q.project_name,
-    sumInsured: '-',
-    premium: q.total_premium,
+    sumInsured: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
+    premium: q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
     status: q.status,
     createdDate: q.created_at?.slice(0,10),
     validUntil: q.validity_date?.slice(0,10),
@@ -1228,8 +1266,21 @@ const MarketAdminDashboard = () => {
             <TabsContent value="quotes" className="mt-0">
               <Card>
                 <CardHeader>
-                  <CardTitle>All Quote Requests</CardTitle>
-                  <CardDescription>View and manage quote requests from all brokers across the market</CardDescription>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>All Quote Requests</CardTitle>
+                      <CardDescription>View and manage quote requests from all brokers across the market</CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportQuotesToExcel(quotesData)}
+                      className="gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export Excel
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
@@ -1261,18 +1312,6 @@ const MarketAdminDashboard = () => {
                           <SelectItem value="all-brokers">All Brokers</SelectItem>
                           {uniqueBrokers.map(broker => (
                             <SelectItem key={broker} value={broker}>{broker}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <Select value={selectedInsurer} onValueChange={setSelectedInsurer}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Insurers" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all-insurers">All Insurers</SelectItem>
-                          {uniqueInsurers.map(insurer => (
-                            <SelectItem key={insurer} value={insurer}>{insurer}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -1326,7 +1365,6 @@ const MarketAdminDashboard = () => {
                           <TableHead>Quote ID</TableHead>
                           <TableHead>Broker</TableHead>
                           <TableHead>Project Name</TableHead>
-                          <TableHead>Insurer</TableHead>
                           <TableHead>Sum Insured</TableHead>
                           <TableHead>Premium</TableHead>
                           <TableHead>Quote Status</TableHead>
@@ -1347,7 +1385,6 @@ const MarketAdminDashboard = () => {
                             <TableCell className="font-medium">{quote.quoteId}</TableCell>
                             <TableCell className="font-medium text-primary">{quote.broker}</TableCell>
                             <TableCell>{quote.projectName}</TableCell>
-                            <TableCell className="font-medium text-primary">{quote.insurer}</TableCell>
                             <TableCell className="font-medium">{quote.sumInsured}</TableCell>
                             <TableCell className="font-medium text-primary">{quote.premium}</TableCell>
                             <TableCell>
@@ -1442,8 +1479,21 @@ const MarketAdminDashboard = () => {
             <TabsContent value="policies" className="mt-0">
               <Card>
                 <CardHeader>
-                  <CardTitle>All Policies</CardTitle>
-                  <CardDescription>View and manage active policies from all brokers and insurers</CardDescription>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>All Policies</CardTitle>
+                      <CardDescription>View and manage active policies from all brokers and insurers</CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportPoliciesToExcel(policiesData)}
+                      className="gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export Excel
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="search-filter-container mb-6">
