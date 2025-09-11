@@ -53,6 +53,8 @@ const CreateBroker = () => {
   const [mastersLoading, setMastersLoading] = useState<boolean>(true);
   const [mastersError, setMastersError] = useState<string | null>(null);
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const [licenseFileUrl, setLicenseFileUrl] = useState<string | null>(null);
+  const [isUploadingLicense, setIsUploadingLicense] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoFileUrl, setLogoFileUrl] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -175,7 +177,7 @@ const CreateBroker = () => {
         license_number: values.licenseNumber,
         license_start_date: values.validityStartDate || null,
         license_end_date: values.validityEndDate || null,
-        license_doc: licenseFile ? licenseFile.name : null,
+        license_doc: licenseFileUrl || null,
         company_logo: logoFileUrl || null,
         operating_countries: countriesLabels.length ? countriesLabels : null,
         operating_regions: selectedRegionObjects.length ? selectedRegionObjects : null,
@@ -205,35 +207,63 @@ const CreateBroker = () => {
     }
   };
 
-  const handleLicenseFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLicenseFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type (images only)
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid File Type",
-          description: "Please upload an image file (JPG, PNG, etc.)",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (!file) return;
+
+    // Validate file type (images only)
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload an image file (JPG, PNG, etc.)",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingLicense(true);
+
+    try {
+      // Upload file using the API
+      const uploadResponse = await uploadFile(file);
       
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+      if (uploadResponse.files && uploadResponse.files.length > 0) {
+        const uploadedFile = uploadResponse.files[0];
+        setLicenseFile(file);
+        setLicenseFileUrl(uploadedFile.url);
+
         toast({
-          title: "File Too Large",
-          description: "Please upload an image smaller than 5MB",
-          variant: "destructive",
+          title: "License Document Uploaded Successfully",
+          description: `File "${uploadedFile.original_name}" has been uploaded successfully.`,
         });
-        return;
+      } else {
+        throw new Error('No file data returned from upload');
       }
-      
-      setLicenseFile(file);
+    } catch (error: any) {
+      console.error('License upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload license document. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingLicense(false);
     }
   };
 
   const removeLicenseFile = () => {
     setLicenseFile(null);
+    setLicenseFileUrl(null);
     // Reset the file input
     const fileInput = document.getElementById('license-file') as HTMLInputElement;
     if (fileInput) {
@@ -486,24 +516,38 @@ const CreateBroker = () => {
                           {!licenseFile ? (
                             <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
                               <div className="text-center">
-                                <Upload className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                                <div className="mt-4">
-                                  <label htmlFor="license-file" className="cursor-pointer">
-                                    <span className="text-sm font-medium text-primary hover:text-primary/80">
-                                      Upload license image
-                                    </span>
-                                    <input
-                                      id="license-file"
-                                      type="file"
-                                      className="sr-only"
-                                      accept="image/*"
-                                      onChange={handleLicenseFileChange}
-                                    />
-                                  </label>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    PNG, JPG, GIF up to 5MB
-                                  </p>
-                                </div>
+                                {isUploadingLicense ? (
+                                  <>
+                                    <div className="mx-auto h-12 w-12 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                                    <div className="mt-4">
+                                      <span className="text-sm font-medium text-muted-foreground">
+                                        Uploading...
+                                      </span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                                    <div className="mt-4">
+                                      <label htmlFor="license-file" className="cursor-pointer">
+                                        <span className="text-sm font-medium text-primary hover:text-primary/80">
+                                          Upload license image
+                                        </span>
+                                        <input
+                                          id="license-file"
+                                          type="file"
+                                          className="sr-only"
+                                          accept="image/*"
+                                          onChange={handleLicenseFileChange}
+                                          disabled={isUploadingLicense}
+                                        />
+                                      </label>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        PNG, JPG, GIF up to 5MB
+                                      </p>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
                           ) : (
@@ -517,6 +561,9 @@ const CreateBroker = () => {
                                   <p className="text-xs text-muted-foreground">
                                     {(licenseFile.size / 1024 / 1024).toFixed(2)} MB
                                   </p>
+                                  {licenseFileUrl && (
+                                    <p className="text-xs text-green-600">✓ Uploaded successfully</p>
+                                  )}
                                 </div>
                               </div>
                               <Button
