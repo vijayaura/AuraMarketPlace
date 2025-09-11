@@ -333,10 +333,24 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       product_id: productId
     };
     
+    console.log('🔧 Building payload for product_id:', productId);
+    console.log('🔧 Available documents:', documents.map(d => ({ 
+      id: d.id, 
+      label: d.display_label, 
+      status: d.status, 
+      hasUpload: !!d.uploadedFile,
+      url: d.uploadedFile?.url 
+    })));
+    
     documents.forEach(doc => {
       if (doc.uploadedFile && doc.status === 'uploaded') {
         // Create a key from the document label (lowercase, replace spaces with underscores)
         const key = doc.display_label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        console.log('🔧 Adding document to payload:', { 
+          originalLabel: doc.display_label, 
+          key, 
+          url: doc.uploadedFile.url 
+        });
         payload[key] = {
           label: doc.display_label,
           url: doc.uploadedFile.url || '' // This should be the actual file URL from upload response
@@ -344,6 +358,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       }
     });
     
+    console.log('🔧 Final payload structure:', JSON.stringify(payload, null, 2));
     return payload;
   };
 
@@ -372,6 +387,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       const payload = buildDocumentSubmissionPayload();
       
       console.log('📤 Submitting documents:', { quoteId: storedQuoteId, isUpdate: policyRequiredDocuments, payload });
+      console.log('📤 Payload structure check:', JSON.stringify(payload, null, 2));
       
       // Call appropriate API based on whether documents were submitted before
       let response;
