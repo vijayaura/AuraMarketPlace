@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { Button } from "@/components/ui/button";
@@ -294,6 +294,13 @@ export default function BrokerDashboard() {
       setPoliciesError(null);
       const data = await getBrokerDashboardPolicies();
       console.log('✅ Broker policies data fetched successfully:', data);
+      console.log('📊 Policies data structure:', {
+        hasData: !!data,
+        hasIssuedPolicies: !!data?.issuedPolicies,
+        issuedPoliciesLength: data?.issuedPolicies?.length || 0,
+        issuedPoliciesType: typeof data?.issuedPolicies,
+        isArray: Array.isArray(data?.issuedPolicies)
+      });
       setPoliciesData(data);
     } catch (err: any) {
       console.error('❌ Error fetching broker policies data:', err);
@@ -342,20 +349,31 @@ export default function BrokerDashboard() {
   }));
   const activeQuotes = filterActiveQuotes(recentQuotes);
 
-  // Map policies data
-  const recentPolicies = (policiesData?.issuedPolicies || []).map(p => ({
-    id: p.id,
-    policyNumber: p.policyNumber,
-    projectName: p.projectName,
-    projectType: p.projectType,
-    insurer: p.insurer,
-    sumInsured: p.sumInsured,
-    premium: p.premium,
-    startDate: p.startDate,
-    endDate: p.endDate,
-    status: p.status,
-    clientName: p.clientName || '-',
-  }));
+  // Map policies data - ensure stable array with error handling
+  const recentPolicies = useMemo(() => {
+    try {
+      if (!policiesData?.issuedPolicies || !Array.isArray(policiesData.issuedPolicies)) {
+        console.log('No policies data available or invalid structure:', policiesData);
+        return [];
+      }
+      return policiesData.issuedPolicies.map(p => ({
+        id: p.id || '',
+        policyNumber: p.policyNumber || '',
+        projectName: p.projectName || '',
+        projectType: p.projectType || '',
+        insurer: p.insurer || '-',
+        sumInsured: p.sumInsured || '-',
+        premium: p.premium || '-',
+        startDate: p.startDate || '',
+        endDate: p.endDate || '',
+        status: p.status || '',
+        clientName: p.clientName || '-',
+      }));
+    } catch (error) {
+      console.error('Error mapping policies data:', error);
+      return [];
+    }
+  }, [policiesData]);
 
   // Configure filters for quotes
   const quoteFilters: FilterConfig[] = [
@@ -431,7 +449,7 @@ export default function BrokerDashboard() {
     updateFilter: updatePolicyFilter,
     clearFilters: clearPolicyFilters
   } = useTableSearch({
-    data: recentPolicies,
+    data: recentPolicies || [],
     searchableFields: ['policyNumber', 'projectName', 'insurer'],
     initialFilters: {}
   });
