@@ -347,23 +347,6 @@ export default function BrokerDashboard() {
   }));
   // Temporarily disable filtering to see all quotes for debugging
   const activeQuotes = recentQuotes; // filterActiveQuotes(recentQuotes);
-  
-  // Debug logging
-  console.log('🔍 Debug pagination:', {
-    totalQuotes: recentQuotes.length,
-    activeQuotes: activeQuotes.length,
-    filteredQuotes: filteredQuotes.length,
-    totalPages: Math.ceil(filteredQuotes.length / itemsPerPage),
-    currentPage: currentQuotePage,
-    itemsPerPage,
-    currentQuotes: currentQuotes.length,
-    quotesData: quotesData?.recentQuotes?.length || 0
-  });
-  
-  // Log sample quotes for debugging
-  if (recentQuotes.length > 0) {
-    console.log('📋 Sample quotes:', recentQuotes.slice(0, 3));
-  }
 
   // Map policies data
   const recentPolicies = (policiesData?.issuedPolicies || []).map(p => ({
@@ -444,6 +427,23 @@ export default function BrokerDashboard() {
     searchableFields: ['quoteId', 'projectName'],
     initialFilters: {}
   });
+
+  // Debug logging - moved after useTableSearch hook
+  console.log('🔍 Debug pagination:', {
+    totalQuotes: recentQuotes.length,
+    activeQuotes: activeQuotes.length,
+    filteredQuotes: filteredQuotes.length,
+    totalPages: Math.ceil(filteredQuotes.length / itemsPerPage),
+    currentPage: currentQuotePage,
+    itemsPerPage,
+    currentQuotes: currentQuotes.length,
+    quotesData: quotesData?.recentQuotes?.length || 0
+  });
+  
+  // Log sample quotes for debugging
+  if (recentQuotes.length > 0) {
+    console.log('📋 Sample quotes:', recentQuotes.slice(0, 3));
+  }
 
   const {
     searchTerm: policySearchTerm,
