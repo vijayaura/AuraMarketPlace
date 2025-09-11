@@ -437,15 +437,6 @@ export interface ProposalBundleResponse {
   // Add more sections as needed
 }
 
-// Get current proposal form details
-export async function getProposalBundle(quoteId: number): Promise<ProposalBundleResponse> {
-  if (!quoteId) {
-    throw new Error('Quote ID is required for getting proposal bundle');
-  }
-  const endpoint = `/quotes/getProposalBundle/${quoteId}`;
-  console.log('📋 getProposalBundle called with:', { quoteId, endpoint });
-  return apiGet<ProposalBundleResponse>(endpoint);
-}
 
 // Types for Insurer Pricing Configuration API
 export interface BaseRate {
