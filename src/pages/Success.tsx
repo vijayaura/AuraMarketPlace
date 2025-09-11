@@ -170,14 +170,14 @@ const Success = () => {
                     <label className="text-sm font-medium text-muted-foreground">Premium Amount</label>
                     <p className="text-lg font-semibold flex items-center gap-1">
                       <DollarSign className="h-4 w-4" />
-                      {proposalBundle.plans[0]?.premium_amount?.toLocaleString() || 'N/A'}
+                      AED {proposalBundle.plans[0]?.premium_amount?.toLocaleString() || 'N/A'}
                     </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Sum Insured</label>
                     <p className="text-lg font-semibold flex items-center gap-1">
                       <DollarSign className="h-4 w-4" />
-                      {parseFloat(proposalBundle.project.sum_insured).toLocaleString()}
+                      AED {parseFloat(proposalBundle.project.sum_insured).toLocaleString()}
                     </p>
                   </div>
                   <div>
