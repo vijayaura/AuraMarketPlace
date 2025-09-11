@@ -333,52 +333,28 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       product_id: productId
     };
     
-    console.log('🔧 Building payload for product_id:', productId);
-    console.log('🔧 Available documents:', documents.map(d => ({ 
-      id: d.id, 
-      label: d.display_label, 
-      status: d.status, 
-      hasUpload: !!d.uploadedFile,
-      url: d.uploadedFile?.url 
-    })));
-    
+    // Add all uploaded documents to the payload
     documents.forEach(doc => {
       if (doc.uploadedFile && doc.status === 'uploaded') {
-        // Map specific document labels to the required API keys
-        let key: string;
-        const label = doc.display_label.toLowerCase();
+        // Create a key from the document label (lowercase, replace spaces with underscores, remove special chars)
+        const key = doc.display_label.toLowerCase()
+          .replace(/\s+/g, '_')
+          .replace(/[^a-z0-9_]/g, '')
+          .replace(/_+/g, '_') // Replace multiple underscores with single
+          .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
         
-        if (label.includes('kyc')) {
-          key = 'kyc';
-        } else if (label.includes('signed') && label.includes('proposal')) {
-          key = 'signed_proposal';
-        } else {
-          // Fallback: create a key from the document label (lowercase, replace spaces with underscores)
-          key = doc.display_label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        }
-        
-        console.log('🔧 Adding document to payload:', { 
-          originalLabel: doc.display_label, 
-          key, 
-          url: doc.uploadedFile.url 
-        });
         payload[key] = {
           label: doc.display_label,
-          url: doc.uploadedFile.url || '' // This should be the actual file URL from upload response
+          url: doc.uploadedFile.url || ''
         };
       }
     });
     
-    console.log('🔧 Final payload structure:', JSON.stringify(payload, null, 2));
     return payload;
   };
 
   // Handle document submission - called by parent component's Next button
   const handleSubmitDocuments = async (): Promise<boolean> => {
-    console.log('🔍 handleSubmitDocuments called in Declaration component');
-    console.log('🔍 Current documents state:', documents);
-    console.log('🔍 Documents with uploads:', documents.filter(d => d.uploadedFile && d.status === 'uploaded'));
-    
     try {
       setIsSubmitting(true);
       onSubmissionStateChange?.(true);
@@ -398,26 +374,17 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       const policyRequiredDocuments = localStorage.getItem('policy_required_documents') === 'true';
       
       // Build submission payload
-      console.log('🔧 About to call buildDocumentSubmissionPayload...');
       const payload = buildDocumentSubmissionPayload();
-      console.log('🔧 buildDocumentSubmissionPayload returned:', payload);
-      
-      console.log('📤 Submitting documents:', { quoteId: storedQuoteId, isUpdate: policyRequiredDocuments, payload });
-      console.log('📤 Payload structure check:', JSON.stringify(payload, null, 2));
       
       // Call appropriate API based on whether documents were submitted before
       let response;
       if (policyRequiredDocuments) {
         // Update existing - use PATCH
-        console.log('📤 Updating existing document submission...');
         response = await updateDocumentSubmission(parseInt(storedQuoteId), payload);
       } else {
         // First time - use POST
-        console.log('📤 Creating new document submission...');
         response = await createDocumentSubmission(parseInt(storedQuoteId), payload);
       }
-      
-      console.log('✅ Document submission response:', response);
       
       // Update storage flag
       localStorage.setItem('policy_required_documents', 'true');
@@ -427,7 +394,6 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
         description: 'All required documents have been submitted successfully.'
       });
       
-      console.log('✅ Document submission completed successfully');
       return true;
       
     } catch (err) {
