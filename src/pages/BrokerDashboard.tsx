@@ -357,17 +357,17 @@ export default function BrokerDashboard() {
         return [];
       }
       return policiesData.issuedPolicies.map(p => ({
-        id: p.id || '',
-        policyNumber: p.policyNumber || '',
-        projectName: p.projectName || '',
-        projectType: p.projectType || '',
-        insurer: p.insurer || '-',
-        sumInsured: p.sumInsured || '-',
-        premium: p.premium || '-',
-        startDate: p.startDate || '',
-        endDate: p.endDate || '',
+        id: p.policy_id || `Q${p.quote_id}`,
+        policyNumber: p.policy_id || `Q${p.quote_id}`,
+        projectName: p.project_name || '',
+        projectType: 'Construction', // Default since not provided in API
+        insurer: 'Insurer', // Default since not provided in API
+        sumInsured: p.total_premium ? `AED ${Number(p.total_premium).toLocaleString()}` : '-',
+        premium: p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
+        startDate: p.start_date ? p.start_date.slice(0, 10) : '',
+        endDate: p.end_date ? p.end_date.slice(0, 10) : '',
         status: p.status || '',
-        clientName: p.clientName || '-',
+        clientName: p.client_name || '-',
       }));
     } catch (error) {
       console.error('Error mapping policies data:', error);
@@ -450,7 +450,7 @@ export default function BrokerDashboard() {
     clearFilters: clearPolicyFilters
   } = useTableSearch({
     data: recentPolicies || [],
-    searchableFields: ['policyNumber', 'projectName', 'insurer'],
+    searchableFields: ['policyNumber', 'projectName', 'clientName'],
     initialFilters: {}
   });
 
@@ -767,7 +767,6 @@ export default function BrokerDashboard() {
                     <TableRow>
                       <TableHead className="w-[140px]">Policy Number</TableHead>
                       <TableHead className="w-[120px]">Project Name</TableHead>
-                      <TableHead className="w-[150px]">Insurer</TableHead>
                       <TableHead className="w-[140px]">Sum Insured</TableHead>
                       <TableHead className="w-[120px]">Premium</TableHead>
                       <TableHead className="w-[100px]">Start Date</TableHead>
@@ -787,7 +786,6 @@ export default function BrokerDashboard() {
                         <TableCell className="w-[120px] truncate" title={policy.projectName}>
                           {policy.projectName.length > 15 ? `${policy.projectName.substring(0, 15)}...` : policy.projectName}
                         </TableCell>
-                        <TableCell className="font-medium w-[150px]">{policy.insurer}</TableCell>
                         <TableCell className="font-medium w-[140px]">{policy.sumInsured}</TableCell>
                         <TableCell className="font-medium text-primary w-[120px]">{policy.premium}</TableCell>
                         <TableCell className="text-sm text-muted-foreground w-[100px]">{policy.startDate}</TableCell>

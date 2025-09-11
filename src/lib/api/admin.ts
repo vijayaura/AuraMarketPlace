@@ -61,4 +61,33 @@ export async function getBrokerDashboardQuotes(): Promise<BrokerDashboardQuotesR
   return apiGet<BrokerDashboardQuotesResponse>('/broker/dashboard/quotes');
 }
 
+// Broker Dashboard Policies
+export interface BrokerDashboardPolicyItem {
+  policy_id: string | null;
+  quote_id: number;
+  broker_id: number;
+  insurer_id: number;
+  start_date: string;
+  end_date: string;
+  base_premium: string;
+  total_premium: string;
+  status: string;
+  project_name: string;
+  client_name: string;
+}
+
+export interface BrokerDashboardPoliciesResponse {
+  totalQuotes: number;
+  totalActiveQuotes: number;
+  totalPolicies: number;
+  totalActivePolicies: number;
+  totalPremiumValue: string;
+  totalCommission: string;
+  issuedPolicies: BrokerDashboardPolicyItem[];
+}
+
+export async function getBrokerDashboardPolicies(): Promise<BrokerDashboardPoliciesResponse> {
+  return apiGet<BrokerDashboardPoliciesResponse>('/broker/dashboard/policies');
+}
+
 
