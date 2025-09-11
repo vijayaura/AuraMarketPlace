@@ -614,15 +614,15 @@ const InsurerDashboard = () => {
     initialFilters: {}
   });
 
-  // Pagination logic for quotes
+  // Pagination logic for quotes - limit to max 3 pages
   const quotesDataSource = dashboardData?.quoteRequests || filteredQuotes;
-  const totalQuotePages = Math.ceil(quotesDataSource.length / itemsPerPage);
+  const totalQuotePages = Math.min(3, Math.ceil(quotesDataSource.length / itemsPerPage));
   const startQuoteIndex = (currentQuotePage - 1) * itemsPerPage;
   const endQuoteIndex = startQuoteIndex + itemsPerPage;
   const currentQuotes = filteredQuotes.slice(startQuoteIndex, endQuoteIndex);
 
-  // Pagination logic for policies
-  const totalPolicyPages = Math.ceil(filteredPolicies.length / itemsPerPage);
+  // Pagination logic for policies - limit to max 3 pages
+  const totalPolicyPages = Math.min(3, Math.ceil(filteredPolicies.length / itemsPerPage));
   const startPolicyIndex = (currentPolicyPage - 1) * itemsPerPage;
   const endPolicyIndex = startPolicyIndex + itemsPerPage;
   const currentPolicies = filteredPolicies.slice(startPolicyIndex, endPolicyIndex);
@@ -874,9 +874,15 @@ const InsurerDashboard = () => {
                  </table>
                 </div>
               
-                {/* Pagination for Quotes */}
-                <div className="px-6 py-4 border-t">
-                  <Pagination>
+                   {/* Pagination for Quotes */}
+                   <div className="px-6 py-4 border-t">
+                     <div className="text-sm text-muted-foreground mb-4">
+                       Showing {currentQuotes.length} of {Math.min(filteredQuotes.length, totalQuotePages * itemsPerPage)} quotes (Page {currentQuotePage} of {totalQuotePages})
+                       {filteredQuotes.length > totalQuotePages * itemsPerPage && (
+                         <span className="ml-2 text-amber-600">• Showing first {totalQuotePages * itemsPerPage} results</span>
+                       )}
+                     </div>
+                     <Pagination>
                     <PaginationContent>
                       <PaginationItem>
                         <PaginationPrevious href="#" onClick={e => {
@@ -1005,6 +1011,12 @@ const InsurerDashboard = () => {
                  
                    {/* Pagination for Policies */}
                    <div className="px-6 py-4 border-t">
+                     <div className="text-sm text-muted-foreground mb-4">
+                       Showing {currentPolicies.length} of {Math.min(filteredPolicies.length, totalPolicyPages * itemsPerPage)} policies (Page {currentPolicyPage} of {totalPolicyPages})
+                       {filteredPolicies.length > totalPolicyPages * itemsPerPage && (
+                         <span className="ml-2 text-amber-600">• Showing first {totalPolicyPages * itemsPerPage} results</span>
+                       )}
+                     </div>
                      <Pagination>
                        <PaginationContent>
                          <PaginationItem>

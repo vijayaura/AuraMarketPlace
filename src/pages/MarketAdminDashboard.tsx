@@ -976,12 +976,13 @@ const MarketAdminDashboard = () => {
     quoteId: q.quote_id,
   }));
   const activeQuotes = filterActiveQuotes(mappedQuotes);
-  const totalQuotePages = Math.ceil(activeQuotes.length / itemsPerPage);
+  // Pagination for quotes - limit to max 3 pages
+  const totalQuotePages = Math.min(3, Math.ceil(activeQuotes.length / itemsPerPage));
   const startQuoteIndex = (currentQuotePage - 1) * itemsPerPage;
   const currentQuotes = activeQuotes.slice(startQuoteIndex, startQuoteIndex + itemsPerPage);
 
-  // Pagination calculations for policies  
-  const totalPolicyPages = Math.ceil(filteredPolicies.length / itemsPerPage);
+  // Pagination for policies - limit to max 3 pages
+  const totalPolicyPages = Math.min(3, Math.ceil(filteredPolicies.length / itemsPerPage));
   const startPolicyIndex = (currentPolicyPage - 1) * itemsPerPage;
   const currentPolicies = filteredPolicies.slice(startPolicyIndex, startPolicyIndex + itemsPerPage);
 
@@ -1388,6 +1389,12 @@ const MarketAdminDashboard = () => {
                     
                     {/* Quotes Pagination */}
                     <div className="px-6 py-4 border-t">
+                      <div className="text-sm text-muted-foreground mb-4">
+                        Showing {currentQuotes.length} of {Math.min(activeQuotes.length, totalQuotePages * itemsPerPage)} quotes (Page {currentQuotePage} of {totalQuotePages})
+                        {activeQuotes.length > totalQuotePages * itemsPerPage && (
+                          <span className="ml-2 text-amber-600">• Showing first {totalQuotePages * itemsPerPage} results</span>
+                        )}
+                      </div>
                       <Pagination>
                         <PaginationContent>
                           <PaginationItem>
@@ -1563,6 +1570,12 @@ const MarketAdminDashboard = () => {
                     
                     {/* Policies Pagination */}
                     <div className="px-6 py-4 border-t">
+                      <div className="text-sm text-muted-foreground mb-4">
+                        Showing {currentPolicies.length} of {Math.min(filteredPolicies.length, totalPolicyPages * itemsPerPage)} policies (Page {currentPolicyPage} of {totalPolicyPages})
+                        {filteredPolicies.length > totalPolicyPages * itemsPerPage && (
+                          <span className="ml-2 text-amber-600">• Showing first {totalPolicyPages * itemsPerPage} results</span>
+                        )}
+                      </div>
                       <Pagination>
                         <PaginationContent>
                           <PaginationItem>
