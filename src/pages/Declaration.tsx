@@ -79,15 +79,11 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
 
       const { insurerId, productId } = getInsurerAndProductIds();
       
-      console.log('📋 Fetching required documents for insurer:', insurerId, 'product:', productId);
-      
       const response = await getRequiredDocuments(insurerId, productId);
       
       // Filter only ACTIVE documents (exclude INACTIVE, DRAFT, etc.) and transform API response to component format
       const activeDocuments = response.documents.filter(doc => doc.status === 'ACTIVE');
       const inactiveCount = response.documents.length - activeDocuments.length;
-      
-      console.log(`📋 Filtered documents: ${activeDocuments.length} active, ${inactiveCount} inactive`);
       
       const transformedDocs: DocumentWithUpload[] = activeDocuments.map(doc => ({
         ...doc,
@@ -193,16 +189,21 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Clear the input so the same file can be selected again
+    event.target.value = '';
+
     try {
-      // Add to uploading set
+      // Set uploading state
       setUploadingDocs(prev => new Set(prev).add(docId));
       
       // Update document status to uploading
-      setDocuments(prevDocs => prevDocs.map(doc => 
-        doc.id === docId 
-          ? { ...doc, status: "uploading" as const }
-          : doc
-      ));
+      setDocuments(prevDocs => 
+        prevDocs.map(doc => 
+          doc.id === docId 
+            ? { ...doc, status: "uploading" as const }
+            : doc
+        )
+      );
       
       // Upload file using the API
       const uploadResponse = await uploadFile(file);
@@ -212,25 +213,24 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
         const fileSizeInMB = (uploadedFile.size_bytes / (1024 * 1024)).toFixed(1);
         
         // Update document with uploaded file info
-        setDocuments(prevDocs => {
-          const newDocs = [...prevDocs];
-          const docIndex = newDocs.findIndex(doc => doc.id === docId);
-          if (docIndex !== -1) {
-            newDocs[docIndex] = {
-              ...newDocs[docIndex],
-              status: "uploaded" as const,
-              uploadedFile: {
-                name: uploadedFile.original_name,
-                size: `${fileSizeInMB} MB`,
-                uploadDate: new Date().toISOString().split('T')[0],
-                url: uploadedFile.url
-              }
-            };
-          }
-          return newDocs;
-        });
+        setDocuments(prevDocs => 
+          prevDocs.map(doc => 
+            doc.id === docId 
+              ? {
+                  ...doc,
+                  status: "uploaded" as const,
+                  uploadedFile: {
+                    name: uploadedFile.original_name,
+                    size: `${fileSizeInMB} MB`,
+                    uploadDate: new Date().toISOString().split('T')[0],
+                    url: uploadedFile.url
+                  }
+                }
+              : doc
+          )
+        );
         
-        toast.success('File Uploaded', {
+        toast.success('File Uploaded Successfully', {
           description: `${uploadedFile.original_name} has been uploaded successfully.`
         });
       } else {
@@ -240,11 +240,13 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       console.error('File upload error:', error);
       
       // Revert to pending status on error
-      setDocuments(prevDocs => prevDocs.map(doc => 
-        doc.id === docId 
-          ? { ...doc, status: "pending" as const }
-          : doc
-      ));
+      setDocuments(prevDocs => 
+        prevDocs.map(doc => 
+          doc.id === docId 
+            ? { ...doc, status: "pending" as const }
+            : doc
+        )
+      );
       
       toast.error('Upload Failed', {
         description: error.message || "Failed to upload file. Please try again."
@@ -260,11 +262,13 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
   };
 
   const removeUploadedFile = (docId: number) => {
-    setDocuments(prevDocs => prevDocs.map(doc => 
-      doc.id === docId 
-        ? { ...doc, uploadedFile: undefined, status: "pending" as const }
-        : doc
-    ));
+    setDocuments(prevDocs => 
+      prevDocs.map(doc => 
+        doc.id === docId 
+          ? { ...doc, uploadedFile: undefined, status: "pending" as const }
+          : doc
+      )
+    );
     
     toast.success('File Removed', {
       description: 'Uploaded file has been removed.'
@@ -367,14 +371,6 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     try {
       setIsSubmitting(true);
       onSubmissionStateChange?.(true);
-      
-      // Ensure documents are loaded
-      if (documents.length === 0) {
-        console.warn('No documents loaded, fetching required documents...');
-        await fetchRequiredDocuments();
-        // Wait a bit for state to update
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
       
       // Validate required documents
       if (!validateRequiredDocuments()) {
