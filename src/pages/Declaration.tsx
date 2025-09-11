@@ -312,8 +312,12 @@ const Declaration = ({ onSubmissionStateChange }: DeclarationProps) => {
   };
 
   // Build document submission payload
-  const buildDocumentSubmissionPayload = (): DocumentSubmissionRequest => {
-    const payload: DocumentSubmissionRequest = {};
+  const buildDocumentSubmissionPayload = () => {
+    const { productId } = getInsurerAndProductIds();
+    
+    const payload: any = {
+      product_id: productId
+    };
     
     documents.forEach(doc => {
       if (doc.uploadedFile && doc.status === 'uploaded') {

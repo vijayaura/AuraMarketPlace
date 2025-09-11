@@ -883,7 +883,8 @@ export interface DocumentSubmissionItem {
 }
 
 export interface DocumentSubmissionRequest {
-  [key: string]: DocumentSubmissionItem;
+  product_id: number;
+  [key: string]: DocumentSubmissionItem | number;
 }
 
 export interface DocumentSubmissionResponseItem {
