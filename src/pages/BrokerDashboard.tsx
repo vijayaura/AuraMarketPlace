@@ -17,7 +17,7 @@ import { QuoteStatusDot } from "@/components/QuoteStatusDot";
 import { TableSearchFilter, FilterConfig } from "@/components/TableSearchFilter";
 import { useTableSearch } from "@/hooks/useTableSearch";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
-import { getBrokerDashboardQuotes, type BrokerDashboardQuotesResponse } from "@/lib/api";
+import { getBrokerDashboardQuotes, getBrokerDashboardPolicies, type BrokerDashboardQuotesResponse, type BrokerDashboardPoliciesResponse } from "@/lib/api";
 
 // Mock data for demonstration - expanded to 15+ entries
 const mockQuotes = [
@@ -243,7 +243,7 @@ const exportQuotesToExcel = () => {
 };
 
 const exportPoliciesToExcel = () => {
-  const worksheet = XLSX.utils.json_to_sheet(mockPolicies);
+  const worksheet = XLSX.utils.json_to_sheet(recentPolicies);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Policies");
   XLSX.writeFile(workbook, "broker_policies.xlsx");
@@ -258,6 +258,9 @@ export default function BrokerDashboard() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [quotesData, setQuotesData] = useState<BrokerDashboardQuotesResponse | null>(null);
+  const [policiesData, setPoliciesData] = useState<BrokerDashboardPoliciesResponse | null>(null);
+  const [policiesLoading, setPoliciesLoading] = useState<boolean>(false);
+  const [policiesError, setPoliciesError] = useState<string | null>(null);
 
   // Fetch dashboard data function
   const fetchDashboardData = async () => {
@@ -283,16 +286,43 @@ export default function BrokerDashboard() {
     }
   };
 
+  // Fetch policies data function
+  const fetchPoliciesData = async () => {
+    try {
+      console.log('🚀 Fetching broker policies data...');
+      setPoliciesLoading(true);
+      setPoliciesError(null);
+      const data = await getBrokerDashboardPolicies();
+      console.log('✅ Broker policies data fetched successfully:', data);
+      setPoliciesData(data);
+    } catch (err: any) {
+      console.error('❌ Error fetching broker policies data:', err);
+      const status = err?.status;
+      const friendly =
+        status === 400 ? 'Invalid request while loading policies.' :
+        status === 401 ? 'Session expired. Please log in again.' :
+        status === 403 ? 'You are not authorized to view policies.' :
+        status === 500 ? 'Server error while fetching policies.' :
+        (err?.message || 'Failed to load policies.');
+      setPoliciesError(friendly);
+    } finally {
+      setPoliciesLoading(false);
+    }
+  };
+
   // Fetch dashboard data when component mounts (since default tab is "quotes")
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
-  // Fetch dashboard data when quotes tab is selected
+  // Fetch dashboard data when tabs are selected
   useEffect(() => {
     if (activeTab === "quotes") {
       console.log('📊 Quote Requests tab clicked - fetching broker dashboard data...');
       fetchDashboardData();
+    } else if (activeTab === "policies") {
+      console.log('📋 Policies tab clicked - fetching broker policies data...');
+      fetchPoliciesData();
     }
   }, [activeTab]);
 
@@ -310,7 +340,33 @@ export default function BrokerDashboard() {
     insurer: q.insurer_name || '-',
     quoteId: q.quote_id,
   }));
-  const activeQuotes = filterActiveQuotes(recentQuotes);
+  // Temporarily disable filtering to see all quotes for debugging
+  const activeQuotes = recentQuotes; // filterActiveQuotes(recentQuotes);
+  
+  // Debug logging
+  console.log('🔍 Debug pagination:', {
+    totalQuotes: recentQuotes.length,
+    activeQuotes: activeQuotes.length,
+    filteredQuotes: filteredQuotes.length,
+    totalPages: Math.ceil(filteredQuotes.length / itemsPerPage),
+    currentPage: currentQuotePage,
+    itemsPerPage
+  });
+
+  // Map policies data
+  const recentPolicies = (policiesData?.issuedPolicies || []).map(p => ({
+    id: p.id,
+    policyNumber: p.policyNumber,
+    projectName: p.projectName,
+    projectType: p.projectType,
+    insurer: p.insurer,
+    sumInsured: p.sumInsured,
+    premium: p.premium,
+    startDate: p.startDate,
+    endDate: p.endDate,
+    status: p.status,
+    clientName: p.clientName || '-',
+  }));
 
   // Configure filters for quotes
   const quoteFilters: FilterConfig[] = [
@@ -385,7 +441,7 @@ export default function BrokerDashboard() {
     updateFilter: updatePolicyFilter,
     clearFilters: clearPolicyFilters
   } = useTableSearch({
-    data: mockPolicies,
+    data: recentPolicies,
     searchableFields: ['policyNumber', 'projectName', 'insurer'],
     initialFilters: {}
   });
@@ -473,7 +529,7 @@ export default function BrokerDashboard() {
                 <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
               ) : (
                 <div className="text-2xl font-bold text-foreground">
-                  {quotesData?.totalPolicies !== undefined ? quotesData.totalPolicies : mockPolicies.length}
+                  {policiesData?.totalPolicies !== undefined ? policiesData.totalPolicies : 0}
                 </div>
               )}
             </CardContent>
@@ -684,6 +740,11 @@ export default function BrokerDashboard() {
                   onFilterChange={updatePolicyFilter}
                   onClearFilters={clearPolicyFilters}
                 />
+                {policiesLoading ? (
+                  <TableSkeleton />
+                ) : policiesError ? (
+                  <div className="rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">{policiesError}</div>
+                ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -735,6 +796,7 @@ export default function BrokerDashboard() {
                     ))}
                   </TableBody>
                 </Table>
+                )}
                 
                 {/* Pagination for Policies */}
                 <div className="px-6 py-4 border-t">
