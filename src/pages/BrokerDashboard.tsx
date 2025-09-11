@@ -254,7 +254,7 @@ export default function BrokerDashboard() {
   const [activeTab, setActiveTab] = useState("quotes");
   const [currentQuotePage, setCurrentQuotePage] = useState(1);
   const [currentPolicyPage, setCurrentPolicyPage] = useState(1);
-  const itemsPerPage = 10; // Increased from 5 to 10 to show more quotes per page
+  const itemsPerPage = 5;
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [quotesData, setQuotesData] = useState<BrokerDashboardQuotesResponse | null>(null);
@@ -270,11 +270,6 @@ export default function BrokerDashboard() {
       setLoadError(null);
       const data = await getBrokerDashboardQuotes();
       console.log('✅ Broker dashboard data fetched successfully:', data);
-      console.log('📊 API Response details:', {
-        totalQuotes: data.totalQuotes,
-        recentQuotesCount: data.recentQuotes?.length || 0,
-        sampleQuote: data.recentQuotes?.[0] || null
-      });
       setQuotesData(data);
     } catch (err: any) {
       console.error('❌ Error fetching broker dashboard data:', err);
@@ -345,8 +340,7 @@ export default function BrokerDashboard() {
     insurer: '-', // API doesn't include insurer_name field
     quoteId: q.quote_id,
   }));
-  // Temporarily disable filtering to see all quotes for debugging
-  const activeQuotes = recentQuotes; // filterActiveQuotes(recentQuotes);
+  const activeQuotes = filterActiveQuotes(recentQuotes);
 
   // Map policies data
   const recentPolicies = (policiesData?.issuedPolicies || []).map(p => ({
@@ -454,22 +448,6 @@ export default function BrokerDashboard() {
   const endPolicyIndex = startPolicyIndex + itemsPerPage;
   const currentPolicies = filteredPolicies.slice(startPolicyIndex, endPolicyIndex);
 
-  // Debug logging - moved after all variable definitions
-  console.log('🔍 Debug pagination:', {
-    totalQuotes: recentQuotes.length,
-    activeQuotes: activeQuotes.length,
-    filteredQuotes: filteredQuotes.length,
-    totalPages: Math.ceil(filteredQuotes.length / itemsPerPage),
-    currentPage: currentQuotePage,
-    itemsPerPage,
-    currentQuotes: currentQuotes.length,
-    quotesData: quotesData?.recentQuotes?.length || 0
-  });
-  
-  // Log sample quotes for debugging
-  if (recentQuotes.length > 0) {
-    console.log('📋 Sample quotes:', recentQuotes.slice(0, 3));
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-6">
@@ -672,11 +650,6 @@ export default function BrokerDashboard() {
                   </TableBody>
                 </Table>
                 )}
-                
-                {/* Debug Info - Remove after fixing */}
-                <div className="px-6 py-2 bg-yellow-100 text-sm">
-                  Debug: Total quotes: {recentQuotes.length}, Filtered: {filteredQuotes.length}, Pages: {totalQuotePages}, Current: {currentQuotePage}
-                </div>
                 
                 {/* Pagination for Quotes */}
                 {totalQuotePages > 1 && (
