@@ -2299,17 +2299,18 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                 }} />
               </div>
               
-              {/* Navigation Buttons */}
-              <div className="flex items-center gap-3 flex-shrink-0">
-                {/* Previous Button - only show for declaration step */}
-                {currentStep === 7 && (
-                  <Button variant="outline" onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}>
-                    Previous
-                  </Button>
-                )}
-                
-                {/* Next/Proceed Button - hide for declaration step since it has its own button */}
-                {currentStep === steps.length - 1 ? (
+              {/* Navigation Buttons - hide for declaration step */}
+              {currentStep !== 7 && (
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {/* Previous Button */}
+                  {currentStep > 0 && (
+                    <Button variant="outline" onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}>
+                      Previous
+                    </Button>
+                  )}
+                  
+                  {/* Next/Proceed Button */}
+                  {currentStep === steps.length - 1 ? (
                   <Button 
                     variant="hero" 
                     size="lg" 
@@ -2582,7 +2583,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     )}
                   </Button>
                 ) : null}
-              </div>
+                </div>
+              )}
             </div>
           </CardHeader>
 
@@ -3761,7 +3763,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
             {/* Always render Declaration component outside TabsContent to maintain state */}
             <div style={{ display: currentStep === 7 ? 'block' : 'none' }}>
-              <Declaration ref={declarationRef} onSubmissionStateChange={setIsSubmittingDocuments} />
+              <Declaration 
+                ref={declarationRef} 
+                onSubmissionStateChange={setIsSubmittingDocuments}
+                onPrevious={() => setCurrentStep(Math.max(0, currentStep - 1))}
+              />
             </div>
 
           </CardContent>

@@ -22,13 +22,14 @@ interface DocumentWithUpload extends RequiredDocument {
 
 interface DeclarationProps {
   onSubmissionStateChange?: (isSubmitting: boolean) => void;
+  onPrevious?: () => void;
 }
 
 export interface DeclarationRef {
   handleSubmitDocuments: () => Promise<boolean>;
 }
 
-const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmissionStateChange }, ref) => {
+const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmissionStateChange, onPrevious }, ref) => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<DocumentWithUpload[]>([]);
   const [loading, setLoading] = useState(true);
@@ -634,8 +635,16 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
         ))}
       </div>
 
-      {/* Complete Payment and Get Policy Button */}
-      <div className="mt-8 flex justify-end">
+      {/* Action Buttons */}
+      <div className="mt-8 flex justify-between items-center">
+        <Button
+          variant="outline"
+          onClick={onPrevious}
+          className="px-6"
+        >
+          Previous
+        </Button>
+        
         <Button
           variant="hero"
           size="lg"
