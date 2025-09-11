@@ -65,6 +65,9 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   // State for expanded clause wordings
   const [expandedWording, setExpandedWording] = useState<Set<number>>(new Set());
 
+  // CEW items state
+  const [cewItems, setCEWItems] = useState<CEWItem[]>([]);
+
   // Helper function to calculate premium impact for an item
   const calculateItemPremiumImpact = (item: CEWItem): number => {
     if (!item.isSelected) return 0;
@@ -93,6 +96,11 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
       console.log('🔧 Selected mandatory items:', selectedMandatoryItems.length);
       console.log('🔧 Mandatory items details:', mandatoryItems.map(item => ({ name: item.name, isSelected: item.isSelected, isMandatory: item.isMandatory })));
       
+      // Verify NO items are selected
+      const allSelectedItems = transformedItems.filter(item => item.isSelected);
+      console.log('🔧 ALL selected items (should be 0):', allSelectedItems.length);
+      console.log('🔧 ALL selected items details:', allSelectedItems.map(item => ({ name: item.name, isSelected: item.isSelected, isMandatory: item.isMandatory })));
+      
       // Don't auto-select mandatory items - let user select them
       setCEWItems(transformedItems);
       onSelectionChange?.(transformedItems);
@@ -112,6 +120,15 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
         return sum + impact;
       }, 0);
       
+      // Check specifically for mandatory items
+      const mandatoryItems = cewItems.filter(item => item.isMandatory);
+      console.log('🔧 Mandatory items in calculation:', mandatoryItems.map(item => ({ 
+        name: item.name, 
+        isSelected: item.isSelected, 
+        isMandatory: item.isMandatory,
+        defaultValue: item.defaultValue
+      })));
+      
       console.log('🔧 Total CEW Adjustment calculated:', cewAdjustment);
       onCEWAdjustmentChange?.(cewAdjustment);
     }
@@ -121,17 +138,23 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   const transformProductConfigToCEWItems = (configBundle: any): CEWItem[] => {
     if (!configBundle?.clause_pricing_config) return [];
     
-    return configBundle.clause_pricing_config.map((clause: any, index: number) => ({
-      id: clause.id,
-      code: clause.clause_code,
-      name: clause.meta?.title || clause.clause_code,
-      type: (clause.meta?.clause_type && typeof clause.meta.clause_type === 'string' && clause.meta.clause_type.toLowerCase() === 'warranty') ? 'warranty' : 
-            (clause.meta?.clause_type && typeof clause.meta.clause_type === 'string' && clause.meta.clause_type.toLowerCase() === 'exclusion') ? 'condition' : 'extension',
-      category: clause.meta?.clause_type || 'Extension',
-      description: clause.meta?.purpose_description || clause.meta?.clause_wording || 'No description available',
-      isMandatory: clause.meta?.show_type === 'MANDATORY',
-      isSelected: false, // Don't auto-select mandatory items - let user select them
-      isPremium: false,
+    return configBundle.clause_pricing_config.map((clause: any, index: number) => {
+      const isMandatory = clause.meta?.show_type === 'MANDATORY';
+      const isSelected = false; // NEVER auto-select any items
+      
+      console.log(`🔧 transformProductConfigToCEWItems - ${clause.clause_code}: isMandatory=${isMandatory}, isSelected=${isSelected}`);
+      
+      return {
+        id: clause.id,
+        code: clause.clause_code,
+        name: clause.meta?.title || clause.clause_code,
+        type: (clause.meta?.clause_type && typeof clause.meta.clause_type === 'string' && clause.meta.clause_type.toLowerCase() === 'warranty') ? 'warranty' : 
+              (clause.meta?.clause_type && typeof clause.meta.clause_type === 'string' && clause.meta.clause_type.toLowerCase() === 'exclusion') ? 'condition' : 'extension',
+        category: clause.meta?.clause_type || 'Extension',
+        description: clause.meta?.purpose_description || clause.meta?.clause_wording || 'No description available',
+        isMandatory: isMandatory,
+        isSelected: isSelected, // Don't auto-select mandatory items - let user select them
+        isPremium: false,
       options: clause.options?.map((option: any, optIndex: number) => ({
         id: optIndex + 1,
         label: option.label,
@@ -153,7 +176,8 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
         console.log('🔧 transformProductConfigToCEWItems - clause:', clause.clause_code, 'pricing_value:', clause.pricing_value, 'pricing_type:', clause.pricing_type, 'defaultValue:', value);
         return value;
       })()
-    }));
+      };
+    });
   };
 
   // Transform TPL extensions from product config bundle
@@ -170,7 +194,6 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     }));
   };
 
-  const [cewItems, setCEWItems] = useState<CEWItem[]>([]);
 
   const [commissionPercentage, setCommissionPercentage] = useState(brokerCommissionLimits.current);
   const [commissionError, setCommissionError] = useState("");
@@ -269,7 +292,7 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     
     const updatedItems = cewItems.map(item => {
       if (item.id === itemId) {
-        // For mandatory items, allow option selection but don't force item selection
+        // For mandatory items, allow normal selection behavior
         if (item.isMandatory) {
           // If clicking the same option, deselect it (use base value)
           if (item.selectedOptionId === optionId) {
@@ -279,7 +302,7 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
               selectedOptionId: undefined, // Deselect option (use base value)
               impact: {
                 ...item.impact,
-                premiumAmount: item.defaultValue // Use base value when no option selected
+                premiumAmount: item.isSelected ? item.defaultValue : 0 // Use base value if selected, 0 if not
               }
             };
           } else {
@@ -291,7 +314,7 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
               selectedOptionId: optionId,
               impact: {
                 ...item.impact,
-                premiumAmount: selectedOption ? (selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000) : item.defaultValue
+                premiumAmount: item.isSelected ? (selectedOption ? (selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000) : item.defaultValue) : 0
               }
             };
           }
@@ -338,8 +361,10 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
     onPremiumChange?.(tplAdjustment + cewAdjustment);
   };
 
-  // Helper function to get potential impact regardless of selection status
+  // Helper function to get potential impact only for selected items
   const getPotentialImpact = (item: CEWItem): number => {
+    if (!item.isSelected) return 0;
+    
     const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
     if (selectedOption) {
       return selectedOption.type === "percentage" ? selectedOption.value : selectedOption.value / 1000;
@@ -366,39 +391,22 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
   };
 
   const formatPotentialImpact = (item: CEWItem) => {
-    // Show base rate from pricing configuration when no option is selected
-    if (!item.selectedOptionId) {
-      const baseRate = item.defaultValue;
-      console.log('🔧 formatPotentialImpact - item:', item.name, 'baseRate:', baseRate, 'selectedOptionId:', item.selectedOptionId);
-      
-      // Determine if it's percentage or amount based on the first option's type or item's default type
-      const firstOption = item.options[0];
-      const isPercentage = firstOption?.type === "percentage" || 
-                          (item.options.length === 0 && Math.abs(baseRate) <= 100);
-      
-      console.log('🔧 formatPotentialImpact - firstOption:', firstOption, 'isPercentage:', isPercentage);
-      
-      if (isPercentage) {
-        const sign = baseRate > 0 ? "+" : "";
-        return `${sign}${baseRate}%`;
-      } else {
-        return `+AED ${baseRate.toLocaleString()}`;
-      }
-    }
-    
-    // Show selected option impact when an option is selected
-    const potentialImpact = getPotentialImpact(item);
+    // Always show base rate from pricing configuration
+    const baseRate = item.defaultValue;
+    console.log('🔧 formatPotentialImpact - item:', item.name, 'baseRate:', baseRate, 'selectedOptionId:', item.selectedOptionId);
     
     // Determine if it's percentage or amount based on the first option's type or item's default type
     const firstOption = item.options[0];
     const isPercentage = firstOption?.type === "percentage" || 
-                        (item.options.length === 0 && Math.abs(item.defaultValue) <= 100);
+                        (item.options.length === 0 && Math.abs(baseRate) <= 100);
+    
+    console.log('🔧 formatPotentialImpact - firstOption:', firstOption, 'isPercentage:', isPercentage);
     
     if (isPercentage) {
-      const sign = potentialImpact > 0 ? "+" : "";
-      return `${sign}${potentialImpact}%`;
+      const sign = baseRate > 0 ? "+" : "";
+      return `${sign}${baseRate}%`;
     } else {
-      return `+AED ${potentialImpact.toLocaleString()}`;
+      return `+AED ${baseRate.toLocaleString()}`;
     }
   };
 
@@ -564,45 +572,35 @@ export const CEWSelection = ({ onSelectionChange, onPremiumChange, onTPLAdjustme
           <div
             key={item.id}
             className={`p-3 border rounded-lg transition-all ${
-              item.isMandatory 
-                ? "bg-primary/5 border-primary/30" 
-                : item.isSelected 
+              item.isSelected 
                 ? "bg-accent/10 border-accent/50" 
+                : item.isMandatory
+                ? "bg-destructive/5 border-destructive/30" 
                 : "bg-card border-border hover:border-accent/30"
             }`}
           >
             <div className="flex items-center gap-3">
               {/* Checkbox/Status */}
-              <div>
-                {item.isMandatory ? (
-                  <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 rounded border-2 border-destructive bg-destructive/10 flex items-center justify-center">
-                      <span className="text-xs font-bold text-destructive">!</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={item.isSelected}
-                      onChange={() => toggleSelection(item.id)}
-                      className="sr-only"
-                      id={`checkbox-${item.id}`}
-                    />
-                    <label
-                      htmlFor={`checkbox-${item.id}`}
-                      className={`w-4 h-4 rounded border-2 cursor-pointer transition-all duration-200 flex items-center justify-center ${
-                        item.isSelected
-                          ? "bg-primary border-primary text-white"
-                          : "bg-background border-gray-300 hover:border-primary/50 hover:bg-primary/5"
-                      }`}
-                    >
-                      {item.isSelected && (
-                        <CheckCircle2 className="w-3 h-3" />
-                      )}
-                    </label>
-                  </div>
-                )}
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={item.isSelected}
+                  onChange={() => toggleSelection(item.id)}
+                  className="sr-only"
+                  id={`checkbox-${item.id}`}
+                />
+                <label
+                  htmlFor={`checkbox-${item.id}`}
+                  className={`w-4 h-4 rounded border-2 cursor-pointer transition-all duration-200 flex items-center justify-center ${
+                    item.isSelected
+                      ? "bg-primary border-primary text-white"
+                      : "bg-background border-gray-300 hover:border-primary/50 hover:bg-primary/5"
+                  }`}
+                >
+                  {item.isSelected && (
+                    <CheckCircle2 className="w-3 h-3" />
+                  )}
+                </label>
               </div>
               
               {/* Content */}
