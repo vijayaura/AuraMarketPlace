@@ -2301,14 +2301,14 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               
               {/* Navigation Buttons */}
               <div className="flex items-center gap-3 flex-shrink-0">
-                {/* Previous Button */}
-                {currentStep > 0 && (
+                {/* Previous Button - only show for declaration step */}
+                {currentStep === 7 && (
                   <Button variant="outline" onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}>
                     Previous
                   </Button>
                 )}
                 
-                {/* Next/Proceed Button */}
+                {/* Next/Proceed Button - hide for declaration step since it has its own button */}
                 {currentStep === steps.length - 1 ? (
                   <Button 
                     variant="hero" 
@@ -2409,7 +2409,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       'Next'
                     )}
                   </Button>
-                ) : (
+                ) : currentStep !== 7 ? (
                   <Button 
                     onClick={async () => {
                       // Validate current step first
@@ -2581,7 +2581,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       'Next'
                     )}
                   </Button>
-                )}
+                ) : null}
               </div>
             </div>
           </CardHeader>
@@ -3753,7 +3753,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
               <TabsContent value="declaration">
                 <div className="p-8 text-center text-muted-foreground">
-                  Declaration step will be shown here
+                  Declaration step content
                 </div>
               </TabsContent>
 

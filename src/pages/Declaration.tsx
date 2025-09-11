@@ -633,6 +633,26 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
           </Card>
         ))}
       </div>
+
+      {/* Complete Payment and Get Policy Button */}
+      <div className="mt-8 flex justify-end">
+        <Button
+          variant="hero"
+          size="lg"
+          onClick={handleSubmitDocuments}
+          disabled={isSubmitting}
+          className="px-8"
+        >
+          {isSubmitting ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Processing...
+            </>
+          ) : (
+            'Complete Payment and Get Policy'
+          )}
+        </Button>
+      </div>
     </div>
   );
 });
