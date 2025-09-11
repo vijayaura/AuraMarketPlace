@@ -428,22 +428,6 @@ export default function BrokerDashboard() {
     initialFilters: {}
   });
 
-  // Debug logging - moved after useTableSearch hook
-  console.log('🔍 Debug pagination:', {
-    totalQuotes: recentQuotes.length,
-    activeQuotes: activeQuotes.length,
-    filteredQuotes: filteredQuotes.length,
-    totalPages: Math.ceil(filteredQuotes.length / itemsPerPage),
-    currentPage: currentQuotePage,
-    itemsPerPage,
-    currentQuotes: currentQuotes.length,
-    quotesData: quotesData?.recentQuotes?.length || 0
-  });
-  
-  // Log sample quotes for debugging
-  if (recentQuotes.length > 0) {
-    console.log('📋 Sample quotes:', recentQuotes.slice(0, 3));
-  }
 
   const {
     searchTerm: policySearchTerm,
@@ -469,6 +453,23 @@ export default function BrokerDashboard() {
   const startPolicyIndex = (currentPolicyPage - 1) * itemsPerPage;
   const endPolicyIndex = startPolicyIndex + itemsPerPage;
   const currentPolicies = filteredPolicies.slice(startPolicyIndex, endPolicyIndex);
+
+  // Debug logging - moved after all variable definitions
+  console.log('🔍 Debug pagination:', {
+    totalQuotes: recentQuotes.length,
+    activeQuotes: activeQuotes.length,
+    filteredQuotes: filteredQuotes.length,
+    totalPages: Math.ceil(filteredQuotes.length / itemsPerPage),
+    currentPage: currentQuotePage,
+    itemsPerPage,
+    currentQuotes: currentQuotes.length,
+    quotesData: quotesData?.recentQuotes?.length || 0
+  });
+  
+  // Log sample quotes for debugging
+  if (recentQuotes.length > 0) {
+    console.log('📋 Sample quotes:', recentQuotes.slice(0, 3));
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-6">
