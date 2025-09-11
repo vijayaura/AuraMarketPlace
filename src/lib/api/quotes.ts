@@ -857,6 +857,48 @@ export interface PlanSelectionResponse {
   };
 }
 
+// Required Documents Types
+export interface RequiredDocument {
+  id: number;
+  product_id: number;
+  display_order: number;
+  display_label: string;
+  description: string;
+  is_required: number;
+  template_file: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  insurer_id: number | null;
+}
+
+export interface RequiredDocumentsResponse {
+  documents: RequiredDocument[];
+}
+
+// Document Submission Types
+export interface DocumentSubmissionItem {
+  label: string;
+  url: string;
+}
+
+export interface DocumentSubmissionRequest {
+  [key: string]: DocumentSubmissionItem;
+}
+
+export interface DocumentSubmissionResponseItem {
+  label: string;
+  url: string;
+  uploaded_at: string;
+}
+
+export interface DocumentSubmissionResponse {
+  message: string;
+  documents: {
+    [key: string]: DocumentSubmissionResponseItem;
+  };
+}
+
 // Plan Selection API Functions
 export const createPlanSelection = async (quoteId: number, data: PlanSelectionRequest): Promise<PlanSelectionResponse> => {
   const response = await apiPost<PlanSelectionResponse>(`/quotes/${quoteId}/plans`, data);
@@ -865,5 +907,22 @@ export const createPlanSelection = async (quoteId: number, data: PlanSelectionRe
 
 export const updatePlanSelection = async (quoteId: number, planId: string, data: PlanSelectionRequest): Promise<PlanSelectionResponse> => {
   const response = await apiPatch<PlanSelectionResponse>(`/quotes/${quoteId}/plans/${planId}`, data);
+  return response;
+};
+
+// Required Documents API Functions
+export const getRequiredDocuments = async (insurerId: number, productId: number): Promise<RequiredDocumentsResponse> => {
+  const response = await apiGet<RequiredDocumentsResponse>(`/insurers/${insurerId}/products/${productId}/required-documents`);
+  return response;
+};
+
+// Document Submission API Functions
+export const createDocumentSubmission = async (quoteId: number, data: DocumentSubmissionRequest): Promise<DocumentSubmissionResponse> => {
+  const response = await apiPost<DocumentSubmissionResponse>(`/quotes/${quoteId}/docs-required`, data);
+  return response;
+};
+
+export const updateDocumentSubmission = async (quoteId: number, data: DocumentSubmissionRequest): Promise<DocumentSubmissionResponse> => {
+  const response = await apiPatch<DocumentSubmissionResponse>(`/quotes/${quoteId}/docs-required`, data);
   return response;
 };
