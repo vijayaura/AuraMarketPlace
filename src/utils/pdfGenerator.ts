@@ -10,67 +10,62 @@ export const generatePolicyPDF = (proposalBundle: ProposalBundleResponse): void 
   let yPosition = margin;
 
   // Helper function to add text with word wrapping
-  const addText = (text: string, x: number, y: number, maxWidth?: number, fontSize: number = 10) => {
+  const addText = (text: string, x: number, y: number, maxWidth?: number, fontSize: number = 8) => {
     const lines = doc.splitTextToSize(text, maxWidth || contentWidth);
     doc.setFontSize(fontSize);
     doc.text(lines, x, y);
-    return y + (lines.length * (fontSize * 0.4));
+    return y + (lines.length * (fontSize * 0.35));
   };
 
   // Helper function to add a section header
   const addSectionHeader = (title: string, y: number) => {
-    doc.setFontSize(14);
+    doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
-    const newY = addText(title, margin, y, contentWidth, 14);
+    const newY = addText(title, margin, y, contentWidth, 10);
     doc.setFont(undefined, 'normal');
-    return newY + 5;
+    return newY + 3;
   };
 
   // Helper function to add a table
   const addTable = (data: Array<{label: string, value: string}>, startY: number) => {
     let currentY = startY;
-    const col1Width = contentWidth * 0.4;
-    const col2Width = contentWidth * 0.6;
+    const col1Width = contentWidth * 0.35;
+    const col2Width = contentWidth * 0.65;
     
     data.forEach((row, index) => {
-      if (currentY > pageHeight - 30) {
-        doc.addPage();
-        currentY = margin;
-      }
-      
       // Add row background for better readability
       if (index % 2 === 0) {
         doc.setFillColor(245, 245, 245);
-        doc.rect(margin, currentY - 2, contentWidth, 8, 'F');
+        doc.rect(margin, currentY - 1, contentWidth, 5, 'F');
       }
       
       // Label
-      doc.setFontSize(10);
+      doc.setFontSize(7);
       doc.setFont(undefined, 'bold');
-      doc.text(row.label, margin + 2, currentY + 5);
+      doc.text(row.label, margin + 1, currentY + 3);
       
       // Value
       doc.setFont(undefined, 'normal');
       const valueLines = doc.splitTextToSize(row.value, col2Width);
-      doc.text(valueLines, margin + col1Width, currentY + 5);
+      doc.text(valueLines, margin + col1Width, currentY + 3);
       
-      currentY += Math.max(8, valueLines.length * 4) + 2;
+      currentY += Math.max(5, valueLines.length * 2.5) + 1;
     });
     
-    return currentY + 5;
+    return currentY + 2;
   };
 
   // Header
   doc.setFillColor(41, 128, 185);
-  doc.rect(0, 0, pageWidth, 30, 'F');
+  doc.rect(0, 0, pageWidth, 20, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
+  doc.setFontSize(14);
   doc.setFont(undefined, 'bold');
-  doc.text('INSURANCE POLICY', pageWidth / 2, 20, { align: 'center' });
+  doc.text('INSURANCE POLICY', pageWidth / 2, 13, { align: 'center' });
   
   // Reset text color
   doc.setTextColor(0, 0, 0);
-  yPosition = 40;
+  yPosition = 25;
 
   // Policy Details Section
   yPosition = addSectionHeader('POLICY DETAILS', yPosition);
@@ -224,22 +219,42 @@ export const generatePolicyPDF = (proposalBundle: ProposalBundleResponse): void 
     yPosition = addTable(planData, yPosition);
   }
 
-  // Required Documents Section
-  if (Object.keys(proposalBundle.required_documents).length > 0) {
-    yPosition = addSectionHeader('REQUIRED DOCUMENTS', yPosition);
-    const documentData = Object.entries(proposalBundle.required_documents).map(([key, doc]) => ({
-      label: doc.label,
-      value: 'Uploaded ✓'
-    }));
-    yPosition = addTable(documentData, yPosition);
+  // Clause Wordings Section
+  yPosition = addSectionHeader('CLAUSE WORDINGS', yPosition);
+  
+  // Add TPL Limit wording
+  if (proposalBundle.plans[0]?.extensions.tpl_limit) {
+    const tplWording = [
+      { label: 'Third Party Liability', value: proposalBundle.plans[0].extensions.tpl_limit.description }
+    ];
+    yPosition = addTable(tplWording, yPosition);
   }
+  
+  // Add selected extensions wordings
+  if (proposalBundle.plans[0]?.extensions.selected_extensions) {
+    const extensionWordings = Object.entries(proposalBundle.plans[0].extensions.selected_extensions).map(([key, extension]) => ({
+      label: extension.code,
+      value: `${extension.label}: ${extension.description}`
+    }));
+    yPosition = addTable(extensionWordings, yPosition);
+  }
+  
+  // Add general policy wordings
+  const generalWordings = [
+    { label: 'Coverage Period', value: `From ${new Date(proposalBundle.project.start_date).toLocaleDateString()} to ${new Date(proposalBundle.project.completion_date).toLocaleDateString()}` },
+    { label: 'Maintenance Period', value: `${proposalBundle.project.maintenance_period_months} months from completion` },
+    { label: 'Deductible', value: `AED ${proposalBundle.plans[0]?.extensions.selected_plan.deductible?.toLocaleString() || 'N/A'} per claim` },
+    { label: 'Cross Liability', value: proposalBundle.cover_requirements.cross_liability_cover === 'yes' ? 'Covered' : 'Not Covered' },
+    { label: 'Policy Limits', value: `Maximum coverage: AED ${proposalBundle.plans[0]?.extensions.selected_plan.coverage_amount?.toLocaleString() || 'N/A'}` }
+  ];
+  yPosition = addTable(generalWordings, yPosition);
 
   // Footer
-  const footerY = pageHeight - 20;
-  doc.setFontSize(8);
+  const footerY = pageHeight - 10;
+  doc.setFontSize(6);
   doc.setTextColor(128, 128, 128);
   doc.text('Generated on ' + new Date().toLocaleString(), margin, footerY);
-  doc.text('Page ' + doc.getCurrentPageInfo().pageNumber, pageWidth - margin - 20, footerY);
+  doc.text('Page ' + doc.getCurrentPageInfo().pageNumber, pageWidth - margin - 15, footerY);
 
   // Save the PDF
   const fileName = `Policy_${proposalBundle.project.project_id}_${proposalBundle.quote_meta.quote_id}.pdf`;
