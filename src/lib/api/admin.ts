@@ -91,9 +91,6 @@ export async function getBrokerDashboardPolicies(): Promise<BrokerDashboardPolic
 }
 
 // Admin Dashboard APIs
-export async function getAdminDashboardQuotes(): Promise<AdminDashboardQuotesResponse> {
-  return apiGet<AdminDashboardQuotesResponse>('/admin/dashboard/quotes');
-}
 
 export async function getAdminDashboardPolicies(): Promise<BrokerDashboardPoliciesResponse> {
   return apiGet<BrokerDashboardPoliciesResponse>('/admin/dashboard/policies');
