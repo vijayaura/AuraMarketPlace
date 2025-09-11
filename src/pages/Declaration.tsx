@@ -42,6 +42,11 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     handleSubmitDocuments
   }), []);
 
+  // Debug: Log when component mounts and ref is set
+  useEffect(() => {
+    console.log('🔍 Declaration component mounted, ref available:', !!ref);
+  }, [ref]);
+
   // Get insurer and product IDs from localStorage or URL params
   const getInsurerAndProductIds = () => {
     // Try to get from localStorage first
@@ -344,6 +349,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
 
   // Handle document submission - called by parent component's Next button
   const handleSubmitDocuments = async (): Promise<boolean> => {
+    console.log('🔍 handleSubmitDocuments called in Declaration component');
     try {
       setIsSubmitting(true);
       onSubmissionStateChange?.(true);

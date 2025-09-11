@@ -2485,13 +2485,23 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       } else if (currentStep === 7) {
                         // Declaration step - submit documents first, then navigate to success page
+                        console.log('🔍 Declaration step - Next button clicked');
+                        console.log('🔍 declarationRef.current:', declarationRef.current);
+                        
                         if (declarationRef.current && declarationRef.current.handleSubmitDocuments) {
-                          const success = await declarationRef.current.handleSubmitDocuments();
-                          if (success) {
-                            markStepCompleted('policy_required_documents');
-                            navigate('/customer/success');
+                          console.log('🔍 Calling handleSubmitDocuments...');
+                          try {
+                            const success = await declarationRef.current.handleSubmitDocuments();
+                            console.log('🔍 handleSubmitDocuments result:', success);
+                            if (success) {
+                              markStepCompleted('policy_required_documents');
+                              navigate('/customer/success');
+                            }
+                          } catch (error) {
+                            console.error('🔍 Error calling handleSubmitDocuments:', error);
                           }
                         } else {
+                          console.log('🔍 Ref not available, using fallback');
                           // Fallback if ref is not available
                           markStepCompleted('policy_required_documents');
                           navigate('/customer/success');
@@ -3721,6 +3731,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
               <TabsContent value="declaration">
                 <Declaration ref={declarationRef} onSubmissionStateChange={setIsSubmittingDocuments} />
+                {/* Debug info */}
+                {currentStep === 7 && (
+                  <div className="mt-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
+                    Debug: Current step is {currentStep}, declarationRef.current: {declarationRef.current ? 'Available' : 'Not available'}
+                  </div>
+                )}
               </TabsContent>
 
             </Tabs>
