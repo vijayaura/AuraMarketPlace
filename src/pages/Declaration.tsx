@@ -376,6 +376,9 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
   // Handle document submission - called by parent component's Next button
   const handleSubmitDocuments = async (): Promise<boolean> => {
     console.log('🔍 handleSubmitDocuments called in Declaration component');
+    console.log('🔍 Current documents state:', documents);
+    console.log('🔍 Documents with uploads:', documents.filter(d => d.uploadedFile && d.status === 'uploaded'));
+    
     try {
       setIsSubmitting(true);
       onSubmissionStateChange?.(true);
@@ -395,7 +398,9 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       const policyRequiredDocuments = localStorage.getItem('policy_required_documents') === 'true';
       
       // Build submission payload
+      console.log('🔧 About to call buildDocumentSubmissionPayload...');
       const payload = buildDocumentSubmissionPayload();
+      console.log('🔧 buildDocumentSubmissionPayload returned:', payload);
       
       console.log('📤 Submitting documents:', { quoteId: storedQuoteId, isUpdate: policyRequiredDocuments, payload });
       console.log('📤 Payload structure check:', JSON.stringify(payload, null, 2));
