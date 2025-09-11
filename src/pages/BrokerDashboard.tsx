@@ -652,48 +652,51 @@ export default function BrokerDashboard() {
                 )}
                 
                 {/* Pagination for Quotes */}
-                {totalQuotePages > 1 && (
-                  <div className="px-6 py-4 border-t">
-                    <Pagination>
-                      <PaginationContent>
-                        <PaginationItem>
-                          <PaginationPrevious 
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              if (currentQuotePage > 1) setCurrentQuotePage(currentQuotePage - 1);
-                            }}
-                            className={currentQuotePage === 1 ? "pointer-events-none opacity-50" : ""}
-                          />
-                        </PaginationItem>
-                        {[...Array(totalQuotePages)].map((_, i) => (
-                          <PaginationItem key={i + 1}>
-                            <PaginationLink
-                              href="#"
-                              isActive={currentQuotePage === i + 1}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setCurrentQuotePage(i + 1);
-                              }}
-                            >
-                              {i + 1}
-                            </PaginationLink>
-                          </PaginationItem>
-                        ))}
-                        <PaginationItem>
-                          <PaginationNext 
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              if (currentQuotePage < totalQuotePages) setCurrentQuotePage(currentQuotePage + 1);
-                            }}
-                            className={currentQuotePage === totalQuotePages ? "pointer-events-none opacity-50" : ""}
-                          />
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
+                <div className="px-6 py-4 border-t">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {currentQuotes.length} of {filteredQuotes.length} quotes (Page {currentQuotePage} of {totalQuotePages})
+                    </div>
                   </div>
-                )}
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (currentQuotePage > 1) setCurrentQuotePage(currentQuotePage - 1);
+                          }}
+                          className={currentQuotePage === 1 ? "pointer-events-none opacity-50" : ""}
+                        />
+                      </PaginationItem>
+                      {[...Array(totalQuotePages)].map((_, i) => (
+                        <PaginationItem key={i + 1}>
+                          <PaginationLink
+                            href="#"
+                            isActive={currentQuotePage === i + 1}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentQuotePage(i + 1);
+                            }}
+                          >
+                            {i + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+                      <PaginationItem>
+                        <PaginationNext 
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (currentQuotePage < totalQuotePages) setCurrentQuotePage(currentQuotePage + 1);
+                          }}
+                          className={currentQuotePage === totalQuotePages ? "pointer-events-none opacity-50" : ""}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -793,6 +796,11 @@ export default function BrokerDashboard() {
                 
                 {/* Pagination for Policies */}
                 <div className="px-6 py-4 border-t">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {currentPolicies.length} of {filteredPolicies.length} policies (Page {currentPolicyPage} of {totalPolicyPages})
+                    </div>
+                  </div>
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
