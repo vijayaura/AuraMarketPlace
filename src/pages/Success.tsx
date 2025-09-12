@@ -142,212 +142,301 @@ const Success = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-blue-50">
       <Header />
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Success Header */}
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <CheckCircle className="h-16 w-16 text-green-500" />
+      <div className="container mx-auto px-4 py-6">
+        <div className="max-w-5xl mx-auto">
+          {/* Success Header - Prominent */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+              <CheckCircle className="h-12 w-12 text-green-600" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Policy Created Successfully!</h1>
-            <p className="text-muted-foreground">
-              Your insurance policy has been created and is now active.
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">Policy Created Successfully!</h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Your insurance policy has been created.
             </p>
           </div>
 
-          {/* Policy Details */}
+          {/* Vertical Summary List */}
           {proposalBundle && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Policy Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Quote ID</label>
-                    <p className="text-lg font-semibold">{proposalBundle.quote_meta.quote_id}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Status</label>
-                    <div className="mt-1">
-                      <Badge variant="default" className="bg-green-100 text-green-800">
-                        {proposalBundle.quote_meta.status || 'Active'}
-                      </Badge>
+            <Card className="bg-white shadow-lg border-0 mb-8">
+              <CardContent className="p-6">
+                <div className="space-y-6">
+                  {/* Policy Information */}
+                  <div className="border-b border-gray-100 pb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Policy Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Policy ID</span>
+                        <p className="text-sm font-medium">{proposalBundle.quote_meta.quote_id}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Insurer</span>
+                        <p className="text-sm font-medium">{proposalBundle.plans[0]?.insurer_name || 'N/A'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Premium Amount</span>
+                        <p className="text-sm font-semibold text-green-600">
+                          AED {proposalBundle.plans[0]?.premium_amount?.toLocaleString() || 'N/A'}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Sum Insured</span>
+                        <p className="text-sm font-semibold">
+                          AED {parseFloat(proposalBundle.project.sum_insured).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Project Information */}
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Insurer</label>
-                    <p className="text-lg font-semibold">{proposalBundle.plans[0]?.insurer_name || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Project Name</label>
-                    <p className="text-lg font-semibold">{proposalBundle.project.project_name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Premium Amount</label>
-                    <p className="text-lg font-semibold flex items-center gap-1">
-                      <DollarSign className="h-4 w-4" />
-                      AED {proposalBundle.plans[0]?.premium_amount?.toLocaleString() || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Sum Insured</label>
-                    <p className="text-lg font-semibold flex items-center gap-1">
-                      <DollarSign className="h-4 w-4" />
-                      AED {parseFloat(proposalBundle.project.sum_insured).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Start Date</label>
-                    <p className="text-lg font-semibold flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(proposalBundle.project.start_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Completion Date</label>
-                    <p className="text-lg font-semibold flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(proposalBundle.project.completion_date).toLocaleDateString()}
-                    </p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Details</h3>
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Project Name</span>
+                        <p className="text-sm font-medium">{proposalBundle.project.project_name}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Client Name</span>
+                        <p className="text-sm font-medium">{proposalBundle.project.client_name}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Location</span>
+                        <p className="text-sm font-medium">{proposalBundle.project.address}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Project Type</span>
+                        <p className="text-sm font-medium capitalize">{proposalBundle.project.project_type}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Construction Period</span>
+                        <p className="text-sm font-medium">{proposalBundle.project.construction_period_months} months</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Construction Type</span>
+                        <p className="text-sm font-medium capitalize">{proposalBundle.project.construction_type}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-500">Maintenance Period</span>
+                        <p className="text-sm font-medium">{proposalBundle.project.maintenance_period_months} months</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Project Details */}
-          {proposalBundle && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  Project Details
+          {/* Extensions Section */}
+          {proposalBundle && proposalBundle.plans[0]?.extensions && (
+            <Card className="bg-white shadow-lg border-0 mb-8">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-gray-900">
+                  Extensions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Client Name</label>
-                    <p className="text-lg font-semibold">{proposalBundle.project.client_name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Project Type</label>
-                    <p className="text-lg font-semibold capitalize">{proposalBundle.project.project_type}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Construction Type</label>
-                    <p className="text-lg font-semibold capitalize">{proposalBundle.project.construction_type}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Location</label>
-                    <p className="text-lg font-semibold">{proposalBundle.project.address}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Construction Period</label>
-                    <p className="text-lg font-semibold">{proposalBundle.project.construction_period_months} months</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Maintenance Period</label>
-                    <p className="text-lg font-semibold">{proposalBundle.project.maintenance_period_months} months</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Submitted Documents */}
-          {proposalBundle && Object.keys(proposalBundle.required_documents).length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Submitted Documents
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {Object.entries(proposalBundle.required_documents).map(([key, doc]) => (
-                    <div key={key} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{doc.label}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Document uploaded successfully
-                          </p>
+              <CardContent className="pt-0">
+                <div className="space-y-4">
+                  {/* TPL Limit - Show all */}
+                  {proposalBundle.plans[0].extensions.tpl_limit && (
+                    <div className="border-b border-gray-100 pb-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Third Party Liability Limit</h4>
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-900">
+                            {proposalBundle.plans[0].extensions.tpl_limit.label}
+                          </span>
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownloadDocument(doc.url, doc.label)}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Selected Extensions - Show all */}
+                  {proposalBundle.plans[0].extensions.selected_extensions && 
+                   Object.keys(proposalBundle.plans[0].extensions.selected_extensions).length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Extensions</h4>
+                      <div className="space-y-2">
+                        {Object.entries(proposalBundle.plans[0].extensions.selected_extensions).map(([key, extension]) => (
+                          <div key={key} className="p-3 bg-green-50 rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-900">
+                                {extension.label}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                Code: {extension.code}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Policy Documents */}
-          {policyWordings.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  Policy Documents
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {policyWordings.map((wording) => (
-                    <div key={wording.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{wording.document_title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Created on {new Date(wording.created_at).toLocaleDateString()}
-                          </p>
+          {/* Documents Section - Three Separate Cards */}
+          <div className="space-y-6 mb-8">
+            {/* Policy Documents - Only Active Items */}
+            {policyWordings.filter(wording => wording.is_active).length > 0 && (
+              <Card className="bg-white shadow-lg border-0">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    Policy Documents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    {policyWordings
+                      .filter(wording => wording.is_active)
+                      .map((wording) => (
+                        <div key={wording.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <span className="text-sm font-medium block">{wording.document_title}</span>
+                              <span className="text-xs text-gray-500">
+                                Created on {new Date(wording.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {wording.document_url && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadDocument(wording.document_url!, wording.document_title)}
+                                className="h-8 px-3 text-xs"
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Download
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={wording.is_active ? "default" : "secondary"}>
-                          {wording.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                        {wording.document_url && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownloadDocument(wording.document_url!, wording.document_title)}
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Action Buttons */}
-          <div className="flex justify-center gap-4">
+            {/* Project Documents */}
+            {proposalBundle && Object.keys(proposalBundle.required_documents).length > 0 && (
+              <Card className="bg-white shadow-lg border-0">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    Project Documents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    {Object.entries(proposalBundle.required_documents).map(([key, doc]) => (
+                      <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-sm font-medium">{doc.label}</span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadDocument(doc.url, doc.label)}
+                          className="h-8 px-3 text-xs"
+                        >
+                          <Download className="h-3 w-3 mr-1" />
+                          Download
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Declaration Documents */}
+            {proposalBundle && proposalBundle.required_documents_for_policy_issue && (
+              <Card className="bg-white shadow-lg border-0">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    Declaration Documents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    {Array.isArray(proposalBundle.required_documents_for_policy_issue) ? (
+                      proposalBundle.required_documents_for_policy_issue.map((doc: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                            <span className="text-sm font-medium">{doc.label || doc.name || `Document ${index + 1}`}</span>
+                          </div>
+                          {doc.url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadDocument(doc.url, doc.label || doc.name)}
+                              className="h-8 px-3 text-xs"
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                          )}
+                        </div>
+                      ))
+                    ) : typeof proposalBundle.required_documents_for_policy_issue === 'object' ? (
+                      Object.entries(proposalBundle.required_documents_for_policy_issue).map(([key, doc]: [string, any]) => (
+                        <div key={key} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <span className="text-sm font-medium">{doc.label || key}</span>
+                              {doc.uploaded_at && (
+                                <span className="text-xs text-gray-500 block">
+                                  Uploaded on {new Date(doc.uploaded_at).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {doc.url ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadDocument(doc.url, doc.label || key)}
+                              className="h-8 px-3 text-xs"
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-gray-400 px-2 py-1">Not uploaded</span>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <span className="text-sm text-gray-600">
+                          {typeof proposalBundle.required_documents_for_policy_issue === 'string' 
+                            ? proposalBundle.required_documents_for_policy_issue 
+                            : JSON.stringify(proposalBundle.required_documents_for_policy_issue)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+          </div>
+
+          {/* Action Buttons - Centered */}
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button
               onClick={handlePrintPolicy}
               variant="outline"
               size="lg"
+              className="bg-white hover:bg-gray-50 border-gray-300"
             >
               <FileText className="h-4 w-4 mr-2" />
               Print Policy
@@ -355,6 +444,7 @@ const Success = () => {
             <Button
               onClick={() => window.location.href = '/customer/proposal?new=true'}
               size="lg"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               Create New Policy
             </Button>

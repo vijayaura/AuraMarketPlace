@@ -31,6 +31,7 @@ const CEWCustomization = () => {
   const [premiumAdjustment, setPremiumAdjustment] = useState(0);
   const [tplAdjustment, setTPLAdjustment] = useState(0);
   const [cewAdjustment, setCEWAdjustment] = useState(0);
+  const [mandatoryCewAdjustment, setMandatoryCewAdjustment] = useState(0);
   const [selectedCEWItems, setSelectedCEWItems] = useState<any[]>([]);
   const [showCEWDialog, setShowCEWDialog] = useState(false);
   const [brokerCommission, setBrokerCommission] = useState(5.0);
@@ -49,6 +50,10 @@ const CEWCustomization = () => {
 
   const handleCEWAdjustmentChange = (adjustment: number) => {
     setCEWAdjustment(adjustment);
+  };
+
+  const handleMandatoryCEWAdjustmentChange = (adjustment: number) => {
+    setMandatoryCewAdjustment(adjustment);
   };
 
   const handleCommissionChange = (commission: number) => {
@@ -186,10 +191,32 @@ const CEWCustomization = () => {
                     </>
                   )}
                   
+                  {mandatoryCewAdjustment !== 0 && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span>Mandatory CEW Adjustments</span>
+                        <span className={`font-medium ${
+                          mandatoryCewAdjustment > 0 ? "text-warning" : "text-success"
+                        }`}>
+                          {mandatoryCewAdjustment > 0 ? "+" : ""}{mandatoryCewAdjustment.toFixed(1)}%
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span>Mandatory CEW Adjustment Amount</span>
+                        <span className={`font-medium ${
+                          mandatoryCewAdjustment > 0 ? "text-warning" : "text-success"
+                        }`}>
+                          {mandatoryCewAdjustment > 0 ? "+" : ""}{formatCurrency((selectedQuoteData.basePremium * mandatoryCewAdjustment) / 100)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  
                   {cewAdjustment !== 0 && (
                     <>
                       <div className="flex justify-between items-center">
-                        <span>CEW Adjustments</span>
+                        <span>Optional CEW Adjustments</span>
                         <span className={`font-medium ${
                           cewAdjustment > 0 ? "text-warning" : "text-success"
                         }`}>
@@ -198,7 +225,7 @@ const CEWCustomization = () => {
                       </div>
                       
                       <div className="flex justify-between items-center">
-                        <span>CEW Adjustment Amount</span>
+                        <span>Optional CEW Adjustment Amount</span>
                         <span className={`font-medium ${
                           cewAdjustment > 0 ? "text-warning" : "text-success"
                         }`}>
@@ -230,33 +257,81 @@ const CEWCustomization = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {selectedCEWItems.filter(item => item.isSelected).map(item => (
-                      <div key={item.id} className="flex justify-between items-start p-3 bg-accent/10 rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="font-medium">{item.name}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {item.code}
-                            </Badge>
-                          </div>
-                          {item.selectedOptionId && (
-                            <p className="text-sm text-muted-foreground">
-                              {item.options.find((opt: any) => opt.id === item.selectedOptionId)?.label}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className={`font-medium ${
-                            item.impact.premiumAmount > 0 ? "text-warning" : 
-                            item.impact.premiumAmount < 0 ? "text-success" : "text-muted-foreground"
-                          }`}>
-                            {item.impact.premiumAmount > 0 ? "+" : ""}
-                            {item.impact.premiumAmount}%
-                          </div>
+                  <div className="space-y-6">
+                    {/* Mandatory Extensions */}
+                    {selectedCEWItems.filter(item => item.isSelected && item.isMandatory).length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                          Mandatory Extensions
+                        </h4>
+                        <div className="space-y-2">
+                          {selectedCEWItems.filter(item => item.isSelected && item.isMandatory).map(item => (
+                            <div key={item.id} className="flex justify-between items-start p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                  <span className="font-medium">{item.name}</span>
+                                  <Badge variant="destructive" className="text-xs">Mandatory</Badge>
+                                  <Badge variant="outline" className="text-xs">
+                                    {item.code}
+                                  </Badge>
+                                </div>
+                                {item.selectedOptionId && (
+                                  <p className="text-sm text-muted-foreground">
+                                    {item.options.find((opt: any) => opt.id === item.selectedOptionId)?.label}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className={`font-medium ${
+                                  item.impact.premiumAmount > 0 ? "text-warning" : 
+                                  item.impact.premiumAmount < 0 ? "text-success" : "text-muted-foreground"
+                                }`}>
+                                  {item.impact.premiumAmount > 0 ? "+" : ""}
+                                  {item.impact.premiumAmount}%
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
+                    )}
+                    
+                    {/* Optional Extensions */}
+                    {selectedCEWItems.filter(item => item.isSelected && !item.isMandatory).length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                          Optional Extensions
+                        </h4>
+                        <div className="space-y-2">
+                          {selectedCEWItems.filter(item => item.isSelected && !item.isMandatory).map(item => (
+                            <div key={item.id} className="flex justify-between items-start p-3 bg-accent/10 rounded-lg">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                  <span className="font-medium">{item.name}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {item.code}
+                                  </Badge>
+                                </div>
+                                {item.selectedOptionId && (
+                                  <p className="text-sm text-muted-foreground">
+                                    {item.options.find((opt: any) => opt.id === item.selectedOptionId)?.label}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className={`font-medium ${
+                                  item.impact.premiumAmount > 0 ? "text-warning" : 
+                                  item.impact.premiumAmount < 0 ? "text-success" : "text-muted-foreground"
+                                }`}>
+                                  {item.impact.premiumAmount > 0 ? "+" : ""}
+                                  {item.impact.premiumAmount}%
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -281,6 +356,7 @@ const CEWCustomization = () => {
                           onPremiumChange={handlePremiumChange}
                           onTPLAdjustmentChange={handleTPLAdjustmentChange}
                           onCEWAdjustmentChange={handleCEWAdjustmentChange}
+                          onMandatoryCEWAdjustmentChange={handleMandatoryCEWAdjustmentChange}
                           onCommissionChange={handleCommissionChange}
                         />
                     

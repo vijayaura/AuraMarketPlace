@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, Info, Percent } from "lucide-react";
+import { CheckCircle2, Info, Percent, Plus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,7 @@ interface CEWSelectionProps {
   onPremiumChange?: (totalAdjustment: number) => void;
   onTPLAdjustmentChange?: (tplAdjustment: number) => void;
   onCEWAdjustmentChange?: (cewAdjustment: number) => void;
+  onMandatoryCEWAdjustmentChange?: (mandatoryAdjustment: number) => void;
   onTPLSelectionChange?: (tplOption: any) => void;
   productConfigBundle?: any;
   isLoadingProductConfig?: boolean;
@@ -58,6 +59,7 @@ export const CEWSelection = ({
   onPremiumChange, 
   onTPLAdjustmentChange, 
   onCEWAdjustmentChange, 
+  onMandatoryCEWAdjustmentChange,
   onTPLSelectionChange, 
   productConfigBundle, 
   isLoadingProductConfig,
@@ -118,12 +120,12 @@ export const CEWSelection = ({
       console.log('🔧 Selected mandatory items:', selectedMandatoryItems.length);
       console.log('🔧 Mandatory items details:', mandatoryItems.map(item => ({ name: item.name, isSelected: item.isSelected, isMandatory: item.isMandatory })));
       
-      // Verify NO items are selected
+      // Verify mandatory items are auto-selected
       const allSelectedItems = transformedItems.filter(item => item.isSelected);
-      console.log('🔧 ALL selected items (should be 0):', allSelectedItems.length);
+      console.log('🔧 ALL selected items (mandatory auto-selected):', allSelectedItems.length);
       console.log('🔧 ALL selected items details:', allSelectedItems.map(item => ({ name: item.name, isSelected: item.isSelected, isMandatory: item.isMandatory })));
       
-      // Don't auto-select mandatory items - let user select them
+      // Auto-select mandatory items
       setCEWItems(transformedItems);
       onSelectionChange?.(transformedItems);
       
@@ -222,35 +224,51 @@ export const CEWSelection = ({
       const selectedItems = cewItems.filter(item => item.isSelected);
       console.log('🔧 Selected CEW Items:', selectedItems);
       
-      // Calculate percentage and fixed adjustments separately
-      let percentageAdjustment = 0;
-      let fixedAdjustment = 0;
+      // Separate mandatory and optional items
+      const mandatoryItems = selectedItems.filter(item => item.isMandatory);
+      const optionalItems = selectedItems.filter(item => !item.isMandatory);
       
-      selectedItems.forEach(item => {
+      console.log('🔧 Mandatory items:', mandatoryItems.map(item => ({ name: item.name, isSelected: item.isSelected })));
+      console.log('🔧 Optional items:', optionalItems.map(item => ({ name: item.name, isSelected: item.isSelected })));
+      
+      // Calculate mandatory adjustments
+      let mandatoryPercentageAdjustment = 0;
+      let mandatoryFixedAdjustment = 0;
+      
+      mandatoryItems.forEach(item => {
         const impact = calculateItemPremiumImpact(item);
-        console.log(`🔧 Item ${item.name} (${item.code}): impact = ${impact.value} (${impact.type}), isSelected = ${item.isSelected}, isMandatory = ${item.isMandatory}`);
+        console.log(`🔧 Mandatory Item ${item.name} (${item.code}): impact = ${impact.value} (${impact.type})`);
         
         if (impact.type === 'percentage') {
-          percentageAdjustment += impact.value;
+          mandatoryPercentageAdjustment += impact.value;
         } else {
-          fixedAdjustment += impact.value;
+          mandatoryFixedAdjustment += impact.value;
         }
       });
       
-      // Check specifically for mandatory items
-      const mandatoryItems = cewItems.filter(item => item.isMandatory);
-      console.log('🔧 Mandatory items in calculation:', mandatoryItems.map(item => ({ 
-        name: item.name, 
-        isSelected: item.isSelected, 
-        isMandatory: item.isMandatory,
-        defaultValue: item.defaultValue
-      })));
+      // Calculate optional adjustments
+      let optionalPercentageAdjustment = 0;
+      let optionalFixedAdjustment = 0;
       
-      console.log('🔧 CEW Percentage Adjustment:', percentageAdjustment);
-      console.log('🔧 CEW Fixed Adjustment:', fixedAdjustment);
+      optionalItems.forEach(item => {
+        const impact = calculateItemPremiumImpact(item);
+        console.log(`🔧 Optional Item ${item.name} (${item.code}): impact = ${impact.value} (${impact.type})`);
+        
+        if (impact.type === 'percentage') {
+          optionalPercentageAdjustment += impact.value;
+        } else {
+          optionalFixedAdjustment += impact.value;
+        }
+      });
       
-      // Pass both adjustments to parent component
-      onCEWAdjustmentChange?.(percentageAdjustment, fixedAdjustment);
+      console.log('🔧 Mandatory CEW Percentage Adjustment:', mandatoryPercentageAdjustment);
+      console.log('🔧 Mandatory CEW Fixed Adjustment:', mandatoryFixedAdjustment);
+      console.log('🔧 Optional CEW Percentage Adjustment:', optionalPercentageAdjustment);
+      console.log('🔧 Optional CEW Fixed Adjustment:', optionalFixedAdjustment);
+      
+      // Pass adjustments to parent component
+      onMandatoryCEWAdjustmentChange?.(mandatoryPercentageAdjustment + mandatoryFixedAdjustment);
+      onCEWAdjustmentChange?.(optionalPercentageAdjustment, optionalFixedAdjustment);
     }
   }, [cewItems]);
 
@@ -267,7 +285,7 @@ export const CEWSelection = ({
     
     return enabledClauses.map((clause: any, index: number) => {
       const isMandatory = clause.meta?.show_type === 'MANDATORY';
-      const isSelected = false; // NEVER auto-select any items
+      const isSelected = isMandatory; // Auto-select mandatory items
       
       console.log(`🔧 transformProductConfigToCEWItems - ${clause.clause_code}: isMandatory=${isMandatory}, isSelected=${isSelected}`);
       
@@ -280,7 +298,7 @@ export const CEWSelection = ({
         category: clause.meta?.clause_type || 'Extension',
         description: clause.meta?.purpose_description || clause.meta?.clause_wording || 'No description available',
         isMandatory: isMandatory,
-        isSelected: isSelected, // Don't auto-select mandatory items - let user select them
+        isSelected: isSelected, // Auto-select mandatory items
         isPremium: false,
       options: clause.options?.map((option: any, optIndex: number) => ({
         id: optIndex + 1,
@@ -291,7 +309,7 @@ export const CEWSelection = ({
         value: option.value,
         recommended: optIndex === 0 // First option is recommended
       })) || [],
-      selectedOptionId: undefined, // Don't auto-select options for mandatory items
+      selectedOptionId: undefined, // Don't auto-select any options, only the card
       impact: {
         coverage: clause.meta?.clause_wording || 'Standard coverage',
         premium: clause.pricing_value > 0 ? 'increase' : clause.pricing_value < 0 ? 'decrease' : 'neutral',
@@ -370,30 +388,52 @@ export const CEWSelection = ({
 
 
   const toggleSelection = (itemId: number) => {
+    const item = cewItems.find(item => item.id === itemId);
+    
+    // Prevent unselecting mandatory items
+    if (item?.isMandatory && item.isSelected) {
+      console.log('🔒 Cannot unselect mandatory item:', item.name);
+      return;
+    }
+    
     const updatedItems = cewItems.map(item =>
       item.id === itemId ? { ...item, isSelected: !item.isSelected } : item
     );
     setCEWItems(updatedItems);
     onSelectionChange?.(updatedItems);
     
-    // Calculate total premium adjustment including TPL
-    const tplAdjustment = tplLimitOptions.find(opt => opt.id === selectedTPLLimit)?.premiumAdjustment || 0;
-    let cewPercentageAdjustment = 0;
-    let cewFixedAdjustment = 0;
+    // Calculate adjustments separately for mandatory and optional
+    const selectedItems = updatedItems.filter(item => item.isSelected);
+    const mandatoryItems = selectedItems.filter(item => item.isMandatory);
+    const optionalItems = selectedItems.filter(item => !item.isMandatory);
     
-    updatedItems.forEach(item => {
+    // Calculate mandatory adjustments
+    let mandatoryAdjustment = 0;
+    mandatoryItems.forEach(item => {
+      const impact = calculateItemPremiumImpact(item);
+      mandatoryAdjustment += impact.type === 'percentage' ? impact.value : impact.value;
+    });
+    
+    // Calculate optional adjustments
+    let optionalPercentageAdjustment = 0;
+    let optionalFixedAdjustment = 0;
+    optionalItems.forEach(item => {
       const impact = calculateItemPremiumImpact(item);
       if (impact.type === 'percentage') {
-        cewPercentageAdjustment += impact.value;
+        optionalPercentageAdjustment += impact.value;
       } else {
-        cewFixedAdjustment += impact.value;
+        optionalFixedAdjustment += impact.value;
       }
     });
     
+    // Calculate TPL adjustment
+    const tplAdjustment = tplLimitOptions.find(opt => opt.id === selectedTPLLimit)?.premiumAdjustment || 0;
+    
     // Call separate callbacks
     onTPLAdjustmentChange?.(tplAdjustment);
-    onCEWAdjustmentChange?.(cewPercentageAdjustment, cewFixedAdjustment);
-    onPremiumChange?.(tplAdjustment + cewPercentageAdjustment + cewFixedAdjustment);
+    onMandatoryCEWAdjustmentChange?.(mandatoryAdjustment);
+    onCEWAdjustmentChange?.(optionalPercentageAdjustment, optionalFixedAdjustment);
+    onPremiumChange?.(tplAdjustment + mandatoryAdjustment + optionalPercentageAdjustment + optionalFixedAdjustment);
   };
 
   const updateSelection = (itemId: number, optionId: number) => {
@@ -433,24 +473,38 @@ export const CEWSelection = ({
     setCEWItems(updatedItems);
     onSelectionChange?.(updatedItems);
     
-    // Recalculate premium adjustment including TPL
-    const tplAdjustment = tplLimitOptions.find(opt => opt.id === selectedTPLLimit)?.premiumAdjustment || 0;
-    let cewPercentageAdjustment = 0;
-    let cewFixedAdjustment = 0;
+    // Calculate adjustments separately for mandatory and optional
+    const selectedItems = updatedItems.filter(item => item.isSelected);
+    const mandatoryItems = selectedItems.filter(item => item.isMandatory);
+    const optionalItems = selectedItems.filter(item => !item.isMandatory);
     
-    updatedItems.forEach(item => {
+    // Calculate mandatory adjustments
+    let mandatoryAdjustment = 0;
+    mandatoryItems.forEach(item => {
+      const impact = calculateItemPremiumImpact(item);
+      mandatoryAdjustment += impact.type === 'percentage' ? impact.value : impact.value;
+    });
+    
+    // Calculate optional adjustments
+    let optionalPercentageAdjustment = 0;
+    let optionalFixedAdjustment = 0;
+    optionalItems.forEach(item => {
       const impact = calculateItemPremiumImpact(item);
       if (impact.type === 'percentage') {
-        cewPercentageAdjustment += impact.value;
+        optionalPercentageAdjustment += impact.value;
       } else {
-        cewFixedAdjustment += impact.value;
+        optionalFixedAdjustment += impact.value;
       }
     });
     
+    // Calculate TPL adjustment
+    const tplAdjustment = tplLimitOptions.find(opt => opt.id === selectedTPLLimit)?.premiumAdjustment || 0;
+    
     // Call separate callbacks
     onTPLAdjustmentChange?.(tplAdjustment);
-    onCEWAdjustmentChange?.(cewPercentageAdjustment, cewFixedAdjustment);
-    onPremiumChange?.(tplAdjustment + cewPercentageAdjustment + cewFixedAdjustment);
+    onMandatoryCEWAdjustmentChange?.(mandatoryAdjustment);
+    onCEWAdjustmentChange?.(optionalPercentageAdjustment, optionalFixedAdjustment);
+    onPremiumChange?.(tplAdjustment + mandatoryAdjustment + optionalPercentageAdjustment + optionalFixedAdjustment);
   };
 
   // Helper function to get potential impact only for selected items
@@ -478,7 +532,20 @@ export const CEWSelection = ({
   };
 
   const formatPotentialImpact = (item: CEWItem) => {
-    // Always show the base rate in the card display, regardless of selection status
+    // If an option is selected, show "Selected X%" instead of base rate
+    if (item.selectedOptionId) {
+      const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
+      if (selectedOption) {
+        if (selectedOption.type === "percentage") {
+          const sign = selectedOption.value > 0 ? "+" : "";
+          return `Selected ${sign}${selectedOption.value}%`;
+        } else {
+          return `Selected +AED ${selectedOption.value.toLocaleString()}`;
+        }
+      }
+    }
+    
+    // If no option selected, show the base rate
     const baseRate = item.defaultValue;
     
     if (baseRate === 0) {
@@ -544,6 +611,7 @@ export const CEWSelection = ({
     if (selectedTPLLimit === newTPLId) {
       setSelectedTPLLimit(0); // 0 means no selection
       onTPLAdjustmentChange?.(0);
+      onMandatoryCEWAdjustmentChange?.(0);
       onCEWAdjustmentChange?.(0);
       onPremiumChange?.(0);
       onTPLSelectionChange?.(null); // Clear TPL selection
@@ -555,24 +623,38 @@ export const CEWSelection = ({
     // Get the selected TPL option
     const selectedTPLOption = tplLimitOptions.find(opt => opt.id === newTPLId);
     
-    // Get separate adjustments
-    const tplAdjustment = selectedTPLOption?.premiumAdjustment || 0;
-    let cewPercentageAdjustment = 0;
-    let cewFixedAdjustment = 0;
+    // Calculate adjustments separately for mandatory and optional
+    const selectedItems = cewItems.filter(item => item.isSelected);
+    const mandatoryItems = selectedItems.filter(item => item.isMandatory);
+    const optionalItems = selectedItems.filter(item => !item.isMandatory);
     
-    cewItems.forEach(item => {
+    // Calculate mandatory adjustments
+    let mandatoryAdjustment = 0;
+    mandatoryItems.forEach(item => {
+      const impact = calculateItemPremiumImpact(item);
+      mandatoryAdjustment += impact.type === 'percentage' ? impact.value : impact.value;
+    });
+    
+    // Calculate optional adjustments
+    let optionalPercentageAdjustment = 0;
+    let optionalFixedAdjustment = 0;
+    optionalItems.forEach(item => {
       const impact = calculateItemPremiumImpact(item);
       if (impact.type === 'percentage') {
-        cewPercentageAdjustment += impact.value;
+        optionalPercentageAdjustment += impact.value;
       } else {
-        cewFixedAdjustment += impact.value;
+        optionalFixedAdjustment += impact.value;
       }
     });
     
+    // Get TPL adjustment
+    const tplAdjustment = selectedTPLOption?.premiumAdjustment || 0;
+    
     // Call separate callbacks
     onTPLAdjustmentChange?.(tplAdjustment);
-    onCEWAdjustmentChange?.(cewPercentageAdjustment, cewFixedAdjustment);
-    onPremiumChange?.(tplAdjustment + cewPercentageAdjustment + cewFixedAdjustment);
+    onMandatoryCEWAdjustmentChange?.(mandatoryAdjustment);
+    onCEWAdjustmentChange?.(optionalPercentageAdjustment, optionalFixedAdjustment);
+    onPremiumChange?.(tplAdjustment + mandatoryAdjustment + optionalPercentageAdjustment + optionalFixedAdjustment);
     onTPLSelectionChange?.(selectedTPLOption); // Pass selected TPL option
   };
 
@@ -688,15 +770,18 @@ export const CEWSelection = ({
                   type="checkbox"
                   checked={item.isSelected}
                   onChange={() => toggleSelection(item.id)}
+                  disabled={item.isMandatory && item.isSelected}
                   className="sr-only"
                   id={`checkbox-${item.id}`}
                 />
                 <label
                   htmlFor={`checkbox-${item.id}`}
-                  className={`w-4 h-4 rounded border-2 cursor-pointer transition-all duration-200 flex items-center justify-center ${
-                    item.isSelected
-                      ? "bg-primary border-primary text-white"
-                      : "bg-background border-gray-300 hover:border-primary/50 hover:bg-primary/5"
+                  className={`w-4 h-4 rounded border-2 transition-all duration-200 flex items-center justify-center ${
+                    item.isMandatory && item.isSelected
+                      ? "bg-primary border-primary text-white cursor-not-allowed opacity-75"
+                      : item.isSelected
+                      ? "bg-primary border-primary text-white cursor-pointer"
+                      : "bg-background border-gray-300 hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
                   }`}
                 >
                   {item.isSelected && (
@@ -730,89 +815,16 @@ export const CEWSelection = ({
                       }`}>
                         {formatPotentialImpact(item)}
                       </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleClauseExpansion(item.id)}
-                        className="text-xs h-6 px-2"
-                      >
-                        {expandedClauses.has(item.id) ? 'Hide options' : 'View options'}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Description with two-line truncation and view more */}
-                  <div className="mt-2">
-                    <div 
-                      className={`text-sm text-muted-foreground ${
-                        !expandedDescriptions.has(item.id) ? 'overflow-hidden' : ''
-                      }`}
-                      style={{
-                        display: !expandedDescriptions.has(item.id) ? '-webkit-box' : 'block',
-                        WebkitLineClamp: !expandedDescriptions.has(item.id) ? 2 : 'unset',
-                        WebkitBoxOrient: 'vertical'
-                      }}
-                    >
-                      {!expandedDescriptions.has(item.id) && item.description.length > 100 ? (
-                        <>
-                          {item.description.substring(0, 150)}...
-                          <button
-                            onClick={() => toggleDescriptionExpansion(item.id)}
-                            className="text-xs text-primary hover:text-primary/80 ml-1 font-medium"
-                          >
-                            View more
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          {item.description}
-                          {expandedDescriptions.has(item.id) && (
-                            <button
-                              onClick={() => toggleDescriptionExpansion(item.id)}
-                              className="text-xs text-primary hover:text-primary/80 ml-1 font-medium"
-                            >
-                              View less
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Clause wording with two-line truncation and view more */}
-                  <div className="mt-2">
-                    <div 
-                      className={`text-sm text-muted-foreground ${
-                        !expandedWording.has(item.id) ? 'overflow-hidden' : ''
-                      }`}
-                      style={{
-                        display: !expandedWording.has(item.id) ? '-webkit-box' : 'block',
-                        WebkitLineClamp: !expandedWording.has(item.id) ? 2 : 'unset',
-                        WebkitBoxOrient: 'vertical'
-                      }}
-                    >
-                      {!expandedWording.has(item.id) && item.impact.coverage.length > 100 ? (
-                        <>
-                          {item.impact.coverage.substring(0, 150)}...
-                          <button
-                            onClick={() => toggleWordingExpansion(item.id)}
-                            className="text-xs text-primary hover:text-primary/80 ml-1 font-medium"
-                          >
-                            View more
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          {item.impact.coverage}
-                          {expandedWording.has(item.id) && (
-                            <button
-                              onClick={() => toggleWordingExpansion(item.id)}
-                              className="text-xs text-primary hover:text-primary/80 ml-1 font-medium"
-                            >
-                              View less
-                            </button>
-                          )}
-                        </>
+                      {item.options.length > 0 && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => toggleClauseExpansion(item.id)}
+                          className="text-xs h-6 px-2 bg-green-600 hover:bg-green-700 text-white border-0"
+                        >
+                          <Plus className="w-3 h-3" />
+                          {expandedClauses.has(item.id) ? 'Hide' : 'Add'}
+                        </Button>
                       )}
                     </div>
                   </div>

@@ -192,23 +192,131 @@ const QuotesComparison = ({
       return factor;
     });
     
+    // Add mandatory clause pricing to factors
+    let mandatoryClauseFactors: number[] = [];
+    let mandatoryClauseFixedAmounts: number = 0;
+    
+    if (insurerPricingConfig?.clause_pricing_config) {
+      console.log('💰 Processing mandatory clause pricing config:', insurerPricingConfig.clause_pricing_config);
+      console.log('💰 Clause pricing config length:', insurerPricingConfig.clause_pricing_config.length);
+      console.log('💰 Selected CEW items for pricing:', selectedCEWItems);
+      
+      insurerPricingConfig.clause_pricing_config.forEach((clause: any, index: number) => {
+        console.log(`💰 Clause ${index}:`, {
+          clause_code: clause.clause_code,
+          is_mandatory: clause.is_mandatory,
+          meta_show_type: clause.meta?.show_type,
+          pricing_type: clause.pricing_type,
+          pricing_value: clause.pricing_value,
+          is_mandatory_type: typeof clause.is_mandatory,
+          is_mandatory_strict: clause.is_mandatory === 1,
+          is_mandatory_loose: clause.is_mandatory == 1,
+          meta_mandatory: clause.meta?.show_type === 'MANDATORY'
+        });
+        
+        if (clause.meta?.show_type === 'MANDATORY') {
+          console.log(`💰 Processing mandatory clause: ${clause.clause_code}`, clause);
+          
+          // Check if this clause has selected options in CEWSelection
+          const selectedCEWItem = selectedCEWItems?.find(item => item.code === clause.clause_code);
+          
+          if (selectedCEWItem && selectedCEWItem.isSelected) {
+            // Use selected option pricing if available
+            if (selectedCEWItem.selectedOptionId) {
+              const selectedOption = selectedCEWItem.options?.find(opt => opt.id === selectedCEWItem.selectedOptionId);
+              if (selectedOption) {
+                console.log(`💰 Using selected option pricing for ${clause.clause_code}:`, selectedOption);
+                
+                if (selectedOption.type === 'percentage') {
+                  const clauseFactor = 1 + (selectedOption.value / 100);
+                  mandatoryClauseFactors.push(clauseFactor);
+                  console.log(`💰 Mandatory clause ${clause.clause_code} selected option percentage factor: 1 + ${selectedOption.value}% = ${clauseFactor}`);
+                } else {
+                  mandatoryClauseFixedAmounts += selectedOption.value;
+                  console.log(`💰 Mandatory clause ${clause.clause_code} selected option fixed amount: ${selectedOption.value}`);
+                }
+              } else {
+                console.log(`💰 Selected option not found for ${clause.clause_code}, using base pricing`);
+                // Fallback to base pricing
+                if (clause.pricing_type === 'PERCENTAGE') {
+                  const clauseFactor = 1 + (parseFloat(clause.pricing_value) / 100);
+                  mandatoryClauseFactors.push(clauseFactor);
+                  console.log(`💰 Mandatory clause ${clause.clause_code} base percentage factor: 1 + ${clause.pricing_value}% = ${clauseFactor}`);
+                } else if (clause.pricing_type === 'CURRENCY') {
+                  mandatoryClauseFixedAmounts += parseFloat(clause.pricing_value);
+                  console.log(`💰 Mandatory clause ${clause.clause_code} base fixed amount: ${clause.pricing_value}`);
+                }
+              }
+            } else {
+              // No option selected, use base pricing
+              console.log(`💰 No option selected for ${clause.clause_code}, using base pricing`);
+              if (clause.pricing_type === 'PERCENTAGE') {
+                const clauseFactor = 1 + (parseFloat(clause.pricing_value) / 100);
+                mandatoryClauseFactors.push(clauseFactor);
+                console.log(`💰 Mandatory clause ${clause.clause_code} base percentage factor: 1 + ${clause.pricing_value}% = ${clauseFactor}`);
+              } else if (clause.pricing_type === 'CURRENCY') {
+                mandatoryClauseFixedAmounts += parseFloat(clause.pricing_value);
+                console.log(`💰 Mandatory clause ${clause.clause_code} base fixed amount: ${clause.pricing_value}`);
+              }
+            }
+          } else {
+            // No CEW item found or not selected, use base pricing
+            console.log(`💰 No CEW item found or not selected for ${clause.clause_code}, using base pricing`);
+            if (clause.pricing_type === 'PERCENTAGE') {
+              const clauseFactor = 1 + (parseFloat(clause.pricing_value) / 100);
+              mandatoryClauseFactors.push(clauseFactor);
+              console.log(`💰 Mandatory clause ${clause.clause_code} base percentage factor: 1 + ${clause.pricing_value}% = ${clauseFactor}`);
+            } else if (clause.pricing_type === 'CURRENCY') {
+              mandatoryClauseFixedAmounts += parseFloat(clause.pricing_value);
+              console.log(`💰 Mandatory clause ${clause.clause_code} base fixed amount: ${clause.pricing_value}`);
+            }
+          }
+        } else {
+          console.log(`💰 Skipping non-mandatory clause: ${clause.clause_code} (meta.show_type: ${clause.meta?.show_type})`);
+        }
+      });
+      
+      console.log('💰 Mandatory clause factors:', mandatoryClauseFactors);
+      console.log('💰 Mandatory clause fixed amounts:', mandatoryClauseFixedAmounts);
+    } else {
+      console.log('💰 No clause_pricing_config found in insurer pricing config');
+    }
+    
+    // Combine regular factors with mandatory clause factors
+    const allFactors = [...factors, ...mandatoryClauseFactors];
+    
     // Calculate final percentage product: base_rate × factor1 × factor2 × ... × factorN
     let percentageProduct = baseRate / 100; // Convert base rate to decimal
-    if (factors.length > 0) {
-      percentageProduct = factors.reduce((acc, factor) => acc * factor, percentageProduct);
+    if (allFactors.length > 0) {
+      percentageProduct = allFactors.reduce((acc, factor) => acc * factor, percentageProduct);
     }
     
     console.log('💰 Final percentage product:', percentageProduct);
-    console.log('💰 Calculation: base_rate × factors =', baseRate, '×', factors.join(' × '), '=', percentageProduct);
+    console.log('💰 Calculation: base_rate × factors =', baseRate, '×', allFactors.join(' × '), '=', percentageProduct);
+    console.log('💰 Regular factors:', factors);
+    console.log('💰 Mandatory clause factors:', mandatoryClauseFactors);
+    console.log('💰 All factors combined:', allFactors);
 
-    // Calculate SUM of fixed amount fields
-    const factorsSum = fixedAmountFields.reduce((acc, field) => acc + field.pricing_value, 0);
+    // Calculate SUM of fixed amount fields + mandatory clause fixed amounts
+    const regularFixedAmounts = fixedAmountFields.reduce((acc, field) => acc + field.pricing_value, 0);
+    const factorsSum = regularFixedAmounts + mandatoryClauseFixedAmounts;
+    
+    console.log('💰 Regular fixed amounts:', regularFixedAmounts);
+    console.log('💰 Mandatory clause fixed amounts:', mandatoryClauseFixedAmounts);
+    console.log('💰 Total fixed amounts (factorsSum):', factorsSum);
     
     // Get sum insured value
     const sumInsured = proposal.cover_requirements?.sum_insured || 0;
     
     // Calculate base premium: (percentage_product * Sum insured) + SUM(fixedAmountFields)
     const calculatedBasePremium = (percentageProduct * sumInsured) + factorsSum;
+    
+    console.log('💰 Base premium calculation breakdown:');
+    console.log('💰 - Sum Insured:', sumInsured);
+    console.log('💰 - Percentage Product:', percentageProduct);
+    console.log('💰 - Percentage contribution:', percentageProduct * sumInsured);
+    console.log('💰 - Fixed amounts contribution:', factorsSum);
+    console.log('💰 - Calculated Base Premium:', calculatedBasePremium);
     
     // Check minimum premium rates from insurer's product bundle
     let minimumPremiumRate = 0;
