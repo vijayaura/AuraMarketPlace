@@ -168,19 +168,39 @@ const Success = () => {
   }
 
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#f8fafc' }}>
       <Header />
       <div className="container mx-auto px-4 py-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Success Header - Prominent */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
-              <CheckCircle className="h-10 w-10 text-green-600" />
+          <div className="text-left mb-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 animate-pulse">
+                  <CheckCircle className="h-10 w-10 text-green-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Policy Created Successfully!</h1>
+                  <p className="text-base text-gray-600">
+                    Your insurance policy has been created.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Print Policy
+                </Button>
+                <Button className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Create New Policy
+                </Button>
+              </div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Policy Created Successfully!</h1>
-            <p className="text-base text-gray-600 max-w-2xl mx-auto">
-              Your insurance policy has been created.
-            </p>
           </div>
 
           {/* Vertical Summary List */}
@@ -200,20 +220,16 @@ const Success = () => {
                           <p className="text-sm font-medium">{policyDetails?.policyInfo.policy_id || policyData.policyId || proposalBundle?.quote_meta.quote_id || 'N/A'}</p>
                         </div>
                         <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Quote ID</span>
-                          <p className="text-sm font-medium">{policyDetails?.policyInfo.quote_id || policyData.policyQuoteId || proposalBundle?.quote_meta.quote_id || 'N/A'}</p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3">
                           <span className="text-xs text-gray-500">Insurer</span>
                           <p className="text-sm font-medium">{policyDetails?.policyInfo.insurer_name || proposalBundle?.plans[0]?.insurer_name || 'N/A'}</p>
                         </div>
-                        <div className="border-b border-gray-200 p-3">
+                        <div className="border-r border-b border-gray-200 p-3">
                           <span className="text-xs text-gray-500">Premium Amount</span>
                           <p className="text-sm font-semibold text-green-600">
                             AED {policyDetails?.policyInfo.base_premium ? parseFloat(policyDetails.policyInfo.base_premium).toLocaleString() : proposalBundle?.plans[0]?.base_premium?.toLocaleString() || 'N/A'}
                           </p>
                         </div>
-                        <div className="border-r border-gray-200 p-3">
+                        <div className="p-3">
                           <span className="text-xs text-gray-500">Sum Insured</span>
                           <p className="text-sm font-semibold">
                             AED {policyDetails?.policyInfo.sum_insured ? parseFloat(policyDetails.policyInfo.sum_insured).toLocaleString() : proposalBundle?.project.sum_insured ? parseFloat(proposalBundle.project.sum_insured).toLocaleString() : 'N/A'}
@@ -236,21 +252,59 @@ const Success = () => {
                           <span className="text-xs text-gray-500">Client Name</span>
                           <p className="text-sm font-medium">{policyDetails?.policyInfo.client_name || proposalBundle?.project.client_name || 'N/A'}</p>
                         </div>
-                        <div className="border-r border-b border-gray-200 p-3">
+                        <div className="border-r border-b border-gray-200 p-3 col-span-2">
                           <span className="text-xs text-gray-500">Location</span>
                           <p className="text-sm font-medium">{policyDetails?.policyInfo.address || proposalBundle?.project.address || 'N/A'}</p>
                         </div>
-                        <div className="border-b border-gray-200 p-3">
+                        <div className="border-r border-b border-gray-200 p-3">
                           <span className="text-xs text-gray-500">Project Type</span>
                           <p className="text-sm font-medium capitalize">{policyDetails?.policyInfo.project_type || proposalBundle?.project.project_type || 'N/A'}</p>
                         </div>
                         <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Construction Period</span>
-                          <p className="text-sm font-medium">{policyDetails?.policyInfo.construction_period_months || proposalBundle?.project.construction_period_months || 'N/A'} months</p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3">
                           <span className="text-xs text-gray-500">Construction Type</span>
                           <p className="text-sm font-medium capitalize">{policyDetails?.policyInfo.construction_type || proposalBundle?.project.construction_type || 'N/A'}</p>
+                        </div>
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Project Start Time</span>
+                          <p className="text-sm font-medium">
+                            {policyDetails?.policyInfo.start_date 
+                              ? new Date(policyDetails.policyInfo.start_date).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })
+                              : proposalBundle?.project.start_date 
+                                ? new Date(proposalBundle.project.start_date).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })
+                                : 'N/A'
+                            }
+                          </p>
+                        </div>
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Project End Time</span>
+                          <p className="text-sm font-medium">
+                            {policyDetails?.policyInfo.end_date 
+                              ? new Date(policyDetails.policyInfo.end_date).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })
+                              : proposalBundle?.project.end_date 
+                                ? new Date(proposalBundle.project.end_date).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })
+                                : 'N/A'
+                            }
+                          </p>
+                        </div>
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Construction Period</span>
+                          <p className="text-sm font-medium">{policyDetails?.policyInfo.construction_period_months || proposalBundle?.project.construction_period_months || 'N/A'} months</p>
                         </div>
                         <div className="border-b border-gray-200 p-3">
                           <span className="text-xs text-gray-500">Maintenance Period</span>
@@ -493,25 +547,6 @@ const Success = () => {
 
           </div>
 
-          {/* Action Buttons - Centered */}
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button
-              onClick={handlePrintPolicy}
-              variant="outline"
-              size="lg"
-              className="bg-white hover:bg-gray-50 border-gray-300"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Print Policy
-            </Button>
-            <Button
-              onClick={() => window.location.href = '/customer/proposal?new=true'}
-              size="lg"
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Create New Policy
-            </Button>
-          </div>
         </div>
       </div>
       <Footer />

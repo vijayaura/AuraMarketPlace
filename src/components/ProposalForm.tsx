@@ -2566,7 +2566,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               </div>
 
               <TabsContent value="project" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="projectName">Project Name *</Label>
                     <Input 
@@ -2823,7 +2823,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                 </div>
 
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="startDate">Start Date *</Label>
                     <Input 
@@ -2870,7 +2870,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         });
                       }}
                     />
-                    <p className="text-xs text-muted-foreground">Planned project commencement date</p>
+                    <p className="text-xs text-hint">Planned project commencement date</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="completionDate">Completion Date *</Label>
@@ -2922,15 +2922,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         });
                       }}
                     />
-                    <p className="text-xs text-muted-foreground">Expected project end date</p>
+                    <p className="text-xs text-hint">Expected project end date</p>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="constructionPeriod">Construction Period (Months)</Label>
                     <Input id="constructionPeriod" value={formData.constructionPeriod} placeholder="Auto-calculated" disabled />
-                    <p className="text-xs text-muted-foreground">Derived from start and end date</p>
+                    <p className="text-xs text-hint">Derived from start and end date</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="maintenancePeriod">Maintenance Period (Months) *</Label>
@@ -2938,7 +2935,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     ...formData,
                     maintenancePeriod: e.target.value
                   })} placeholder="12" />
-                    <p className="text-xs text-muted-foreground">Typically 12-24 months</p>
+                    <p className="text-xs text-hint">Typically 12-24 months</p>
                   </div>
                 </div>
               </TabsContent>
@@ -3479,7 +3476,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           ...formData,
                           sumInsuredMaterial: e.target.value
                         })} placeholder="Enter amount (AED)" />
-                          <p className="text-xs text-muted-foreground">Main construction value</p>
+                          <p className="text-xs text-hint">Main construction value</p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="plantEquipment">Plant & Equipment (CPM)</Label>
@@ -3487,7 +3484,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           ...formData,
                           sumInsuredPlant: e.target.value
                         })} placeholder="Enter amount (AED)" />
-                          <p className="text-xs text-muted-foreground">Construction Plant & Machinery</p>
+                          <p className="text-xs text-hint">Construction Plant & Machinery</p>
                         </div>
                       </div>
                       
@@ -3498,7 +3495,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           ...formData,
                           sumInsuredTemporary: e.target.value
                         })} placeholder="Enter amount (AED)" />
-                          <p className="text-xs text-muted-foreground">Temporary structures and formwork</p>
+                          <p className="text-xs text-hint">Temporary structures and formwork</p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="otherMaterials">Other Materials</Label>
@@ -3506,7 +3503,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           ...formData,
                           otherMaterials: e.target.value
                         })} placeholder="Enter amount (AED)" />
-                          <p className="text-xs text-muted-foreground">Additional materials coverage</p>
+                          <p className="text-xs text-hint">Additional materials coverage</p>
                         </div>
                       </div>
                       
@@ -3517,7 +3514,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           ...formData,
                           principalExistingProperty: e.target.value
                         })} placeholder="Enter amount (AED)" />
-                          <p className="text-xs text-muted-foreground">Value of adjacent structures owned by principal</p>
+                          <p className="text-xs text-hint">Value of adjacent structures owned by principal</p>
                         </div>
                       </div>
                       

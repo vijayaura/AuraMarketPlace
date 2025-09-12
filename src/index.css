@@ -51,53 +51,53 @@ body[data-unsaved="true"] .save-pulse {
 [data-radix-select-trigger] span[data-placeholder],
 [data-radix-select-value] [data-placeholder],
 [data-radix-select-trigger] [data-placeholder] {
-  color: hsl(var(--primary) / 0.7) !important;
+  color: #78909C !important; /* blue-gray */
 }
 
 /* Additional targeting for Radix Select */
 [data-radix-select-trigger] > span[data-placeholder] {
-  color: hsl(var(--primary) / 0.7) !important;
+  color: #78909C !important; /* blue-gray */
 }
 
 /* Target any element with data-placeholder inside select components */
 [data-radix-select-trigger] *[data-placeholder] {
-  color: hsl(var(--primary) / 0.7) !important;
+  color: #78909C !important; /* blue-gray */
 }
 
 /* Very specific targeting for the actual placeholder text */
 [data-radix-select-trigger] span[data-placeholder="true"] {
-  color: hsl(var(--primary) / 0.7) !important;
+  color: #78909C !important; /* blue-gray */
 }
 
 /* Nuclear option - target all text in select triggers when placeholder is shown */
 [data-radix-select-trigger]:has([data-placeholder]) {
-  color: hsl(var(--primary) / 0.7) !important;
+  color: #78909C !important; /* blue-gray */
 }
 
 /* Target the specific text content */
 [data-radix-select-trigger]:has([data-placeholder]) span {
-  color: hsl(var(--primary) / 0.7) !important;
+  color: #78909C !important; /* blue-gray */
 }
 
 /* Direct color fallback for testing */
 [data-radix-select-trigger] [data-placeholder] {
-  color: #5B9BD5 !important; /* Direct blue color */
+  color: #78909C !important; /* blue-gray */
 }
 
 /* Additional fallback */
 [data-radix-select-trigger] span[data-placeholder] {
-  color: #5B9BD5 !important; /* Direct blue color */
+  color: #78909C !important; /* blue-gray */
 }
 
 /* Target the exact Radix structure */
 [data-radix-select-trigger] > span[data-placeholder] {
-  color: #5B9BD5 !important;
+  color: #78909C !important; /* blue-gray */
 }
 
 /* Force override any existing styles */
 [data-radix-select-trigger] [data-placeholder] {
-  color: #5B9BD5 !important;
-  opacity: 0.7 !important;
+  color: #78909C !important; /* blue-gray */
+  opacity: 0.6 !important;
 }
 
 /* Target all possible placeholder states */
@@ -105,13 +105,13 @@ body[data-unsaved="true"] .save-pulse {
 [data-radix-select-trigger] span[data-placeholder],
 [data-radix-select-trigger] [data-placeholder="true"],
 [data-radix-select-trigger] [data-placeholder] {
-  color: #5B9BD5 !important;
-  opacity: 0.7 !important;
+  color: #78909C !important; /* blue-gray */
+  opacity: 0.6 !important;
 }
 
 /* Ultimate fallback - target any text in select that looks like placeholder */
 [data-radix-select-trigger] {
-  color: #5B9BD5 !important;
+  color: #78909C !important; /* blue-gray */
 }
 
 /* Reset when value is selected */
@@ -121,7 +121,13 @@ body[data-unsaved="true"] .save-pulse {
 
 /* Force placeholder color */
 [data-radix-select-trigger]:has([data-placeholder]) {
-  color: #5B9BD5 !important;
+  color: #78909C !important; /* blue-gray */
+}
+
+/* Custom lighter text for hints and placeholders */
+.text-hint {
+  color: #78909C !important; /* blue-gray */
+  opacity: 0.7 !important;
 }
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
@@ -150,7 +156,7 @@ All colors MUST be HSL.
     --secondary-light: 213 88% 97%;
 
     --muted: 213 88% 95%;
-    --muted-foreground: 213 26% 45%;
+    --muted-foreground: 0 0% 60%;
 
     --accent: 213 78% 74%;
     --accent-foreground: 0 0% 100%;

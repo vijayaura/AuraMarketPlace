@@ -14,7 +14,7 @@ const SelectValue = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Value
     ref={ref}
-    className={cn("data-[placeholder]:text-primary/70 data-[placeholder]:opacity-70 [&[data-placeholder]]:text-primary/70", className)}
+    className={cn("data-[placeholder]:text-[#78909C] data-[placeholder]:opacity-60 [&[data-placeholder]]:text-[#78909C]", className)}
     {...props}
   />
 ))
@@ -27,7 +27,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "select-trigger flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-primary/70 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 [&>span[data-placeholder]]:text-primary/70",
+      "select-trigger flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-[#78909C] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 [&>span[data-placeholder]]:text-[#78909C]",
       className
     )}
     {...props}
