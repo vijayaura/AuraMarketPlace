@@ -274,7 +274,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     zone: "business-bay",
     projectAddress: "Sheikh Zayed Road, Business Bay, Dubai, UAE",
     coordinates: "25.2048, 55.2708",
-    projectValue: "9175000",
+    projectValue: "0", // Always 0 as requested
     startDate: new Date().toISOString().split('T')[0],
     completionDate: "",
     constructionPeriod: "18",
@@ -963,7 +963,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         zone: "business-bay", // Default zone
         projectAddress: editingQuote.projectAddress || "",
         coordinates: editingQuote.coordinates || "",
-        projectValue: editingQuote.projectValue?.replace(/[^0-9]/g, '') || "",
+        projectValue: "0", // Always 0 as requested
         startDate: editingQuote.startDate || new Date().toISOString().split('T')[0],
         completionDate: editingQuote.completionDate || "",
         constructionPeriod: editingQuote.constructionPeriod || "18",
@@ -1049,12 +1049,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   });
 
   // Rule engine for default calculations
-  const calculateDefaultValues = (projectValue: string) => {
-    const pv = parseFloat(projectValue) || 0;
+  const calculateDefaultValues = () => {
     return {
-      debrisRemovalLimit: Math.round(pv * 0.05).toString(),
-      // 5% of project value
-      professionalFeesLimit: Math.round(pv * 0.03).toString() // 3% of project value
+      debrisRemovalLimit: "0", // No longer based on project value
+      professionalFeesLimit: "0" // No longer based on project value
       // Add more default calculations as needed
     };
   };
@@ -1063,12 +1061,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   // Validation logic
   const validateCoverageRequirements = () => {
     const errors: Record<string, string> = {};
-    const projectValue = parseFloat(formData.projectValue) || 0;
     const sumInsuredTotal = parseInt(formData.sumInsuredMaterial || "0") + parseInt(formData.sumInsuredPlant || "0") + parseInt(formData.sumInsuredTemporary || "0") + parseInt(formData.otherMaterials || "0") + parseInt(formData.principalExistingProperty || "0");
     if (sumInsuredTotal === 0) {
       errors.sumInsured = "Sum Insured for Material Damage cannot be 0";
-    } else if (sumInsuredTotal < projectValue) {
-      errors.sumInsured = `Sum Insured (${sumInsuredTotal.toLocaleString()}) must not be less than Project Value (${projectValue.toLocaleString()})`;
     }
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -1159,7 +1154,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       zone: formData.zone,
       latitude: latitude,
       longitude: longitude,
-      sum_insured: parseInt(formData.projectValue) || 0,
+      sum_insured: 0, // Always set to 0 as requested
       start_date: formData.startDate,
       completion_date: formData.completionDate,
       construction_period_months: parseInt(formData.constructionPeriod) || 0,
@@ -1222,11 +1217,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
           }
         }
         
-        // Required project value
-        const projectValue = parseFloat(formData.projectValue?.replace(/[^0-9.]/g, '') || '0');
-        if (!formData.projectValue || formData.projectValue.trim() === '' || isNaN(projectValue) || projectValue < 0) {
-          errors.projectValue = "Valid project value is required";
-        }
+        // Project value validation removed - always set to 0
         break;
         
       case 1: // Insured Details step
@@ -1374,7 +1365,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
           zone: 'Zone',
           startDate: 'Start Date',
           completionDate: 'Completion Date',
-          projectValue: 'Project Value',
           insuredName: 'Insured Name',
           roleOfInsured: 'Role of Insured',
           claimsDisclaimer: 'Claims Disclaimer',
@@ -1764,7 +1754,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   // Transform cover requirements form data to API format
   const transformCoverRequirementsToAPI = (): CoverRequirementsRequest => {
     return {
-      project_value: parseFloat(formData.projectValue?.replace(/[^0-9.]/g, '') || '0'),
+      project_value: 0, // Always set to 0 as requested
       contract_works: parseFloat(formData.sumInsuredMaterial?.replace(/[^0-9.]/g, '') || '0'),
       plant_and_equipment: parseFloat(formData.sumInsuredPlant?.replace(/[^0-9.]/g, '') || '0'),
       temporary_works: parseFloat(formData.sumInsuredTemporary?.replace(/[^0-9.]/g, '') || '0'),
@@ -1775,22 +1765,20 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   };
 
   // Transform documents data to API format
-  const transformDocumentsToAPI = (): RequiredDocumentsRequest => {
-    const documentsPayload: any = {};
+  const transformDocumentsToAPI = (): { required_document: Array<{label: string, url: string}> } => {
+    const documentsArray: Array<{label: string, url: string}> = [];
     
     // Include ALL documents that have been uploaded (both required and optional)
     allDocumentTypes.forEach(doc => {
       if (doc.status === "uploaded" && doc.fileUrl) {
-        // Use document name as key for API request
-        const docKey = doc.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        documentsPayload[docKey] = {
+        documentsArray.push({
           label: doc.name,
           url: doc.fileUrl
-        };
+        });
       }
     });
     
-    return documentsPayload;
+    return { required_document: documentsArray };
   };
 
   // Load pricing configurations for eligible insurers
@@ -2164,14 +2152,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     }
   }, [formData.startDate, formData.completionDate]);
 
-  // Update debris removal limit when project value changes
+  // Project value change handler - no longer needed since field is hidden
   const handleProjectValueChange = (value: string) => {
-    const defaults = calculateDefaultValues(value);
-    setFormData({
-      ...formData,
-      projectValue: value,
-      removalDebrisLimit: defaults.debrisRemovalLimit
-    });
+    // Project value is always 0, no action needed
   };
   const addSubcontractor = () => {
     const newId = Math.max(...formData.subContractors.map(sc => sc.id), 0) + 1;
@@ -2425,7 +2408,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                             zone: 'Zone',
                             startDate: 'Start Date',
                             completionDate: 'Completion Date',
-                            projectValue: 'Project Value',
                             insuredName: 'Insured Name',
                             roleOfInsured: 'Role of Insured',
                             claimsDisclaimer: 'Claims Disclaimer',
@@ -3529,33 +3511,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-1 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="projectValue">Project Value (AED/USD) *</Label>
-                          <Input 
-                            id="projectValue" 
-                            type="number" 
-                            value={formData.projectValue} 
-                            onChange={e => {
-                              handleProjectValueChange(e.target.value);
-                              // Clear validation error when user starts typing
-                              if (validationErrors.projectValue) {
-                                setValidationErrors(prev => {
-                                  const newErrors = { ...prev };
-                                  delete newErrors.projectValue;
-                                  return newErrors;
-                                });
-                              }
-                            }} 
-                            placeholder="Total contract value"
-                            className={validationErrors.projectValue ? "border-red-500" : ""}
-                          />
-                          <p className="text-xs text-muted-foreground">Total estimated project cost</p>
-                          {validationErrors.projectValue && (
-                            <p className="text-sm text-red-500">{validationErrors.projectValue}</p>
-                          )}
-                        </div>
-                      </div>
+                      {/* Project Value field hidden - always set to 0 */}
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="contractWorks">Contract Works *</Label>

@@ -30,11 +30,13 @@ const CEWCustomization = () => {
 
   const [premiumAdjustment, setPremiumAdjustment] = useState(0);
   const [tplAdjustment, setTPLAdjustment] = useState(0);
-  const [cewAdjustment, setCEWAdjustment] = useState(0);
-  const [mandatoryCewAdjustment, setMandatoryCewAdjustment] = useState(0);
+  const [cewAdjustment, setCEWAdjustment] = useState({ percentage: 0, fixed: 0 });
+  const [mandatoryCewAdjustment, setMandatoryCewAdjustment] = useState({ percentage: 0, fixed: 0 });
   const [selectedCEWItems, setSelectedCEWItems] = useState<any[]>([]);
   const [showCEWDialog, setShowCEWDialog] = useState(false);
+  
   const [brokerCommission, setBrokerCommission] = useState(5.0);
+
 
   const handleCEWSelectionChange = (selectedItems: any[]) => {
     setSelectedCEWItems(selectedItems);
@@ -48,12 +50,12 @@ const CEWCustomization = () => {
     setTPLAdjustment(adjustment);
   };
 
-  const handleCEWAdjustmentChange = (adjustment: number) => {
-    setCEWAdjustment(adjustment);
+  const handleCEWAdjustmentChange = (percentage: number, fixed: number) => {
+    setCEWAdjustment({ percentage, fixed });
   };
 
-  const handleMandatoryCEWAdjustmentChange = (adjustment: number) => {
-    setMandatoryCewAdjustment(adjustment);
+  const handleMandatoryCEWAdjustmentChange = (percentage: number, fixed: number) => {
+    setMandatoryCewAdjustment({ percentage, fixed });
   };
 
   const handleCommissionChange = (commission: number) => {
@@ -61,8 +63,24 @@ const CEWCustomization = () => {
   };
 
   const calculateFinalPremium = () => {
-    const adjustmentAmount = (selectedQuoteData.basePremium * premiumAdjustment) / 100;
-    return selectedQuoteData.basePremium + adjustmentAmount;
+    const basePremium = selectedQuoteData.basePremium;
+    
+    // Calculate mandatory CEW adjustments
+    const mandatoryPercentageAmount = (basePremium * mandatoryCewAdjustment.percentage) / 100;
+    const mandatoryFixedAmount = mandatoryCewAdjustment.fixed;
+    
+    // Calculate optional CEW adjustments
+    const optionalPercentageAmount = (basePremium * cewAdjustment.percentage) / 100;
+    const optionalFixedAmount = cewAdjustment.fixed;
+    
+    // Calculate TPL adjustments
+    const tplAmount = (basePremium * tplAdjustment) / 100;
+    
+    // Calculate broker commission
+    const totalBeforeCommission = basePremium + mandatoryPercentageAmount + mandatoryFixedAmount + optionalPercentageAmount + optionalFixedAmount + tplAmount;
+    const commissionAmount = (totalBeforeCommission * brokerCommission) / 100;
+    
+    return totalBeforeCommission + commissionAmount;
   };
 
   const handleContinue = () => {
@@ -73,7 +91,7 @@ const CEWCustomization = () => {
         cewSelections: selectedCEWItems,
         finalPremium: calculateFinalPremium(),
         tplAdjustment: tplAdjustment,
-        cewAdjustment: cewAdjustment
+        cewAdjustment: cewAdjustment.percentage + cewAdjustment.fixed
       } 
     });
   };
@@ -191,45 +209,49 @@ const CEWCustomization = () => {
                     </>
                   )}
                   
-                  {mandatoryCewAdjustment !== 0 && (
+                  {(mandatoryCewAdjustment.percentage > 0 || mandatoryCewAdjustment.fixed > 0) && (
                     <>
                       <div className="flex justify-between items-center">
                         <span>Mandatory CEW Adjustments</span>
                         <span className={`font-medium ${
-                          mandatoryCewAdjustment > 0 ? "text-warning" : "text-success"
+                          (mandatoryCewAdjustment.percentage + mandatoryCewAdjustment.fixed) > 0 ? "text-warning" : "text-success"
                         }`}>
-                          {mandatoryCewAdjustment > 0 ? "+" : ""}{mandatoryCewAdjustment.toFixed(1)}%
+                          {mandatoryCewAdjustment.percentage > 0 && `+${mandatoryCewAdjustment.percentage.toFixed(1)}%`}
+                          {mandatoryCewAdjustment.percentage > 0 && mandatoryCewAdjustment.fixed > 0 && " + "}
+                          {mandatoryCewAdjustment.fixed > 0 && `+${formatCurrency(mandatoryCewAdjustment.fixed)}`}
                         </span>
                       </div>
                       
                       <div className="flex justify-between items-center">
                         <span>Mandatory CEW Adjustment Amount</span>
                         <span className={`font-medium ${
-                          mandatoryCewAdjustment > 0 ? "text-warning" : "text-success"
+                          (mandatoryCewAdjustment.percentage + mandatoryCewAdjustment.fixed) > 0 ? "text-warning" : "text-success"
                         }`}>
-                          {mandatoryCewAdjustment > 0 ? "+" : ""}{formatCurrency((selectedQuoteData.basePremium * mandatoryCewAdjustment) / 100)}
+                          {formatCurrency((selectedQuoteData.basePremium * mandatoryCewAdjustment.percentage) / 100 + mandatoryCewAdjustment.fixed)}
                         </span>
                       </div>
                     </>
                   )}
                   
-                  {cewAdjustment !== 0 && (
+                  {(cewAdjustment.percentage > 0 || cewAdjustment.fixed > 0) && (
                     <>
                       <div className="flex justify-between items-center">
                         <span>Optional CEW Adjustments</span>
                         <span className={`font-medium ${
-                          cewAdjustment > 0 ? "text-warning" : "text-success"
+                          (cewAdjustment.percentage + cewAdjustment.fixed) > 0 ? "text-warning" : "text-success"
                         }`}>
-                          {cewAdjustment > 0 ? "+" : ""}{cewAdjustment.toFixed(1)}%
+                          {cewAdjustment.percentage > 0 && `+${cewAdjustment.percentage.toFixed(1)}%`}
+                          {cewAdjustment.percentage > 0 && cewAdjustment.fixed > 0 && " + "}
+                          {cewAdjustment.fixed > 0 && `+${formatCurrency(cewAdjustment.fixed)}`}
                         </span>
                       </div>
                       
                       <div className="flex justify-between items-center">
                         <span>Optional CEW Adjustment Amount</span>
                         <span className={`font-medium ${
-                          cewAdjustment > 0 ? "text-warning" : "text-success"
+                          (cewAdjustment.percentage + cewAdjustment.fixed) > 0 ? "text-warning" : "text-success"
                         }`}>
-                          {cewAdjustment > 0 ? "+" : ""}{formatCurrency((selectedQuoteData.basePremium * cewAdjustment) / 100)}
+                          {formatCurrency((selectedQuoteData.basePremium * cewAdjustment.percentage) / 100 + cewAdjustment.fixed)}
                         </span>
                       </div>
                     </>

@@ -14,6 +14,7 @@ import { Building, ArrowLeft, Download, Eye, FileText, ChevronDown, ChevronUp, A
 import { CEWSelection } from "./CEWSelection";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
+import { generateInsuranceProposalPDF } from '@/utils/pdfGenerator';
 import { type BrokerInsurersResponse } from "@/lib/api/brokers";
 import { type ProposalBundleResponse, type InsurerPricingConfigResponse, getInsurerPricingConfig, createPlanSelection, updatePlanSelection, type PlanSelectionRequest } from "@/lib/api/quotes";
 
@@ -2136,61 +2137,203 @@ const QuotesComparison = ({
   };
 
   const handleDownloadQuotation = () => {
-    if (selectedQuotes.length === 0) {
+    // Use the first available quote if none selected, or the first selected quote
+    const quoteToUse = selectedQuotes.length > 0 ? 
+      realQuotes.find(q => selectedQuotes.includes(q.id)) : 
+      realQuotes[0];
+
+    if (!quoteToUse) {
       toast({
-        title: "No Plan Selected",
-        description: "Please select a plan to download the quotation.",
+        title: "No Quote Available",
+        description: "No quotes are available to download.",
         variant: "destructive"
       });
       return;
     }
 
-    const selectedQuoteData = realQuotes.filter(q => selectedQuotes.includes(q.id));
-    
-    // Create quotation content
-    const quotationContent = selectedQuoteData.map(quote => {
-      return `
-CONSTRUCTION INSURANCE QUOTATION
-================================
+    // Get current CEW data from state
+    const cewData = {
+      selectedItems: selectedCEWItems || [],
+      mandatoryAdjustments: { percentage: 0, fixed: 0 }, // Will be calculated from CEW items
+      optionalAdjustments: { percentage: 0, fixed: 0 }, // Will be calculated from CEW items
+      tplAdjustment: tplAdjustment || 0
+    };
 
-Plan Details:
-- Plan Name: ${quote.planName}
-- Insurer: ${quote.insurerName}
-- Annual Premium: ${formatCurrency(quote.annualPremium)}
-- Coverage Amount: ${formatCurrency(quote.coverageAmount)}
-- Deductible: ${quote.deductible}
-- Rating: ${quote.rating}/5.0
+    // Calculate premium summary
+    const basePremium = quoteToUse.annualPremium || 0;
+    const tplAdjustmentAmount = cewData.tplAdjustment;
+    const mandatoryAdjustmentAmount = cewData.mandatoryAdjustments.percentage + cewData.mandatoryAdjustments.fixed;
+    const optionalAdjustmentAmount = cewData.optionalAdjustments.percentage + cewData.optionalAdjustments.fixed;
+    const totalBeforeCommission = basePremium + tplAdjustmentAmount + mandatoryAdjustmentAmount + optionalAdjustmentAmount;
+    const brokerCommissionAmount = totalBeforeCommission * (brokerCommissionPercent / 100);
+    const totalAnnualPremium = totalBeforeCommission + brokerCommissionAmount;
 
-Key Coverage:
-${quote.keyCoverage.map(coverage => `• ${coverage}`).join('\n')}
+    // Create proposal data
+    const proposalData = {
+      project: currentProposal?.project || {
+        project_id: 'CAR-001',
+        project_name: 'Construction Project',
+        client_name: 'Client Name',
+        address: 'Project Address',
+        region: 'Dubai',
+        country: 'UAE'
+      },
+      insured: currentProposal?.insured || null,
+      contract_structure: currentProposal?.contract_structure || null,
+      cover_requirements: currentProposal?.cover_requirements || null,
+      quote: quoteToUse,
+      cewData: cewData,
+      premiumSummary: {
+        basePremium: basePremium,
+        tplAdjustment: tplAdjustmentAmount,
+        mandatoryAdjustments: mandatoryAdjustmentAmount,
+        optionalAdjustments: optionalAdjustmentAmount,
+        totalBeforeCommission: totalBeforeCommission,
+        brokerCommission: brokerCommissionAmount,
+        totalAnnualPremium: totalAnnualPremium
+      }
+    };
 
-Benefits:
-${quote.benefits.map(benefit => `• ${benefit}`).join('\n')}
+    // Generate and download PDF
+    try {
+      generateInsuranceProposalPDF(proposalData);
+      toast({
+        title: "Quote Downloaded",
+        description: "Insurance proposal PDF has been generated and downloaded.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error generating the PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
-Generated on: ${new Date().toLocaleDateString()}
-Valid until: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+  const handleDownloadCurrentQuote = () => {
+    if (!selectedQuoteForCEW) {
+      toast({
+        title: "No Quote Selected",
+        description: "Please select a quote to download.",
+        variant: "destructive"
+      });
+      return;
+    }
 
----
-This quotation is subject to terms and conditions.
-Contact us for more details or to proceed with the application.
-      `.trim();
-    }).join('\n\n' + '='.repeat(50) + '\n\n');
+    // Get current CEW data from state
+    const cewData = {
+      selectedItems: selectedCEWItems || [],
+      mandatoryAdjustments: { percentage: 0, fixed: 0 }, // Will be calculated from CEW items
+      optionalAdjustments: { percentage: 0, fixed: 0 }, // Will be calculated from CEW items
+      tplAdjustment: tplAdjustment || 0
+    };
 
-    // Create and download file
-    const blob = new Blob([quotationContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Insurance_Quotation_${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Quotation Downloaded",
-      description: `Downloaded quotation for ${selectedQuoteData.length} plan(s)`,
-    });
+    // Calculate actual CEW adjustments from selected items
+    if (selectedCEWItems && selectedCEWItems.length > 0) {
+      let mandatoryPercentage = 0;
+      let mandatoryFixed = 0;
+      let optionalPercentage = 0;
+      let optionalFixed = 0;
+
+      selectedCEWItems.forEach(item => {
+        if (item.isMandatory) {
+          if (item.selectedOptionId) {
+            const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
+            if (selectedOption) {
+              const baseValue = item.defaultValue || 0;
+              const selectedValue = selectedOption.value || 0;
+              const difference = selectedValue - baseValue;
+              
+              if (selectedOption.type === 'percentage') {
+                mandatoryPercentage += difference;
+              } else {
+                mandatoryFixed += difference;
+              }
+            }
+          }
+        } else {
+          if (item.selectedOptionId) {
+            const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
+            if (selectedOption) {
+              if (selectedOption.type === 'percentage') {
+                optionalPercentage += selectedOption.value || 0;
+              } else {
+                optionalFixed += selectedOption.value || 0;
+              }
+            }
+          } else {
+            // No option selected, use base rate
+            if (item.defaultValue) {
+              const firstOption = item.options[0];
+              const isPercentage = firstOption?.type === 'percentage' || Math.abs(item.defaultValue) <= 100;
+              
+              if (isPercentage) {
+                optionalPercentage += item.defaultValue;
+              } else {
+                optionalFixed += item.defaultValue;
+              }
+            }
+          }
+        }
+      });
+
+      cewData.mandatoryAdjustments = { percentage: mandatoryPercentage, fixed: mandatoryFixed };
+      cewData.optionalAdjustments = { percentage: optionalPercentage, fixed: optionalFixed };
+    }
+
+    // Calculate premium summary using current values
+    const basePremium = selectedQuoteForCEW.annualPremium || 0;
+    const tplAdjustmentAmount = cewData.tplAdjustment;
+    const mandatoryAdjustmentAmount = cewData.mandatoryAdjustments.percentage + cewData.mandatoryAdjustments.fixed;
+    const optionalAdjustmentAmount = cewData.optionalAdjustments.percentage + cewData.optionalAdjustments.fixed;
+    const totalBeforeCommission = basePremium + tplAdjustmentAmount + mandatoryAdjustmentAmount + optionalAdjustmentAmount;
+    const brokerCommissionAmount = totalBeforeCommission * (brokerCommissionPercent / 100);
+    const totalAnnualPremium = totalBeforeCommission + brokerCommissionAmount;
+
+    // Create proposal data
+    const proposalData = {
+      project: currentProposal?.project || {
+        project_id: 'CAR-001',
+        project_name: 'Construction Project',
+        client_name: 'Client Name',
+        address: 'Project Address',
+        region: 'Dubai',
+        country: 'UAE'
+      },
+      insured: currentProposal?.insured || null,
+      contract_structure: currentProposal?.contract_structure || null,
+      cover_requirements: currentProposal?.cover_requirements || null,
+      quote: selectedQuoteForCEW,
+      cewData: cewData,
+      premiumSummary: {
+        basePremium: basePremium,
+        tplAdjustment: tplAdjustmentAmount,
+        mandatoryAdjustments: mandatoryAdjustmentAmount,
+        optionalAdjustments: optionalAdjustmentAmount,
+        totalBeforeCommission: totalBeforeCommission,
+        brokerCommission: brokerCommissionAmount,
+        totalAnnualPremium: totalAnnualPremium
+      }
+    };
+
+    // Generate and download PDF
+    try {
+      generateInsuranceProposalPDF(proposalData);
+      toast({
+        title: "Quote Downloaded",
+        description: "Insurance proposal PDF has been generated and downloaded.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error generating the PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDownloadProposal = () => {
@@ -2394,39 +2537,12 @@ Contact us for more details or to proceed with the application.
                   <FileText className="w-4 h-4" />
                   Download Proposal
                 </Button>
-                
-                <Button 
-                  onClick={handleDownloadQuotation}
-                  className="gap-2 bg-white text-gray-900 border border-gray-300 hover:bg-gray-50"
-                >
-                  <Download className="w-4 h-4" />
-                  Download Quotation
-                </Button>
               </>
             )}
           </div>
         </div>
 
 
-        {/* Eligible Insurers Information */}
-        {eligibleInsurers.length > 0 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <h3 className="font-semibold text-green-800">Eligible Insurers for Pricing</h3>
-            </div>
-            <p className="text-sm text-green-700 mb-3">
-              {eligibleInsurers.length} insurer{eligibleInsurers.length !== 1 ? 's' : ''} passed all validation checks and can proceed with pricing.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {eligibleInsurers.map((insurer, index) => (
-                <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {insurer.insurer_name}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Show message if no eligible insurers */}
         {assignedInsurers && currentProposal && eligibleInsurers.length === 0 && (
@@ -2460,11 +2576,13 @@ Contact us for more details or to proceed with the application.
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <Checkbox
-                      checked={selectedQuotes.includes(quote.id)}
-                      onCheckedChange={(checked) => handleQuoteSelect(quote.id, !!checked)}
-                      disabled={selectedQuotes.length >= 2 && !selectedQuotes.includes(quote.id)}
-                    />
+                    {realQuotes.length > 1 && (
+                      <Checkbox
+                        checked={selectedQuotes.includes(quote.id)}
+                        onCheckedChange={(checked) => handleQuoteSelect(quote.id, !!checked)}
+                        disabled={selectedQuotes.length >= 2 && !selectedQuotes.includes(quote.id)}
+                      />
+                    )}
                     
                     <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
                       <Building className="h-6 w-6 text-muted-foreground" />
@@ -2977,6 +3095,13 @@ Contact us for more details or to proceed with the application.
 
                       {/* Action Buttons */}
                       <div className="space-y-2">
+                        <Button 
+                          onClick={handleDownloadCurrentQuote}
+                          className="w-full bg-white text-gray-900 border border-gray-300 hover:bg-gray-50"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download Quote
+                        </Button>
                         <Button 
                           onClick={() => {
                             // Only proceed if validation passes

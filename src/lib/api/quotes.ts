@@ -262,13 +262,13 @@ export interface DocumentInfo {
 }
 
 export interface RequiredDocumentsRequest {
-  [key: string]: DocumentInfo;
+  required_document: DocumentInfo[];
 }
 
 export interface RequiredDocumentsResponse {
   message: string;
   quote_id: number;
-  required_documents: RequiredDocumentsRequest;
+  required_documents: DocumentInfo[];
 }
 
 // Save required documents (POST for new)
@@ -853,14 +853,14 @@ export interface RequiredDocument {
   id: number;
   product_id: number;
   display_order: number;
-  display_label: string;
+  label: string;
   description: string;
   is_required: number;
-  template_file: string | null;
+  url: string;
   status: string;
+  insurer_id: number;
   created_at: string;
   updated_at: string;
-  insurer_id: number | null;
 }
 
 export interface RequiredDocumentsResponse {
@@ -868,14 +868,14 @@ export interface RequiredDocumentsResponse {
 }
 
 // Document Submission Types
-export interface DocumentSubmissionItem {
+export interface DeclarationDocument {
   label: string;
   url: string;
 }
 
 export interface DocumentSubmissionRequest {
   product_id: number;
-  [key: string]: DocumentSubmissionItem | number;
+  declaration_documents: DeclarationDocument[];
 }
 
 export interface DocumentSubmissionResponseItem {
@@ -884,11 +884,29 @@ export interface DocumentSubmissionResponseItem {
   uploaded_at: string;
 }
 
+export interface PolicyDetails {
+  id: number;
+  policy_id: string;
+  quote_id: number;
+  insurer_id: number;
+  broker_id: number;
+  start_date: string;
+  end_date: string;
+  base_premium: string;
+  total_premium: string;
+  commission_rate: string;
+  commission_amount: string;
+  document_path: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  proposal_bundle: any; // This is a complex object, keeping as any for now
+}
+
 export interface DocumentSubmissionResponse {
   message: string;
-  documents: {
-    [key: string]: DocumentSubmissionResponseItem;
-  };
+  documents: DocumentSubmissionResponseItem[];
+  policy: PolicyDetails;
 }
 
 // Plan Selection API Functions

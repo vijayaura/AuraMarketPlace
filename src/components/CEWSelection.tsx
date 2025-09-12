@@ -44,7 +44,7 @@ interface CEWSelectionProps {
   onPremiumChange?: (totalAdjustment: number) => void;
   onTPLAdjustmentChange?: (tplAdjustment: number) => void;
   onCEWAdjustmentChange?: (cewAdjustment: number) => void;
-  onMandatoryCEWAdjustmentChange?: (mandatoryAdjustment: number) => void;
+  onMandatoryCEWAdjustmentChange?: (percentage: number, fixed: number) => void;
   onTPLSelectionChange?: (tplOption: any) => void;
   productConfigBundle?: any;
   isLoadingProductConfig?: boolean;
@@ -69,7 +69,8 @@ export const CEWSelection = ({
   storedBrokerCommission
 }: CEWSelectionProps) => {
 
-  // State for expanded/collapsed clauses
+
+  // State for expanded/collapsed clauses - auto-expand mandatory clauses
   const [expandedClauses, setExpandedClauses] = useState<Set<number>>(new Set());
   // State for expanded descriptions
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set());
@@ -87,43 +88,57 @@ export const CEWSelection = ({
     
     const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
     if (selectedOption) {
-      // Rule 2: Card selected + option selected = use selected option's value and type
-      return {
-        value: selectedOption.value,
-        type: selectedOption.type === "percentage" ? 'percentage' : 'fixed'
-      };
+      // Rule 2: Card selected + option selected
+      if (item.isMandatory) {
+        // For mandatory clauses: calculate difference between selected option and base price
+        const baseValue = item.defaultValue;
+        const selectedValue = selectedOption.value;
+        const difference = selectedValue - baseValue;
+        
+        
+        return {
+          value: difference,
+          type: selectedOption.type === "percentage" ? 'percentage' : 'fixed'
+        };
+      } else {
+        // For optional clauses: use full selected option value
+        return {
+          value: selectedOption.value,
+          type: selectedOption.type === "percentage" ? 'percentage' : 'fixed'
+        };
+      }
     } else {
       // Rule 1: Card selected + no option selected = use base rate
-      // Determine if base rate is percentage or fixed based on the first option's type or clause pricing type
-      const firstOption = item.options[0];
-      const isPercentage = firstOption?.type === "percentage" || 
-                          (item.options.length === 0 && Math.abs(item.defaultValue) <= 100);
-      
-      return {
-        value: item.defaultValue,
-        type: isPercentage ? 'percentage' : 'fixed'
-      };
+      // For mandatory clauses: base rate is already included in base premium, so no adjustment
+      // For optional clauses: use base rate as adjustment
+      if (item.isMandatory) {
+        // Mandatory clauses with no option selected = 0 adjustment (base already included)
+        return { value: 0, type: 'percentage' };
+      } else {
+        // Optional clauses with no option selected = use base rate
+        const firstOption = item.options[0];
+        const isPercentage = firstOption?.type === "percentage" || 
+                            (item.options.length === 0 && Math.abs(item.defaultValue) <= 100);
+        
+        return {
+          value: item.defaultValue,
+          type: isPercentage ? 'percentage' : 'fixed'
+        };
+      }
     }
   };
 
   // Update cewItems when productConfigBundle changes
   useEffect(() => {
     if (productConfigBundle) {
-      console.log('🔧 Product config bundle received:', productConfigBundle);
       const transformedItems = transformProductConfigToCEWItems(productConfigBundle);
-      console.log('🔧 Transformed items:', transformedItems);
       
       // Check if any mandatory items are being auto-selected
       const mandatoryItems = transformedItems.filter(item => item.isMandatory);
       const selectedMandatoryItems = mandatoryItems.filter(item => item.isSelected);
-      console.log('🔧 Mandatory items found:', mandatoryItems.length);
-      console.log('🔧 Selected mandatory items:', selectedMandatoryItems.length);
-      console.log('🔧 Mandatory items details:', mandatoryItems.map(item => ({ name: item.name, isSelected: item.isSelected, isMandatory: item.isMandatory })));
       
       // Verify mandatory items are auto-selected
       const allSelectedItems = transformedItems.filter(item => item.isSelected);
-      console.log('🔧 ALL selected items (mandatory auto-selected):', allSelectedItems.length);
-      console.log('🔧 ALL selected items details:', allSelectedItems.map(item => ({ name: item.name, isSelected: item.isSelected, isMandatory: item.isMandatory })));
       
       // Auto-select mandatory items
       setCEWItems(transformedItems);
@@ -134,7 +149,6 @@ export const CEWSelection = ({
       
       // If we have stored selections, apply them now that we have the transformed items
       if (storedSelections && storedSelections.length > 0) {
-        console.log('🔄 Applying stored selections after product config load:', storedSelections);
         applyStoredSelections(transformedItems, storedSelections);
         setHasAppliedStoredData(true);
       }
@@ -143,12 +157,8 @@ export const CEWSelection = ({
 
   // Function to apply stored selections to transformed items
   const applyStoredSelections = (transformedItems: CEWItem[], storedSelections: CEWItem[]) => {
-    console.log('🔄 Applying stored selections to transformed items:', storedSelections);
-    console.log('🔄 Transformed items before restoration:', transformedItems);
-    console.log('🔄 Stored selections selected count:', storedSelections.filter(item => item.isSelected).length);
     
     if (!storedSelections || storedSelections.length === 0) {
-      console.log('🔄 No stored selections to apply');
       return;
     }
     
@@ -156,11 +166,6 @@ export const CEWSelection = ({
     const updatedItems = transformedItems.map(item => {
       const storedItem = storedSelections.find(stored => stored.id === item.id);
       if (storedItem) {
-        console.log('🔄 Restoring item:', item.name, 'with stored data:', {
-          isSelected: storedItem.isSelected,
-          selectedOptionId: storedItem.selectedOptionId,
-          premiumAmount: storedItem.premiumAmount
-        });
         
         return {
           ...item,
@@ -175,41 +180,26 @@ export const CEWSelection = ({
       return item;
     });
     
-    console.log('🔄 Updated items after restoration:', updatedItems);
-    console.log('🔄 Updated items selected count:', updatedItems.filter(item => item.isSelected).length);
     
     setCEWItems(updatedItems);
     onSelectionChange?.(updatedItems);
     
     // Apply stored adjustments
     if (storedTPLAdjustment !== undefined) {
-      console.log('🔄 Restoring TPL adjustment:', storedTPLAdjustment);
       onTPLAdjustmentChange?.(storedTPLAdjustment);
     }
     if (storedCEWAdjustment !== undefined) {
-      console.log('🔄 Restoring CEW adjustment:', storedCEWAdjustment);
       onCEWAdjustmentChange?.(storedCEWAdjustment);
     }
     if (storedBrokerCommission !== undefined) {
-      console.log('🔄 Restoring broker commission:', storedBrokerCommission);
       // Note: Broker commission restoration is handled by parent component
     }
   };
 
-  // Debug storedSelections changes
-  useEffect(() => {
-    console.log('🔧 storedSelections prop changed to:', storedSelections);
-    console.log('🔧 storedSelections length:', storedSelections?.length || 0);
-    if (storedSelections && storedSelections.length > 0) {
-      console.log('🔧 storedSelections selected count:', storedSelections.filter(item => item.isSelected).length);
-    }
-  }, [storedSelections]);
 
   // Apply stored selections when they change (separate from product config loading)
   useEffect(() => {
     if (storedSelections && storedSelections.length > 0 && cewItems.length > 0 && !hasAppliedStoredData) {
-      console.log('🔄 Applying stored selections due to prop change:', storedSelections);
-      console.log('🔄 hasAppliedStoredData:', hasAppliedStoredData);
       
       // Apply stored selections
       applyStoredSelections(cewItems, storedSelections);
@@ -220,16 +210,11 @@ export const CEWSelection = ({
   // Calculate initial adjustments when CEW items change
   useEffect(() => {
     if (cewItems.length > 0) {
-      console.log('🔧 CEW Items for adjustment calculation:', cewItems);
       const selectedItems = cewItems.filter(item => item.isSelected);
-      console.log('🔧 Selected CEW Items:', selectedItems);
       
       // Separate mandatory and optional items
       const mandatoryItems = selectedItems.filter(item => item.isMandatory);
       const optionalItems = selectedItems.filter(item => !item.isMandatory);
-      
-      console.log('🔧 Mandatory items:', mandatoryItems.map(item => ({ name: item.name, isSelected: item.isSelected })));
-      console.log('🔧 Optional items:', optionalItems.map(item => ({ name: item.name, isSelected: item.isSelected })));
       
       // Calculate mandatory adjustments
       let mandatoryPercentageAdjustment = 0;
@@ -237,7 +222,6 @@ export const CEWSelection = ({
       
       mandatoryItems.forEach(item => {
         const impact = calculateItemPremiumImpact(item);
-        console.log(`🔧 Mandatory Item ${item.name} (${item.code}): impact = ${impact.value} (${impact.type})`);
         
         if (impact.type === 'percentage') {
           mandatoryPercentageAdjustment += impact.value;
@@ -252,7 +236,6 @@ export const CEWSelection = ({
       
       optionalItems.forEach(item => {
         const impact = calculateItemPremiumImpact(item);
-        console.log(`🔧 Optional Item ${item.name} (${item.code}): impact = ${impact.value} (${impact.type})`);
         
         if (impact.type === 'percentage') {
           optionalPercentageAdjustment += impact.value;
@@ -261,16 +244,11 @@ export const CEWSelection = ({
         }
       });
       
-      console.log('🔧 Mandatory CEW Percentage Adjustment:', mandatoryPercentageAdjustment);
-      console.log('🔧 Mandatory CEW Fixed Adjustment:', mandatoryFixedAdjustment);
-      console.log('🔧 Optional CEW Percentage Adjustment:', optionalPercentageAdjustment);
-      console.log('🔧 Optional CEW Fixed Adjustment:', optionalFixedAdjustment);
-      
       // Pass adjustments to parent component
-      onMandatoryCEWAdjustmentChange?.(mandatoryPercentageAdjustment + mandatoryFixedAdjustment);
+      onMandatoryCEWAdjustmentChange?.(mandatoryPercentageAdjustment, mandatoryFixedAdjustment);
       onCEWAdjustmentChange?.(optionalPercentageAdjustment, optionalFixedAdjustment);
     }
-  }, [cewItems]);
+  }, [cewItems, onMandatoryCEWAdjustmentChange, onCEWAdjustmentChange]);
 
   // Transform product config bundle data to CEW items
   const transformProductConfigToCEWItems = (configBundle: any): CEWItem[] => {
@@ -279,15 +257,11 @@ export const CEWSelection = ({
     // Filter only enabled clauses (is_enabled: 1)
     const enabledClauses = configBundle.clause_pricing_config.filter((clause: any) => clause.is_enabled === 1);
     
-    console.log(`🔧 Total clauses in bundle: ${configBundle.clause_pricing_config.length}`);
-    console.log(`🔧 Enabled clauses: ${enabledClauses.length}`);
-    console.log(`🔧 Disabled clauses: ${configBundle.clause_pricing_config.length - enabledClauses.length}`);
     
     return enabledClauses.map((clause: any, index: number) => {
       const isMandatory = clause.meta?.show_type === 'MANDATORY';
       const isSelected = isMandatory; // Auto-select mandatory items
       
-      console.log(`🔧 transformProductConfigToCEWItems - ${clause.clause_code}: isMandatory=${isMandatory}, isSelected=${isSelected}`);
       
       return {
         id: clause.id,
@@ -318,7 +292,6 @@ export const CEWSelection = ({
       // Use the base rate from pricing configuration
       defaultValue: (() => {
         const value = clause.pricing_type === 'PERCENTAGE' ? parseFloat(clause.pricing_value) || 0 : parseFloat(clause.pricing_value) || 0;
-        console.log('🔧 transformProductConfigToCEWItems - clause:', clause.clause_code, 'pricing_value:', clause.pricing_value, 'pricing_type:', clause.pricing_type, 'defaultValue:', value);
         return value;
       })()
       };
@@ -392,26 +365,32 @@ export const CEWSelection = ({
     
     // Prevent unselecting mandatory items
     if (item?.isMandatory && item.isSelected) {
-      console.log('🔒 Cannot unselect mandatory item:', item.name);
       return;
     }
     
     const updatedItems = cewItems.map(item =>
       item.id === itemId ? { ...item, isSelected: !item.isSelected } : item
     );
+    
+    // Update state first
     setCEWItems(updatedItems);
     onSelectionChange?.(updatedItems);
     
-    // Calculate adjustments separately for mandatory and optional
+    // Calculate adjustments separately for mandatory and optional using the updated items
     const selectedItems = updatedItems.filter(item => item.isSelected);
     const mandatoryItems = selectedItems.filter(item => item.isMandatory);
     const optionalItems = selectedItems.filter(item => !item.isMandatory);
     
     // Calculate mandatory adjustments
-    let mandatoryAdjustment = 0;
+    let mandatoryPercentageAdjustment = 0;
+    let mandatoryFixedAdjustment = 0;
     mandatoryItems.forEach(item => {
       const impact = calculateItemPremiumImpact(item);
-      mandatoryAdjustment += impact.type === 'percentage' ? impact.value : impact.value;
+      if (impact.type === 'percentage') {
+        mandatoryPercentageAdjustment += impact.value;
+      } else {
+        mandatoryFixedAdjustment += impact.value;
+      }
     });
     
     // Calculate optional adjustments
@@ -431,9 +410,9 @@ export const CEWSelection = ({
     
     // Call separate callbacks
     onTPLAdjustmentChange?.(tplAdjustment);
-    onMandatoryCEWAdjustmentChange?.(mandatoryAdjustment);
+    onMandatoryCEWAdjustmentChange?.(mandatoryPercentageAdjustment, mandatoryFixedAdjustment);
     onCEWAdjustmentChange?.(optionalPercentageAdjustment, optionalFixedAdjustment);
-    onPremiumChange?.(tplAdjustment + mandatoryAdjustment + optionalPercentageAdjustment + optionalFixedAdjustment);
+    onPremiumChange?.(tplAdjustment + mandatoryPercentageAdjustment + mandatoryFixedAdjustment + optionalPercentageAdjustment + optionalFixedAdjustment);
   };
 
   const updateSelection = (itemId: number, optionId: number) => {
@@ -470,19 +449,26 @@ export const CEWSelection = ({
       }
       return item;
     });
+    
+    // Update state first
     setCEWItems(updatedItems);
     onSelectionChange?.(updatedItems);
     
-    // Calculate adjustments separately for mandatory and optional
+    // Calculate adjustments separately for mandatory and optional using the updated items
     const selectedItems = updatedItems.filter(item => item.isSelected);
     const mandatoryItems = selectedItems.filter(item => item.isMandatory);
     const optionalItems = selectedItems.filter(item => !item.isMandatory);
     
     // Calculate mandatory adjustments
-    let mandatoryAdjustment = 0;
+    let mandatoryPercentageAdjustment = 0;
+    let mandatoryFixedAdjustment = 0;
     mandatoryItems.forEach(item => {
       const impact = calculateItemPremiumImpact(item);
-      mandatoryAdjustment += impact.type === 'percentage' ? impact.value : impact.value;
+      if (impact.type === 'percentage') {
+        mandatoryPercentageAdjustment += impact.value;
+      } else {
+        mandatoryFixedAdjustment += impact.value;
+      }
     });
     
     // Calculate optional adjustments
@@ -502,9 +488,9 @@ export const CEWSelection = ({
     
     // Call separate callbacks
     onTPLAdjustmentChange?.(tplAdjustment);
-    onMandatoryCEWAdjustmentChange?.(mandatoryAdjustment);
+    onMandatoryCEWAdjustmentChange?.(mandatoryPercentageAdjustment, mandatoryFixedAdjustment);
     onCEWAdjustmentChange?.(optionalPercentageAdjustment, optionalFixedAdjustment);
-    onPremiumChange?.(tplAdjustment + mandatoryAdjustment + optionalPercentageAdjustment + optionalFixedAdjustment);
+    onPremiumChange?.(tplAdjustment + mandatoryPercentageAdjustment + mandatoryFixedAdjustment + optionalPercentageAdjustment + optionalFixedAdjustment);
   };
 
   // Helper function to get potential impact only for selected items
@@ -611,8 +597,8 @@ export const CEWSelection = ({
     if (selectedTPLLimit === newTPLId) {
       setSelectedTPLLimit(0); // 0 means no selection
       onTPLAdjustmentChange?.(0);
-      onMandatoryCEWAdjustmentChange?.(0);
-      onCEWAdjustmentChange?.(0);
+      onMandatoryCEWAdjustmentChange?.(0, 0);
+      onCEWAdjustmentChange?.(0, 0);
       onPremiumChange?.(0);
       onTPLSelectionChange?.(null); // Clear TPL selection
       return;
@@ -623,16 +609,21 @@ export const CEWSelection = ({
     // Get the selected TPL option
     const selectedTPLOption = tplLimitOptions.find(opt => opt.id === newTPLId);
     
-    // Calculate adjustments separately for mandatory and optional
+    // Calculate adjustments separately for mandatory and optional using current cewItems
     const selectedItems = cewItems.filter(item => item.isSelected);
     const mandatoryItems = selectedItems.filter(item => item.isMandatory);
     const optionalItems = selectedItems.filter(item => !item.isMandatory);
     
     // Calculate mandatory adjustments
-    let mandatoryAdjustment = 0;
+    let mandatoryPercentageAdjustment = 0;
+    let mandatoryFixedAdjustment = 0;
     mandatoryItems.forEach(item => {
       const impact = calculateItemPremiumImpact(item);
-      mandatoryAdjustment += impact.type === 'percentage' ? impact.value : impact.value;
+      if (impact.type === 'percentage') {
+        mandatoryPercentageAdjustment += impact.value;
+      } else {
+        mandatoryFixedAdjustment += impact.value;
+      }
     });
     
     // Calculate optional adjustments
@@ -652,9 +643,9 @@ export const CEWSelection = ({
     
     // Call separate callbacks
     onTPLAdjustmentChange?.(tplAdjustment);
-    onMandatoryCEWAdjustmentChange?.(mandatoryAdjustment);
+    onMandatoryCEWAdjustmentChange?.(mandatoryPercentageAdjustment, mandatoryFixedAdjustment);
     onCEWAdjustmentChange?.(optionalPercentageAdjustment, optionalFixedAdjustment);
-    onPremiumChange?.(tplAdjustment + mandatoryAdjustment + optionalPercentageAdjustment + optionalFixedAdjustment);
+    onPremiumChange?.(tplAdjustment + mandatoryPercentageAdjustment + mandatoryFixedAdjustment + optionalPercentageAdjustment + optionalFixedAdjustment);
     onTPLSelectionChange?.(selectedTPLOption); // Pass selected TPL option
   };
 
@@ -815,7 +806,7 @@ export const CEWSelection = ({
                       }`}>
                         {formatPotentialImpact(item)}
                       </span>
-                      {item.options.length > 0 && (
+                      {item.options.length > 0 && !item.isMandatory && (
                         <Button
                           variant="default"
                           size="sm"
@@ -831,8 +822,8 @@ export const CEWSelection = ({
                 </div>
 
 
-                {/* Available Options Grid - Only show when expanded */}
-                {expandedClauses.has(item.id) && (
+                {/* Available Options Grid - Only show when expanded for non-mandatory clauses */}
+                {expandedClauses.has(item.id) && !item.isMandatory && (
                   <div className="space-y-2 mt-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         {item.options.map(option => {

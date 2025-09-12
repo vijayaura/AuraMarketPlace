@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileText, Download, Upload, Check, X, AlertCircle, Eye, Trash2, RefreshCw } from "lucide-react";
-import { getRequiredDocuments, RequiredDocument, uploadFile, createDocumentSubmission, updateDocumentSubmission, DocumentSubmissionRequest } from "@/lib/api/quotes";
+import { getRequiredDocuments, RequiredDocument, uploadFile } from "@/lib/api/quotes";
 import { ApiError } from "@/lib/api/client";
 import DocumentSkeleton from "@/components/loaders/DocumentSkeleton";
 import { toast } from "@/components/ui/sonner";
 
-interface DocumentWithUpload extends RequiredDocument {
+interface DocumentDisplay extends RequiredDocument {
   uploadedFile?: {
     name: string;
     size: string;
@@ -31,7 +31,7 @@ export interface DeclarationRef {
 
 const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmissionStateChange, onSubmitComplete }, ref) => {
   const navigate = useNavigate();
-  const [documents, setDocuments] = useState<DocumentWithUpload[]>([]);
+  const [documents, setDocuments] = useState<DocumentDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
@@ -69,24 +69,26 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     return { insurerId, productId };
   };
 
-  const fetchRequiredDocuments = async (showRetry = false) => {
+  // Load required documents from API
+  const loadDocuments = async () => {
     try {
-      if (showRetry) {
-        setRetrying(true);
-      } else {
-        setLoading(true);
-      }
+      setLoading(true);
       setError(null);
-
+      
       const { insurerId, productId } = getInsurerAndProductIds();
       
+      if (!insurerId || !productId) {
+        throw new Error('Insurer ID or Product ID not found. Please refresh the page and try again.');
+      }
+      
+      console.log('Loading required documents for insurer:', insurerId, 'product:', productId);
+      
       const response = await getRequiredDocuments(insurerId, productId);
+      console.log('Required documents response:', response);
       
-      // Filter only ACTIVE documents (exclude INACTIVE, DRAFT, etc.) and transform API response to component format
+      // Filter only ACTIVE documents and transform to display format
       const activeDocuments = response.documents.filter(doc => doc.status === 'ACTIVE');
-      const inactiveCount = response.documents.length - activeDocuments.length;
-      
-      const transformedDocs: DocumentWithUpload[] = activeDocuments.map(doc => ({
+      const transformedDocs: DocumentDisplay[] = activeDocuments.map(doc => ({
         ...doc,
         uploadedFile: undefined,
         status: 'pending' as const
@@ -95,7 +97,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       setDocuments(transformedDocs);
       
     } catch (err) {
-      console.error('❌ Error fetching required documents:', err);
+      console.error('❌ Error loading documents:', err);
       
       let errorMessage = 'Failed to load required documents. Please try again.';
       
@@ -120,11 +122,9 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       
       setError(errorMessage);
       
-      if (!showRetry) {
-        toast.error('Failed to Load Documents', {
-          description: errorMessage
-        });
-      }
+      toast.error('Failed to Load Documents', {
+        description: errorMessage
+      });
     } finally {
       setLoading(false);
       setRetrying(false);
@@ -132,11 +132,11 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
   };
 
   useEffect(() => {
-    fetchRequiredDocuments();
+    loadDocuments();
   }, []);
 
-  const handleDownloadTemplate = (templateFile: string, displayLabel: string) => {
-    if (!templateFile) {
+  const handleDownloadTemplate = async (url: string, label: string) => {
+    if (!url) {
       toast.error('Template Not Available', {
         description: 'Template file is not available for this document.'
       });
@@ -144,24 +144,18 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     }
 
     try {
-      // Determine if template_file is a full URL or just a filename
-      let templateUrl: string;
-      
-      if (templateFile.startsWith('http://') || templateFile.startsWith('https://')) {
-        // It's already a full URL
-        templateUrl = templateFile;
-      } else {
-        // It's a filename, construct the full URL
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-        templateUrl = `${baseUrl}/templates/${templateFile}`;
-      }
-      
-      console.log('📥 Downloading template:', templateUrl);
+      console.log('📥 Downloading template:', url, 'for document:', label);
       
       // Create a temporary link element to trigger download
       const link = document.createElement('a');
-      link.href = templateUrl;
-      link.download = templateFile.includes('/') ? templateFile.split('/').pop() || templateFile : templateFile;
+      link.href = url;
+      
+      // Extract filename from URL or use label as fallback
+      const filename = url.includes('/') 
+        ? url.split('/').pop() || `${label}_template.pdf`
+        : url;
+      
+      link.download = filename;
       link.target = '_blank'; // Open in new tab as fallback
       link.rel = 'noopener noreferrer'; // Security best practice
       
@@ -172,11 +166,11 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
       
       // Optional: Add a small delay to ensure the download starts
       setTimeout(() => {
-        console.log('✅ Template download initiated for:', displayLabel);
+        console.log('✅ Template download initiated for:', label);
       }, 100);
       
       toast.success('Template Downloaded', {
-        description: `${displayLabel} template has been downloaded.`
+        description: `${label} template has been downloaded.`
       });
     } catch (error) {
       console.error('❌ Error downloading template:', error);
@@ -186,6 +180,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     }
   };
 
+  // File upload functionality
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, docId: number) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -316,7 +311,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
   };
 
   const handleRetry = () => {
-    fetchRequiredDocuments(true);
+    loadDocuments();
   };
 
   // Validate that all required documents are uploaded
@@ -326,7 +321,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     
     if (uploadedDocs.length !== requiredDocs.length) {
       const missingDocs = requiredDocs.filter(doc => !doc.uploadedFile || doc.status !== 'uploaded');
-      const missingLabels = missingDocs.map(doc => doc.display_label).join(', ');
+      const missingLabels = missingDocs.map(doc => doc.label).join(', ');
       
       toast.error('Missing Required Documents', {
         description: `Please upload the following required documents: ${missingLabels}`
@@ -337,49 +332,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     return true;
   };
 
-  // Build document submission payload
-  const buildDocumentSubmissionPayload = () => {
-    const { productId } = getInsurerAndProductIds();
-    
-    const payload: any = {
-      product_id: productId
-    };
-    
-    // Get all uploaded documents
-    const uploadedDocs = documents.filter(doc => doc.uploadedFile && doc.status === 'uploaded');
-    
-    console.log('Building payload - Total documents:', documents.length);
-    console.log('Building payload - Uploaded documents:', uploadedDocs.length);
-    console.log('Building payload - Documents state:', documents);
-    
-    // Add each uploaded document to the payload with a dynamic key
-    uploadedDocs.forEach((doc, index) => {
-      // Create a clean key from the document label
-      let key = doc.display_label
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '') // Remove special characters except spaces
-        .replace(/\s+/g, '_') // Replace spaces with underscores
-        .replace(/_+/g, '_') // Replace multiple underscores with single
-        .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
-      
-      // If key is empty or too short, use a fallback
-      if (!key || key.length < 2) {
-        key = `document_${index + 1}`;
-      }
-      
-      console.log(`Adding document: "${doc.display_label}" -> key: "${key}"`);
-      
-      payload[key] = {
-        label: doc.display_label,
-        url: doc.uploadedFile.url || ''
-      };
-    });
-    
-    console.log('Final payload:', payload);
-    return payload;
-  };
-
-  // Handle document submission - called by parent component's Next button
+  // Handle document submission with validation
   const handleSubmitDocuments = async (): Promise<boolean> => {
     try {
       setIsSubmitting(true);
@@ -390,67 +343,19 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
         return false;
       }
       
-      // Get quote ID from storage
-      const storedQuoteId = localStorage.getItem('currentQuoteId');
-      console.log('Declaration - localStorage currentQuoteId:', storedQuoteId);
-      console.log('Declaration - all localStorage keys:', Object.keys(localStorage));
-      
-      if (!storedQuoteId) {
-        throw new Error('Quote ID not found in storage. Please refresh the page and try again.');
-      }
-      
-      // Check if documents have been submitted before
-      const policyRequiredDocuments = localStorage.getItem('policy_required_documents') === 'true';
-      
-      // Build submission payload
-      const payload = buildDocumentSubmissionPayload();
-      
-      // Call appropriate API based on whether documents were submitted before
-      let response;
-      if (policyRequiredDocuments) {
-        // Update existing - use PATCH
-        response = await updateDocumentSubmission(parseInt(storedQuoteId), payload);
-      } else {
-        // First time - use POST
-        response = await createDocumentSubmission(parseInt(storedQuoteId), payload);
-      }
-      
-      // Update storage flag
-      localStorage.setItem('policy_required_documents', 'true');
+      console.log('Declaration tab - all required documents uploaded successfully');
       
       // Show success message
-      toast.success('Documents Submitted Successfully', {
-        description: 'All required documents have been submitted successfully.'
+      toast.success('Documents Ready', {
+        description: 'All required documents have been uploaded successfully.'
       });
       
       return true;
       
     } catch (err) {
-      console.error('❌ Error submitting documents:', err);
-      
-      let errorMessage = 'Failed to submit documents. Please try again.';
-      
-      if (err instanceof ApiError) {
-        switch (err.status) {
-          case 400:
-            errorMessage = 'Invalid document data. Please check your uploads and try again.';
-            break;
-          case 401:
-            errorMessage = 'Authentication required. Please log in again.';
-            break;
-          case 403:
-            errorMessage = 'Access denied. You do not have permission to submit documents.';
-            break;
-          case 500:
-            errorMessage = 'Server error. Please try again later.';
-            break;
-          default:
-            errorMessage = err.message || errorMessage;
-        }
-      }
-      
+      console.error('❌ Error in document submission:', err);
       toast.error('Submission Failed', {
-        description: errorMessage
+        description: 'An error occurred during document submission. Please try again.'
       });
       return false;
     } finally {
@@ -461,13 +366,6 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
 
   // Expose the submission function and state to parent component
   // The submission function is available via the handleSubmitDocuments function
-
-  // Notify parent about submission state changes
-  useEffect(() => {
-    if (onSubmissionStateChange) {
-      onSubmissionStateChange(isSubmitting);
-    }
-  }, [isSubmitting, onSubmissionStateChange]);
 
   // Show loading skeleton
   if (loading) {
@@ -520,10 +418,10 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
     <div className="w-full">
       <div className="text-left mb-6">
         <h2 className="text-lg font-semibold text-foreground mb-1">
-          Upload Declaration Documents
+          Declaration Documents
         </h2>
         <p className="text-sm text-muted-foreground">
-          Please upload documents needed for policy issuance
+          Required documents for policy issuance
         </p>
       </div>
 
@@ -552,7 +450,7 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 lg:space-x-3 mb-2">
-                      <h4 className="font-semibold text-sm lg:text-base text-foreground">{doc.display_label}</h4>
+                      <h4 className="font-semibold text-sm lg:text-base text-foreground">{doc.label}</h4>
                       {doc.is_required === 1 && (
                         <Badge variant="outline" className="text-warning border-warning">Required</Badge>
                       )}
@@ -573,11 +471,11 @@ const Declaration = forwardRef<DeclarationRef, DeclarationProps>(({ onSubmission
                 </div>
                 
                 <div className="flex items-center space-x-1 lg:space-x-2 ml-3 lg:ml-4">
-                  {doc.template_file && (
+                  {doc.url && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownloadTemplate(doc.template_file!, doc.display_label)}
+                      onClick={() => handleDownloadTemplate(doc.url!, doc.label)}
                       className="bg-white text-foreground border-border hover:bg-gray-50 mr-1 lg:mr-2"
                     >
                       <Download className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
