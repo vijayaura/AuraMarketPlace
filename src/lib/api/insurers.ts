@@ -1395,11 +1395,13 @@ export interface RequiredDocumentDTO {
   id: number;
   product_id: number;
   display_order: number;
-  display_label: string;
+  label: string; // Updated from display_label to match new API
+  display_label?: string; // Keep for backward compatibility
   description: string | null;
   is_required: boolean;
   status: string; // 'active' | 'inactive'
-  template_file_url: string | null;
+  url: string | null; // Updated from template_file_url to match new API
+  template_file_url?: string | null; // Keep for backward compatibility
 }
 
 export interface GetRequiredDocumentsResponse {
@@ -1479,11 +1481,12 @@ export interface UpdateRequiredDocumentResponse {
 
 export async function updateRequiredDocument(
   insurerId: number | string,
+  productId: number | string,
   documentId: number | string,
   params: UpdateRequiredDocumentParams
 ): Promise<UpdateRequiredDocumentResponse> {
   return apiPatch<UpdateRequiredDocumentResponse>(
-    `/insurers/${encodeURIComponent(String(insurerId))}/required-documents/${encodeURIComponent(String(documentId))}`,
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/required-documents/${encodeURIComponent(String(documentId))}`,
     params
   );
 }

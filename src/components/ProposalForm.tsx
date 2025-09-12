@@ -34,7 +34,7 @@ import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentUpload } from "./DocumentUpload";
 import { QuotesComparison } from "./QuotesComparison";
-import Declaration, { DeclarationRef } from "@/pages/Declaration";
+import DeclarationTab from "./DeclarationTab";
 
 // Extend Window interface for global functions
 declare global {
@@ -115,9 +115,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const [requiredDocumentTypes, setRequiredDocumentTypes] = useState<Array<{id: number, name: string, required: boolean}>>([]);
   const [allDocumentTypes, setAllDocumentTypes] = useState<Array<{id: number, name: string, required: boolean, status: string, fileUrl?: string, fileName?: string}>>([]);
   
-  // Declaration submission state
-  const [isSubmittingDocuments, setIsSubmittingDocuments] = useState(false);
-  const declarationRef = useRef<DeclarationRef>(null);
+  // Declaration submission state - will be handled by DeclarationTab component
   
   // Assigned Insurers State
   const [assignedInsurers, setAssignedInsurers] = useState<BrokerInsurersResponse | null>(null);
@@ -263,68 +261,62 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     (window as any).proposalStorageAPI = storageAPI;
   }
 
-  // Default form data
+  // Default form data - all fields empty for new proposals
   const getDefaultFormData = () => ({
-    projectName: "Al Habtoor Tower Development",
-    projectType: "commercial",
-    subProjectType: "office-buildings",
-    constructionType: "concrete",
+    projectName: "",
+    projectType: "",
+    subProjectType: "",
+    constructionType: "",
     country: "uae",
-    region: "dubai",
-    zone: "business-bay",
-    projectAddress: "Sheikh Zayed Road, Business Bay, Dubai, UAE",
-    coordinates: "25.2048, 55.2708",
+    region: "",
+    zone: "",
+    projectAddress: "",
+    coordinates: "",
     projectValue: "0", // Always 0 as requested
     startDate: new Date().toISOString().split('T')[0],
     completionDate: "",
-    constructionPeriod: "18",
-    maintenancePeriod: "24",
-    thirdPartyLimit: "7340000",
-    insuredName: "Al Habtoor Construction LLC",
+    constructionPeriod: "",
+    maintenancePeriod: "12",
+    thirdPartyLimit: "",
+    insuredName: "",
     roleOfInsured: "contractor",
-    mainContractor: "Al Habtoor Construction LLC",
-    principalOwner: "Dubai Development Authority",
-    contractType: "turnkey",
-    contractNumber: "DDA-2024-CT-001",
-    experienceYears: "15",
+    mainContractor: "",
+    principalOwner: "",
+    contractType: "",
+    contractNumber: "",
+    experienceYears: "",
     consultants: [{
       id: 1,
-      name: "Atkins Middle East",
-      role: "Structural Engineer",
-      licenseNumber: "ENG-2024-001"
+      name: "",
+      role: "",
+      licenseNumber: ""
     }],
     subContractors: [{
       id: 1,
-      name: "Emirates Steel",
-      contractType: "supply",
-      contractNumber: "ES-2024-001"
-    }, {
-      id: 2,
-      name: "Dubai Glass",
-      contractType: "install",
-      contractNumber: "DG-2024-002"
+      name: "",
+      contractType: "",
+      contractNumber: ""
     }],
     nearWaterBody: "no",
     waterBodyDistance: "",
     floodProneZone: "no",
     withinCityCenter: "",
     cityAreaType: "",
-    soilType: "sandy",
+    soilType: "",
     existingStructure: "no",
     existingStructureDetails: "",
     blastingExcavation: "no",
-    siteSecurityArrangements: "24-7-guarded",
-    sumInsuredMaterial: "7340000",
-    sumInsuredPlant: "1835000",
+    siteSecurityArrangements: "",
+    sumInsuredMaterial: "",
+    sumInsuredPlant: "",
     sumInsuredTemporary: "0",
-    tplLimit: "3670000",
+    tplLimit: "",
     crossLiabilityCover: "yes",
     principalExistingProperty: "0",
-    removalDebrisLimit: "458750",
-    // Auto-calculated as 5% of project value
-    surroundingPropertyLimit: "550500",
-    lossesInLastFiveYears: "yes",
-    lossesDetails: "Minor equipment damage in 2022 - AED 50,000 claim settled",
+    removalDebrisLimit: "",
+    surroundingPropertyLimit: "",
+    lossesInLastFiveYears: "no",
+    lossesDetails: "",
     claimsHistory: [{
       year: 2025,
       claimCount: 0,
@@ -332,9 +324,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       description: ""
     }, {
       year: 2024,
-      claimCount: 1,
-      amount: "50000",
-      description: "Minor equipment damage"
+      claimCount: 0,
+      amount: "",
+      description: ""
     }, {
       year: 2023,
       claimCount: 0,
@@ -959,8 +951,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         subProjectType: editingQuote.subProjectType || "",
         constructionType: editingQuote.constructionType?.toLowerCase() || "",
         country: "uae", // Default to UAE
-        region: "dubai", // Default based on project location
-        zone: "business-bay", // Default zone
+        region: "", // Will be selected by user
+        zone: "", // Will be selected by user
         projectAddress: editingQuote.projectAddress || "",
         coordinates: editingQuote.coordinates || "",
         projectValue: "0", // Always 0 as requested
@@ -1062,9 +1054,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const validateCoverageRequirements = () => {
     const errors: Record<string, string> = {};
     const sumInsuredTotal = parseInt(formData.sumInsuredMaterial || "0") + parseInt(formData.sumInsuredPlant || "0") + parseInt(formData.sumInsuredTemporary || "0") + parseInt(formData.otherMaterials || "0") + parseInt(formData.principalExistingProperty || "0");
-    if (sumInsuredTotal === 0) {
-      errors.sumInsured = "Sum Insured for Material Damage cannot be 0";
-    }
+    // Allow 0 values - removed the validation that prevented 0 sum insured
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -1276,23 +1266,23 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         
       case 4: // Cover Requirements step
         const materialValue = parseFloat(formData.sumInsuredMaterial?.replace(/[^0-9.]/g, '') || '0');
-        if (!formData.sumInsuredMaterial || formData.sumInsuredMaterial.trim() === '' || isNaN(materialValue) || materialValue < 0) {
+        if (formData.sumInsuredMaterial && formData.sumInsuredMaterial.trim() !== '' && (isNaN(materialValue) || materialValue < 0)) {
           errors.sumInsuredMaterial = "Valid contract works amount is required";
         }
         const plantValue = parseFloat(formData.sumInsuredPlant?.replace(/[^0-9.]/g, '') || '0');
-        if (!formData.sumInsuredPlant || formData.sumInsuredPlant.trim() === '' || isNaN(plantValue) || plantValue < 0) {
+        if (formData.sumInsuredPlant && formData.sumInsuredPlant.trim() !== '' && (isNaN(plantValue) || plantValue < 0)) {
           errors.sumInsuredPlant = "Valid plant and equipment amount is required";
         }
         const temporaryValue = parseFloat(formData.sumInsuredTemporary?.replace(/[^0-9.]/g, '') || '0');
-        if (!formData.sumInsuredTemporary || formData.sumInsuredTemporary.trim() === '' || isNaN(temporaryValue) || temporaryValue < 0) {
+        if (formData.sumInsuredTemporary && formData.sumInsuredTemporary.trim() !== '' && (isNaN(temporaryValue) || temporaryValue < 0)) {
           errors.sumInsuredTemporary = "Valid temporary works amount is required";
         }
         const otherMaterialsValue = parseFloat(formData.otherMaterials?.replace(/[^0-9.]/g, '') || '0');
-        if (!formData.otherMaterials || formData.otherMaterials.trim() === '' || isNaN(otherMaterialsValue) || otherMaterialsValue < 0) {
+        if (formData.otherMaterials && formData.otherMaterials.trim() !== '' && (isNaN(otherMaterialsValue) || otherMaterialsValue < 0)) {
           errors.otherMaterials = "Valid other materials amount is required";
         }
         const principalValue = parseFloat(formData.principalExistingProperty?.replace(/[^0-9.]/g, '') || '0');
-        if (!formData.principalExistingProperty || formData.principalExistingProperty.trim() === '' || isNaN(principalValue) || principalValue < 0) {
+        if (formData.principalExistingProperty && formData.principalExistingProperty.trim() !== '' && (isNaN(principalValue) || principalValue < 0)) {
           errors.principalExistingProperty = "Valid principals property amount is required";
         }
         if (!formData.crossLiabilityCover) {
@@ -1680,7 +1670,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       blasting_or_deep_excavation: formData.blastingExcavation === "yes",
       site_security_arrangements: formData.siteSecurityArrangements || '',
       area_type: formData.cityAreaType || 'Urban',
-      describe_existing_structure: formData.existingStructureDetails || 'sample existing structures'
+      describe_existing_structure: formData.existingStructureDetails || ''
     };
   };
 
@@ -2349,23 +2339,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         return;
                       }
                       
-                      // Handle declaration step (step 7) in the hero button
+                      // Handle declaration step (step 7) - will be handled by DeclarationTab component
                       if (currentStep === 7) {
-                        if (declarationRef.current && declarationRef.current.handleSubmitDocuments) {
-                          try {
-                            const success = await declarationRef.current.handleSubmitDocuments();
-                            if (success) {
-                              markStepCompleted('policy_required_documents');
-                              navigate('/customer/success');
-                            }
-                          } catch (error) {
-                            console.error('Error calling handleSubmitDocuments:', error);
-                          }
-                        } else {
-                          // Fallback if ref is not available
-                          markStepCompleted('policy_required_documents');
-                          navigate('/customer/success');
-                        }
+                        // DeclarationTab will handle its own submission
+                        return;
                       } else if (currentStep !== 4) {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
@@ -2374,14 +2351,14 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         // Do nothing here, let the main handler (BUTTON 2) handle step 4
                       }
                     }}
-                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody || isSubmittingDocuments}
+                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody || false}
                   >
                     {isSavingCoverRequirements ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Saving...
                       </>
-                    ) : isSubmittingDocuments ? (
+                    ) : false ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Submitting Documents...
@@ -2477,6 +2454,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         // Documents step - save documents and go to step 6 (Quotes)
                         const success = await saveRequiredDocumentsData();
                         if (success) {
+                          // Mark policy_required_documents step as completed
+                          markStepCompleted('policy_required_documents');
                           // Load assigned insurers when navigating to quotes comparison
                           await loadAssignedInsurers();
                           setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
@@ -2486,34 +2465,15 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         markStepCompleted('coverages_selected');
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       } else if (currentStep === 7) {
-                        // Declaration step - submit documents first, then navigate to success page
+                        // Declaration step - will be handled by DeclarationTab component
                         console.log('🔍 Declaration step - Next button clicked');
-                        console.log('🔍 declarationRef.current:', declarationRef.current);
-                        
-                        if (declarationRef.current && declarationRef.current.handleSubmitDocuments) {
-                          console.log('🔍 Calling handleSubmitDocuments...');
-                          try {
-                            const success = await declarationRef.current.handleSubmitDocuments();
-                            console.log('🔍 handleSubmitDocuments result:', success);
-                            if (success) {
-                              markStepCompleted('policy_required_documents');
-                              navigate('/customer/success');
-                            }
-                          } catch (error) {
-                            console.error('🔍 Error calling handleSubmitDocuments:', error);
-                          }
-                        } else {
-                          console.log('🔍 Ref not available, using fallback');
-                          // Fallback if ref is not available
-                          markStepCompleted('policy_required_documents');
-                          navigate('/customer/success');
-                        }
+                        // DeclarationTab will handle its own submission and flag update
                       } else {
                         // Other steps - just navigate
                         setCurrentStep(Math.min(steps.length - 1, currentStep + 1));
                       }
                     }}
-                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody || isSubmittingDocuments}
+                    disabled={isSavingProject || isSavingInsuredDetails || isSavingContractStructure || isSavingSiteRisks || isSavingCoverRequirements || isSavingDocuments || isCheckingWaterBody || false}
                   >
                     {isSavingProject ? (
                       <>
@@ -2550,7 +2510,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Checking water bodies...
                       </>
-                    ) : isSubmittingDocuments ? (
+                    ) : false ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Submitting Documents...
@@ -3713,26 +3673,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
 
             </Tabs>
 
-            {/* Always render Declaration component outside TabsContent to maintain state */}
+            {/* Declaration Tab */}
             <div style={{ display: currentStep === 7 ? 'block' : 'none' }}>
-              <Declaration 
-                ref={declarationRef} 
-                onSubmissionStateChange={setIsSubmittingDocuments}
-                onSubmitComplete={async () => {
-                  if (declarationRef.current && declarationRef.current.handleSubmitDocuments) {
-                    try {
-                      const success = await declarationRef.current.handleSubmitDocuments();
-                      if (success) {
-                        markStepCompleted('policy_required_documents');
-                        const quoteId = localStorage.getItem('currentQuoteId');
-                        navigate('/customer/success', { state: { quoteId } });
-                      }
-                    } catch (error) {
-                      console.error('Error calling handleSubmitDocuments:', error);
-                    }
-                  }
-                }}
-              />
+              <DeclarationTab onPolicyIssued={() => markStepCompleted('policy_issued')} />
             </div>
 
           </CardContent>

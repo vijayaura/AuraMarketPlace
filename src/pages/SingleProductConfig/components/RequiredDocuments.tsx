@@ -261,14 +261,19 @@ const RequiredDocuments: React.FC<RequiredDocumentsProps> = (props) => {
                                 size="sm"
                                 className="text-blue-600 hover:text-blue-700"
                                 onClick={() => {
-                                  toast({
-                                    title: "Template Preview",
-                                    description: `Template: ${doc.template.name} (${doc.template.size})`,
-                                  });
+                                  if (doc.template?.url) {
+                                    // Open the template URL in a new tab
+                                    window.open(doc.template.url, '_blank', 'noopener,noreferrer');
+                                  } else {
+                                    toast({
+                                      title: "Template Preview",
+                                      description: `Template: ${doc.template.name} (${doc.template.size})`,
+                                    });
+                                  }
                                 }}
                               >
                                 <Eye className="w-4 h-4 mr-1" />
-                                View
+                                Preview
                               </Button>
                               <span className="text-xs text-muted-foreground">{doc.template.name}</span>
                             </div>

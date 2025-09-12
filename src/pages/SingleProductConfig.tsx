@@ -1626,12 +1626,16 @@ const SingleProductConfig = () => {
         // map to existing requiredDocuments UI structure
         const mapped = list.map(d => ({
           id: d.id,
-          label: d.display_label,
+          label: d.label || d.display_label, // Handle both new and old API formats
           description: d.description || '',
           required: !!d.is_required,
           active: (d.status || '').toLowerCase() === 'active',
           order: d.display_order,
-          template: d.template_file_url ? { name: d.template_file_url.split('/').pop() || 'template.pdf', size: '—', url: d.template_file_url } : null,
+          template: (d.url || d.template_file_url) ? { 
+            name: (d.url || d.template_file_url).split('/').pop() || 'template.pdf', 
+            size: '—', 
+            url: d.url || d.template_file_url 
+          } : null,
         }));
         setRequiredDocuments(mapped as any);
         // loaded successfully
@@ -5122,7 +5126,7 @@ const SingleProductConfig = () => {
       setRequiredDocsError(null);
       
       // Call the UPDATE API with correct format
-      const response = await updateRequiredDocument(insurerId, editingDocument.id, {
+      const response = await updateRequiredDocument(insurerId, product.id, editingDocument.id, {
         display_label: editingDocument.label,
         description: editingDocument.description || '',
         is_required: !!editingDocument.required,
@@ -5136,12 +5140,16 @@ const SingleProductConfig = () => {
       const list = Array.isArray(resp?.documents) ? resp.documents : [];
       const mapped = list.map(d => ({
         id: d.id,
-        label: d.display_label,
+        label: d.label || d.display_label, // Handle both new and old API formats
         description: d.description || '',
         required: !!d.is_required,
         active: (d.status || '').toLowerCase() === 'active',
         order: d.display_order,
-        template: d.template_file_url ? { name: d.template_file_url.split('/').pop() || 'template.pdf', size: '—', url: d.template_file_url } : null,
+        template: (d.url || d.template_file_url) ? { 
+          name: (d.url || d.template_file_url).split('/').pop() || 'template.pdf', 
+          size: '—', 
+          url: d.url || d.template_file_url 
+        } : null,
       }));
       setRequiredDocuments(mapped as any);
       
@@ -7474,12 +7482,16 @@ const SingleProductConfig = () => {
                               const list = Array.isArray(resp?.documents) ? resp.documents : [];
                               const mapped = list.map(d => ({
                                 id: d.id,
-                                label: d.display_label,
+                                label: d.label || d.display_label, // Handle both new and old API formats
                                 description: d.description || '',
                                 required: !!d.is_required,
                                 active: (d.status || '').toLowerCase() === 'active',
                                 order: d.display_order,
-                                template: d.template_file_url ? { name: d.template_file_url.split('/').pop() || 'template.pdf', size: '—', url: d.template_file_url } : null,
+                                template: (d.url || d.template_file_url) ? { 
+                                  name: (d.url || d.template_file_url).split('/').pop() || 'template.pdf', 
+                                  size: '—', 
+                                  url: d.url || d.template_file_url 
+                                } : null,
                               }));
                               setRequiredDocuments(mapped as any);
                               toast({ title: 'Document added', description: 'Required document created successfully.' });

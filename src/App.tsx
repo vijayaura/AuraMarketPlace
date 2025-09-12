@@ -19,7 +19,7 @@ import { BrokerLayout } from "./components/BrokerLayout";
 import Proposal from "./pages/Proposal";
 import Quotes from "./pages/Quotes";
 import Documents from "./pages/Documents";
-import Declaration from "./pages/Declaration";
+// Declaration component removed - now using DeclarationTab in ProposalForm
 import Payment from "./pages/Payment";
 import Success from "./pages/Success";
 import InsurerDashboard from "./pages/InsurerDashboard";
@@ -129,7 +129,7 @@ const App = () => (
           <Route path="/customer/documents" element={<Documents />} />
           <Route path="/customer/quotes" element={<Quotes />} />
           <Route path="/customer/cew-customization" element={<CEWCustomization />} />
-          <Route path="/customer/declaration" element={<Declaration />} />
+          {/* Declaration route removed - now handled within ProposalForm */}
           <Route path="/customer/payment" element={<Payment />} />
           <Route path="/customer/success" element={<Success />} />
           {/* Insurer Routes */}

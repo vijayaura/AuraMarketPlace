@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Download, CheckCircle, Calendar, Building, DollarSign, Shield, AlertCircle } from "lucide-react";
-import { getProposalBundle, ProposalBundleResponse } from "@/lib/api/quotes";
+import { getProposalBundle, ProposalBundleResponse, getPolicyDetails, PolicyDetailsResponse } from "@/lib/api/quotes";
 import { getPolicyWordings, PolicyWording } from "@/lib/api/insurers";
 import { toast } from "@/components/ui/sonner";
 import { generatePolicyPDF } from "@/utils/pdfGenerator";
@@ -16,8 +17,18 @@ const Success = () => {
   const location = useLocation();
   const [proposalBundle, setProposalBundle] = useState<ProposalBundleResponse | null>(null);
   const [policyWordings, setPolicyWordings] = useState<PolicyWording[]>([]);
+  const [policyDetails, setPolicyDetails] = useState<PolicyDetailsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [policyData, setPolicyData] = useState<{
+    policyId: string | null;
+    policyQuoteId: string | null;
+    policyDetails: any | null;
+  }>({
+    policyId: null,
+    policyQuoteId: null,
+    policyDetails: null
+  });
 
   useEffect(() => {
     const loadPolicyData = async () => {
@@ -25,22 +36,38 @@ const Success = () => {
         setLoading(true);
         setError(null);
 
-        // Get quote ID from navigation state first, then localStorage
-        const quoteIdFromState = location.state?.quoteId;
-        const quoteIdFromStorage = localStorage.getItem('currentQuoteId');
-        const quoteId = quoteIdFromState || quoteIdFromStorage;
+        // Get policy data from localStorage
+        const policyId = localStorage.getItem('policyId');
+        const policyQuoteId = localStorage.getItem('policyQuoteId');
+        const policyDetailsStr = localStorage.getItem('policyDetails');
+        const policyDetails = policyDetailsStr ? JSON.parse(policyDetailsStr) : null;
         
-        console.log('Success page - quoteId from state:', quoteIdFromState);
-        console.log('Success page - quoteId from localStorage:', quoteIdFromStorage);
-        console.log('Success page - final quoteId:', quoteId);
+        console.log('Success page - policyId:', policyId);
+        console.log('Success page - policyQuoteId:', policyQuoteId);
+        console.log('Success page - policyDetails:', policyDetails);
         console.log('Success page - all localStorage keys:', Object.keys(localStorage));
         
-        if (!quoteId) {
+        // Set policy data
+        setPolicyData({
+          policyId,
+          policyQuoteId,
+          policyDetails
+        });
+        
+        // If we have a policy ID, fetch policy details
+        if (policyId) {
+          console.log('Success page - Fetching policy details for policy ID:', policyId);
+          const policyDetailsData = await getPolicyDetails(parseInt(policyId));
+          setPolicyDetails(policyDetailsData);
+          console.log('Success page - Policy details loaded:', policyDetailsData);
+        }
+        
+        if (!policyQuoteId) {
           throw new Error('Quote ID not found. Please start the process again.');
         }
 
-        // Get proposal bundle with all data
-        const bundleData = await getProposalBundle(parseInt(quoteId));
+        // Get proposal bundle with all data using policyQuoteId
+        const bundleData = await getProposalBundle(parseInt(policyQuoteId));
         setProposalBundle(bundleData);
 
         // Get policy wordings
@@ -162,32 +189,6 @@ const Success = () => {
             <Card className="bg-white shadow-lg border-0 mb-8">
               <CardContent className="p-6">
                 <div className="space-y-6">
-                  {/* Policy Information */}
-                  <div className="border-b border-gray-100 pb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Policy Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Policy ID</span>
-                        <p className="text-sm font-medium">{proposalBundle.quote_meta.quote_id}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Insurer</span>
-                        <p className="text-sm font-medium">{proposalBundle.plans[0]?.insurer_name || 'N/A'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Premium Amount</span>
-                        <p className="text-sm font-semibold text-green-600">
-                          AED {proposalBundle.plans[0]?.premium_amount?.toLocaleString() || 'N/A'}
-                        </p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Sum Insured</span>
-                        <p className="text-sm font-semibold">
-                          AED {parseFloat(proposalBundle.project.sum_insured).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Project Information */}
                   <div>
@@ -195,34 +196,105 @@ const Success = () => {
                     <div className="grid grid-cols-4 gap-4">
                       <div className="space-y-1">
                         <span className="text-sm text-gray-500">Project Name</span>
-                        <p className="text-sm font-medium">{proposalBundle.project.project_name}</p>
+                        <p className="text-sm font-medium">{policyDetails?.policyInfo.project_name || proposalBundle?.project.project_name || 'N/A'}</p>
                       </div>
                       <div className="space-y-1">
                         <span className="text-sm text-gray-500">Client Name</span>
-                        <p className="text-sm font-medium">{proposalBundle.project.client_name}</p>
+                        <p className="text-sm font-medium">{policyDetails?.policyInfo.client_name || proposalBundle?.project.client_name || 'N/A'}</p>
                       </div>
                       <div className="space-y-1">
                         <span className="text-sm text-gray-500">Location</span>
-                        <p className="text-sm font-medium">{proposalBundle.project.address}</p>
+                        <p className="text-sm font-medium">{policyDetails?.policyInfo.address || proposalBundle?.project.address || 'N/A'}</p>
                       </div>
                       <div className="space-y-1">
                         <span className="text-sm text-gray-500">Project Type</span>
-                        <p className="text-sm font-medium capitalize">{proposalBundle.project.project_type}</p>
+                        <p className="text-sm font-medium capitalize">{policyDetails?.policyInfo.project_type || proposalBundle?.project.project_type || 'N/A'}</p>
                       </div>
                       <div className="space-y-1">
                         <span className="text-sm text-gray-500">Construction Period</span>
-                        <p className="text-sm font-medium">{proposalBundle.project.construction_period_months} months</p>
+                        <p className="text-sm font-medium">{policyDetails?.policyInfo.construction_period_months || proposalBundle?.project.construction_period_months || 'N/A'} months</p>
                       </div>
                       <div className="space-y-1">
                         <span className="text-sm text-gray-500">Construction Type</span>
-                        <p className="text-sm font-medium capitalize">{proposalBundle.project.construction_type}</p>
+                        <p className="text-sm font-medium capitalize">{policyDetails?.policyInfo.construction_type || proposalBundle?.project.construction_type || 'N/A'}</p>
                       </div>
                       <div className="space-y-1">
                         <span className="text-sm text-gray-500">Maintenance Period</span>
-                        <p className="text-sm font-medium">{proposalBundle.project.maintenance_period_months} months</p>
+                        <p className="text-sm font-medium">{policyDetails?.policyInfo.maintenance_period_months || proposalBundle?.project.maintenance_period_months || 'N/A'} months</p>
                       </div>
                     </div>
                   </div>
+
+                  {/* Policy Details and Timeline Tabs */}
+                  <Tabs defaultValue="details" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="details">Policy Details</TabsTrigger>
+                      <TabsTrigger value="timeline">Policy Timeline</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="details" className="mt-6">
+                      <div className="border-b border-gray-100 pb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Policy Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="space-y-1">
+                            <span className="text-sm text-gray-500">Policy ID</span>
+                            <p className="text-sm font-medium">{policyDetails?.policyInfo.policy_id || policyData.policyId || proposalBundle?.quote_meta.quote_id || 'N/A'}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-sm text-gray-500">Quote ID</span>
+                            <p className="text-sm font-medium">{policyDetails?.policyInfo.quote_id || policyData.policyQuoteId || proposalBundle?.quote_meta.quote_id || 'N/A'}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-sm text-gray-500">Insurer</span>
+                            <p className="text-sm font-medium">{policyDetails?.policyInfo.insurer_name || proposalBundle?.plans[0]?.insurer_name || 'N/A'}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-sm text-gray-500">Premium Amount</span>
+                            <p className="text-sm font-semibold text-green-600">
+                              AED {policyDetails?.policyInfo.total_premium ? parseFloat(policyDetails.policyInfo.total_premium).toLocaleString() : proposalBundle?.plans[0]?.premium_amount?.toLocaleString() || 'N/A'}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-sm text-gray-500">Sum Insured</span>
+                            <p className="text-sm font-semibold">
+                              AED {policyDetails?.policyInfo.sum_insured ? parseFloat(policyDetails.policyInfo.sum_insured).toLocaleString() : proposalBundle?.project.sum_insured ? parseFloat(proposalBundle.project.sum_insured).toLocaleString() : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="timeline" className="mt-6">
+                      {policyDetails?.policyTimeline && policyDetails.policyTimeline.length > 0 ? (
+                        <div className="border-b border-gray-100 pb-4">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4">Policy Timeline</h3>
+                          <div className="space-y-3">
+                            {policyDetails.policyTimeline.map((event, index) => (
+                              <div key={index} className="flex items-center space-x-3">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-900">{event.event}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(event.date).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric'
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                          <p>No timeline events available</p>
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+
                 </div>
               </CardContent>
             </Card>

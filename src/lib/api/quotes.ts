@@ -932,36 +932,68 @@ export const createDocumentSubmission = async (quoteId: number, data: DocumentSu
   return response;
 };
 
-export const updateDocumentSubmission = async (quoteId: number, data: DocumentSubmissionRequest): Promise<DocumentSubmissionResponse> => {
-  const response = await apiPatch<DocumentSubmissionResponse>(`/quotes/${quoteId}/docs-required`, data);
+// Policy API Functions
+export interface PolicyInfo {
+  id: number;
+  policy_id: string;
+  quote_id: string;
+  insurer_id: number;
+  broker_id: number;
+  start_date: string;
+  end_date: string;
+  base_premium: string;
+  total_premium: string;
+  commission_rate: string;
+  commission_amount: string;
+  document_path: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  proposal_bundle: any; // Complex nested object
+  project_id: string;
+  broker_company_id: number;
+  broker_company_name: string;
+  broker_user_id: number;
+  broker_user_name: string;
+  broker_user_role: string;
+  broker_user_type: string;
+  client_name: string;
+  project_name: string;
+  project_type: string;
+  sub_project_type: string;
+  construction_type: string;
+  address: string;
+  country: string;
+  region: string;
+  zone: string;
+  latitude: string;
+  longitude: string;
+  sum_insured: string;
+  completion_date: string;
+  construction_period_months: number;
+  maintenance_period_months: number;
+  broker_name: string;
+  insurer_name: string;
+  insurer_email: string;
+}
+
+export interface PolicyTimelineEvent {
+  event: string;
+  date: string;
+}
+
+export interface PolicyDetailsResponse {
+  policyInfo: PolicyInfo;
+  policyTimeline: PolicyTimelineEvent[];
+}
+
+export const getPolicyDetails = async (policyId: number): Promise<PolicyDetailsResponse> => {
+  const response = await apiGet<PolicyDetailsResponse>(`/policies/${policyId}`);
   return response;
 };
 
-// Policy Details API
-export interface PolicyDetailsResponse {
-  policy_id: string;
-  policy_number: string;
-  insurer_name: string;
-  insurer_id: number;
-  product_name: string;
-  product_id: number;
-  premium_amount: number;
-  sum_insured: number;
-  start_date: string;
-  end_date: string;
-  status: string;
-  created_at: string;
-  documents: {
-    [key: string]: {
-      label: string;
-      url: string;
-      uploaded_at: string;
-    };
-  };
-}
-
-export const getPolicyDetails = async (quoteId: number): Promise<PolicyDetailsResponse> => {
-  const response = await apiGet<PolicyDetailsResponse>(`/quotes/${quoteId}/policy-details`);
+export const updateDocumentSubmission = async (quoteId: number, data: DocumentSubmissionRequest): Promise<DocumentSubmissionResponse> => {
+  const response = await apiPatch<DocumentSubmissionResponse>(`/quotes/${quoteId}/docs-required`, data);
   return response;
 };
 

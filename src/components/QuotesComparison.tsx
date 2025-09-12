@@ -933,45 +933,72 @@ const QuotesComparison = ({
     // 8. Sub-Contractors Count Validation
     const validateSubContractorsCount = () => {
       const subContractorsCount = (proposal.contract_structure?.sub_contractors || []).length;
-      const subContractorsLoadings = insurerConfig.contractor_risk_factors?.subcontractor_number_based || [];
       
-      console.log('🔍 Sub-contractors validation - Count:', subContractorsCount, 'Loadings:', subContractorsLoadings);
+      console.log('🔍 Sub-contractors validation - Count:', subContractorsCount);
+      console.log('🔍 Sub-contractors array:', proposal.contract_structure?.sub_contractors);
       
-      // If no loadings configured, just display the count
+      // Try multiple possible paths for subcontractor loadings
+      const subContractorsLoadings = 
+        insurerConfig.contractor_risk_factors?.subcontractor_number_based || 
+        insurerConfig.subcontractor_number_based || 
+        [];
+      
+      console.log('🔍 Subcontractor loadings:', subContractorsLoadings);
+      
+      // If no loadings configured, show configuration missing error
       if (subContractorsLoadings.length === 0) {
+        console.log('❌ No subcontractor loadings found in insurer configuration');
         addValidationResult(
           'sub_contractors_count',
           subContractorsCount,
-          'No configuration available',
+          'Configuration missing',
           'N/A',
           'percentage',
           0,
-          'auto_quote',
-          'Auto Quote'
+          'no_quote',
+          'No Quote'
         );
         return;
       }
       
       let matched = false;
-      for (const loading of subContractorsLoadings) {
-        // Try different possible field names for sub-contractors range
-        const fromField = loading.from_subcontractors || loading.from_sub_contractors || loading.from_count || loading.from || loading.min_count || loading.min;
-        const toField = loading.to_subcontractors || loading.to_sub_contractors || loading.to_count || loading.to || loading.max_count || loading.max;
+      for (let i = 0; i < subContractorsLoadings.length; i++) {
+        const loading = subContractorsLoadings[i];
+        console.log(`🔍 Testing range ${i + 1}:`, loading);
         
-        console.log('🔍 Checking range:', fromField, 'to', toField, 'for count:', subContractorsCount);
+        // Extract range values - prioritize the exact field names from your data
+        const fromValue = loading.from_subcontractors !== undefined ? loading.from_subcontractors : 
+                         loading.from_sub_contractors || loading.from_count || loading.from || 0;
+        const toValue = loading.to_subcontractors !== undefined ? loading.to_subcontractors : 
+                       loading.to_sub_contractors || loading.to_count || loading.to;
         
-        if (isWithinRange(subContractorsCount, fromField, toField)) {
+        console.log(`🔍 Range ${i + 1} - from: ${fromValue}, to: ${toValue}, count: ${subContractorsCount}`);
+        
+        // Convert to numbers
+        const fromNum = Number(fromValue);
+        const toNum = Number(toValue);
+        const countNum = Number(subContractorsCount);
+        
+        console.log(`🔍 Converted - from: ${fromNum}, to: ${toNum}, count: ${countNum}`);
+        
+        // Check if count is within range
+        const isInRange = isWithinRange(countNum, fromNum, toNum);
+        console.log(`🔍 Range ${i + 1} match result: ${isInRange}`);
+        
+        if (isInRange) {
           matched = true;
           const decision = loading.quote_option === 'NO_QUOTE' ? 'No Quote' : 
                           loading.quote_option === 'MANUAL_QUOTE' ? 'Manual Review' : 'Auto Quote';
           
           const pricingValue = extractPricingValue(loading);
           
+          console.log(`✅ Range ${i + 1} matched! Decision: ${decision}, Pricing: ${pricingValue}`);
+          
           addValidationResult(
             'sub_contractors_count',
-            subContractorsCount,
-            `${fromField || 0} - ${toField || '∞'}`,
-            `${fromField || 0}-${toField || '∞'}`,
+            `${subContractorsCount} No`,
+            `${fromNum} - ${toNum}`,
+            `${fromNum}-${toNum}`,
             loading.pricing_type || 'percentage',
             pricingValue,
             loading.quote_option || 'auto_quote',
@@ -982,6 +1009,7 @@ const QuotesComparison = ({
       }
 
       if (!matched) {
+        console.log('❌ No matching range found for subcontractor count:', subContractorsCount);
         addValidationResult(
           'sub_contractors_count',
           subContractorsCount,
@@ -992,6 +1020,8 @@ const QuotesComparison = ({
           'no_quote',
           'No Quote'
         );
+      } else {
+        console.log('✅ Match found for subcontractor count:', subContractorsCount);
       }
     };
 
