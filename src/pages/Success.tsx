@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Download, CheckCircle, Calendar, Building, DollarSign, Shield, AlertCircle } from "lucide-react";
 import { getProposalBundle, ProposalBundleResponse, getPolicyDetails, PolicyDetailsResponse } from "@/lib/api/quotes";
 import { getPolicyWordings, PolicyWording } from "@/lib/api/insurers";
@@ -171,129 +170,121 @@ const Success = () => {
   return (
     <div className="min-h-screen bg-blue-50">
       <Header />
-      <div className="container mx-auto px-4 py-6">
-        <div className="max-w-5xl mx-auto">
+      <div className="container mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto">
           {/* Success Header - Prominent */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
-              <CheckCircle className="h-12 w-12 text-green-600" />
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
+              <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">Policy Created Successfully!</h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Policy Created Successfully!</h1>
+            <p className="text-base text-gray-600 max-w-2xl mx-auto">
               Your insurance policy has been created.
             </p>
           </div>
 
           {/* Vertical Summary List */}
           {proposalBundle && (
-            <Card className="bg-white shadow-lg border-0 mb-8">
-              <CardContent className="p-6">
-                <div className="space-y-6">
+            <Card className="bg-white shadow-lg border-0 mb-6">
+              <CardContent className="p-4">
+                <div className="space-y-4">
 
-                  {/* Project Information */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Details</h3>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Project Name</span>
-                        <p className="text-sm font-medium">{policyDetails?.policyInfo.project_name || proposalBundle?.project.project_name || 'N/A'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Client Name</span>
-                        <p className="text-sm font-medium">{policyDetails?.policyInfo.client_name || proposalBundle?.project.client_name || 'N/A'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Location</span>
-                        <p className="text-sm font-medium">{policyDetails?.policyInfo.address || proposalBundle?.project.address || 'N/A'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Project Type</span>
-                        <p className="text-sm font-medium capitalize">{policyDetails?.policyInfo.project_type || proposalBundle?.project.project_type || 'N/A'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Construction Period</span>
-                        <p className="text-sm font-medium">{policyDetails?.policyInfo.construction_period_months || proposalBundle?.project.construction_period_months || 'N/A'} months</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Construction Type</span>
-                        <p className="text-sm font-medium capitalize">{policyDetails?.policyInfo.construction_type || proposalBundle?.project.construction_type || 'N/A'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-500">Maintenance Period</span>
-                        <p className="text-sm font-medium">{policyDetails?.policyInfo.maintenance_period_months || proposalBundle?.project.maintenance_period_months || 'N/A'} months</p>
+
+                  {/* Policy Details Section */}
+                  <div className="border-b border-gray-100 pb-3">
+                    <h3 className="text-base font-semibold text-gray-900 mb-3">Policy Details</h3>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Policy ID</span>
+                          <p className="text-sm font-medium">{policyDetails?.policyInfo.policy_id || policyData.policyId || proposalBundle?.quote_meta.quote_id || 'N/A'}</p>
+                        </div>
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Quote ID</span>
+                          <p className="text-sm font-medium">{policyDetails?.policyInfo.quote_id || policyData.policyQuoteId || proposalBundle?.quote_meta.quote_id || 'N/A'}</p>
+                        </div>
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Insurer</span>
+                          <p className="text-sm font-medium">{policyDetails?.policyInfo.insurer_name || proposalBundle?.plans[0]?.insurer_name || 'N/A'}</p>
+                        </div>
+                        <div className="border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Premium Amount</span>
+                          <p className="text-sm font-semibold text-green-600">
+                            AED {policyDetails?.policyInfo.base_premium ? parseFloat(policyDetails.policyInfo.base_premium).toLocaleString() : proposalBundle?.plans[0]?.base_premium?.toLocaleString() || 'N/A'}
+                          </p>
+                        </div>
+                        <div className="border-r border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Sum Insured</span>
+                          <p className="text-sm font-semibold">
+                            AED {policyDetails?.policyInfo.sum_insured ? parseFloat(policyDetails.policyInfo.sum_insured).toLocaleString() : proposalBundle?.project.sum_insured ? parseFloat(proposalBundle.project.sum_insured).toLocaleString() : 'N/A'}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Policy Details and Timeline Tabs */}
-                  <Tabs defaultValue="details" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="details">Policy Details</TabsTrigger>
-                      <TabsTrigger value="timeline">Policy Timeline</TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="details" className="mt-6">
-                      <div className="border-b border-gray-100 pb-4">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Policy Information</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <div className="space-y-1">
-                            <span className="text-sm text-gray-500">Policy ID</span>
-                            <p className="text-sm font-medium">{policyDetails?.policyInfo.policy_id || policyData.policyId || proposalBundle?.quote_meta.quote_id || 'N/A'}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-sm text-gray-500">Quote ID</span>
-                            <p className="text-sm font-medium">{policyDetails?.policyInfo.quote_id || policyData.policyQuoteId || proposalBundle?.quote_meta.quote_id || 'N/A'}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-sm text-gray-500">Insurer</span>
-                            <p className="text-sm font-medium">{policyDetails?.policyInfo.insurer_name || proposalBundle?.plans[0]?.insurer_name || 'N/A'}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-sm text-gray-500">Premium Amount</span>
-                            <p className="text-sm font-semibold text-green-600">
-                              AED {policyDetails?.policyInfo.total_premium ? parseFloat(policyDetails.policyInfo.total_premium).toLocaleString() : proposalBundle?.plans[0]?.premium_amount?.toLocaleString() || 'N/A'}
-                            </p>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-sm text-gray-500">Sum Insured</span>
-                            <p className="text-sm font-semibold">
-                              AED {policyDetails?.policyInfo.sum_insured ? parseFloat(policyDetails.policyInfo.sum_insured).toLocaleString() : proposalBundle?.project.sum_insured ? parseFloat(proposalBundle.project.sum_insured).toLocaleString() : 'N/A'}
-                            </p>
-                          </div>
+                  {/* Project Details Section */}
+                  <div className="border-b border-gray-100 pb-3">
+                    <h3 className="text-base font-semibold text-gray-900 mb-3">Project Details</h3>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Project Name</span>
+                          <p className="text-sm font-medium">{policyDetails?.policyInfo.project_name || proposalBundle?.project.project_name || 'N/A'}</p>
+                        </div>
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Client Name</span>
+                          <p className="text-sm font-medium">{policyDetails?.policyInfo.client_name || proposalBundle?.project.client_name || 'N/A'}</p>
+                        </div>
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Location</span>
+                          <p className="text-sm font-medium">{policyDetails?.policyInfo.address || proposalBundle?.project.address || 'N/A'}</p>
+                        </div>
+                        <div className="border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Project Type</span>
+                          <p className="text-sm font-medium capitalize">{policyDetails?.policyInfo.project_type || proposalBundle?.project.project_type || 'N/A'}</p>
+                        </div>
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Construction Period</span>
+                          <p className="text-sm font-medium">{policyDetails?.policyInfo.construction_period_months || proposalBundle?.project.construction_period_months || 'N/A'} months</p>
+                        </div>
+                        <div className="border-r border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Construction Type</span>
+                          <p className="text-sm font-medium capitalize">{policyDetails?.policyInfo.construction_type || proposalBundle?.project.construction_type || 'N/A'}</p>
+                        </div>
+                        <div className="border-b border-gray-200 p-3">
+                          <span className="text-xs text-gray-500">Maintenance Period</span>
+                          <p className="text-sm font-medium">{policyDetails?.policyInfo.maintenance_period_months || proposalBundle?.project.maintenance_period_months || 'N/A'} months</p>
                         </div>
                       </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="timeline" className="mt-6">
-                      {policyDetails?.policyTimeline && policyDetails.policyTimeline.length > 0 ? (
-                        <div className="border-b border-gray-100 pb-4">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-4">Policy Timeline</h3>
-                          <div className="space-y-3">
-                            {policyDetails.policyTimeline.map((event, index) => (
-                              <div key={index} className="flex items-center space-x-3">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium text-gray-900">{event.event}</p>
-                                  <p className="text-xs text-gray-500">
-                                    {new Date(event.date).toLocaleDateString('en-US', {
-                                      year: 'numeric',
-                                      month: 'long',
-                                      day: 'numeric'
-                                    })}
-                                  </p>
-                                </div>
+                    </div>
+                  </div>
+
+                  {/* Policy Timeline Section */}
+                  {policyDetails?.policyTimeline && policyDetails.policyTimeline.length > 0 && (
+                    <div className="border-b border-gray-100 pb-3">
+                      <h3 className="text-base font-semibold text-gray-900 mb-3">Policy Timeline</h3>
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="flex flex-wrap">
+                          {policyDetails.policyTimeline.map((event, index) => (
+                            <div key={index} className="flex items-center space-x-3 min-w-0 flex-1 border-r border-b border-gray-200 p-3 last:border-r-0">
+                              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900">{event.event}</p>
+                                <p className="text-xs text-gray-500">
+                                  {new Date(event.date).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })}
+                                </p>
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          ))}
                         </div>
-                      ) : (
-                        <div className="text-center py-8 text-gray-500">
-                          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                          <p>No timeline events available</p>
-                        </div>
-                      )}
-                    </TabsContent>
-                  </Tabs>
+                      </div>
+                    </div>
+                  )}
 
                 </div>
               </CardContent>
