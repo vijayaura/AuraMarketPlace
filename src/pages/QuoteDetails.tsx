@@ -1,1443 +1,838 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useParams, useLocation } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Building2, User, Calendar, DollarSign, Shield, FileText, AlertTriangle, Briefcase, CheckCircle, FileCheck, Download, Edit } from "lucide-react";
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import { QUOTE_STATUSES, getQuoteStatusLabel, getQuoteStatusColor } from "@/lib/quote-status";
-import { QuoteStatusDot } from "@/components/QuoteStatusDot";
-import { useNavigationHistory } from "@/hooks/use-navigation-history";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, ArrowLeft, Edit, Download } from "lucide-react";
+import { getProposalBundle, ProposalBundleResponse, getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
 
-// Mock detailed quote data showing only what's captured in the quote creation process
-const getQuoteDetails = (id: string) => {
-  const quotes = {
-    "Q001": {
-      id: "Q001",
-      // Project Details
-      projectName: "Al Habtoor Tower Development",
-      projectType: "Commercial",
-      constructionType: "Concrete",
-      projectAddress: "Sheikh Zayed Road, Business Bay, Dubai, UAE",
-      coordinates: "25.2048, 55.2708",
-      projectValue: "AED 9,175,000",
-      startDate: "2024-03-01",
-      completionDate: "2024-09-15",
-      constructionPeriod: "18 months",
-      maintenancePeriod: "24 months",
-      
-      // Insured Details
-      insuredName: "Al Habtoor Construction LLC",
-      roleOfInsured: "Contractor",
-      contactEmail: "projects@alhabtoor.ae",
-      phoneNumber: "+971-4-555-0123",
-      vatNumber: "100123456700003",
-      countryOfIncorporation: "UAE",
-      
-      // Contract Structure
-      mainContractor: "Al Habtoor Construction LLC",
-      principalOwner: "Dubai Development Authority",
-      contractType: "Turnkey",
-      contractNumber: "DDA-2024-CT-001",
-      engineerConsultant: "Atkins Middle East",
-      subContractors: [
-        {
-          name: "Emirates Steel",
-          contractType: "Supply",
-          contractNumber: "ES-2024-001"
-        },
-        {
-          name: "Dubai Glass",
-          contractType: "Install",
-          contractNumber: "DG-2024-002"
-        }
-      ],
-      
-      // Site Risks
-      nearWaterBody: "No",
-      floodProneZone: "No",
-      withinCityCenter: "Yes",
-      cityAreaType: "Urban",
-      soilType: "Sandy",
-      existingStructure: "No",
-      blastingExcavation: "No",
-      siteSecurityArrangements: "24/7 Guarded",
-      
-      // Cover Requirements
-      sumInsuredMaterial: "AED 6,615,000",
-      sumInsuredPlant: "AED 1,468,000",
-      sumInsuredTemporary: "AED 367,000",
-      principalExistingProperty: "AED 0",
-      tplLimit: "AED 3,670,000",
-      crossLiabilityCover: "Yes",
-      removalDebrisLimit: "AED 458,750",
-      
-      // Extensions
-      extensions: {
-        debrisRemoval: true,
-        professionalFees: false,
-        offsiteStorage: false,
-        transitStorage: false,
-        icow: false,
-        fireBrigadeCharges: false
-      },
-      
-      // Selected CEW Items (Policy Extensions & Conditions)
-      selectedCEWItems: [
-        {
-          id: 1,
-          name: "Maintenance Extension",
-          type: "extension",
-          selectedOption: "18 Months",
-          limit: "24 Months",
-          percentage: "+15%",
-          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract. Coverage includes rectification costs, re-performance costs, and associated professional fees."
-        },
-        {
-          id: 2,
-          name: "Professional Indemnity Extension",
-          type: "extension", 
-          selectedOption: "AED 2M Limit",
-          limit: "AED 2,000,000",
-          percentage: "+8%",
-          wording: "This extension provides coverage for legal liability arising from professional negligence in the performance of professional services. Coverage includes defense costs, settlements, and court-awarded damages."
-        },
-        {
-          id: 3,
-          name: "Off-site Storage Extension",
-          type: "extension",
-          selectedOption: "AED 500K Limit",
-          limit: "AED 500,000",
-          percentage: "+3%",
-          wording: "Coverage for materials, goods, and equipment stored at locations away from the main construction site, including transit to and from such storage locations."
-        },
-        {
-          id: 4,
-          name: "Earthquake Exclusion Waiver",
-          type: "condition",
-          selectedOption: "Zone 3-4 Coverage",
-          limit: "100% of Sum Insured",
-          percentage: "-5%",
-          wording: "Standard earthquake exclusion is waived for seismic zones 3-4, providing coverage for earthquake-related damages including ground shaking, surface rupture, and associated ground failures."
-        },
-        {
-          id: 5,
-          name: "Contractors Plant Deductible",
-          type: "condition",
-          selectedOption: "AED 2,500",
-          limit: "AED 2,500 per claim",
-          percentage: "-2%",
-          wording: "Reduced deductible applicable to contractors' plant and equipment. Lower deductible provides enhanced protection for specialized construction equipment and machinery."
-        },
-        {
-          id: 6,
-          name: "Defects Liability Period",
-          type: "warranty",
-          selectedOption: "12 Months",
-          limit: "12 Months from Completion",
-          percentage: "0%",
-          wording: "Contractor warrants that all works will be free from defects for the specified period. This warranty covers material and workmanship defects discovered during the liability period."
-        },
-        {
-          id: 7,
-          name: "Performance Guarantee",
-          type: "warranty",
-          selectedOption: "10% Contract Value",
-          limit: "10% of Contract Sum",
-          percentage: "+5%",
-          wording: "Contractor guarantees satisfactory performance and completion of the works in accordance with contract specifications, including quality standards and delivery timelines."
-        }
-      ],
-      
-      // Claims History
-      lossesInLastFiveYears: "Yes",
-      claimsHistory: [
-        {
-          year: 2024,
-          claimCount: 1,
-          amount: "50000",
-          description: "Minor equipment damage during construction phase"
-        },
-        {
-          year: 2023,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        },
-        {
-          year: 2022,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        },
-        {
-          year: 2021,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        },
-        {
-          year: 2020,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        }
-      ],
-      
-      // Status & Quote Info
-      status: QUOTE_STATUSES.QUOTE_GENERATED,
-      submittedDate: "2024-01-15",
-      expiryDate: "2024-02-15"
-    },
-    "Q002": {
-      id: "Q002",
-      projectName: "Downtown Residential Complex",
-      projectType: "Residential",
-      constructionType: "Concrete",
-      projectAddress: "Downtown Dubai, UAE",
-      coordinates: "25.1972, 55.2744",
-      projectValue: "AED 6,200,000",
-      startDate: "2024-02-01",
-      completionDate: "2024-08-15",
-      constructionPeriod: "12 months",
-      maintenancePeriod: "18 months",
-      insuredName: "Emaar Properties",
-      roleOfInsured: "Developer",
-      contactEmail: "projects@emaar.ae",
-      phoneNumber: "+971-4-367-3333",
-      vatNumber: "100123456700004",
-      countryOfIncorporation: "UAE",
-      mainContractor: "Emaar Construction",
-      principalOwner: "Emaar Properties",
-      contractType: "Design & Build",
-      contractNumber: "EMA-2024-RES-001",
-      engineerConsultant: "AECOM Middle East",
-      subContractors: [
-        {
-          name: "Al Habtoor Leighton",
-          contractType: "Supply",
-          contractNumber: "AH-2024-001"
-        }
-      ],
-      nearWaterBody: "No",
-      floodProneZone: "No",
-      withinCityCenter: "Yes",
-      cityAreaType: "Urban",
-      soilType: "Clay",
-      existingStructure: "No",
-      blastingExcavation: "No",
-      siteSecurityArrangements: "24/7 Guarded",
-      sumInsuredMaterial: "AED 4,340,000",
-      sumInsuredPlant: "AED 930,000",
-      sumInsuredTemporary: "AED 310,000",
-      principalExistingProperty: "AED 0",
-      tplLimit: "AED 3,100,000",
-      crossLiabilityCover: "Yes",
-      removalDebrisLimit: "AED 310,000",
-      extensions: {
-        debrisRemoval: true,
-        professionalFees: true,
-        offsiteStorage: false,
-        transitStorage: false,
-        icow: false,
-        fireBrigadeCharges: false
-      },
-      selectedCEWItems: [
-        {
-          id: 1,
-          name: "Maintenance Extension",
-          type: "extension",
-          selectedOption: "12 Months",
-          limit: "18 Months",
-          percentage: "+10%",
-          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
-        }
-      ],
-      claimsHistory: [
-        {
-          year: 2023,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        },
-        {
-          year: 2022,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        }
-      ],
-      status: QUOTE_STATUSES.QUOTE_CONFIRMED,
-      submittedDate: "2024-01-12",
-      expiryDate: "2024-02-12"
-    },
-    "Q003": {
-      id: "Q003",
-      projectName: "Marina Shopping Mall Renovation",
-      projectType: "Commercial",
-      constructionType: "Steel Frame",
-      projectAddress: "Dubai Marina, UAE",
-      coordinates: "25.0772, 55.1307",
-      projectValue: "AED 14,800,000",
-      startDate: "2024-01-15",
-      completionDate: "2024-07-15",
-      constructionPeriod: "6 months",
-      maintenancePeriod: "12 months",
-      insuredName: "DAMAC Properties",
-      roleOfInsured: "Owner",
-      contactEmail: "projects@damac.ae",
-      phoneNumber: "+971-4-444-4444",
-      vatNumber: "100123456700005",
-      countryOfIncorporation: "UAE",
-      mainContractor: "DAMAC Construction",
-      principalOwner: "DAMAC Properties",
-      contractType: "Renovation",
-      contractNumber: "DAM-2024-REN-001",
-      engineerConsultant: "WSP Middle East",
-      subContractors: [
-        {
-          name: "Marina Glass Works",
-          contractType: "Supply",
-          contractNumber: "MGW-2024-001"
-        }
-      ],
-      nearWaterBody: "Yes",
-      floodProneZone: "No",
-      withinCityCenter: "Yes",
-      cityAreaType: "Urban",
-      soilType: "Sandy",
-      existingStructure: "Yes",
-      blastingExcavation: "No",
-      siteSecurityArrangements: "24/7 Guarded",
-      sumInsuredMaterial: "AED 10,360,000",
-      sumInsuredPlant: "AED 2,220,000",
-      sumInsuredTemporary: "AED 740,000",
-      principalExistingProperty: "AED 1,480,000",
-      tplLimit: "AED 7,400,000",
-      crossLiabilityCover: "Yes",
-      removalDebrisLimit: "AED 740,000",
-      extensions: {
-        debrisRemoval: true,
-        professionalFees: true,
-        offsiteStorage: true,
-        transitStorage: false,
-        icow: true,
-        fireBrigadeCharges: false
-      },
-      selectedCEWItems: [
-        {
-          id: 1,
-          name: "Maintenance Extension",
-          type: "extension",
-          selectedOption: "6 Months",
-          limit: "12 Months",
-          percentage: "+5%",
-          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
-        }
-      ],
-      claimsHistory: [
-        {
-          year: 2023,
-          claimCount: 1,
-          amount: "AED 50,000",
-          description: "Minor water damage during renovation"
-        },
-        {
-          year: 2022,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        }
-      ],
-      status: QUOTE_STATUSES.SELECTED_PRODUCT,
-      submittedDate: "2024-01-10",
-      expiryDate: "2024-02-10"
-    },
-    "Q004": {
-      id: "Q004",
-      projectName: "Palm Jumeirah Villa Complex",
-      projectType: "Residential",
-      constructionType: "Concrete",
-      projectAddress: "Palm Jumeirah, Dubai, UAE",
-      coordinates: "25.1124, 55.1390",
-      projectValue: "AED 11,200,000",
-      startDate: "2024-01-20",
-      completionDate: "2024-10-20",
-      constructionPeriod: "9 months",
-      maintenancePeriod: "12 months",
-      insuredName: "Nakheel Properties",
-      roleOfInsured: "Developer",
-      contactEmail: "projects@nakheel.ae",
-      phoneNumber: "+971-4-390-3333",
-      vatNumber: "100123456700006",
-      countryOfIncorporation: "UAE",
-      mainContractor: "Nakheel Construction",
-      principalOwner: "Nakheel Properties",
-      contractType: "Turnkey",
-      contractNumber: "NAK-2024-VIL-001",
-      engineerConsultant: "Parsons Corporation",
-      subContractors: [
-        {
-          name: "Palm Marine Works",
-          contractType: "Supply",
-          contractNumber: "PMW-2024-001"
-        }
-      ],
-      nearWaterBody: "Yes",
-      floodProneZone: "No",
-      withinCityCenter: "No",
-      cityAreaType: "Coastal",
-      soilType: "Sandy",
-      existingStructure: "No",
-      blastingExcavation: "No",
-      siteSecurityArrangements: "24/7 Guarded",
-      sumInsuredMaterial: "AED 7,840,000",
-      sumInsuredPlant: "AED 1,680,000",
-      sumInsuredTemporary: "AED 560,000",
-      principalExistingProperty: "AED 0",
-      tplLimit: "AED 5,600,000",
-      crossLiabilityCover: "Yes",
-      removalDebrisLimit: "AED 560,000",
-      extensions: {
-        debrisRemoval: true,
-        professionalFees: false,
-        offsiteStorage: false,
-        transitStorage: false,
-        icow: false,
-        fireBrigadeCharges: false
-      },
-      selectedCEWItems: [
-        {
-          id: 1,
-          name: "Maintenance Extension",
-          type: "extension",
-          selectedOption: "9 Months",
-          limit: "12 Months",
-          percentage: "+8%",
-          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
-        }
-      ],
-      claimsHistory: [
-        {
-          year: 2023,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        },
-        {
-          year: 2022,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        }
-      ],
-      status: QUOTE_STATUSES.QUOTE_EDITED,
-      submittedDate: "2024-01-08",
-      expiryDate: "2024-02-08"
-    },
-    "Q005": {
-      id: "Q005",
-      projectName: "Public Infrastructure Project",
-      projectType: "Infrastructure",
-      constructionType: "Concrete & Steel",
-      projectAddress: "Dubai Municipality Area, UAE",
-      coordinates: "25.2048, 55.2708",
-      projectValue: "AED 18,700,000",
-      startDate: "2024-02-01",
-      completionDate: "2024-12-01",
-      constructionPeriod: "10 months",
-      maintenancePeriod: "24 months",
-      insuredName: "Dubai Municipality",
-      roleOfInsured: "Government Entity",
-      contactEmail: "projects@dm.gov.ae",
-      phoneNumber: "+971-4-221-5555",
-      vatNumber: "100123456700007",
-      countryOfIncorporation: "UAE",
-      mainContractor: "Dubai Municipality Construction",
-      principalOwner: "Dubai Municipality",
-      contractType: "Government Contract",
-      contractNumber: "DM-2024-INF-001",
-      engineerConsultant: "AECOM Middle East",
-      subContractors: [
-        {
-          name: "Dubai Roads & Transport Authority",
-          contractType: "Supply",
-          contractNumber: "RTA-2024-001"
-        }
-      ],
-      nearWaterBody: "No",
-      floodProneZone: "No",
-      withinCityCenter: "Yes",
-      cityAreaType: "Urban",
-      soilType: "Mixed",
-      existingStructure: "Yes",
-      blastingExcavation: "Yes",
-      siteSecurityArrangements: "24/7 Guarded",
-      sumInsuredMaterial: "AED 13,090,000",
-      sumInsuredPlant: "AED 2,805,000",
-      sumInsuredTemporary: "AED 935,000",
-      principalExistingProperty: "AED 1,870,000",
-      tplLimit: "AED 9,350,000",
-      crossLiabilityCover: "Yes",
-      removalDebrisLimit: "AED 935,000",
-      extensions: {
-        debrisRemoval: true,
-        professionalFees: true,
-        offsiteStorage: true,
-        transitStorage: true,
-        icow: true,
-        fireBrigadeCharges: true
-      },
-      selectedCEWItems: [
-        {
-          id: 1,
-          name: "Maintenance Extension",
-          type: "extension",
-          selectedOption: "10 Months",
-          limit: "24 Months",
-          percentage: "+12%",
-          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
-        }
-      ],
-      claimsHistory: [
-        {
-          year: 2023,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        },
-        {
-          year: 2022,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        }
-      ],
-      status: QUOTE_STATUSES.QUOTE_GENERATED,
-      submittedDate: "2024-01-05",
-      expiryDate: "2024-02-05"
-    },
-    "Q006": {
-      id: "Q006",
-      projectName: "Bluewaters Island Resort",
-      projectType: "Commercial",
-      constructionType: "Concrete",
-      projectAddress: "Bluewaters Island, Dubai, UAE",
-      coordinates: "25.0772, 55.1307",
-      projectValue: "AED 15,600,000",
-      startDate: "2024-03-01",
-      completionDate: "2024-11-01",
-      constructionPeriod: "8 months",
-      maintenancePeriod: "18 months",
-      insuredName: "Meraas Holding",
-      roleOfInsured: "Developer",
-      contactEmail: "projects@meraas.ae",
-      phoneNumber: "+971-4-317-7777",
-      vatNumber: "100123456700008",
-      countryOfIncorporation: "UAE",
-      mainContractor: "Meraas Construction",
-      principalOwner: "Meraas Holding",
-      contractType: "Design & Build",
-      contractNumber: "MER-2024-RES-001",
-      engineerConsultant: "Atkins Middle East",
-      subContractors: [
-        {
-          name: "Bluewaters Marine Works",
-          contractType: "Supply",
-          contractNumber: "BMW-2024-001"
-        }
-      ],
-      nearWaterBody: "Yes",
-      floodProneZone: "No",
-      withinCityCenter: "No",
-      cityAreaType: "Island",
-      soilType: "Sandy",
-      existingStructure: "No",
-      blastingExcavation: "No",
-      siteSecurityArrangements: "24/7 Guarded",
-      sumInsuredMaterial: "AED 10,920,000",
-      sumInsuredPlant: "AED 2,340,000",
-      sumInsuredTemporary: "AED 780,000",
-      principalExistingProperty: "AED 0",
-      tplLimit: "AED 7,800,000",
-      crossLiabilityCover: "Yes",
-      removalDebrisLimit: "AED 780,000",
-      extensions: {
-        debrisRemoval: true,
-        professionalFees: true,
-        offsiteStorage: false,
-        transitStorage: false,
-        icow: false,
-        fireBrigadeCharges: false
-      },
-      selectedCEWItems: [
-        {
-          id: 1,
-          name: "Maintenance Extension",
-          type: "extension",
-          selectedOption: "8 Months",
-          limit: "18 Months",
-          percentage: "+10%",
-          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
-        }
-      ],
-      claimsHistory: [
-        {
-          year: 2023,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        },
-        {
-          year: 2022,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        }
-      ],
-      status: QUOTE_STATUSES.QUOTE_GENERATED,
-      submittedDate: "2024-01-03",
-      expiryDate: "2024-02-03"
-    },
-    "Q007": {
-      id: "Q007",
-      projectName: "Dubai Hills Mall Expansion",
-      projectType: "Commercial",
-      constructionType: "Steel Frame",
-      projectAddress: "Dubai Hills, UAE",
-      coordinates: "25.0657, 55.1713",
-      projectValue: "AED 22,400,000",
-      startDate: "2024-02-15",
-      completionDate: "2024-10-15",
-      constructionPeriod: "8 months",
-      maintenancePeriod: "12 months",
-      insuredName: "Emaar Properties",
-      roleOfInsured: "Developer",
-      contactEmail: "projects@emaar.ae",
-      phoneNumber: "+971-4-367-3333",
-      vatNumber: "100123456700009",
-      countryOfIncorporation: "UAE",
-      mainContractor: "Emaar Construction",
-      principalOwner: "Emaar Properties",
-      contractType: "Design & Build",
-      contractNumber: "EMA-2024-MAL-001",
-      engineerConsultant: "WSP Middle East",
-      subContractors: [
-        {
-          name: "Dubai Hills Steel Works",
-          contractType: "Supply",
-          contractNumber: "DHSW-2024-001"
-        }
-      ],
-      nearWaterBody: "No",
-      floodProneZone: "No",
-      withinCityCenter: "No",
-      cityAreaType: "Suburban",
-      soilType: "Clay",
-      existingStructure: "Yes",
-      blastingExcavation: "No",
-      siteSecurityArrangements: "24/7 Guarded",
-      sumInsuredMaterial: "AED 15,680,000",
-      sumInsuredPlant: "AED 3,360,000",
-      sumInsuredTemporary: "AED 1,120,000",
-      principalExistingProperty: "AED 2,240,000",
-      tplLimit: "AED 11,200,000",
-      crossLiabilityCover: "Yes",
-      removalDebrisLimit: "AED 1,120,000",
-      extensions: {
-        debrisRemoval: true,
-        professionalFees: true,
-        offsiteStorage: true,
-        transitStorage: false,
-        icow: true,
-        fireBrigadeCharges: false
-      },
-      selectedCEWItems: [
-        {
-          id: 1,
-          name: "Maintenance Extension",
-          type: "extension",
-          selectedOption: "8 Months",
-          limit: "12 Months",
-          percentage: "+8%",
-          wording: "This extension provides coverage for defects arising during the maintenance period as specified in the contract."
-        }
-      ],
-      claimsHistory: [
-        {
-          year: 2023,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        },
-        {
-          year: 2022,
-          claimCount: 0,
-          amount: "",
-          description: ""
-        }
-      ],
-      status: QUOTE_STATUSES.POLICY_GENERATED,
-      submittedDate: "2024-01-01",
-      expiryDate: "2024-02-01"
-    }
-  };
-  
-  // For now, always return Q001 details regardless of the quote ID
-  // This will be replaced with API integration later
-  return quotes["Q001"] || null;
+// Helper functions for formatting
+const formatFieldName = (key: string): string => {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, l => l.toUpperCase())
+    .replace(/Id\b/g, 'ID')
+    .replace(/Tpl\b/g, 'TPL')
+    .replace(/Cew\b/g, 'CEW');
 };
 
-const getStatusBadge = (status: string) => {
-  return (
-    <QuoteStatusDot status={status} />
-  );
+const formatFieldValue = (key: string, value: any): string => {
+  // Handle missing or empty values
+  if (value === null || value === undefined || value === '') {
+    if (key.includes('date') || key.includes('_at') || key.includes('time')) {
+      return 'Not set';
+    }
+    if (key.includes('amount') || key.includes('premium') || key.includes('sum_insured') || key.includes('value')) {
+      return 'Not calculated';
+    }
+    if (key.includes('count') || key.includes('number') || key.includes('period')) {
+      return '0';
+    }
+    return 'Not specified';
+  }
+  
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+  
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  
+  // Format dates
+  if (key.includes('date') || key.includes('_at') || key.includes('time')) {
+    try {
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    } catch (e) {
+      return 'Invalid date';
+    }
+  }
+  
+  // Format monetary values
+  if (key.includes('amount') || key.includes('premium') || key.includes('sum_insured') || key.includes('value')) {
+    const num = parseFloat(String(value));
+    if (!isNaN(num)) {
+      if (num === 0) return 'AED 0';
+      if (num > 0) return `AED ${num.toLocaleString()}`;
+    }
+    return 'Invalid amount';
+  }
+  
+  // Format text to sentence case
+  const str = String(value);
+  if (str.length > 0) {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+  
+  return 'Not specified';
 };
 
 const QuoteDetails = () => {
-  const { navigateBack } = useNavigationHistory();
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const quote = getQuoteDetails(id || "");
+  const { id: quoteId } = useParams<{ id: string }>();
+  const location = useLocation();
+  const [proposalBundle, setProposalBundle] = useState<ProposalBundleResponse | null>(null);
+  const [productBundle, setProductBundle] = useState<InsurerPricingConfigResponse | null>(null);
+  const [selectedExtensions, setSelectedExtensions] = useState<any[]>([]);
+  const [expandedWordings, setExpandedWordings] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const exportToExcel = () => {
-    if (!quote) return;
-
-    const exportData = [
-      ['Quote Details'],
-      ['Quote ID', quote.id],
-      ['Insured Name', quote.insuredName],
-      ['Status', getQuoteStatusLabel(quote.status)],
-      ['Submitted Date', quote.submittedDate],
-      [],
-      ['Project Details'],
-      ['Project Name', quote.projectName],
-      ['Project Type', quote.projectType],
-      ['Construction Type', quote.constructionType],
-      ['Project Address', quote.projectAddress],
-      ['Sum Insured Value', quote.projectValue],
-      ['Start Date', quote.startDate],
-      ['Completion Date', quote.completionDate],
-      ['Construction Period', quote.constructionPeriod],
-      ['Maintenance Period', quote.maintenancePeriod],
-      [],
-      ['Insured Details'],
-      ['Role of Insured', quote.roleOfInsured],
-      ['Contact Email', quote.contactEmail],
-      ['Phone Number', quote.phoneNumber],
-      ['VAT Number', quote.vatNumber],
-      ['Country of Incorporation', quote.countryOfIncorporation],
-      [],
-      ['Contract Structure'],
-      ['Main Contractor', quote.mainContractor],
-      ['Principal/Owner', quote.principalOwner],
-      ['Contract Type', quote.contractType],
-      ['Contract Number', quote.contractNumber],
-      ['Engineer/Consultant', quote.engineerConsultant],
-      [],
-      ['Sub-Contractors'],
-      ...quote.subContractors.map(sub => [sub.name, sub.contractType, sub.contractNumber]),
-      [],
-      ['Site Risk Assessment'],
-      ['Near Water Body', quote.nearWaterBody],
-      ['Flood Prone Zone', quote.floodProneZone],
-      ['Within City Center', quote.withinCityCenter],
-      ['Area Type', quote.cityAreaType],
-      ['Soil Type', quote.soilType],
-      ['Existing Structure', quote.existingStructure],
-      ['Blasting/Deep Excavation', quote.blastingExcavation],
-      ['Site Security', quote.siteSecurityArrangements],
-      [],
-      ['Cover Requirements'],
-      ['Contract Works', quote.sumInsuredMaterial],
-      ['Plant & Equipment', quote.sumInsuredPlant],
-      ['Temporary Works', quote.sumInsuredTemporary],
-      ['Principal\'s Existing Property', quote.principalExistingProperty],
-      ['TPL Limit', quote.tplLimit],
-      ['Cross Liability Cover', quote.crossLiabilityCover],
-      ['Removal of Debris Limit', quote.removalDebrisLimit],
-      [],
-      ['Claims History'],
-      ['Losses in Last 5 Years', quote.lossesInLastFiveYears],
-      ...(quote.lossesInLastFiveYears === "Yes" ? [
-        ['Year', 'Count of Claims', 'Amount (AED)', 'Description'],
-        ...quote.claimsHistory
-          .filter(claim => claim.claimCount > 0)
-          .map(claim => [claim.year, claim.claimCount, `AED ${claim.amount}`, claim.description])
-      ] : [])
-    ];
-
-    const worksheet = XLSX.utils.aoa_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Quote Details');
-    XLSX.writeFile(workbook, `Quote_${quote.id}_Details.xlsx`);
-  };
-
-  const downloadProposal = () => {
-    if (!quote) return;
-
-    const pdf = new jsPDF();
-    let yPos = 20;
-    const lineHeight = 8;
-    const pageHeight = pdf.internal.pageSize.height;
-    const marginBottom = 20;
-
-    // Helper function to add text with page break if needed
-    const addText = (text: string, fontSize = 12, isBold = false) => {
-      if (yPos > pageHeight - marginBottom) {
-        pdf.addPage();
-        yPos = 20;
+  useEffect(() => {
+    const loadQuoteData = async () => {
+      if (!quoteId) {
+        setError("Quote ID not found");
+        setLoading(false);
+        return;
       }
-      pdf.setFontSize(fontSize);
-      pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-      pdf.text(text, 20, yPos);
-      yPos += lineHeight;
+
+      try {
+        setLoading(true);
+        
+        console.log('%cQuote Details Debug:', 'color: #ff1493; font-weight: bold;');
+        console.log('- Quote ID:', quoteId);
+        console.log('- API Endpoint: /api/v1/quotes/getProposalBundle/' + quoteId);
+        console.log('- Current URL:', location.pathname);
+        
+        const data = await getProposalBundle(parseInt(quoteId));
+        setProposalBundle(data);
+        
+        console.log('%cProposal Bundle loaded successfully:', 'color: #ff1493; font-weight: bold;', data);
+
+        // Get product bundle configuration with clause_pricing_config and meta data
+        if (data.quote_meta?.insurer_id) {
+          const insurerId = data.quote_meta.insurer_id;
+          console.log('%cCalling Product Bundle API for insurer:', 'color: #ff1493; font-weight: bold;', insurerId);
+          
+          const productBundleData = await getInsurerPricingConfig(insurerId);
+          setProductBundle(productBundleData);
+          
+          console.log('%cProduct Bundle API Response:', 'color: #ff1493; font-weight: bold;', productBundleData);
+          console.log('%cClause Pricing Config with Meta:', 'color: #ff1493; font-weight: bold;', productBundleData.clause_pricing_config);
+        }
+      } catch (err) {
+        console.error('Error loading proposal bundle:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load quote data');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // Title
-    addText('CONSTRUCTION INSURANCE PROPOSAL', 16, true);
-    yPos += 5;
+    loadQuoteData();
+  }, [quoteId]);
 
-    // Quote Details
-    addText('QUOTE DETAILS', 14, true);
-    addText(`Quote ID: ${quote.id}`);
-    addText(`Insured Name: ${quote.insuredName}`);
-    addText(`Status: ${getQuoteStatusLabel(quote.status)}`);
-    addText(`Submitted Date: ${quote.submittedDate}`);
-    yPos += 5;
+  // Process selected extensions when both proposalBundle and productBundle are loaded
+  useEffect(() => {
+    if (proposalBundle && productBundle) {
+      // Use clause_pricing_config from product bundle API
+      const clausePricingConfig = productBundle.clause_pricing_config || [];
+      
+      console.log('%cUsing clause_pricing_config from product bundle API:', 'color: #ff1493; font-weight: bold;', clausePricingConfig);
 
-    // Project Details
-    addText('PROJECT DETAILS', 14, true);
-    addText(`Project Name: ${quote.projectName}`);
-    addText(`Project Type: ${quote.projectType}`);
-    addText(`Construction Type: ${quote.constructionType}`);
-    addText(`Project Address: ${quote.projectAddress}`);
-    addText(`Sum Insured Value: ${quote.projectValue}`);
-    addText(`Start Date: ${quote.startDate}`);
-    addText(`Completion Date: ${quote.completionDate}`);
-    addText(`Construction Period: ${quote.constructionPeriod}`);
-    addText(`Maintenance Period: ${quote.maintenancePeriod}`);
-    yPos += 5;
+      // Get only selected extensions from policy response
+      const policyExtensions = proposalBundle.plans[0]?.extensions?.selected_extensions || {};
+      
+      console.log('%cPolicy Extensions:', 'color: #ff1493; font-weight: bold;', policyExtensions);
 
-    // Insured Details
-    addText('INSURED DETAILS', 14, true);
-    addText(`Role of Insured: ${quote.roleOfInsured}`);
-    addText(`Contact Email: ${quote.contactEmail}`);
-    addText(`Phone Number: ${quote.phoneNumber}`);
-    addText(`VAT Number: ${quote.vatNumber}`);
-    addText(`Country of Incorporation: ${quote.countryOfIncorporation}`);
-    yPos += 5;
+      // Process each selected extension
+      const processedExtensions = Object.entries(policyExtensions).map(([extensionKey, extensionData]) => {
+        // Get the code from policy extension data
+        const extensionCode = (extensionData as any)?.code;
+        console.log(`%cProcessing policy extension ${extensionKey}, code: ${extensionCode}`, 'color: #ff1493; font-weight: bold;');
 
-    // Contract Structure
-    addText('CONTRACT STRUCTURE', 14, true);
-    addText(`Main Contractor: ${quote.mainContractor}`);
-    addText(`Principal/Owner: ${quote.principalOwner}`);
-    addText(`Contract Type: ${quote.contractType}`);
-    addText(`Contract Number: ${quote.contractNumber}`);
-    addText(`Engineer/Consultant: ${quote.engineerConsultant}`);
-    yPos += 5;
-
-    // Sub-Contractors
-    if (quote.subContractors.length > 0) {
-      addText('SUB-CONTRACTORS', 14, true);
-      quote.subContractors.forEach(sub => {
-        addText(`${sub.name} - ${sub.contractType} (${sub.contractNumber})`);
-      });
-      yPos += 5;
-    }
-
-    // Site Risk Assessment
-    addText('SITE RISK ASSESSMENT', 14, true);
-    addText(`Near Water Body: ${quote.nearWaterBody}`);
-    addText(`Flood Prone Zone: ${quote.floodProneZone}`);
-    addText(`Within City Center: ${quote.withinCityCenter}`);
-    addText(`Area Type: ${quote.cityAreaType}`);
-    addText(`Soil Type: ${quote.soilType}`);
-    addText(`Existing Structure: ${quote.existingStructure}`);
-    addText(`Blasting/Deep Excavation: ${quote.blastingExcavation}`);
-    addText(`Site Security: ${quote.siteSecurityArrangements}`);
-    yPos += 5;
-
-    // Cover Requirements
-    addText('COVER REQUIREMENTS', 14, true);
-    addText(`Contract Works: ${quote.sumInsuredMaterial}`);
-    addText(`Plant & Equipment: ${quote.sumInsuredPlant}`);
-    addText(`Temporary Works: ${quote.sumInsuredTemporary}`);
-    addText(`Principal's Existing Property: ${quote.principalExistingProperty}`);
-    addText(`TPL Limit: ${quote.tplLimit}`);
-    addText(`Cross Liability Cover: ${quote.crossLiabilityCover}`);
-    addText(`Removal of Debris Limit: ${quote.removalDebrisLimit}`);
-    yPos += 5;
-
-    // Claims History
-    addText('CLAIMS HISTORY', 14, true);
-    addText(`Losses in Last 5 Years: ${quote.lossesInLastFiveYears}`);
-    if (quote.lossesInLastFiveYears === "Yes") {
-      quote.claimsHistory
-        .filter(claim => claim.claimCount > 0)
-        .forEach(claim => {
-          addText(`${claim.year}: ${claim.claimCount} claims, AED ${claim.amount} - ${claim.description}`);
+        // Find matching clause in product bundle's clausePricingConfig by clause_code
+        const matchingClause = clausePricingConfig.find((clause: any) => {
+          const clauseCode = clause.clause_code;
+          const match = clauseCode && extensionCode && 
+            clauseCode.toLowerCase() === extensionCode.toLowerCase();
+          
+          console.log(`%cComparing: "${clauseCode}" with "${extensionCode}" = ${match}`, 'color: #ff1493;');
+          if (match) {
+            console.log('%cFull matching clause:', 'color: #ff1493; font-weight: bold;', clause);
+            console.log('%cMeta from matching clause:', 'color: #ff1493; font-weight: bold;', clause.meta);
+          }
+          return match;
         });
+
+        if (matchingClause) {
+          const meta = (matchingClause as any).meta || {};
+          console.log(`%cFound matching clause for ${extensionCode}:`, 'color: #ff1493; font-weight: bold;', {
+            clause_code: matchingClause.clause_code,
+            meta: meta
+          });
+          
+          const processedExtension = {
+            policy_key: extensionKey,
+            clause_code: matchingClause.clause_code, // Use clause_code from product bundle
+            title: meta.title || meta.clause_title || (extensionData as any)?.label || extensionKey,
+            clause_wording: meta.clause_wording || '',
+            clause_type: meta.clause_type || 'Extension',
+            show_type: meta.show_type || 'default', // Use show_type from product bundle meta
+            is_mandatory: meta.show_type?.toLowerCase() === 'mandatory', // Only check product bundle meta
+            extension_data: extensionData,
+            clause_config: matchingClause
+          };
+          
+          console.log(`%cFinal processed extension for ${extensionCode}:`, 'color: #ff1493; font-weight: bold;', processedExtension);
+          return processedExtension;
+        }
+
+        console.log(`%cNo matching clause found in product bundle for ${extensionKey} (code: ${extensionCode})`, 'color: #ff1493; font-weight: bold;');
+        
+        // If no matching clause found, use basic info from policy
+        return {
+          policy_key: extensionKey,
+          clause_code: extensionCode || extensionKey,
+          title: (extensionData as any)?.label || extensionKey,
+          clause_wording: '',
+          clause_type: 'Extension',
+          show_type: 'default',
+          is_mandatory: false,
+          extension_data: extensionData,
+          clause_config: null
+        };
+      });
+
+      setSelectedExtensions(processedExtensions);
     }
+  }, [proposalBundle, productBundle]);
 
-    yPos += 10;
-
-    // Signature Section
-    addText('SIGNATURES', 14, true);
-    yPos += 10;
-
-    // Broker Signature
-    addText('BROKER SIGNATURE:', 12, true);
-    yPos += 15;
-    pdf.line(20, yPos, 120, yPos); // Signature line
-    yPos += 5;
-    addText('Broker Name: _______________________', 10);
-    addText('Date: _______________', 10);
-    yPos += 15;
-
-    // Customer Signature
-    addText('CUSTOMER SIGNATURE:', 12, true);
-    yPos += 15;
-    pdf.line(20, yPos, 120, yPos); // Signature line
-    yPos += 5;
-    addText('Customer Name: _______________________', 10);
-    addText('Date: _______________', 10);
-
-    pdf.save(`Proposal_${quote.id}.pdf`);
+  const toggleWordingExpansion = (extensionKey: string) => {
+    setExpandedWordings(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(extensionKey)) {
+        newSet.delete(extensionKey);
+      } else {
+        newSet.add(extensionKey);
+      }
+      return newSet;
+    });
   };
 
-  if (!quote) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Quote Not Found</h2>
-            <p className="text-muted-foreground mb-4">The requested quote could not be found.</p>
-            <Button onClick={() => {
-              // Navigate to market admin dashboard for broker-admin routes
-              if (window.location.pathname.includes('/market-admin/quote/')) {
-                navigate("/market-admin/dashboard");
-              } else if (window.location.pathname.includes('/broker/')) {
-                navigate("/broker/dashboard");
-              } else if (window.location.pathname.includes('/insurer/')) {
-                navigate("/insurer/dashboard");
-              } else {
-                navigateBack();
-              }
-            }}>
-              Back
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading quote details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">Error</div>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!proposalBundle) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Quote not found</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  // Navigate to market admin dashboard for broker-admin routes
-                  if (window.location.pathname.includes('/market-admin/quote/')) {
-                    navigate("/market-admin/dashboard");
-                  } else if (window.location.pathname.includes('/broker/')) {
-                    navigate("/broker/dashboard");
-                  } else if (window.location.pathname.includes('/insurer/')) {
-                    navigate("/insurer/dashboard");
-                  } else {
-                    navigateBack();
-                  }
-                }}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-xl font-semibold text-foreground">Quote Details - {quote.id}</h1>
-                <p className="text-sm text-muted-foreground">{quote.insuredName}</p>
-              </div>
+    <div className="min-h-screen" style={{ backgroundColor: '#f8fafc' }}>
+      {/* Top Navigation Bar */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => window.history.back()}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">
+                Quote Details - {proposalBundle.quote_meta?.quote_id || 'Unknown'}
+              </h1>
+              <p className="text-sm text-gray-600">
+                {proposalBundle.insured?.details?.insured_name || proposalBundle.project?.client_name || 'Insurance Quote'}
+              </p>
             </div>
-            <div className="flex items-center gap-3">
-              {getStatusBadge(quote.status)}
-              {/* Only show Edit Quote button in broker portal */}
-              {window.location.pathname.startsWith('/broker/') && (
-                <Button variant="outline" onClick={() => {
-                  navigate(`/broker/quote/${quote.id}/edit`, { 
-                    state: { editingQuote: quote } 
-                  });
-                }}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Quote
-                </Button>
-              )}
-              <Button variant="outline" onClick={exportToExcel}>
-                <Download className="w-4 h-4 mr-2" />
-                Download Quote
-              </Button>
-            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              {proposalBundle.quote_meta?.status || 'Quote Generated'}
+            </Badge>
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+              Edit Quote
+            </Button>
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Download Quote
+            </Button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            {/* Project Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5" />
-                  Project Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Project Name</div>
-                  <p className="font-medium">{quote.projectName}</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Project Type</div>
-                    <p className="font-medium">{quote.projectType}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Construction Type</div>
-                    <p className="font-medium">{quote.constructionType}</p>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Project Address</div>
-                  <p className="font-medium">{quote.projectAddress}</p>
-                </div>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                   <div>
-                     <div className="text-sm font-medium text-muted-foreground">Sum Insured Value</div>
-                     <p className="font-medium">{quote.projectValue}</p>
-                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Start Date</div>
-                    <p className="font-medium">{quote.startDate}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Completion Date</div>
-                    <p className="font-medium">{quote.completionDate}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Construction Period</div>
-                    <p className="font-medium">{quote.constructionPeriod}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Maintenance Period</div>
-                    <p className="font-medium">{quote.maintenancePeriod}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
 
-            {/* Insured Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Insured Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Insured Name</div>
-                    <p className="font-medium">{quote.insuredName}</p>
+        {/* Quote Summary */}
+        {proposalBundle.quote_meta && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Quote Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="grid lg:grid-cols-4">
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Quote ID</div>
+                    <div className="text-sm font-medium">{proposalBundle.quote_meta.quote_id}</div>
                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Role of Insured</div>
-                    <p className="font-medium">{quote.roleOfInsured}</p>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Status</div>
+                    <div className="text-sm font-medium">
+                      <Badge variant="outline">{proposalBundle.quote_meta.status || 'Draft'}</Badge>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">VAT Number</div>
-                    <p className="font-medium">{quote.vatNumber}</p>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Created Date</div>
+                    <div className="text-sm font-medium">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        }) : 'Not available'
+                      }
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Country of Incorporation</div>
-                    <p className="font-medium">{quote.countryOfIncorporation}</p>
+                  <div className="p-3 border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Validity Date</div>
+                    <div className="text-sm font-medium">
+                      {proposalBundle.quote_meta.validity_date ? 
+                        new Date(proposalBundle.quote_meta.validity_date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        }) : 'Not set'
+                      }
+                    </div>
                   </div>
                 </div>
-                
-                {/* Contact Information - Only show in broker portal */}
-                {window.location.pathname.includes('/broker/') && (
-                  <div className="border-t pt-4 mt-4">
-                    <h4 className="font-medium text-sm text-muted-foreground mb-3">Contact Information</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Email</div>
-                        <p className="font-medium">{quote.contactEmail}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Cover Requirements - Show above Project Details if values exist */}
+        {proposalBundle.cover_requirements && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Cover Requirements
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="grid lg:grid-cols-4">
+                  {Object.entries(proposalBundle.cover_requirements)
+                    .filter(([key]) => key !== 'project_value' && key !== 'id' && key !== 'updated_at')
+                    .map(([key, value], idx) => {
+                      let displayKey = key;
+                      let displayValue = value;
+                      
+                      // Rename computed_sum_insured to sum_insured
+                      if (key === 'computed_sum_insured') {
+                        displayKey = 'sum_insured';
+                      }
+                      
+                      // Format monetary values to show AED
+                      if (key.includes('works') || key.includes('equipment') || key.includes('materials') || 
+                          key.includes('property') || key.includes('sum_insured') || key.includes('computed_sum_insured')) {
+                        const num = parseFloat(String(value));
+                        if (!isNaN(num) && num >= 0) {
+                          displayValue = `AED ${num.toLocaleString()}`;
+                        }
+                      }
+                      
+                      return (
+                        <div key={key} className="p-3 border-r border-b border-gray-200 last:border-r-0">
+                          <div className="text-xs text-gray-500 mb-1">{formatFieldName(displayKey)}</div>
+                          <div className="text-sm font-medium">
+                            {typeof displayValue === 'string' && displayValue.startsWith('AED') ? 
+                              displayValue : 
+                              formatFieldValue(displayKey, displayValue)
+                            }
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Project Details */}
+        {proposalBundle.project && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Project Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="grid lg:grid-cols-4">
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Project Name</div>
+                    <div className="text-sm font-medium">{proposalBundle.project.project_name || 'Not specified'}</div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Project Type</div>
+                    <div className="text-sm font-medium">{formatFieldValue('project_type', proposalBundle.project.project_type)}</div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Sub Project Type</div>
+                    <div className="text-sm font-medium">{formatFieldValue('sub_project_type', proposalBundle.project.sub_project_type)}</div>
+                  </div>
+                  <div className="p-3 border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Construction Type</div>
+                    <div className="text-sm font-medium">{formatFieldValue('construction_type', proposalBundle.project.construction_type)}</div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Project Start Date</div>
+                    <div className="text-sm font-medium">
+                      {formatFieldValue('start_date', proposalBundle.project.start_date)}
+                    </div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Completion Date</div>
+                    <div className="text-sm font-medium">
+                      {formatFieldValue('completion_date', proposalBundle.project.completion_date)}
+                    </div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Construction Period</div>
+                    <div className="text-sm font-medium">
+                      {proposalBundle.project.construction_period_months ? 
+                        `${proposalBundle.project.construction_period_months} months` : 
+                        'Not calculated'
+                      }
+                    </div>
+                  </div>
+                  <div className="p-3 border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Maintenance Period</div>
+                    <div className="text-sm font-medium">
+                      {proposalBundle.project.maintenance_period_months ? 
+                        `${proposalBundle.project.maintenance_period_months} months` : 
+                        'Not specified'
+                      }
+                    </div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Sum Insured</div>
+                    <div className="text-sm font-medium">
+                      {formatFieldValue('sum_insured', proposalBundle.project.sum_insured)}
+                    </div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Country</div>
+                    <div className="text-sm font-medium">{formatFieldValue('country', proposalBundle.project.country)}</div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Region</div>
+                    <div className="text-sm font-medium">{formatFieldValue('region', proposalBundle.project.region)}</div>
+                  </div>
+                  <div className="p-3 border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Zone</div>
+                    <div className="text-sm font-medium">{formatFieldValue('zone', proposalBundle.project.zone)}</div>
+                  </div>
+                  <div className="col-span-4 p-3">
+                    <div className="text-xs text-gray-500 mb-1">Address</div>
+                    <div className="text-sm font-medium">{proposalBundle.project.address || 'Not specified'}</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Insured Details */}
+        {proposalBundle.insured?.details && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Insured Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="grid lg:grid-cols-4">
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Insured Name</div>
+                    <div className="text-sm font-medium">{proposalBundle.insured.details.insured_name || 'Not specified'}</div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Role of Insured</div>
+                    <div className="text-sm font-medium">{formatFieldValue('role_of_insured', proposalBundle.insured.details.role_of_insured)}</div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Had Losses (Last 5 Years)</div>
+                    <div className="text-sm font-medium">{proposalBundle.insured.details.had_losses_last_5yrs ? 'Yes' : 'No'}</div>
+                  </div>
+                  <div className="p-3 border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Created Date</div>
+                    <div className="text-sm font-medium">
+                      {formatFieldValue('created_at', proposalBundle.insured.details.created_at)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Claims History */}
+        {proposalBundle.insured?.claims && proposalBundle.insured.claims.length > 0 && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Claims History
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-4">
+                {proposalBundle.insured.claims.map((claim, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="grid lg:grid-cols-4">
+                      {Object.entries(claim).map(([key, value], idx) => (
+                        <div key={key} className="p-3 border-r border-b border-gray-200 last:border-r-0">
+                          <div className="text-xs text-gray-500 mb-1">{formatFieldName(key)}</div>
+                          <div className="text-sm font-medium">
+                            {formatFieldValue(key, value)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Contract Structure */}
+        {proposalBundle.contract_structure && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Contract Structure
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {/* Main Contract Details */}
+              {proposalBundle.contract_structure.details && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Main Contract</h4>
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="grid lg:grid-cols-4">
+                      <div className="p-3 border-r border-b border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Main Contractor</div>
+                        <div className="text-sm font-medium">{proposalBundle.contract_structure.details.main_contractor || 'Not specified'}</div>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Phone</div>
-                        <p className="font-medium">{quote.phoneNumber}</p>
+                      <div className="p-3 border-r border-b border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Principal Owner</div>
+                        <div className="text-sm font-medium">{proposalBundle.contract_structure.details.principal_owner || 'Not specified'}</div>
+                      </div>
+                      <div className="p-3 border-r border-b border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Contract Type</div>
+                        <div className="text-sm font-medium">{formatFieldValue('contract_type', proposalBundle.contract_structure.details.contract_type)}</div>
+                      </div>
+                      <div className="p-3 border-b border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Experience Years</div>
+                        <div className="text-sm font-medium">{proposalBundle.contract_structure.details.experience_years || 0} years</div>
+                      </div>
+                      <div className="col-span-4 p-3">
+                        <div className="text-xs text-gray-500 mb-1">Contract Number</div>
+                        <div className="text-sm font-medium">{proposalBundle.contract_structure.details.contract_number || 'Not specified'}</div>
                       </div>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              )}
 
-            {/* Contract Structure */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Contract Structure
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Main Contractor</div>
-                    <p className="font-medium">{quote.mainContractor}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Principal/Owner</div>
-                    <p className="font-medium">{quote.principalOwner}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Contract Type</div>
-                    <p className="font-medium">{quote.contractType}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Contract Number</div>
-                    <p className="font-medium">{quote.contractNumber}</p>
-                  </div>
-                </div>
+              {/* Sub Contractors */}
+              {proposalBundle.contract_structure.sub_contractors && proposalBundle.contract_structure.sub_contractors.length > 0 && (
                 <div>
-                  <div className="text-sm font-medium text-muted-foreground">Engineer/Consultant</div>
-                  <p className="font-medium">{quote.engineerConsultant}</p>
-                </div>
-                
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Sub-Contractors</div>
-                  <div className="space-y-2 mt-2">
-                    {quote.subContractors.map((subcontractor, index) => (
-                      <div key={index} className="p-3 border border-border rounded-lg bg-muted/30">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                          <div>
-                            <span className="font-medium">Name:</span> {subcontractor.name}
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Sub Contractors</h4>
+                  <div className="space-y-4">
+                    {proposalBundle.contract_structure.sub_contractors.map((subContract, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="grid lg:grid-cols-3">
+                          <div className="p-3 border-r border-b border-gray-200">
+                            <div className="text-xs text-gray-500 mb-1">Name</div>
+                            <div className="text-sm font-medium">{subContract.name || 'Not specified'}</div>
                           </div>
-                          <div>
-                            <span className="font-medium">Type:</span> {subcontractor.contractType}
+                          <div className="p-3 border-r border-b border-gray-200">
+                            <div className="text-xs text-gray-500 mb-1">Contract Type</div>
+                            <div className="text-sm font-medium">{formatFieldValue('contract_type', subContract.contract_type)}</div>
                           </div>
-                          <div>
-                            <span className="font-medium">Contract #:</span> {subcontractor.contractNumber}
+                          <div className="p-3 border-b border-gray-200">
+                            <div className="text-xs text-gray-500 mb-1">Contract Number</div>
+                            <div className="text-sm font-medium">{subContract.contract_number || 'Not specified'}</div>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              )}
 
-            {/* Site Risks */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5" />
-                  Site Risk Assessment
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Near Water Body</div>
-                    <p className="font-medium">{quote.nearWaterBody}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Flood Prone Zone</div>
-                    <p className="font-medium">{quote.floodProneZone}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Within City Center</div>
-                    <p className="font-medium">{quote.withinCityCenter}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Area Type</div>
-                    <p className="font-medium">{quote.cityAreaType}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Soil Type</div>
-                    <p className="font-medium">{quote.soilType}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Existing Structure</div>
-                    <p className="font-medium">{quote.existingStructure}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Blasting/Deep Excavation</div>
-                    <p className="font-medium">{quote.blastingExcavation}</p>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Site Security</div>
-                    <p className="font-medium">{quote.siteSecurityArrangements}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Cover Requirements */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  Cover Requirements
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <h4 className="font-medium text-sm text-muted-foreground">Section 1: Material Damage</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-sm font-medium text-muted-foreground">Contract Works</div>
-                      <p className="font-medium">{quote.sumInsuredMaterial}</p>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-muted-foreground">Plant & Equipment</div>
-                      <p className="font-medium">{quote.sumInsuredPlant}</p>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-muted-foreground">Temporary Works</div>
-                      <p className="font-medium">{quote.sumInsuredTemporary}</p>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-muted-foreground">Principal's Existing Property</div>
-                      <p className="font-medium">{quote.principalExistingProperty}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-3">
-                  <h4 className="font-medium text-sm text-muted-foreground">Section 2: Third Party Liability</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-sm font-medium text-muted-foreground">TPL Limit</div>
-                      <p className="font-medium">{quote.tplLimit}</p>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-muted-foreground">Cross Liability Cover</div>
-                      <p className="font-medium">{quote.crossLiabilityCover}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <h4 className="font-medium text-sm text-muted-foreground">Clauses, Exclusions, and Warranties</h4>
-                  
-                  {/* Extensions with Wordings */}
-                  {quote.selectedCEWItems.filter(item => item.type === "extension").length > 0 && (
-                    <div className="space-y-3">
-                      <h5 className="text-sm font-medium text-green-600">Extensions</h5>
-                      <Accordion type="multiple" className="w-full">
-                        {quote.selectedCEWItems.filter(item => item.type === "extension").map((item) => (
-                          <AccordionItem key={item.id} value={item.id.toString()}>
-                            <AccordionTrigger className="text-left">
-                              <div className="flex justify-between items-center w-full pr-4">
-                                <span className="text-sm font-medium">{item.name}</span>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-xs text-muted-foreground">{item.limit}</span>
-                                  <Badge variant={item.percentage.startsWith('+') ? 'destructive' : 'secondary'} className="text-xs">
-                                    {item.percentage}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="pt-2 text-sm text-muted-foreground">
-                                {item.wording}
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </div>
-                  )}
-
-                  {/* Conditions with Wordings */}
-                  {quote.selectedCEWItems.filter(item => item.type === "condition").length > 0 && (
-                    <div className="space-y-3">
-                      <h5 className="text-sm font-medium text-orange-600">Exclusions</h5>
-                      <Accordion type="multiple" className="w-full">
-                        {quote.selectedCEWItems.filter(item => item.type === "condition").map((item) => (
-                          <AccordionItem key={item.id} value={item.id.toString()}>
-                            <AccordionTrigger className="text-left">
-                              <div className="flex justify-between items-center w-full pr-4">
-                                <span className="text-sm font-medium">{item.name}</span>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-xs text-muted-foreground">{item.limit}</span>
-                                  <Badge variant={item.percentage.startsWith('+') ? 'destructive' : 'secondary'} className="text-xs">
-                                    {item.percentage}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="pt-2 text-sm text-muted-foreground">
-                                {item.wording}
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </div>
-                  )}
-
-                  {/* Warranties with Wordings */}
-                  {quote.selectedCEWItems.filter(item => item.type === "warranty").length > 0 && (
-                    <div className="space-y-3">
-                      <h5 className="text-sm font-medium text-blue-600">Warranties</h5>
-                      <Accordion type="multiple" className="w-full">
-                        {quote.selectedCEWItems.filter(item => item.type === "warranty").map((item) => (
-                          <AccordionItem key={item.id} value={item.id.toString()}>
-                            <AccordionTrigger className="text-left">
-                              <div className="flex justify-between items-center w-full pr-4">
-                                <span className="text-sm font-medium">{item.name}</span>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-xs text-muted-foreground">{item.limit}</span>
-                                  <Badge variant={item.percentage.startsWith('+') ? 'destructive' : 'secondary'} className="text-xs">
-                                    {item.percentage}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="pt-2 text-sm text-muted-foreground">
-                                {item.wording}
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Claims History */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileCheck className="w-5 h-5" />
-                  Claims History
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              {/* Consultants */}
+              {proposalBundle.contract_structure.consultants && proposalBundle.contract_structure.consultants.length > 0 && (
                 <div>
-                  <div className="text-sm font-medium text-muted-foreground">Losses in Last 5 Years</div>
-                  <p className="font-medium">{quote.lossesInLastFiveYears}</p>
-                </div>
-                {quote.lossesInLastFiveYears === "Yes" && (
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Consultants</h4>
                   <div className="space-y-4">
-                    <div className="bg-muted/30 p-4 rounded-lg">
-                      <h4 className="font-medium text-foreground mb-4">Claims History Matrix (2020-2024)</h4>
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-20">Year</TableHead>
-                              <TableHead className="w-32">Count of Claims</TableHead>
-                              <TableHead className="w-40">Amount of Claims (AED)</TableHead>
-                              <TableHead>Description</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {quote.claimsHistory.filter(claim => claim.claimCount > 0).map(claim => (
-                              <TableRow key={claim.year}>
-                                <TableCell className="font-medium">{claim.year}</TableCell>
-                                <TableCell>{claim.claimCount}</TableCell>
-                                <TableCell>
-                                  AED {parseInt(claim.amount).toLocaleString()}
-                                </TableCell>
-                                <TableCell>
-                                  {claim.description}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                    {proposalBundle.contract_structure.consultants.map((consultant, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="grid lg:grid-cols-3">
+                          <div className="p-3 border-r border-b border-gray-200">
+                            <div className="text-xs text-gray-500 mb-1">Name</div>
+                            <div className="text-sm font-medium">{consultant.name || 'Not specified'}</div>
+                          </div>
+                          <div className="p-3 border-r border-b border-gray-200">
+                            <div className="text-xs text-gray-500 mb-1">Role</div>
+                            <div className="text-sm font-medium">{formatFieldValue('role', consultant.role)}</div>
+                          </div>
+                          <div className="p-3 border-b border-gray-200">
+                            <div className="text-xs text-gray-500 mb-1">License Number</div>
+                            <div className="text-sm font-medium">{consultant.license_number || 'Not specified'}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Site Risk Assessment */}
+        {proposalBundle.site_risks && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Site Risk Assessment
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="grid lg:grid-cols-4">
+                  {Object.entries(proposalBundle.site_risks).filter(([key]) => key !== 'id' && key !== 'project_id').map(([key, value], idx) => (
+                    <div key={key} className="p-3 border-r border-b border-gray-200 last:border-r-0">
+                      <div className="text-xs text-gray-500 mb-1">{formatFieldName(key)}</div>
+                      <div className="text-sm font-medium">
+                        {formatFieldValue(key, value)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Required Documents */}
+        {proposalBundle.required_documents && proposalBundle.required_documents.length > 0 && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Required Documents
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-4">
+                {proposalBundle.required_documents.map((doc, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="grid lg:grid-cols-3">
+                      <div className="p-3 border-r border-b border-gray-200">
+                        <div className="text-sm font-medium">{doc.label || 'Not specified'}</div>
+                      </div>
+                      <div className="p-3 border-r border-b border-gray-200">
+                        <div className="text-sm font-medium">
+                          {doc.url ? (
+                            <Badge variant="default" className="text-xs">Uploaded</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">Pending</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="p-3 border-b border-gray-200">
+                        <div className="text-sm font-medium">
+                          {doc.url ? (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-7 flex items-center gap-1"
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = doc.url;
+                                link.download = doc.label || 'document';
+                                link.target = '_blank';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                              }}
+                            >
+                              <Download className="h-3 w-3" />
+                              Download
+                            </Button>
+                          ) : (
+                            <span className="text-gray-400 text-xs">No file available</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Quote Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Quote ID</span>
-                    <span className="font-medium">{quote.id}</span>
-                  </div>
-                   <div className="flex justify-between">
-                     <span className="text-sm text-muted-foreground">Quote Status</span>
-                     {getStatusBadge(quote.status)}
-                   </div>
-                   <div className="flex justify-between">
-                     <span className="text-sm text-muted-foreground">Submitted Date</span>
-                     <span className="font-medium">{quote.submittedDate}</span>
-                   </div>
-                   <div className="flex justify-between">
-                     <span className="text-sm text-muted-foreground">Quote Expiry</span>
-                     <span className="font-medium text-red-600">{quote.expiryDate}</span>
-                   </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Sum Insured Value</span>
-                      <span className="font-medium">{quote.projectValue}</span>
+        {/* Selected Plan Details */}
+        {proposalBundle.plans && proposalBundle.plans.length > 0 && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Selected Plan Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {proposalBundle.plans.map((plan, index) => (
+                <div key={plan.id || index} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="grid lg:grid-cols-4">
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Insurer Name</div>
+                      <div className="text-sm font-medium">{plan.insurer_name || 'Not specified'}</div>
                     </div>
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Premium Amount</div>
+                      <div className="text-sm font-medium">{formatFieldValue('premium_amount', plan.premium_amount)}</div>
+                    </div>
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Minimum Premium</div>
+                      <div className="text-sm font-medium">{formatFieldValue('minimum_premium_value', plan.minimum_premium_value)}</div>
+                    </div>
+                    <div className="p-3 border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Minimum Applied</div>
+                      <div className="text-sm font-medium">{plan.is_minimum_premium_applied ? 'Yes' : 'No'}</div>
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full" onClick={downloadProposal}>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Download Proposal
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <Download className="w-4 h-4 mr-2" />  
-                  Download Quote
-                </Button>
-                <Button variant="secondary" className="w-full">
-                  Send Quote in Mail
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        {/* Selected Extensions - Enhanced with Product Bundle Data */}
+        {selectedExtensions.length > 0 && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Selected Extensions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                {selectedExtensions.map((extension) => (
+                  <div key={extension.policy_key} className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-semibold text-foreground">{extension.title}</h3>
+                        <Badge variant="outline" className="text-xs px-1 py-0">{extension.clause_code}</Badge>
+                        <Badge 
+                          variant={extension.clause_type === "CLAUSE" ? "default" : extension.clause_type === "WARRANTY" ? "secondary" : "outline"}
+                          className="text-xs px-1 py-0"
+                        >
+                          {extension.clause_type}
+                        </Badge>
+                        {extension.is_mandatory && (
+                          <Badge variant="destructive" className="text-xs px-1 py-0">Mandatory</Badge>
+                        )}
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-7"
+                        onClick={() => toggleWordingExpansion(extension.policy_key)}
+                      >
+                        {expandedWordings.has(extension.policy_key) ? 'Hide Wordings' : 'View Wordings'}
+                      </Button>
+                    </div>
+                    
+                    {/* Expanded Wording */}
+                    {expandedWordings.has(extension.policy_key) && extension.clause_wording && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="text-xs text-gray-600 leading-relaxed">
+                          {extension.clause_wording || 'No wording available'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Fallback message if no data sections are available */}
+        {(!proposalBundle.quote_meta && 
+          !proposalBundle.project && 
+          !proposalBundle.insured?.details &&
+          !proposalBundle.contract_structure &&
+          !proposalBundle.site_risks &&
+          !proposalBundle.cover_requirements &&
+          (!proposalBundle.required_documents || proposalBundle.required_documents.length === 0) &&
+          (!proposalBundle.plans || proposalBundle.plans.length === 0)) && (
+          <Card className="bg-white shadow-lg border-0 mb-8">
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <div className="text-gray-500 mb-2">
+                  <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Quote In Progress</h3>
+                <p className="text-gray-600">
+                  This quote is still being prepared. Information will appear here as it becomes available.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

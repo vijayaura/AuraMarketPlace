@@ -285,18 +285,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     contractType: "",
     contractNumber: "",
     experienceYears: "",
-    consultants: [{
-      id: 1,
-      name: "",
-      role: "",
-      licenseNumber: ""
-    }],
-    subContractors: [{
-      id: 1,
-      name: "",
-      contractType: "",
-      contractNumber: ""
-    }],
+    consultants: [],
+    subContractors: [],
     nearWaterBody: "no",
     waterBodyDistance: "",
     floodProneZone: "no",
@@ -436,14 +426,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         soilType: "",
         siteSecurityArrangements: "",
         // Clear dynamic fields
-        consultants: prev.consultants.map(consultant => ({
-          ...consultant,
-          role: ""
-        })),
-        subContractors: prev.subContractors.map(subcontractor => ({
-          ...subcontractor,
-          contractType: ""
-        }))
+        consultants: [],
+        subContractors: []
       }));
       
       setLoadingStates({ isLoading: false, hasError: false, errorMessage: '' });
@@ -968,18 +952,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         contractType: editingQuote.contractType || "turnkey",
         contractNumber: editingQuote.contractNumber || "",
         experienceYears: editingQuote.experienceYears || "",
-        consultants: editingQuote.consultants || [{
-          id: 1,
-          name: "",
-          role: "",
-          licenseNumber: ""
-        }],
-        subContractors: editingQuote.subContractors || [{
-          id: 1,
-          name: "",
-          contractType: "supply",
-          contractNumber: ""
-        }],
+        consultants: editingQuote.consultants || [],
+        subContractors: editingQuote.subContractors || [],
         nearWaterBody: editingQuote.nearWaterBody || "no",
         waterBodyDistance: editingQuote.waterBodyDistance || "",
         floodProneZone: editingQuote.floodProneZone || "no",
@@ -1235,8 +1209,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         if (!formData.contractNumber?.trim()) {
           errors.contractNumber = "Contract number is required";
         }
-        if (!formData.experienceYears || parseInt(formData.experienceYears) <= 0) {
-          errors.experienceYears = "Valid experience years is required";
+        if (!formData.experienceYears || parseInt(formData.experienceYears) < 0) {
+          errors.experienceYears = "Experience years must be 0 or greater";
         }
         break;
         
@@ -2985,7 +2959,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                 <div className="space-y-4 border-t border-border pt-6">
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium">Claims History</h3>
-                    <p className="text-sm text-muted-foreground">Information about past insurance claims</p>
                   </div>
                   
                   <div className="space-y-4">
@@ -3138,12 +3111,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       type="number" 
                       min="0" 
                       max="100" 
-                      value={formData.experienceYears} 
+                      value={formData.experienceYears || "0"} 
                       onChange={e => setFormData({
                         ...formData,
                         experienceYears: e.target.value
                       })} 
-                      placeholder="Years of experience" 
+                      placeholder="0" 
                     />
                   </div>
                 </div>
@@ -3158,7 +3131,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                   </div>
                   
                   <div className="space-y-4">
-                    {formData.subContractors.map((subcontractor, index) => <div key={subcontractor.id} className="grid md:grid-cols-4 gap-4 p-4 border border-border rounded-lg bg-muted/30">
+                    {formData.subContractors.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No subcontractors added yet. Click "Add Sub-Contractor" to add one.</p>
+                      </div>
+                    ) : (
+                      formData.subContractors.map((subcontractor, index) => <div key={subcontractor.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-border rounded-lg bg-muted/30">
                         <div className="space-y-2">
                           <Label htmlFor={`subcontractor-name-${subcontractor.id}`}>Name *</Label>
                           <Input id={`subcontractor-name-${subcontractor.id}`} value={subcontractor.name} onChange={e => updateSubcontractor(subcontractor.id, 'name', e.target.value)} placeholder="Subcontractor name" />
@@ -3193,11 +3171,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           <Input id={`subcontractor-contract-${subcontractor.id}`} value={subcontractor.contractNumber} onChange={e => updateSubcontractor(subcontractor.id, 'contractNumber', e.target.value)} placeholder="Reference number" />
                         </div>
                         <div className="flex items-end">
-                          <Button type="button" variant="destructive" size="sm" onClick={() => removeSubcontractor(subcontractor.id)} disabled={formData.subContractors.length === 1}>
+                          <Button type="button" variant="destructive" size="sm" onClick={() => removeSubcontractor(subcontractor.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      </div>)}
+                      </div>)
+                    )}
                   </div>
                 </div>
 
@@ -3211,7 +3190,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                   </div>
                   
                   <div className="space-y-4">
-                    {formData.consultants.map((consultant, index) => <div key={consultant.id} className="grid md:grid-cols-4 gap-4 p-4 border border-border rounded-lg bg-muted/30">
+                    {formData.consultants.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No consultants added yet. Click "Add Consultant" to add one.</p>
+                      </div>
+                    ) : (
+                      formData.consultants.map((consultant, index) => <div key={consultant.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-border rounded-lg bg-muted/30">
                         <div className="space-y-2">
                           <Label htmlFor={`consultant-name-${consultant.id}`}>Name *</Label>
                           <Input id={`consultant-name-${consultant.id}`} value={consultant.name} onChange={e => updateConsultant(consultant.id, 'name', e.target.value)} placeholder="Consultant name" />
@@ -3246,11 +3230,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           <Input id={`consultant-license-${consultant.id}`} value={consultant.licenseNumber} onChange={e => updateConsultant(consultant.id, 'licenseNumber', e.target.value)} placeholder="Professional license" />
                         </div>
                         <div className="flex items-end">
-                          <Button type="button" variant="destructive" size="sm" onClick={() => removeConsultant(consultant.id)} disabled={formData.consultants.length === 1}>
+                          <Button type="button" variant="destructive" size="sm" onClick={() => removeConsultant(consultant.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      </div>)}
+                      </div>)
+                    )}
                   </div>
                 </div>
 
@@ -3472,18 +3457,18 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="contractWorks">Contract Works *</Label>
-                          <Input id="contractWorks" type="number" value={formData.sumInsuredMaterial} onChange={e => setFormData({
+                          <Input id="contractWorks" type="number" value={formData.sumInsuredMaterial || "0"} onChange={e => setFormData({
                           ...formData,
                           sumInsuredMaterial: e.target.value
-                        })} placeholder="Enter amount (AED)" />
+                        })} placeholder="0" />
                           <p className="text-xs text-hint">Main construction value</p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="plantEquipment">Plant & Equipment (CPM)</Label>
-                          <Input id="plantEquipment" type="number" value={formData.sumInsuredPlant} onChange={e => setFormData({
+                          <Input id="plantEquipment" type="number" value={formData.sumInsuredPlant || "0"} onChange={e => setFormData({
                           ...formData,
                           sumInsuredPlant: e.target.value
-                        })} placeholder="Enter amount (AED)" />
+                        })} placeholder="0" />
                           <p className="text-xs text-hint">Construction Plant & Machinery</p>
                         </div>
                       </div>
@@ -3491,10 +3476,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="temporaryWorks">Temporary Works</Label>
-                          <Input id="temporaryWorks" type="number" value={formData.sumInsuredTemporary} onChange={e => setFormData({
+                          <Input id="temporaryWorks" type="number" value={formData.sumInsuredTemporary || "0"} onChange={e => setFormData({
                           ...formData,
                           sumInsuredTemporary: e.target.value
-                        })} placeholder="Enter amount (AED)" />
+                        })} placeholder="0" />
                           <p className="text-xs text-hint">Temporary structures and formwork</p>
                         </div>
                         <div className="space-y-2">
@@ -3502,7 +3487,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           <Input id="otherMaterials" type="number" value={formData.otherMaterials || "0"} onChange={e => setFormData({
                           ...formData,
                           otherMaterials: e.target.value
-                        })} placeholder="Enter amount (AED)" />
+                        })} placeholder="0" />
                           <p className="text-xs text-hint">Additional materials coverage</p>
                         </div>
                       </div>
@@ -3510,10 +3495,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       <div className="grid md:grid-cols-1 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="principalExistingProperty">Principal's Existing/Surrounding Property</Label>
-                          <Input id="principalExistingProperty" type="number" value={formData.principalExistingProperty} onChange={e => setFormData({
+                          <Input id="principalExistingProperty" type="number" value={formData.principalExistingProperty || "0"} onChange={e => setFormData({
                           ...formData,
                           principalExistingProperty: e.target.value
-                        })} placeholder="Enter amount (AED)" />
+                        })} placeholder="0" />
                           <p className="text-xs text-hint">Value of adjacent structures owned by principal</p>
                         </div>
                       </div>

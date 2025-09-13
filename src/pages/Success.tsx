@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileText, Download, CheckCircle, Calendar, Building, DollarSign, Shield, AlertCircle } from "lucide-react";
 import { getProposalBundle, ProposalBundleResponse, getPolicyDetails, PolicyDetailsResponse } from "@/lib/api/quotes";
 import { getPolicyWordings, PolicyWording } from "@/lib/api/insurers";
+import { getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
 import { toast } from "@/components/ui/sonner";
 import { generatePolicyPDF } from "@/utils/pdfGenerator";
 
@@ -17,6 +18,9 @@ const Success = () => {
   const [proposalBundle, setProposalBundle] = useState<ProposalBundleResponse | null>(null);
   const [policyWordings, setPolicyWordings] = useState<PolicyWording[]>([]);
   const [policyDetails, setPolicyDetails] = useState<PolicyDetailsResponse | null>(null);
+  const [productBundle, setProductBundle] = useState<InsurerPricingConfigResponse | null>(null);
+  const [selectedExtensions, setSelectedExtensions] = useState<any[]>([]);
+  const [expandedWordings, setExpandedWordings] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [policyData, setPolicyData] = useState<{
@@ -73,6 +77,18 @@ const Success = () => {
         const wordingsData = await getPolicyWordings(bundleData.quote_meta.insurer_id, 1); // Using product_id = 1 as per the API
         setPolicyWordings(wordingsData.wordings);
 
+        // Get product bundle configuration with clause_pricing_config and meta data
+        // API: /api/v1/insurers/{insurer_id}/products/1/product-config-bundle
+        const insurerId = bundleData.quote_meta.insurer_id;
+        console.log('%cCalling Product Bundle API for insurer:', 'color: #ff1493; font-weight: bold;', insurerId);
+        
+        const productBundleData = await getInsurerPricingConfig(insurerId);
+        setProductBundle(productBundleData);
+        
+        console.log('%cProduct Bundle API Response:', 'color: #ff1493; font-weight: bold;', productBundleData);
+        console.log('%cClause Pricing Config with Meta:', 'color: #ff1493; font-weight: bold;', productBundleData.clause_pricing_config);
+
+
       } catch (err: any) {
         console.error('Error loading policy data:', err);
         setError(err.message || 'Failed to load policy details. Please try again.');
@@ -86,6 +102,94 @@ const Success = () => {
 
     loadPolicyData();
   }, []);
+
+  // Process selected extensions when both proposalBundle and productBundle are loaded
+  useEffect(() => {
+    if (proposalBundle && productBundle) {
+      // Use clause_pricing_config from product bundle API
+      const clausePricingConfig = productBundle.clause_pricing_config || [];
+      
+      console.log('%cUsing clause_pricing_config from product bundle API:', 'color: #ff1493; font-weight: bold;', clausePricingConfig);
+      // Get selected extensions from policy response
+      const policyExtensions = proposalBundle.plans[0]?.extensions?.selected_extensions || {};
+
+      // Normalize helper
+      const toKey = (v?: string) => (v ?? '').toString().trim().toLowerCase();
+
+      console.log('%cPolicy Extensions:', 'color: #ff1493; font-weight: bold;', policyExtensions);
+      console.log('%cUsing Clause Pricing Config:', 'color: #ff1493; font-weight: bold;', clausePricingConfig);
+
+      // Process each selected extension from policy response
+      const processedExtensions = Object.entries(policyExtensions).map(([extensionKey, extensionData]) => {
+        // Get the code from policy extension data (e.g., "MRe0004")
+        const extensionCode = (extensionData as any)?.code;
+        console.log(`%cProcessing policy extension ${extensionKey}, code: ${extensionCode}`, 'color: #ff1493; font-weight: bold;');
+
+        // Find matching clause in product bundle's clausePricingConfig by clause_code
+        const matchingClause = clausePricingConfig.find((clause: any) => {
+          const clauseCode = clause.clause_code;
+          const match = clauseCode && extensionCode && 
+            toKey(clauseCode) === toKey(extensionCode);
+          
+          console.log(`%cComparing: "${clauseCode}" with "${extensionCode}" = ${match}`, 'color: #ff1493;');
+          if (match) {
+            console.log('%cFull matching clause:', 'color: #ff1493; font-weight: bold;', clause);
+            console.log('%cMeta from matching clause:', 'color: #ff1493; font-weight: bold;', clause.meta);
+          }
+          return match;
+        });
+
+        if (matchingClause) {
+          const meta = (matchingClause as any).meta || {};
+          console.log(`%cFound matching clause for ${extensionCode}:`, 'color: #ff1493; font-weight: bold;', {
+            clause_code: matchingClause.clause_code,
+            meta: meta
+          });
+          
+          const processedExtension = {
+            policy_key: extensionKey,
+            clause_code: matchingClause.clause_code, // Use clause_code from product bundle
+            title: meta.title || meta.clause_title || (extensionData as any)?.label || extensionKey,
+            clause_wording: meta.clause_wording || '',
+            clause_type: meta.clause_type || 'Extension',
+            show_type: (meta.show_type || 'default').toString().toLowerCase(),
+            extension_data: extensionData,
+            clause_config: matchingClause
+          };
+          
+          console.log(`%cFinal processed extension for ${extensionCode}:`, 'color: #ff1493; font-weight: bold;', processedExtension);
+          return processedExtension;
+        }
+
+        // If no matching clause found in product bundle, use basic info from policy
+        console.log(`%cNo matching clause found in product bundle for ${extensionKey} (code: ${extensionCode})`, 'color: #ff1493; font-weight: bold;');
+        return {
+          policy_key: extensionKey,
+          clause_code: extensionCode || extensionKey,
+          title: (extensionData as any)?.label || extensionKey,
+          clause_wording: '',
+          clause_type: 'Extension',
+          show_type: 'default',
+          extension_data: extensionData,
+          clause_config: null
+        };
+      });
+
+      setSelectedExtensions(processedExtensions);
+    }
+  }, [proposalBundle, productBundle]);
+
+  const toggleWordingExpansion = (extensionKey: string) => {
+    setExpandedWordings(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(extensionKey)) {
+        newSet.delete(extensionKey);
+      } else {
+        newSet.add(extensionKey);
+      }
+      return newSet;
+    });
+  };
 
   const handleDownloadDocument = (url: string, filename: string) => {
     try {
@@ -369,27 +473,59 @@ const Success = () => {
                     </div>
                   )}
 
-                  {/* Selected Extensions - Show all */}
-                  {proposalBundle.plans[0].extensions.selected_extensions && 
-                   Object.keys(proposalBundle.plans[0].extensions.selected_extensions).length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Extensions</h4>
-                      <div className="space-y-2">
-                        {Object.entries(proposalBundle.plans[0].extensions.selected_extensions).map(([key, extension]) => (
-                          <div key={key} className="p-3 bg-green-50 rounded-lg">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-gray-900">
-                                {extension.label}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                Code: {extension.code}
-                              </span>
-                            </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Selected Extensions Section */}
+          {selectedExtensions.length > 0 && (
+            <Card className="bg-white shadow-lg border-0 mb-8">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-gray-900">
+                  Selected Extensions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-3">
+                  {selectedExtensions.map((extension) => {
+                    const isExpanded = expandedWordings.has(extension.policy_key);
+                    return (
+                      <div key={extension.policy_key} className="p-4 bg-gray-50 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-sm font-semibold text-foreground">{extension.title}</h3>
+                            <Badge variant="outline" className="text-xs px-1 py-0">{extension.clause_code}</Badge>
+                            <Badge 
+                              variant={extension.clause_type === "CLAUSE" ? "default" : extension.clause_type === "WARRANTY" ? "secondary" : "outline"}
+                              className="text-xs px-1 py-0"
+                            >
+                              {extension.clause_type}
+                            </Badge>
+                            {extension.show_type === 'mandatory' && (
+                              <Badge variant="destructive" className="text-xs px-1 py-0">Mandatory</Badge>
+                            )}
                           </div>
-                        ))}
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs h-7"
+                            onClick={() => toggleWordingExpansion(extension.policy_key)}
+                          >
+                            {isExpanded ? 'Hide Wordings' : 'View Wordings'}
+                          </Button>
+                        </div>
+                        
+                        {isExpanded && extension.clause_wording && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-xs text-gray-600 leading-relaxed">
+                              {extension.clause_wording}
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
