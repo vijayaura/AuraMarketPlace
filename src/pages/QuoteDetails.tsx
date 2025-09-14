@@ -14,7 +14,7 @@ const QUOTE_LIFECYCLE_STEPS = [
   { key: 'contract_structure', label: 'Contract Structure' },
   { key: 'site_risk', label: 'Site Risk Assessment' },
   { key: 'cover_requirements', label: 'Cover Requirements' },
-  { key: 'required_documents', label: 'Required Documents' },
+  { key: 'required_documents', label: 'Underwriting Documents' },
   { key: 'plan_selected', label: 'Plan Selection' },
   { key: 'declaration_documents', label: 'Declaration Documents' },
   { key: 'policy_created', label: 'Policy Created' }
@@ -28,7 +28,7 @@ const getHumanReadableStatus = (status: string): string => {
     'contract_structure': 'Contract Structure',
     'site_risk': 'Site Risk Assessment',
     'cover_requirements': 'Cover Requirements',
-    'required_documents': 'Documents Required',
+    'required_documents': 'Underwriting Documents',
     'plan_selected': 'Plan Selected',
     'declaration_documents': 'Declaration Documents',
     'policy_created': 'Policy Created',
@@ -328,7 +328,7 @@ const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
 
   // Required Documents
   if (proposalBundle.required_documents && Array.isArray(proposalBundle.required_documents)) {
-    addSectionHeader('REQUIRED DOCUMENTS');
+    addSectionHeader('UNDERWRITING DOCUMENTS');
     proposalBundle.required_documents.forEach((doc, index) => {
       addTableRow(`Document ${index + 1}`, formatFieldValue('label', doc.label));
     });
@@ -1555,7 +1555,7 @@ const QuoteDetails = () => {
                   </div>
                 <div>
                     <CardTitle className="text-lg font-semibold text-gray-900">
-                      Required Documents
+                      Underwriting Documents
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
                       {proposalBundle.quote_meta.created_at ? 
