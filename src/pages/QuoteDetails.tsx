@@ -656,10 +656,15 @@ const QuoteDetails = () => {
             </div>
             </div>
             <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={() => window.open(`/customer/proposal?new=true&resume=${quoteId}`, '_blank')}
+            >
               <Edit className="h-4 w-4" />
-                  Edit Quote
-                </Button>
+              Continue Editing
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 

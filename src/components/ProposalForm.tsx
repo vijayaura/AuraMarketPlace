@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DocumentUpload } from "./DocumentUpload";
 import { QuotesComparison } from "./QuotesComparison";
 import DeclarationTab from "./DeclarationTab";
+import { mapProposalBundleToFormData, determineCurrentStep, getStepCompletionStatus } from "@/utils/quote-resume";
 
 // Extend Window interface for global functions
 declare global {
@@ -125,6 +126,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const [currentProposal, setCurrentProposal] = useState<ProposalBundleResponse | null>(null);
   const [isLoadingProposal, setIsLoadingProposal] = useState(false);
   
+  // Resume Quote State
+  const [isResumeMode, setIsResumeMode] = useState(false);
+  const [resumeQuoteId, setResumeQuoteId] = useState<string | null>(null);
+  const [isLoadingResumeData, setIsLoadingResumeData] = useState(false);
+  
   // Insurer Pricing Configurations State
   const [insurerPricingConfigs, setInsurerPricingConfigs] = useState<Record<number, InsurerPricingConfigResponse>>({});
   const [isLoadingPricingConfigs, setIsLoadingPricingConfigs] = useState(false);
@@ -156,6 +162,74 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const [showClaimsDisclaimer, setShowClaimsDisclaimer] = useState(false);
   const [claimsDisclaimerAccepted, setClaimsDisclaimerAccepted] = useState(false);
   
+
+  // Check for resume parameter and load existing quote data
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const resumeParam = searchParams.get('resume');
+    
+    if (resumeParam) {
+      setIsResumeMode(true);
+      setResumeQuoteId(resumeParam);
+      loadResumeData(resumeParam);
+    } else {
+      // Initialize fresh quote session for new quotes
+      initializeFreshQuoteStorage();
+    }
+  }, [location.search]);
+
+  // Load existing quote data for resume functionality
+  const loadResumeData = async (quoteId: string) => {
+    try {
+      setIsLoadingResumeData(true);
+      console.log('🔄 Loading resume data for quote:', quoteId);
+      
+      const proposalBundle = await getProposalBundle(parseInt(quoteId));
+      console.log('📋 Loaded proposal bundle for resume:', proposalBundle);
+      
+      // Map proposal bundle data to form data
+      const mappedFormData = mapProposalBundleToFormData(proposalBundle);
+      console.log('🗂️ Mapped form data:', mappedFormData);
+      
+      // Set form data
+      setFormData(mappedFormData);
+      
+      // Set current quote ID and reference
+      setCurrentQuoteId(parseInt(quoteId));
+      setQuoteReferenceNumber(proposalBundle.quote_meta?.quote_id?.toString() || null);
+      
+      // Set step completion status
+      const completionStatus = getStepCompletionStatus(proposalBundle);
+      setStepCompletionStatus(completionStatus);
+      
+      // Determine appropriate current step
+      const appropriateStep = determineCurrentStep(proposalBundle);
+      setCurrentStep(appropriateStep);
+      
+      console.log('✅ Resume data loaded successfully:', {
+        currentStep: appropriateStep,
+        completionStatus,
+        quoteId: parseInt(quoteId)
+      });
+      
+      toast({
+        title: "Quote Resumed",
+        description: `Continuing quote ${proposalBundle.quote_meta?.quote_id || quoteId}`,
+      });
+      
+    } catch (error) {
+      console.error('❌ Error loading resume data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load quote data. Starting fresh quote.",
+        variant: "destructive"
+      });
+      // Fallback to fresh quote
+      initializeFreshQuoteStorage();
+    } finally {
+      setIsLoadingResumeData(false);
+    }
+  };
 
   // Initialize fresh temporary storage for new quote session
   const initializeFreshQuoteStorage = () => {
@@ -2216,6 +2290,21 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     label: "Declaration",
     icon: FileText
   }];
+  // Show loading state while resume data is being loaded
+  if (isLoadingResumeData) {
+    return (
+      <section className="pt-6 pb-20 bg-background min-h-screen">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading quote data...</p>
+            <p className="text-sm text-gray-500 mt-2">Resuming quote {resumeQuoteId}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return <section className="pt-6 pb-20 bg-background min-h-screen">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
@@ -2224,7 +2313,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">
-                  {location.state?.editingQuote ? 'Edit Quote' : 'Create New Quote'}
+                  {isResumeMode ? 'Resume Quote' : location.state?.editingQuote ? 'Edit Quote' : 'Create New Quote'}
                 </CardTitle>
                 {quoteReferenceNumber && currentStep >= 1 && (
                   <div className="text-sm text-gray-900">
