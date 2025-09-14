@@ -997,6 +997,64 @@ export const updateDocumentSubmission = async (quoteId: number, data: DocumentSu
   return response;
 };
 
+// Policy Details API for actual policies
+export interface PolicyTimelineEvent {
+  event: string;
+  date: string;
+}
+
+export interface PolicyDetailsAPIResponse {
+  policyInfo: {
+    id: number;
+    policy_id: string;
+    quote_id: string;
+    insurer_id: number;
+    broker_id: number;
+    start_date: string;
+    end_date: string;
+    base_premium: string;
+    total_premium: string;
+    commission_rate: string;
+    commission_amount: string;
+    document_path: string | null;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    proposal_bundle: ProposalBundleResponse;
+    project_id: string;
+    broker_company_id: number;
+    broker_company_name: string;
+    broker_user_id: number;
+    broker_user_name: string;
+    broker_user_role: string;
+    broker_user_type: string;
+    client_name: string;
+    project_name: string;
+    project_type: string;
+    sub_project_type: string;
+    construction_type: string;
+    address: string;
+    country: string;
+    region: string;
+    zone: string;
+    latitude: string;
+    longitude: string;
+    sum_insured: string;
+    completion_date: string;
+    construction_period_months: number;
+    maintenance_period_months: number;
+    broker_name: string;
+    insurer_name: string;
+    insurer_email: string;
+  };
+  policyTimeline: PolicyTimelineEvent[];
+}
+
+export const getPolicyDetailsById = async (policyId: number): Promise<PolicyDetailsAPIResponse> => {
+  const response = await apiGet<PolicyDetailsAPIResponse>(`/policies/${policyId}`);
+  return response;
+};
+
 // Proposal Bundle Types
 export interface ProposalBundleResponse {
   project_id: number;

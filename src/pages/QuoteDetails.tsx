@@ -353,10 +353,9 @@ const QuoteDetails = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-primary rounded-full"></div>
+            <div className="px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm">
               {getHumanReadableStatus(proposalBundle.quote_meta?.status || '')}
-            </Badge>
+            </div>
             <Button variant="outline" size="sm" className="flex items-center gap-2">
               <Edit className="h-4 w-4" />
                   Edit Quote
@@ -564,6 +563,18 @@ const QuoteDetails = () => {
                     <CardTitle className="text-lg font-semibold text-gray-900">
                       Cover Requirements
                     </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -591,7 +602,7 @@ const QuoteDetails = () => {
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <div className="grid lg:grid-cols-4">
                     {Object.entries(proposalBundle.cover_requirements)
-                      .filter(([key]) => key !== 'project_value' && key !== 'id' && key !== 'updated_at' && key !== 'project_id')
+                      .filter(([key]) => key !== 'project_value' && key !== 'id' && key !== 'updated_at' && key !== 'project_id' && key !== 'created_at')
                       .map(([key, value], idx) => {
                         let displayKey = key;
                         let displayValue = value;
