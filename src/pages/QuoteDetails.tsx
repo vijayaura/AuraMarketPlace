@@ -564,18 +564,6 @@ const QuoteDetails = () => {
                     <CardTitle className="text-lg font-semibold text-gray-900">
                       Cover Requirements
                     </CardTitle>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {proposalBundle.quote_meta.created_at ? 
-                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        }) : 'No date available'
-                      }
-                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
