@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileText, Download, CheckCircle, Calendar, Building, DollarSign, Shield, AlertCircle } from "lucide-react";
-import { getProposalBundle, ProposalBundleResponse, getPolicyDetails, PolicyDetailsResponse } from "@/lib/api/quotes";
+import { getProposalBundle, ProposalBundleResponse, getPolicyDetailsByIdById, PolicyDetailsAPIResponse } from "@/lib/api/quotes";
 import { getPolicyWordings, PolicyWording } from "@/lib/api/insurers";
 import { getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
 import { toast } from "@/components/ui/sonner";
@@ -17,7 +17,7 @@ const Success = () => {
   const location = useLocation();
   const [proposalBundle, setProposalBundle] = useState<ProposalBundleResponse | null>(null);
   const [policyWordings, setPolicyWordings] = useState<PolicyWording[]>([]);
-  const [policyDetails, setPolicyDetails] = useState<PolicyDetailsResponse | null>(null);
+  const [policyDetails, setPolicyDetails] = useState<PolicyDetailsAPIResponse | null>(null);
   const [productBundle, setProductBundle] = useState<InsurerPricingConfigResponse | null>(null);
   const [selectedExtensions, setSelectedExtensions] = useState<any[]>([]);
   const [expandedWordings, setExpandedWordings] = useState<Set<string>>(new Set());
@@ -60,7 +60,7 @@ const Success = () => {
         // If we have a policy ID, fetch policy details
         if (policyId) {
           console.log('Success page - Fetching policy details for policy ID:', policyId);
-          const policyDetailsData = await getPolicyDetails(parseInt(policyId));
+          const policyDetailsData = await getPolicyDetailsById(parseInt(policyId));
           setPolicyDetails(policyDetailsData);
           console.log('Success page - Policy details loaded:', policyDetailsData);
         }
