@@ -1050,10 +1050,6 @@ export interface PolicyDetailsAPIResponse {
   policyTimeline: PolicyTimelineEvent[];
 }
 
-export const getPolicyDetailsById = async (policyId: number): Promise<PolicyDetailsAPIResponse> => {
-  const response = await apiGet<PolicyDetailsAPIResponse>(`/policies/${policyId}`);
-  return response;
-};
 
 // Proposal Bundle Types
 export interface ProposalBundleResponse {
