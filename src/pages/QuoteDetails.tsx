@@ -3,8 +3,62 @@ import { useParams, useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ArrowLeft, Edit, Download } from "lucide-react";
+import { CheckCircle, ArrowLeft, Edit, Download, Check, Circle, ChevronDown, ChevronUp, FileText, User, Building, MapPin, Shield, FolderOpen, CreditCard, Star } from "lucide-react";
 import { getProposalBundle, ProposalBundleResponse, getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
+
+// Quote lifecycle steps
+const QUOTE_LIFECYCLE_STEPS = [
+  { key: 'project_details', label: 'Project Details' },
+  { key: 'insured_details', label: 'Insured Details' },
+  { key: 'contract_structure', label: 'Contract Structure' },
+  { key: 'site_risk', label: 'Site Risk Assessment' },
+  { key: 'cover_requirements', label: 'Cover Requirements' },
+  { key: 'required_documents', label: 'Required Documents' },
+  { key: 'plan_selected', label: 'Plan Selection' },
+  { key: 'declaration_documents', label: 'Declaration Documents' },
+  { key: 'policy_created', label: 'Policy Created' }
+];
+
+// Convert backend status to human readable
+const getHumanReadableStatus = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    'project_details': 'Project Details',
+    'insured_details': 'Insured Details',
+    'contract_structure': 'Contract Structure',
+    'site_risk': 'Site Risk Assessment',
+    'cover_requirements': 'Cover Requirements',
+    'required_documents': 'Documents Required',
+    'plan_selected': 'Plan Selected',
+    'declaration_documents': 'Declaration Documents',
+    'policy_created': 'Policy Created',
+    'draft': 'Draft',
+    'submitted': 'Submitted',
+    'under_review': 'Under Review',
+    'approved': 'Approved',
+    'rejected': 'Rejected',
+    'expired': 'Expired'
+  };
+  
+  return statusMap[status?.toLowerCase()] || status || 'Unknown';
+};
+
+// Determine completion status based on data availability
+const getCompletionStatus = (proposalBundle: ProposalBundleResponse) => {
+  const steps = [];
+  
+  // Check each step completion
+  if (proposalBundle.project) steps.push('project_details');
+  if (proposalBundle.insured?.details) steps.push('insured_details');
+  if (proposalBundle.contract_structure?.details) steps.push('contract_structure');
+  if (proposalBundle.site_risks) steps.push('site_risk');
+  if (proposalBundle.cover_requirements) steps.push('cover_requirements');
+          if (proposalBundle.required_documents && Array.isArray(proposalBundle.required_documents) && proposalBundle.required_documents.length > 0) steps.push('required_documents');
+  if (proposalBundle.plans && proposalBundle.plans.length > 0) steps.push('plan_selected');
+  if (proposalBundle.required_documents_for_policy_issue) steps.push('declaration_documents');
+  if (proposalBundle.quote_meta?.status === 'policy_created') steps.push('policy_created');
+  
+  return steps;
+};
 
 // Helper functions for formatting
 const formatFieldName = (key: string): string => {
@@ -83,6 +137,7 @@ const QuoteDetails = () => {
   const [productBundle, setProductBundle] = useState<InsurerPricingConfigResponse | null>(null);
   const [selectedExtensions, setSelectedExtensions] = useState<any[]>([]);
   const [expandedWordings, setExpandedWordings] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['quote_summary', 'quote_journey']));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -217,6 +272,18 @@ const QuoteDetails = () => {
     });
   };
 
+  const toggleSectionExpansion = (sectionKey: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionKey)) {
+        newSet.delete(sectionKey);
+      } else {
+        newSet.add(sectionKey);
+      }
+      return newSet;
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -257,153 +324,347 @@ const QuoteDetails = () => {
       {/* Top Navigation Bar */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
               onClick={() => window.history.back()}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <div>
+                Back
+              </Button>
+              <div>
               <h1 className="text-lg font-semibold text-gray-900">
                 Quote Details - {proposalBundle.quote_meta?.quote_id || 'Unknown'}
               </h1>
               <p className="text-sm text-gray-600">
                 {proposalBundle.insured?.details?.insured_name || proposalBundle.project?.client_name || 'Insurance Quote'}
               </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
             <Badge variant="secondary" className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              {proposalBundle.quote_meta?.status || 'Quote Generated'}
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              {getHumanReadableStatus(proposalBundle.quote_meta?.status || '')}
             </Badge>
             <Button variant="outline" size="sm" className="flex items-center gap-2">
               <Edit className="h-4 w-4" />
-              Edit Quote
-            </Button>
+                  Edit Quote
+                </Button>
             <Button variant="outline" size="sm" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
-              Download Quote
-            </Button>
+                Download Quote
+              </Button>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
 
+        {/* Quote Journey Progress */}
+        <Card className="bg-white border border-blue-200 mb-8">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold text-gray-900">
+              Quote Progress Journey
+                </CardTitle>
+              </CardHeader>
+          <CardContent className="pt-0">
+            <div className="relative">
+              {/* Progress Line */}
+              <div className="absolute top-6 left-6 right-6 h-0.5 bg-gray-200"></div>
+              
+              {/* Steps */}
+              <div className="flex justify-between items-start relative z-10">
+                {QUOTE_LIFECYCLE_STEPS.map((step, index) => {
+                  const completedSteps = getCompletionStatus(proposalBundle);
+                  const isCompleted = completedSteps.includes(step.key);
+                  const isCurrentStep = proposalBundle.quote_meta?.status === step.key;
+                  
+                  const handleStepClick = () => {
+                    // Map journey steps to section keys
+                    const sectionMapping: Record<string, string> = {
+                      'project_details': 'project_details',
+                      'insured_details': 'insured_details', 
+                      'contract_structure': 'contract_structure',
+                      'site_risk': 'site_risk_assessment',
+                      'cover_requirements': 'cover_requirements',
+                      'required_documents': 'required_documents',
+                      'plan_selected': 'selected_plan_details',
+                      'declaration_documents': 'required_documents',
+                      'policy_created': 'quote_summary'
+                    };
+                    
+                    const sectionKey = sectionMapping[step.key];
+                    if (sectionKey) {
+                      // Expand the corresponding section
+                      setExpandedSections(prev => {
+                        const newSet = new Set(prev);
+                        newSet.add(sectionKey);
+                        return newSet;
+                      });
+                      
+                      // Scroll to the section
+                      setTimeout(() => {
+                        const element = document.querySelector(`[data-section="${sectionKey}"]`);
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }, 100);
+                    }
+                  };
+                  
+                  return (
+                    <div 
+                      key={step.key} 
+                      className="flex flex-col items-center text-center max-w-24 cursor-pointer"
+                      onClick={handleStepClick}
+                    >
+                      {/* Step Circle */}
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all hover:scale-105 ${
+                        isCompleted 
+                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                          : isCurrentStep 
+                            ? 'bg-primary text-white hover:bg-blue-600'
+                            : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
+                      }`}>
+                        {isCompleted ? (
+                          <Check className="w-5 h-5" />
+                        ) : (
+                          <Circle className="w-5 h-5" />
+                        )}
+                </div>
+                      
+                      {/* Step Label */}
+                      <div className={`text-xs font-medium ${
+                        isCompleted || isCurrentStep ? 'text-gray-900' : 'text-gray-500'
+                      }`}>
+                        {step.label}
+                  </div>
+                  </div>
+                  );
+                })}
+                </div>
+                </div>
+          </CardContent>
+        </Card>
+
         {/* Quote Summary */}
         {proposalBundle.quote_meta && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Quote Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="grid lg:grid-cols-4">
-                  <div className="p-3 border-r border-b border-gray-200">
-                    <div className="text-xs text-gray-500 mb-1">Quote ID</div>
-                    <div className="text-sm font-medium">{proposalBundle.quote_meta.quote_id}</div>
-                  </div>
-                  <div className="p-3 border-r border-b border-gray-200">
-                    <div className="text-xs text-gray-500 mb-1">Status</div>
-                    <div className="text-sm font-medium">
-                      <Badge variant="outline">{proposalBundle.quote_meta.status || 'Draft'}</Badge>
-                    </div>
-                  </div>
-                  <div className="p-3 border-r border-b border-gray-200">
-                    <div className="text-xs text-gray-500 mb-1">Created Date</div>
-                    <div className="text-sm font-medium">
+          <Card className="bg-white border border-blue-200 mb-4" data-section="quote_summary">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('quote_summary')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <FileText className="h-4 w-4 text-white" />
+                   </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Quote Summary
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
                       {proposalBundle.quote_meta.created_at ? 
-                        new Date(proposalBundle.quote_meta.created_at).toLocaleDateString('en-US', {
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
                           year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        }) : 'Not available'
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
                       }
-                    </div>
                   </div>
-                  <div className="p-3 border-b border-gray-200">
-                    <div className="text-xs text-gray-500 mb-1">Validity Date</div>
-                    <div className="text-sm font-medium">
-                      {proposalBundle.quote_meta.validity_date ? 
-                        new Date(proposalBundle.quote_meta.validity_date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        }) : 'Not set'
-                      }
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {proposalBundle.quote_meta.quote_id}
+                  </span>
+                  {expandedSections.has('quote_summary') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                  </div>
+                  </div>
+            </CardHeader>
+            {expandedSections.has('quote_summary') && (
+              <CardContent className="pt-0">
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="grid lg:grid-cols-4">
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Quote ID</div>
+                      <div className="text-sm font-medium">{proposalBundle.quote_meta.quote_id}</div>
+                    </div>
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Status</div>
+                      <div className="text-sm font-medium">
+                        <Badge variant="outline">{getHumanReadableStatus(proposalBundle.quote_meta.status || '')}</Badge>
+                      </div>
+                    </div>
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Created Date</div>
+                      <div className="text-sm font-medium">
+                        {proposalBundle.quote_meta.created_at ? 
+                          new Date(proposalBundle.quote_meta.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          }) : 'Not available'
+                        }
+                      </div>
+                    </div>
+                    <div className="p-3 border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Validity Date</div>
+                      <div className="text-sm font-medium">
+                        {proposalBundle.quote_meta.validity_date ? 
+                          new Date(proposalBundle.quote_meta.validity_date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          }) : 'Not set'
+                        }
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            )}
+            </Card>
         )}
 
         {/* Cover Requirements - Show above Project Details if values exist */}
         {proposalBundle.cover_requirements && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Cover Requirements
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="grid lg:grid-cols-4">
-                  {Object.entries(proposalBundle.cover_requirements)
-                    .filter(([key]) => key !== 'project_value' && key !== 'id' && key !== 'updated_at')
-                    .map(([key, value], idx) => {
-                      let displayKey = key;
-                      let displayValue = value;
-                      
-                      // Rename computed_sum_insured to sum_insured
-                      if (key === 'computed_sum_insured') {
-                        displayKey = 'sum_insured';
+          <Card className="bg-white border border-blue-200 mb-4" data-section="cover_requirements">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('cover_requirements')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Cover Requirements
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
                       }
-                      
-                      // Format monetary values to show AED
-                      if (key.includes('works') || key.includes('equipment') || key.includes('materials') || 
-                          key.includes('property') || key.includes('sum_insured') || key.includes('computed_sum_insured')) {
-                        const num = parseFloat(String(value));
-                        if (!isNaN(num) && num >= 0) {
-                          displayValue = `AED ${num.toLocaleString()}`;
-                        }
-                      }
-                      
-                      return (
-                        <div key={key} className="p-3 border-r border-b border-gray-200 last:border-r-0">
-                          <div className="text-xs text-gray-500 mb-1">{formatFieldName(displayKey)}</div>
-                          <div className="text-sm font-medium">
-                            {typeof displayValue === 'string' && displayValue.startsWith('AED') ? 
-                              displayValue : 
-                              formatFieldValue(displayKey, displayValue)
-                            }
-                          </div>
-                        </div>
-                      );
-                    })}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    Sum Insured
+                  </span>
+                  {expandedSections.has('cover_requirements') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </CardHeader>
+            {expandedSections.has('cover_requirements') && (
+              <CardContent className="pt-0">
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="grid lg:grid-cols-4">
+                    {Object.entries(proposalBundle.cover_requirements)
+                      .filter(([key]) => key !== 'project_value' && key !== 'id' && key !== 'updated_at')
+                      .map(([key, value], idx) => {
+                        let displayKey = key;
+                        let displayValue = value;
+                        
+                        // Rename computed_sum_insured to sum_insured
+                        if (key === 'computed_sum_insured') {
+                          displayKey = 'sum_insured';
+                        }
+                        
+                        // Format monetary values to show AED
+                        if (key.includes('works') || key.includes('equipment') || key.includes('materials') || 
+                            key.includes('property') || key.includes('sum_insured') || key.includes('computed_sum_insured')) {
+                          const num = parseFloat(String(value));
+                          if (!isNaN(num) && num >= 0) {
+                            displayValue = `AED ${num.toLocaleString()}`;
+                          }
+                        }
+                        
+                        return (
+                          <div key={key} className="p-3 border-r border-b border-gray-200 last:border-r-0">
+                            <div className="text-xs text-gray-500 mb-1">{formatFieldName(displayKey)}</div>
+                            <div className="text-sm font-medium">
+                              {typeof displayValue === 'string' && displayValue.startsWith('AED') ? 
+                                displayValue : 
+                                formatFieldValue(displayKey, displayValue)
+                              }
+                      </div>
+                      </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+              </CardContent>
+            )}
+            </Card>
         )}
 
         {/* Project Details */}
         {proposalBundle.project && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Project Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
+          <Card className="bg-white border border-blue-200 mb-4" data-section="project_details">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('project_details')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <Building className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Project Details
+                </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {proposalBundle.project.project_name || 'Project Name'}
+                  </span>
+                  {expandedSections.has('project_details') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
+              </CardHeader>
+            {expandedSections.has('project_details') && (
+              <CardContent className="pt-0">
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="grid lg:grid-cols-4">
                   <div className="p-3 border-r border-b border-gray-200">
@@ -426,14 +687,14 @@ const QuoteDetails = () => {
                     <div className="text-xs text-gray-500 mb-1">Project Start Date</div>
                     <div className="text-sm font-medium">
                       {formatFieldValue('start_date', proposalBundle.project.start_date)}
-                    </div>
-                  </div>
+                </div>
+                </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Completion Date</div>
                     <div className="text-sm font-medium">
                       {formatFieldValue('completion_date', proposalBundle.project.completion_date)}
-                    </div>
-                  </div>
+                          </div>
+                          </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Construction Period</div>
                     <div className="text-sm font-medium">
@@ -441,8 +702,8 @@ const QuoteDetails = () => {
                         `${proposalBundle.project.construction_period_months} months` : 
                         'Not calculated'
                       }
-                    </div>
-                  </div>
+                          </div>
+                        </div>
                   <div className="p-3 border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Maintenance Period</div>
                     <div className="text-sm font-medium">
@@ -450,7 +711,7 @@ const QuoteDetails = () => {
                         `${proposalBundle.project.maintenance_period_months} months` : 
                         'Not specified'
                       }
-                    </div>
+                      </div>
                   </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Sum Insured</div>
@@ -474,21 +735,57 @@ const QuoteDetails = () => {
                     <div className="text-xs text-gray-500 mb-1">Address</div>
                     <div className="text-sm font-medium">{proposalBundle.project.address || 'Not specified'}</div>
                   </div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            )}
+            </Card>
         )}
 
         {/* Insured Details */}
         {proposalBundle.insured?.details && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Insured Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
+          <Card className="bg-white border border-blue-200 mb-4" data-section="insured_details">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('insured_details')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Insured Details
+                </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.insured.details.updated_at ? 
+                        new Date(proposalBundle.insured.details.updated_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {proposalBundle.insured.details.insured_name || 'Insured Name'}
+                  </span>
+                  {expandedSections.has('insured_details') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
+              </CardHeader>
+            {expandedSections.has('insured_details') && (
+              <CardContent className="pt-0">
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="grid lg:grid-cols-4">
                   <div className="p-3 border-r border-b border-gray-200">
@@ -507,23 +804,59 @@ const QuoteDetails = () => {
                     <div className="text-xs text-gray-500 mb-1">Created Date</div>
                     <div className="text-sm font-medium">
                       {formatFieldValue('created_at', proposalBundle.insured.details.created_at)}
-                    </div>
                   </div>
-                </div>
-              </div>
-            </CardContent>
+                  </div>
+                  </div>
+                  </div>
+              </CardContent>
+            )}
           </Card>
         )}
 
         {/* Claims History */}
         {proposalBundle.insured?.claims && proposalBundle.insured.claims.length > 0 && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Claims History
-              </CardTitle>
+          <Card className="bg-white border border-blue-200 mb-4" data-section="claims_history">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('claims_history')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <FileText className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Claims History
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                  </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {proposalBundle.insured.claims.length} claim{proposalBundle.insured.claims.length !== 1 ? 's' : ''}
+                  </span>
+                  {expandedSections.has('claims_history') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="pt-0">
+            {expandedSections.has('claims_history') && (
+              <CardContent className="pt-0">
               <div className="space-y-4">
                 {proposalBundle.insured.claims.map((claim, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
@@ -539,20 +872,56 @@ const QuoteDetails = () => {
                     </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            )}
+            </Card>
         )}
 
         {/* Contract Structure */}
         {proposalBundle.contract_structure && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Contract Structure
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
+          <Card className="bg-white border border-blue-200 mb-4" data-section="contract_structure">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('contract_structure')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <Building className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Contract Structure
+                </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {proposalBundle.contract_structure.details?.contract_type || 'Contract Type'}
+                  </span>
+                  {expandedSections.has('contract_structure') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                    </div>
+                    </div>
+              </CardHeader>
+            {expandedSections.has('contract_structure') && (
+              <CardContent className="pt-0">
               {/* Main Contract Details */}
               {proposalBundle.contract_structure.details && (
                 <div className="mb-6">
@@ -562,94 +931,130 @@ const QuoteDetails = () => {
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Main Contractor</div>
                         <div className="text-sm font-medium">{proposalBundle.contract_structure.details.main_contractor || 'Not specified'}</div>
-                      </div>
+                    </div>
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Principal Owner</div>
                         <div className="text-sm font-medium">{proposalBundle.contract_structure.details.principal_owner || 'Not specified'}</div>
-                      </div>
+                    </div>
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Contract Type</div>
                         <div className="text-sm font-medium">{formatFieldValue('contract_type', proposalBundle.contract_structure.details.contract_type)}</div>
-                      </div>
+                    </div>
                       <div className="p-3 border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Experience Years</div>
                         <div className="text-sm font-medium">{proposalBundle.contract_structure.details.experience_years || 0} years</div>
-                      </div>
+                    </div>
                       <div className="col-span-4 p-3">
                         <div className="text-xs text-gray-500 mb-1">Contract Number</div>
                         <div className="text-sm font-medium">{proposalBundle.contract_structure.details.contract_number || 'Not specified'}</div>
-                      </div>
-                    </div>
                   </div>
+                </div>
+                </div>
                 </div>
               )}
 
               {/* Sub Contractors */}
               {proposalBundle.contract_structure.sub_contractors && proposalBundle.contract_structure.sub_contractors.length > 0 && (
-                <div>
+                    <div>
                   <h4 className="text-sm font-medium text-gray-700 mb-3">Sub Contractors</h4>
-                  <div className="space-y-4">
+                <div className="space-y-4">
                     {proposalBundle.contract_structure.sub_contractors.map((subContract, index) => (
                       <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
                         <div className="grid lg:grid-cols-3">
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Name</div>
                             <div className="text-sm font-medium">{subContract.name || 'Not specified'}</div>
-                          </div>
+                    </div>
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Contract Type</div>
                             <div className="text-sm font-medium">{formatFieldValue('contract_type', subContract.contract_type)}</div>
-                          </div>
+                    </div>
                           <div className="p-3 border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Contract Number</div>
                             <div className="text-sm font-medium">{subContract.contract_number || 'Not specified'}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </div>
-              )}
+                      </div>
+                        ))}
+                  </div>
+                    </div>
+                  )}
 
               {/* Consultants */}
               {proposalBundle.contract_structure.consultants && proposalBundle.contract_structure.consultants.length > 0 && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 mb-3">Consultants</h4>
-                  <div className="space-y-4">
+                <div className="space-y-4">
                     {proposalBundle.contract_structure.consultants.map((consultant, index) => (
                       <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
                         <div className="grid lg:grid-cols-3">
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Name</div>
                             <div className="text-sm font-medium">{consultant.name || 'Not specified'}</div>
-                          </div>
+                                </div>
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Role</div>
                             <div className="text-sm font-medium">{formatFieldValue('role', consultant.role)}</div>
-                          </div>
+                              </div>
                           <div className="p-3 border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">License Number</div>
                             <div className="text-sm font-medium">{consultant.license_number || 'Not specified'}</div>
-                          </div>
+                              </div>
                         </div>
                       </div>
-                    ))}
+                        ))}
                   </div>
-                </div>
+                    </div>
               )}
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
         )}
 
         {/* Site Risk Assessment */}
         {proposalBundle.site_risks && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Site Risk Assessment
-              </CardTitle>
+          <Card className="bg-white border border-blue-200 mb-4" data-section="site_risk_assessment">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('site_risk_assessment')}
+            >
+              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <MapPin className="h-4 w-4 text-white" />
+                                </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Site Risk Assessment
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                              </div>
+                              </div>
+                    </div>
+                                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    Risk Factors
+                  </span>
+                  {expandedSections.has('site_risk_assessment') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                                </div>
+                              </div>
             </CardHeader>
-            <CardContent className="pt-0">
+            {expandedSections.has('site_risk_assessment') && (
+              <CardContent className="pt-0">
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="grid lg:grid-cols-4">
                   {Object.entries(proposalBundle.site_risks).filter(([key]) => key !== 'id' && key !== 'project_id').map(([key, value], idx) => (
@@ -657,26 +1062,62 @@ const QuoteDetails = () => {
                       <div className="text-xs text-gray-500 mb-1">{formatFieldName(key)}</div>
                       <div className="text-sm font-medium">
                         {formatFieldValue(key, value)}
-                      </div>
+                              </div>
                     </div>
-                  ))}
+                        ))}
+                    </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            )}
+            </Card>
         )}
 
         {/* Required Documents */}
-        {proposalBundle.required_documents && proposalBundle.required_documents.length > 0 && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Required Documents
-              </CardTitle>
+        {proposalBundle.required_documents && Array.isArray(proposalBundle.required_documents) && proposalBundle.required_documents.length > 0 && (
+          <Card className="bg-white border border-blue-200 mb-4" data-section="required_documents">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('required_documents')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <FolderOpen className="h-4 w-4 text-white" />
+                  </div>
+                <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Required Documents
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {Array.isArray(proposalBundle.required_documents) ? proposalBundle.required_documents.length : 0} documents
+                  </span>
+                  {expandedSections.has('required_documents') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-4">
-                {proposalBundle.required_documents.map((doc, index) => (
+            {expandedSections.has('required_documents') && (
+              <CardContent className="pt-0">
+                  <div className="space-y-4">
+                {Array.isArray(proposalBundle.required_documents) && proposalBundle.required_documents.map((doc, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
                     <div className="grid lg:grid-cols-3">
                       <div className="p-3 border-r border-b border-gray-200">
@@ -689,8 +1130,8 @@ const QuoteDetails = () => {
                           ) : (
                             <Badge variant="outline" className="text-xs">Pending</Badge>
                           )}
-                        </div>
-                      </div>
+                    </div>
+                  </div>
                       <div className="p-3 border-b border-gray-200">
                         <div className="text-sm font-medium">
                           {doc.url ? (
@@ -720,54 +1161,126 @@ const QuoteDetails = () => {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            )}
+            </Card>
         )}
 
         {/* Selected Plan Details */}
         {proposalBundle.plans && proposalBundle.plans.length > 0 && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Selected Plan Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
+          <Card className="bg-white border border-blue-200 mb-4" data-section="selected_plan_details">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('selected_plan_details')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <CreditCard className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Selected Plan Details
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {proposalBundle.plans[0]?.insurer_name || 'Plan Details'}
+                  </span>
+                  {expandedSections.has('selected_plan_details') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
+              </CardHeader>
+            {expandedSections.has('selected_plan_details') && (
+              <CardContent className="pt-0">
               {proposalBundle.plans.map((plan, index) => (
                 <div key={plan.id || index} className="border border-gray-200 rounded-lg overflow-hidden">
                   <div className="grid lg:grid-cols-4">
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Insurer Name</div>
                       <div className="text-sm font-medium">{plan.insurer_name || 'Not specified'}</div>
-                    </div>
+                  </div>
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Premium Amount</div>
                       <div className="text-sm font-medium">{formatFieldValue('premium_amount', plan.premium_amount)}</div>
-                    </div>
+                   </div>
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Minimum Premium</div>
                       <div className="text-sm font-medium">{formatFieldValue('minimum_premium_value', plan.minimum_premium_value)}</div>
-                    </div>
+                   </div>
                     <div className="p-3 border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Minimum Applied</div>
                       <div className="text-sm font-medium">{plan.is_minimum_premium_applied ? 'Yes' : 'No'}</div>
+                   </div>
                     </div>
-                  </div>
                 </div>
               ))}
-            </CardContent>
-          </Card>
+              </CardContent>
+            )}
+            </Card>
         )}
 
         {/* Selected Extensions - Enhanced with Product Bundle Data */}
         {selectedExtensions.length > 0 && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Selected Extensions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
+          <Card className="bg-white border border-blue-200 mb-4" data-section="selected_extensions">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('selected_extensions')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <Star className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Selected Extensions
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {selectedExtensions.length} extension{selectedExtensions.length !== 1 ? 's' : ''}
+                  </span>
+                  {expandedSections.has('selected_extensions') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
+              </CardHeader>
+            {expandedSections.has('selected_extensions') && (
+              <CardContent className="pt-0">
               <div className="space-y-3">
                 {selectedExtensions.map((extension) => (
                   <div key={extension.policy_key} className="p-4 bg-gray-50 rounded-lg">
@@ -792,7 +1305,7 @@ const QuoteDetails = () => {
                         onClick={() => toggleWordingExpansion(extension.policy_key)}
                       >
                         {expandedWordings.has(extension.policy_key) ? 'Hide Wordings' : 'View Wordings'}
-                      </Button>
+                </Button>
                     </div>
                     
                     {/* Expanded Wording */}
@@ -806,8 +1319,9 @@ const QuoteDetails = () => {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            )}
+            </Card>
         )}
 
         {/* Fallback message if no data sections are available */}
@@ -817,19 +1331,19 @@ const QuoteDetails = () => {
           !proposalBundle.contract_structure &&
           !proposalBundle.site_risks &&
           !proposalBundle.cover_requirements &&
-          (!proposalBundle.required_documents || proposalBundle.required_documents.length === 0) &&
+          (!proposalBundle.required_documents || !Array.isArray(proposalBundle.required_documents) || proposalBundle.required_documents.length === 0) &&
           (!proposalBundle.plans || proposalBundle.plans.length === 0)) && (
-          <Card className="bg-white shadow-lg border-0 mb-8">
+          <Card className="bg-white  border-0 mb-8">
             <CardContent className="pt-6">
               <div className="text-center py-8">
                 <div className="text-gray-500 mb-2">
                   <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                </div>
+          </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Quote In Progress</h3>
                 <p className="text-gray-600">
                   This quote is still being prepared. Information will appear here as it becomes available.
                 </p>
-              </div>
+        </div>
             </CardContent>
           </Card>
         )}
