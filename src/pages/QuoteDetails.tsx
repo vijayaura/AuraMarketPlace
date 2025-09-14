@@ -623,8 +623,8 @@ const QuoteDetails = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold text-gray-900">
               Quote Progress Journey
-                </CardTitle>
-              </CardHeader>
+            </CardTitle>
+          </CardHeader>
           <CardContent className="pt-0">
             <div className="relative">
               {/* Progress Line */}
