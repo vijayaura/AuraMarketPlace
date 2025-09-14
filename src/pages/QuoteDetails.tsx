@@ -98,6 +98,15 @@ const formatFieldValue = (key: string, value: any): string => {
     try {
       const date = new Date(value);
       if (!isNaN(date.getTime())) {
+        // For project start/end dates, show only date without time
+        if (key === 'start_date' || key === 'completion_date') {
+          return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+        }
+        // For other dates, include time
         return date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
@@ -480,15 +489,18 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 font-medium">
-                    {proposalBundle.quote_meta.quote_id}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Quote ID</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {proposalBundle.quote_meta.quote_id}
+                    </div>
+                  </div>
                   {expandedSections.has('quote_summary') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
                     <ChevronDown className="h-5 w-5 text-gray-500" />
                   )}
-                  </div>
+                </div>
                   </div>
             </CardHeader>
             {expandedSections.has('quote_summary') && (
@@ -567,9 +579,17 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 font-medium">
-                    Sum Insured
-                  </span>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Sum Insured</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {Object.entries(proposalBundle.cover_requirements)
+                        .find(([key]) => key.includes('sum_insured') || key.includes('computed_sum'))?.[1] ? 
+                        `AED ${parseFloat(String(Object.entries(proposalBundle.cover_requirements)
+                          .find(([key]) => key.includes('sum_insured') || key.includes('computed_sum'))?.[1] || '0')).toLocaleString()}` : 
+                        'Not calculated'
+                      }
+                    </div>
+                  </div>
                   {expandedSections.has('cover_requirements') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
@@ -583,14 +603,14 @@ const QuoteDetails = () => {
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <div className="grid lg:grid-cols-4">
                     {Object.entries(proposalBundle.cover_requirements)
-                      .filter(([key]) => key !== 'project_value' && key !== 'id' && key !== 'updated_at')
+                      .filter(([key]) => key !== 'project_value' && key !== 'id' && key !== 'updated_at' && key !== 'project_id')
                       .map(([key, value], idx) => {
                         let displayKey = key;
                         let displayValue = value;
                         
-                        // Rename computed_sum_insured to sum_insured
+                        // Rename computed_sum_insured to sum_insured and skip it since we show it in header
                         if (key === 'computed_sum_insured') {
-                          displayKey = 'sum_insured';
+                          return null; // Skip this field since it's shown in the header
                         }
                         
                         // Format monetary values to show AED
@@ -616,6 +636,173 @@ const QuoteDetails = () => {
                       })}
                     </div>
                   </div>
+              </CardContent>
+            )}
+            </Card>
+        )}
+
+        {/* Selected Plan Details */}
+        {proposalBundle.plans && proposalBundle.plans.length > 0 && (
+          <Card className="bg-white border border-blue-200 mb-4" data-section="selected_plan_details">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('selected_plan_details')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <CreditCard className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Selected Plan Details
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Premium Amount</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {proposalBundle.plans[0]?.premium_amount ? 
+                        formatFieldValue('premium_amount', proposalBundle.plans[0].premium_amount) : 
+                        'Not calculated'
+                      }
+                    </div>
+                  </div>
+                  {expandedSections.has('selected_plan_details') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
+              </CardHeader>
+            {expandedSections.has('selected_plan_details') && (
+              <CardContent className="pt-0">
+              {proposalBundle.plans.map((plan, index) => (
+                <div key={plan.id || index} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="grid lg:grid-cols-4">
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Insurer Name</div>
+                      <div className="text-sm font-medium">{plan.insurer_name || 'Not specified'}</div>
+                  </div>
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Premium Amount</div>
+                      <div className="text-sm font-medium">{formatFieldValue('premium_amount', plan.premium_amount)}</div>
+                   </div>
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Minimum Premium</div>
+                      <div className="text-sm font-medium">{formatFieldValue('minimum_premium_value', plan.minimum_premium_value)}</div>
+                   </div>
+                    <div className="p-3 border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Minimum Applied</div>
+                      <div className="text-sm font-medium">{plan.is_minimum_premium_applied ? 'Yes' : 'No'}</div>
+                   </div>
+                    </div>
+                </div>
+              ))}
+              </CardContent>
+            )}
+            </Card>
+        )}
+
+        {/* Selected Extensions - Enhanced with Product Bundle Data */}
+        {selectedExtensions.length > 0 && (
+          <Card className="bg-white border border-blue-200 mb-4" data-section="selected_extensions">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('selected_extensions')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <Star className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Selected Extensions
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {proposalBundle.quote_meta.created_at ? 
+                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : 'No date available'
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Extensions</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {selectedExtensions.length} extension{selectedExtensions.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                  {expandedSections.has('selected_extensions') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
+              </CardHeader>
+            {expandedSections.has('selected_extensions') && (
+              <CardContent className="pt-0">
+              <div className="space-y-3">
+                {selectedExtensions.map((extension) => (
+                  <div key={extension.policy_key} className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-semibold text-foreground">{extension.title}</h3>
+                        <Badge variant="outline" className="text-xs px-1 py-0">{extension.clause_code}</Badge>
+                        <Badge 
+                          variant={extension.clause_type === "CLAUSE" ? "default" : extension.clause_type === "WARRANTY" ? "secondary" : "outline"}
+                          className="text-xs px-1 py-0"
+                        >
+                          {extension.clause_type}
+                        </Badge>
+                        {extension.is_mandatory && (
+                          <Badge variant="destructive" className="text-xs px-1 py-0">Mandatory</Badge>
+                        )}
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-7"
+                        onClick={() => toggleWordingExpansion(extension.policy_key)}
+                      >
+                        {expandedWordings.has(extension.policy_key) ? 'Hide Wordings' : 'View Wordings'}
+                </Button>
+                    </div>
+                    
+                    {/* Expanded Wording */}
+                    {expandedWordings.has(extension.policy_key) && extension.clause_wording && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="text-xs text-gray-600 leading-relaxed">
+                          {extension.clause_wording || 'No wording available'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
               </CardContent>
             )}
             </Card>
@@ -652,9 +839,12 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 font-medium">
-                    {proposalBundle.project.project_name || 'Project Name'}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Project Name</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {proposalBundle.project.project_name || 'Project Name'}
+                    </div>
+                  </div>
                   {expandedSections.has('project_details') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
@@ -714,12 +904,6 @@ const QuoteDetails = () => {
                       </div>
                   </div>
                   <div className="p-3 border-r border-b border-gray-200">
-                    <div className="text-xs text-gray-500 mb-1">Sum Insured</div>
-                    <div className="text-sm font-medium">
-                      {formatFieldValue('sum_insured', proposalBundle.project.sum_insured)}
-                    </div>
-                  </div>
-                  <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Country</div>
                     <div className="text-sm font-medium">{formatFieldValue('country', proposalBundle.project.country)}</div>
                   </div>
@@ -773,9 +957,12 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 font-medium">
-                    {proposalBundle.insured.details.insured_name || 'Insured Name'}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Has Claims</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {proposalBundle.insured?.claims && proposalBundle.insured.claims.length > 0 ? 'Yes' : 'No'}
+                    </div>
+                  </div>
                   {expandedSections.has('insured_details') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
@@ -804,10 +991,26 @@ const QuoteDetails = () => {
                     <div className="text-xs text-gray-500 mb-1">Created Date</div>
                     <div className="text-sm font-medium">
                       {formatFieldValue('created_at', proposalBundle.insured.details.created_at)}
+                    </div>
                   </div>
-                  </div>
-                  </div>
-                  </div>
+                  {/* Claims List */}
+                  {proposalBundle.insured?.claims && proposalBundle.insured.claims.length > 0 && (
+                    <div className="col-span-4 p-3 border-t border-gray-200">
+                      <div className="text-xs text-gray-500 mb-2">Claims History ({proposalBundle.insured.claims.length} claims)</div>
+                      <div className="space-y-2">
+                        {proposalBundle.insured.claims.map((claim, index) => (
+                          <div key={index} className="text-sm bg-gray-50 p-2 rounded">
+                            <div className="font-medium">Claim {index + 1}</div>
+                            {Object.entries(claim).map(([key, value]) => (
+                              <div key={key}>{formatFieldName(key)}: {formatFieldValue(key, value)}</div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
               </CardContent>
             )}
           </Card>
@@ -844,9 +1047,12 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 font-medium">
-                    {proposalBundle.insured.claims.length} claim{proposalBundle.insured.claims.length !== 1 ? 's' : ''}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Claims Count</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {proposalBundle.insured.claims.length} claim{proposalBundle.insured.claims.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
                   {expandedSections.has('claims_history') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
@@ -909,15 +1115,18 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 font-medium">
-                    {proposalBundle.contract_structure.details?.contract_type || 'Contract Type'}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Main Contractor</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {proposalBundle.contract_structure.details?.main_contractor || 'Not specified'}
+                    </div>
+                  </div>
                   {expandedSections.has('contract_structure') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
                     <ChevronDown className="h-5 w-5 text-gray-500" />
                   )}
-                    </div>
+                </div>
                     </div>
               </CardHeader>
             {expandedSections.has('contract_structure') && (
@@ -1041,32 +1250,45 @@ const QuoteDetails = () => {
                               </div>
                               </div>
                     </div>
-                                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 font-medium">
-                    Risk Factors
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Assessment</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      Risk Factors
+                    </div>
+                  </div>
                   {expandedSections.has('site_risk_assessment') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
                     <ChevronDown className="h-5 w-5 text-gray-500" />
                   )}
-                                </div>
+                </div>
                               </div>
             </CardHeader>
             {expandedSections.has('site_risk_assessment') && (
               <CardContent className="pt-0">
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="grid lg:grid-cols-4">
-                  {Object.entries(proposalBundle.site_risks).filter(([key]) => key !== 'id' && key !== 'project_id').map(([key, value], idx) => (
+                  {Object.entries(proposalBundle.site_risks).filter(([key]) => key !== 'id' && key !== 'project_id' && key !== 'updated_at').map(([key, value], idx) => {
+                    // Convert 0/1 values to Yes/No
+                    let displayValue = value;
+                    if (value === 0 || value === '0') {
+                      displayValue = 'No';
+                    } else if (value === 1 || value === '1') {
+                      displayValue = 'Yes';
+                    }
+                    
+                    return (
                     <div key={key} className="p-3 border-r border-b border-gray-200 last:border-r-0">
                       <div className="text-xs text-gray-500 mb-1">{formatFieldName(key)}</div>
                       <div className="text-sm font-medium">
-                        {formatFieldValue(key, value)}
-                              </div>
+                        {formatFieldValue(key, displayValue)}
+                      </div>
                     </div>
-                        ))}
-                    </div>
+                    );
+                  })}
                 </div>
+              </div>
               </CardContent>
             )}
             </Card>
@@ -1103,9 +1325,12 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 font-medium">
-                    {Array.isArray(proposalBundle.required_documents) ? proposalBundle.required_documents.length : 0} documents
-                  </span>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Documents</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {Array.isArray(proposalBundle.required_documents) ? proposalBundle.required_documents.length : 0} documents
+                    </div>
+                  </div>
                   {expandedSections.has('required_documents') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
@@ -1197,9 +1422,15 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 font-medium">
-                    {proposalBundle.plans[0]?.insurer_name || 'Plan Details'}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Premium Amount</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {proposalBundle.plans[0]?.premium_amount ? 
+                        formatFieldValue('premium_amount', proposalBundle.plans[0].premium_amount) : 
+                        'Not calculated'
+                      }
+                    </div>
+                  </div>
                   {expandedSections.has('selected_plan_details') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
@@ -1268,9 +1499,12 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 font-medium">
-                    {selectedExtensions.length} extension{selectedExtensions.length !== 1 ? 's' : ''}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Extensions</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      {selectedExtensions.length} extension{selectedExtensions.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
                   {expandedSections.has('selected_extensions') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
@@ -1333,17 +1567,17 @@ const QuoteDetails = () => {
           !proposalBundle.cover_requirements &&
           (!proposalBundle.required_documents || !Array.isArray(proposalBundle.required_documents) || proposalBundle.required_documents.length === 0) &&
           (!proposalBundle.plans || proposalBundle.plans.length === 0)) && (
-          <Card className="bg-white  border-0 mb-8">
+          <Card className="bg-white border-0 mb-8">
             <CardContent className="pt-6">
               <div className="text-center py-8">
                 <div className="text-gray-500 mb-2">
                   <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          </div>
+                </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Quote In Progress</h3>
                 <p className="text-gray-600">
                   This quote is still being prepared. Information will appear here as it becomes available.
                 </p>
-        </div>
+              </div>
             </CardContent>
           </Card>
         )}
