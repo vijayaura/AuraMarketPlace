@@ -233,7 +233,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     if (pendingResumeData && masterData.projectTypes.length > 0 && brokerData && !brokerLoading.isLoading) {
       console.log('📊 Metadata loaded, now processing resume data...');
       console.log('📋 Available project types:', masterData.projectTypes);
+      console.log('🏗️ Available construction types:', masterData.constructionTypes);
+      console.log('👤 Available role types:', masterData.roleTypes);
+      console.log('📄 Available contract types:', masterData.contractTypes);
       console.log('🏢 Broker data loaded:', brokerData);
+      console.log('🌍 Operating countries:', brokerData?.operatingCountries);
+      console.log('🗺️ Operating regions:', brokerData?.operatingRegions);
       
       // Map proposal bundle data to form data with metadata for proper dropdown matching
       const mappedFormData = mapProposalBundleToFormDataWithMetadata(pendingResumeData, {
@@ -402,7 +407,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     sumInsuredPlant: "",
     sumInsuredTemporary: "0",
     tplLimit: "",
-    crossLiabilityCover: "yes",
     principalExistingProperty: "0",
     removalDebrisLimit: "",
     surroundingPropertyLimit: "",
@@ -1069,7 +1073,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         sumInsuredPlant: editingQuote.sumInsuredPlant?.replace(/[^0-9]/g, '') || "",
         sumInsuredTemporary: editingQuote.sumInsuredTemporary?.replace(/[^0-9]/g, '') || "0",
         tplLimit: editingQuote.tplLimit?.replace(/[^0-9]/g, '') || "",
-        crossLiabilityCover: editingQuote.crossLiabilityCover || "yes",
         principalExistingProperty: editingQuote.principalExistingProperty?.replace(/[^0-9]/g, '') || "0",
         removalDebrisLimit: editingQuote.removalDebrisLimit?.replace(/[^0-9]/g, '') || "",
         surroundingPropertyLimit: editingQuote.surroundingPropertyLimit?.replace(/[^0-9]/g, '') || "",
@@ -1340,10 +1343,13 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         break;
         
       case 4: // Cover Requirements step
+        // Contract works cannot be 0, but other fields can accept 0 values
         const materialValue = parseFloat(formData.sumInsuredMaterial?.replace(/[^0-9.]/g, '') || '0');
-        if (formData.sumInsuredMaterial && formData.sumInsuredMaterial.trim() !== '' && (isNaN(materialValue) || materialValue < 0)) {
-          errors.sumInsuredMaterial = "Valid contract works amount is required";
+        if (!formData.sumInsuredMaterial || formData.sumInsuredMaterial.trim() === '' || isNaN(materialValue) || materialValue <= 0) {
+          errors.sumInsuredMaterial = "Contract works amount must be greater than 0";
         }
+        
+        // Other fields can be 0, just validate they're valid numbers if provided
         const plantValue = parseFloat(formData.sumInsuredPlant?.replace(/[^0-9.]/g, '') || '0');
         if (formData.sumInsuredPlant && formData.sumInsuredPlant.trim() !== '' && (isNaN(plantValue) || plantValue < 0)) {
           errors.sumInsuredPlant = "Valid plant and equipment amount is required";
@@ -1359,9 +1365,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         const principalValue = parseFloat(formData.principalExistingProperty?.replace(/[^0-9.]/g, '') || '0');
         if (formData.principalExistingProperty && formData.principalExistingProperty.trim() !== '' && (isNaN(principalValue) || principalValue < 0)) {
           errors.principalExistingProperty = "Valid principals property amount is required";
-        }
-        if (!formData.crossLiabilityCover) {
-          errors.crossLiabilityCover = "Cross liability cover must be selected";
         }
         break;
         
@@ -1825,7 +1828,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       temporary_works: parseFloat(formData.sumInsuredTemporary?.replace(/[^0-9.]/g, '') || '0'),
       other_materials: parseFloat(formData.otherMaterials?.replace(/[^0-9.]/g, '') || '0'),
       principals_property: parseFloat(formData.principalExistingProperty?.replace(/[^0-9.]/g, '') || '0'),
-      cross_liability_cover: formData.crossLiabilityCover || ''
+      cross_liability_cover: 'no' // Always send 'no' as requested
     };
   };
 
@@ -2141,8 +2144,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         sumInsuredPlant: formData.sumInsuredPlant,
         sumInsuredTemporary: formData.sumInsuredTemporary,
         otherMaterials: formData.otherMaterials,
-        principalExistingProperty: formData.principalExistingProperty,
-        crossLiabilityCover: formData.crossLiabilityCover
+        principalExistingProperty: formData.principalExistingProperty
       });
       
       // Check if cover_requirements step is already completed to decide between POST and PATCH
@@ -2415,8 +2417,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                             sumInsuredPlant: 'Plant and Equipment',
                             sumInsuredTemporary: 'Temporary Works',
                             otherMaterials: 'Other Materials',
-                            principalExistingProperty: 'Principals Property',
-                            crossLiabilityCover: 'Cross Liability Cover'
+                            principalExistingProperty: 'Principals Property'
                           };
                           return fieldMap[field] || field;
                         });
@@ -2494,8 +2495,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                             sumInsuredPlant: 'Plant and Equipment',
                             sumInsuredTemporary: 'Temporary Works',
                             otherMaterials: 'Other Materials',
-                            principalExistingProperty: 'Principals Property',
-                            crossLiabilityCover: 'Cross Liability Cover'
+                            principalExistingProperty: 'Principals Property'
                           };
                           return fieldMap[field] || field;
                         });
@@ -3631,35 +3631,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     </CardContent>
                   </Card>
 
-                  {/* Section 2: Third Party Liability */}
-                  <Card className="border-border">
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Shield className="w-5 h-5" />
-                        Section 2: Liability Covers
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-1 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="crossLiabilityCover">Cross Liability Cover</Label>
-                        <Select value={formData.crossLiabilityCover || undefined} onValueChange={value => setFormData({
-                        ...formData,
-                        crossLiabilityCover: value
-                      })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select yes or no" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="yes">Yes</SelectItem>
-                            <SelectItem value="no">No</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">Coverage between co-insureds</p>
-                      </div>
-                      </div>
-                    </CardContent>
-                  </Card>
 
                 </div>
               </TabsContent>

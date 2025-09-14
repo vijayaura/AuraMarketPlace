@@ -6,35 +6,93 @@ const normalizeString = (str: string | null | undefined): string => {
   return str.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, '');
 };
 
-// Helper function to find matching option by normalized comparison
-const findMatchingOption = (value: string | null | undefined, options: any[], labelKey: string = 'label'): string => {
+// Helper functions for different dropdown value formats (matching existing ProposalForm logic)
+
+// For master data dropdowns (projectType, constructionType) - returns ID
+const findMasterDataOption = (value: string | null | undefined, options: any[]): string => {
   if (!value || !options || options.length === 0) return '';
   
   const normalizedValue = normalizeString(value);
   
   // Try exact match first
-  const exactMatch = options.find(option => {
-    const optionValue = option[labelKey] || option.name || option.value || option;
-    return normalizeString(optionValue) === normalizedValue;
-  });
+  let match = options.find(option => 
+    normalizeString(option.label) === normalizedValue
+  );
   
-  if (exactMatch) {
-    return exactMatch.id?.toString() || exactMatch.value?.toString() || exactMatch[labelKey] || exactMatch;
+  // If no exact match, try matching the value itself (in case it's stored as lowercase)
+  if (!match) {
+    match = options.find(option => 
+      normalizeString(option.label) === normalizedValue ||
+      normalizeString(option.value || option.name) === normalizedValue
+    );
   }
   
-  // Try partial match
-  const partialMatch = options.find(option => {
-    const optionValue = option[labelKey] || option.name || option.value || option;
-    const normalizedOption = normalizeString(optionValue);
-    return normalizedOption.includes(normalizedValue) || normalizedValue.includes(normalizedOption);
+  return match ? match.id.toString() : '';
+};
+
+// For role dropdowns - returns label.toLowerCase().replace(/\s+/g, '_')
+const findRoleOption = (value: string | null | undefined, options: any[]): string => {
+  if (!value || !options || options.length === 0) return '';
+  
+  const normalizedValue = normalizeString(value);
+  const match = options.find(option => 
+    normalizeString(option.label) === normalizedValue
+  );
+  
+  return match ? match.label.toLowerCase().replace(/\s+/g, '_') : '';
+};
+
+// For contract type dropdowns - returns label.toLowerCase().replace(/\s+/g, '-')
+const findContractOption = (value: string | null | undefined, options: any[]): string => {
+  if (!value || !options || options.length === 0) return '';
+  
+  const normalizedValue = normalizeString(value);
+  const match = options.find(option => 
+    normalizeString(option.label) === normalizedValue
+  );
+  
+  return match ? match.label.toLowerCase().replace(/\s+/g, '-') : '';
+};
+
+// For geographic dropdowns (country, region, zone) - returns value
+const findGeographicOption = (value: string | null | undefined, options: any[]): string => {
+  if (!value || !options || options.length === 0) return '';
+  
+  const normalizedValue = normalizeString(value);
+  
+  // Try exact match first
+  let match = options.find(option => {
+    const optionLabel = option.label || option.name || option;
+    const optionValue = option.value || option;
+    return normalizeString(optionLabel) === normalizedValue || 
+           normalizeString(optionValue) === normalizedValue;
   });
   
-  if (partialMatch) {
-    return partialMatch.id?.toString() || partialMatch.value?.toString() || partialMatch[labelKey] || partialMatch;
+  // For countries like "UNITED-ARAB-EMIRATES", try matching with spaces
+  if (!match && value) {
+    const valueWithSpaces = value.replace(/-/g, ' ');
+    const normalizedWithSpaces = normalizeString(valueWithSpaces);
+    
+    match = options.find(option => {
+      const optionLabel = option.label || option.name || option;
+      return normalizeString(optionLabel) === normalizedWithSpaces;
+    });
   }
   
-  // Return original value if no match found
-  return value;
+  return match ? (match.value || match.label || match.name || match) : '';
+};
+
+// For soil type dropdown - returns label.toLowerCase()
+const findSoilTypeOption = (value: string | null | undefined, options: any[]): string => {
+  if (!value || !options || options.length === 0) return '';
+  
+  const normalizedValue = normalizeString(value);
+  const match = options.find(option => 
+    normalizeString(option.label) === normalizedValue
+  );
+  
+  // Return the exact format expected by the form
+  return match ? match.label.toLowerCase() : value?.toLowerCase() || '';
 };
 
 // Enhanced mapping function with metadata for proper dropdown matching
@@ -58,14 +116,14 @@ export const mapProposalBundleToFormDataWithMetadata = (
   const coverRequirements = proposalBundle.cover_requirements;
 
   return {
-    // Project Details Tab - with normalized dropdown matching
+    // Project Details Tab - with proper dropdown value formats
     projectName: project?.project_name || "",
-    projectType: findMatchingOption(project?.project_type, metadata.projectTypes, 'label'),
+    projectType: findMasterDataOption(project?.project_type, metadata.projectTypes),
     subProjectType: project?.sub_project_type || "",
-    constructionType: findMatchingOption(project?.construction_type, metadata.constructionTypes, 'label'),
-    country: findMatchingOption(project?.country, metadata.countries, 'name'),
-    region: findMatchingOption(project?.region, metadata.regions, 'name'),
-    zone: findMatchingOption(project?.zone, metadata.zones, 'name'),
+    constructionType: findMasterDataOption(project?.construction_type, metadata.constructionTypes),
+    country: findGeographicOption(project?.country, metadata.countries),
+    region: findGeographicOption(project?.region, metadata.regions),
+    zone: findGeographicOption(project?.zone, metadata.zones),
     projectAddress: project?.address || "",
     coordinates: project?.coordinates || "",
     startDate: project?.start_date || "",
@@ -73,29 +131,29 @@ export const mapProposalBundleToFormDataWithMetadata = (
     constructionPeriod: project?.construction_period_months?.toString() || "",
     maintenancePeriod: project?.maintenance_period_months?.toString() || "",
     
-    // Insured Details Tab - with normalized dropdown matching
+    // Insured Details Tab - with proper dropdown value formats
     insuredName: insured?.insured_name || "",
-    roleOfInsured: findMatchingOption(insured?.role_of_insured, metadata.roleTypes, 'label'),
+    roleOfInsured: findRoleOption(insured?.role_of_insured, metadata.roleTypes),
     contactEmail: insured?.contact_email || "",
     phoneNumber: insured?.phone_number || "",
     vatNumber: insured?.vat_number || "",
-    countryOfIncorporation: findMatchingOption(insured?.country_of_incorporation, metadata.countries, 'name'),
+    countryOfIncorporation: findGeographicOption(insured?.country_of_incorporation, metadata.countries),
     
-    // Contract Structure Tab - with normalized dropdown matching
+    // Contract Structure Tab - with proper dropdown value formats
     mainContractor: contractStructure?.main_contractor || "",
     principalOwner: contractStructure?.principal_owner || "",
-    contractType: findMatchingOption(contractStructure?.contract_type, metadata.contractTypes, 'label'),
+    contractType: findContractOption(contractStructure?.contract_type, metadata.contractTypes),
     contractNumber: contractStructure?.contract_number || "",
     experienceYears: contractStructure?.experience_years?.toString() || "",
     
-    // Site Risk Assessment Tab - with normalized dropdown matching
+    // Site Risk Assessment Tab - with proper dropdown value formats
     nearWaterBody: siteRisks?.near_water_body === 1 ? "yes" : "no",
     floodProneZone: siteRisks?.flood_prone_zone === 1 ? "yes" : "no", 
-    withinCityCenter: siteRisks?.within_city_center === 1 ? "yes" : "no",
-    cityAreaType: siteRisks?.city_area_type || "",
-    soilType: findMatchingOption(siteRisks?.soil_type, metadata.soilTypes, 'label'),
+    withinCityCenter: siteRisks?.within_city_center === "yes" || siteRisks?.within_city_center === 1 ? "yes" : "no",
+    cityAreaType: siteRisks?.area_type || siteRisks?.city_area_type || "",
+    soilType: findSoilTypeOption(siteRisks?.soil_type, metadata.soilTypes),
     existingStructure: siteRisks?.existing_structure === 1 ? "yes" : "no",
-    blastingExcavation: siteRisks?.blasting_excavation === 1 ? "yes" : "no",
+    blastingExcavation: (siteRisks?.blasting_or_deep_excavation === 1 || siteRisks?.blasting_excavation === 1) ? "yes" : "no",
     siteSecurityArrangements: siteRisks?.site_security_arrangements || "",
     
     // Cover Requirements Tab
@@ -104,7 +162,6 @@ export const mapProposalBundleToFormDataWithMetadata = (
     sumInsuredTemporary: coverRequirements?.temporary_works?.toString() || "0",
     principalsProperty: coverRequirements?.principals_property?.toString() || "",
     thirdPartyLimit: coverRequirements?.tpl_limit?.toString() || "",
-    crossLiabilityCover: coverRequirements?.cross_liability_cover === 'yes' ? 'yes' : 'no',
     removalDebrisLimit: coverRequirements?.removal_debris_limit?.toString() || "",
     
     // Additional required fields
@@ -222,7 +279,6 @@ export const mapProposalBundleToFormData = (proposalBundle: ProposalBundleRespon
     sumInsuredTemporary: coverRequirements?.temporary_works?.toString() || "0",
     principalExistingProperty: coverRequirements?.principals_property?.toString() || "",
     tplLimit: coverRequirements?.tpl_limit?.toString() || "",
-    crossLiabilityCover: coverRequirements?.cross_liability_cover === 'yes' ? 'yes' : 'no',
     removalDebrisLimit: coverRequirements?.removal_debris_limit?.toString() || "",
     surroundingPropertyLimit: coverRequirements?.surrounding_property_limit?.toString() || "",
     
