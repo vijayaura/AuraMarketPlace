@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowLeft, Edit, Download, Check, Circle, ChevronDown, ChevronUp, FileText, User, Building, MapPin, Shield, FolderOpen, CreditCard, Star } from "lucide-react";
 import { getProposalBundle, ProposalBundleResponse, getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
 import jsPDF from 'jspdf';
+import { generateInsuranceProposalPDF } from '@/utils/pdfGenerator';
 
 // Quote lifecycle steps
 const QUOTE_LIFECYCLE_STEPS = [
@@ -376,6 +377,66 @@ const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
   doc.save(fileName);
 };
 
+// Quote PDF Generation Function (using same format as extensions dialog)
+const generateQuotePDF = (proposalBundle: ProposalBundleResponse, extensions: any[] = []) => {
+  // Convert ProposalBundleResponse to the format expected by generateInsuranceProposalPDF
+  const proposalData = {
+    project: {
+      project_id: proposalBundle.project?.project_id || proposalBundle.quote_meta?.quote_id,
+      project_name: proposalBundle.project?.project_name || 'Project Name',
+      client_name: proposalBundle.project?.client_name || proposalBundle.insured?.details?.insured_name || 'Client Name',
+      address: proposalBundle.project?.address || 'N/A',
+      region: proposalBundle.project?.region || 'N/A',
+      country: proposalBundle.project?.country || 'N/A'
+    },
+    insured: proposalBundle.insured,
+    contract_structure: proposalBundle.contract_structure,
+    cover_requirements: proposalBundle.cover_requirements,
+    quote: {
+      id: proposalBundle.quote_meta?.quote_id || 0,
+      planName: proposalBundle.plans?.[0]?.insurer_name || 'Insurance Plan',
+      insurerName: proposalBundle.plans?.[0]?.insurer_name || 'Insurer',
+      annualPremium: proposalBundle.plans?.[0]?.premium_amount || 0,
+      coverageAmount: parseFloat(proposalBundle.project?.sum_insured || '0'),
+      deductible: `AED ${proposalBundle.plans?.[0]?.extensions?.selected_plan?.deductible || 0}`,
+      rating: 5,
+      keyCoverage: ['Contractor All Risk', 'Third Party Liability'],
+      benefits: ['Material Damage', 'Third Party Liability', 'Professional Indemnity'],
+      validationResult: null,
+      pricingConfig: null
+    },
+    cewData: {
+      selectedItems: extensions.map(ext => ({
+        name: ext.title,
+        code: ext.clause_code,
+        isSelected: true,
+        isMandatory: ext.is_mandatory,
+        selectedOptionId: ext.policy_key,
+        options: [{
+          id: ext.policy_key,
+          label: ext.title,
+          code: ext.clause_code,
+          impact: ext.extension_data
+        }]
+      })),
+      mandatoryAdjustments: { percentage: 0, fixed: 0 },
+      optionalAdjustments: { percentage: 0, fixed: 0 },
+      tplAdjustment: 0
+    },
+    premiumSummary: {
+      basePremium: proposalBundle.plans?.[0]?.extensions?.selected_plan?.base_premium || 0,
+      tplAdjustment: 0,
+      mandatoryAdjustments: 0,
+      optionalAdjustments: 0,
+      totalBeforeCommission: proposalBundle.plans?.[0]?.premium_amount || 0,
+      brokerCommission: 0,
+      totalAnnualPremium: proposalBundle.plans?.[0]?.premium_amount || 0
+    }
+  };
+  
+  generateInsuranceProposalPDF(proposalData);
+};
+
 const QuoteDetails = () => {
   const { id: quoteId } = useParams<{ id: string }>();
   const location = useLocation();
@@ -608,7 +669,12 @@ const QuoteDetails = () => {
               <Download className="h-4 w-4" />
                 Download Proposal
               </Button>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={() => proposalBundle && generateQuotePDF(proposalBundle, selectedExtensions)}
+            >
               <Download className="h-4 w-4" />
                 Download Quote
               </Button>
