@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Footer } from "@/components/Footer";
 import { Plus, FileText, Calendar, DollarSign, Building2, Shield, ArrowLeft, Users, UserPlus, Edit, Trash2, Settings, Eye } from "lucide-react";
 import { QUOTE_STATUSES, getQuoteStatusLabel, getQuoteStatusColor, filterActiveQuotes } from "@/lib/quote-status";
+import { formatDateShort } from "@/utils/date-format";
 import { QuoteStatusDot } from "@/components/QuoteStatusDot";
 
 // Mock data for all quotes across brokers

@@ -9,6 +9,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Footer } from "@/components/Footer";
 import { QUOTE_STATUSES, getQuoteStatusLabel, getQuoteStatusColor, filterActiveQuotes } from "@/lib/quote-status";
+import { formatDateShort } from "@/utils/date-format";
 import { QuoteStatusDot } from "@/components/QuoteStatusDot";
 import { Eye, ArrowLeft, Building2, Calendar, DollarSign, Shield, FileText, Download, LogOut, Settings2 } from "lucide-react";
 import { TableSearchFilter, FilterConfig } from "@/components/TableSearchFilter";
@@ -403,9 +404,9 @@ const InsurerDashboard = () => {
         projectType: q.project_type || '',
         projectValue: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
         premium: q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
-        submittedDate: q.created_at ? q.created_at.slice(0, 10) : '',
+        submittedDate: formatDateShort(q.created_at),
         status: q.status || '',
-        validityDate: q.validity_date ? q.validity_date.slice(0, 10) : '',
+        validityDate: formatDateShort(q.validity_date),
       }));
     } catch (error) {
       console.error('Error mapping quotes data:', error);
@@ -428,8 +429,8 @@ const InsurerDashboard = () => {
         projectType: 'Construction', // Default since not provided in API
         sumInsured: p.total_premium ? `AED ${Number(p.total_premium).toLocaleString()}` : '-',
         premium: p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
-        startDate: p.start_date ? p.start_date.slice(0, 10) : '',
-        endDate: p.end_date ? p.end_date.slice(0, 10) : '',
+        startDate: formatDateShort(p.start_date),
+        endDate: formatDateShort(p.end_date),
         status: p.status || '',
       }));
     } catch (error) {
@@ -651,8 +652,8 @@ const InsurerDashboard = () => {
       'Project Type': 'Construction',
       'Sum Insured': p.total_premium ? `AED ${Number(p.total_premium).toLocaleString()}` : '-',
       'Premium': p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
-      'Start Date': p.start_date ? p.start_date.slice(0, 10) : '-',
-      'End Date': p.end_date ? p.end_date.slice(0, 10) : '-',
+      'Start Date': formatDateShort(p.start_date),
+      'End Date': formatDateShort(p.end_date),
       'Status': p.status
     })) || [];
     const ws = XLSX.utils.json_to_sheet(exportData);

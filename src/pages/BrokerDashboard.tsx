@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Plus, FileText, Calendar, DollarSign, Building2, Shield, Download, Search, Filter, Eye, AlertTriangle } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { QUOTE_STATUSES, getQuoteStatusLabel, getQuoteStatusColor, filterActiveQuotes } from "@/lib/quote-status";
+import { formatDateShort } from "@/utils/date-format";
 import { QuoteStatusDot } from "@/components/QuoteStatusDot";
 import { TableSearchFilter, FilterConfig } from "@/components/TableSearchFilter";
 import { useTableSearch } from "@/hooks/useTableSearch";
@@ -244,8 +245,8 @@ const exportQuotesToExcel = (quotesData: any) => {
     'Sum Insured': q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
     'Premium': q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
     'Status': q.status,
-    'Created Date': q.created_at ? q.created_at.slice(0, 10) : '-',
-    'Validity Date': q.validity_date ? q.validity_date.slice(0, 10) : '-',
+    'Created Date': formatDateShort(q.created_at),
+    'Validity Date': formatDateShort(q.validity_date),
   })) || [];
   
   const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -261,8 +262,8 @@ const exportPoliciesToExcel = (policiesData: any) => {
     'Client Name': p.client_name,
     'Sum Insured': p.total_premium ? `AED ${Number(p.total_premium).toLocaleString()}` : '-',
     'Premium': p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
-    'Start Date': p.start_date ? p.start_date.slice(0, 10) : '-',
-    'End Date': p.end_date ? p.end_date.slice(0, 10) : '-',
+    'Start Date': formatDateShort(p.start_date),
+    'End Date': formatDateShort(p.end_date),
     'Status': p.status,
   })) || [];
   
@@ -364,8 +365,8 @@ export default function BrokerDashboard() {
     projectType: q.project_type,
     status: q.status as any,
     premium: q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
-    createdDate: q.created_at?.slice(0,10),
-    validUntil: q.validity_date?.slice(0,10),
+    createdDate: formatDateShort(q.created_at),
+    validUntil: formatDateShort(q.validity_date),
     sumInsured: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
     insurer: '-', // API doesn't include insurer_name field
     quoteId: q.quote_id,
@@ -387,8 +388,8 @@ export default function BrokerDashboard() {
         insurer: 'Insurer', // Default since not provided in API
         sumInsured: p.total_premium ? `AED ${Number(p.total_premium).toLocaleString()}` : '-',
         premium: p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
-        startDate: p.start_date ? p.start_date.slice(0, 10) : '',
-        endDate: p.end_date ? p.end_date.slice(0, 10) : '',
+        startDate: formatDateShort(p.start_date),
+        endDate: formatDateShort(p.end_date),
         status: p.status || '',
         clientName: p.client_name || '-',
       }));
