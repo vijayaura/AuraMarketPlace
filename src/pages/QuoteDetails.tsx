@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowLeft, Edit, Download, Check, Circle, ChevronDown, ChevronUp, FileText, User, Building, MapPin, Shield, FolderOpen, CreditCard, Star } from "lucide-react";
 import { getProposalBundle, ProposalBundleResponse, getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
+import jsPDF from 'jspdf';
 
 // Quote lifecycle steps
 const QUOTE_LIFECYCLE_STEPS = [
@@ -133,10 +134,246 @@ const formatFieldValue = (key: string, value: any): string => {
   // Format text to sentence case
   const str = String(value);
   if (str.length > 0) {
+    // Handle special cases for better formatting
+    if (str.includes('-')) {
+      // Handle hyphenated words like "design-and-build"
+      return str.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      ).join(' & ');
+    }
+    if (str.includes('_')) {
+      // Handle underscore separated words
+      return str.split('_').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      ).join(' ');
+    }
+    // Convert to proper sentence case
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   }
   
   return 'Not specified';
+};
+
+// PDF Generation Function
+const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
+  const doc = new jsPDF();
+  let yPosition = 20;
+  const lineHeight = 6;
+  const pageHeight = doc.internal.pageSize.height;
+  const pageWidth = doc.internal.pageSize.width;
+  const labelWidth = 80;
+  const valueWidth = pageWidth - labelWidth - 30;
+  
+  // Helper function to add table row
+  const addTableRow = (label: string, value: string, isHeader: boolean = false) => {
+    if (yPosition > pageHeight - 15) {
+      doc.addPage();
+      yPosition = 20;
+    }
+    
+    const fontSize = isHeader ? 10 : 8;
+    const isBold = isHeader;
+    
+    doc.setFontSize(fontSize);
+    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+    
+    // Draw border
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(10, yPosition - 4, labelWidth, lineHeight + 2);
+    doc.rect(10 + labelWidth, yPosition - 4, valueWidth, lineHeight + 2);
+    
+    // Add text
+    doc.text(label, 12, yPosition);
+    doc.text(value, 12 + labelWidth, yPosition);
+    
+    yPosition += lineHeight + 2;
+  };
+
+  // Helper function to add section header
+  const addSectionHeader = (title: string) => {
+    yPosition += 3;
+    addTableRow(title, '', true);
+  };
+
+  // Header with Title and Broker Details
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CONTRACTOR ALL RISK INSURANCE', 10, 15);
+  doc.text('PROPOSAL FORM', 10, 22);
+  
+  // Broker Details on the right side
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  const brokerCompanyName = (proposalBundle.quote_meta as any)?.broker_company_name || 'Broker Name';
+  const createdDate = proposalBundle.quote_meta?.created_at ? 
+    new Date(proposalBundle.quote_meta.created_at).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }) : 'N/A';
+  
+  doc.text(`Broker: ${brokerCompanyName}`, pageWidth - 80, 15);
+  doc.text(`Date: ${createdDate}`, pageWidth - 80, 22);
+  
+  // Quote ID
+  doc.setFontSize(8);
+  doc.text(`Quote ID: ${proposalBundle.quote_meta?.quote_id || 'N/A'}`, 10, 30);
+  yPosition = 40;
+
+  // Project Details
+  if (proposalBundle.project) {
+    addSectionHeader('PROJECT DETAILS');
+    addTableRow('Project Name', proposalBundle.project.project_name || 'N/A');
+    addTableRow('Project Type', formatFieldValue('project_type', proposalBundle.project.project_type));
+    addTableRow('Construction Type', formatFieldValue('construction_type', proposalBundle.project.construction_type));
+    addTableRow('Start Date', formatFieldValue('start_date', proposalBundle.project.start_date));
+    addTableRow('Completion Date', formatFieldValue('completion_date', proposalBundle.project.completion_date));
+    addTableRow('Construction Period', `${proposalBundle.project.construction_period_months || 0} months`);
+    addTableRow('Address', proposalBundle.project.address || 'N/A');
+    addTableRow('Country', formatFieldValue('country', proposalBundle.project.country));
+    addTableRow('Region', formatFieldValue('region', proposalBundle.project.region));
+    addTableRow('Zone', formatFieldValue('zone', proposalBundle.project.zone));
+  }
+
+  // Insured Details
+  if (proposalBundle.insured?.details) {
+    addSectionHeader('INSURED DETAILS');
+    addTableRow('Insured Name', formatFieldValue('insured_name', proposalBundle.insured.details.insured_name));
+    addTableRow('Role of Insured', formatFieldValue('role_of_insured', proposalBundle.insured.details.role_of_insured));
+    addTableRow('Had Losses (Last 5 Years)', proposalBundle.insured.details.had_losses_last_5yrs ? 'Yes' : 'No');
+  }
+
+  // Contract Structure
+  if (proposalBundle.contract_structure?.details) {
+    addSectionHeader('CONTRACT STRUCTURE');
+    addTableRow('Main Contractor', formatFieldValue('main_contractor', proposalBundle.contract_structure.details.main_contractor));
+    addTableRow('Principal Owner', formatFieldValue('principal_owner', proposalBundle.contract_structure.details.principal_owner));
+    addTableRow('Contract Type', formatFieldValue('contract_type', proposalBundle.contract_structure.details.contract_type));
+    addTableRow('Contract Number', formatFieldValue('contract_number', proposalBundle.contract_structure.details.contract_number));
+    addTableRow('Experience Years', `${proposalBundle.contract_structure.details.experience_years || 0} years`);
+  }
+
+  // Cover Requirements
+  if (proposalBundle.cover_requirements) {
+    addSectionHeader('COVER REQUIREMENTS');
+    Object.entries(proposalBundle.cover_requirements)
+      .filter(([key]) => !['id', 'created_at', 'updated_at', 'project_id'].includes(key))
+      .forEach(([key, value]) => {
+        const formattedKey = formatFieldName(key);
+        const formattedValue = formatFieldValue(key, value);
+        addTableRow(formattedKey, formattedValue);
+      });
+  }
+
+  // Site Risk Assessment
+  if (proposalBundle.site_risks) {
+    addSectionHeader('SITE RISK ASSESSMENT');
+    Object.entries(proposalBundle.site_risks)
+      .filter(([key]) => !['id', 'project_id', 'created_at', 'updated_at'].includes(key))
+      .forEach(([key, value]) => {
+        let displayValue = value;
+        if (value === 0 || value === '0') displayValue = 'No';
+        else if (value === 1 || value === '1') displayValue = 'Yes';
+        
+        const formattedKey = formatFieldName(key);
+        const formattedValue = formatFieldValue(key, displayValue);
+        addTableRow(formattedKey, formattedValue);
+      });
+  }
+
+  // Selected Plans
+  if (proposalBundle.plans && proposalBundle.plans.length > 0) {
+    addSectionHeader('SELECTED PLAN DETAILS');
+    proposalBundle.plans.forEach((plan, index) => {
+      addTableRow(`Plan ${index + 1} - Insurer`, formatFieldValue('insurer_name', plan.insurer_name));
+      addTableRow(`Plan ${index + 1} - Premium Amount`, formatFieldValue('premium_amount', plan.premium_amount));
+      if (plan.is_minimum_premium_applied) {
+        addTableRow(`Plan ${index + 1} - Minimum Premium`, formatFieldValue('minimum_premium_value', plan.minimum_premium_value));
+        addTableRow(`Plan ${index + 1} - Minimum Applied`, 'Yes');
+      }
+    });
+  }
+
+  // Claims History
+  if (proposalBundle.insured?.claims && proposalBundle.insured.claims.length > 0) {
+    addSectionHeader('CLAIMS HISTORY');
+    proposalBundle.insured.claims.forEach((claim, index) => {
+      Object.entries(claim).forEach(([key, value]) => {
+        const formattedKey = `Claim ${index + 1} - ${formatFieldName(key)}`;
+        const formattedValue = formatFieldValue(key, value);
+        addTableRow(formattedKey, formattedValue);
+      });
+    });
+  }
+
+  // Sub Contractors
+  if (proposalBundle.contract_structure?.sub_contractors && proposalBundle.contract_structure.sub_contractors.length > 0) {
+    addSectionHeader('SUB CONTRACTORS');
+    proposalBundle.contract_structure.sub_contractors.forEach((subContract, index) => {
+      addTableRow(`Sub Contractor ${index + 1} - Name`, formatFieldValue('name', subContract.name));
+      addTableRow(`Sub Contractor ${index + 1} - Contract Type`, formatFieldValue('contract_type', subContract.contract_type));
+      addTableRow(`Sub Contractor ${index + 1} - Contract Number`, formatFieldValue('contract_number', subContract.contract_number));
+    });
+  }
+
+  // Consultants
+  if (proposalBundle.contract_structure?.consultants && proposalBundle.contract_structure.consultants.length > 0) {
+    addSectionHeader('CONSULTANTS');
+    proposalBundle.contract_structure.consultants.forEach((consultant, index) => {
+      addTableRow(`Consultant ${index + 1} - Name`, formatFieldValue('name', consultant.name));
+      addTableRow(`Consultant ${index + 1} - Role`, formatFieldValue('role', consultant.role));
+      addTableRow(`Consultant ${index + 1} - License Number`, formatFieldValue('license_number', consultant.license_number));
+    });
+  }
+
+  // Required Documents
+  if (proposalBundle.required_documents && Array.isArray(proposalBundle.required_documents)) {
+    addSectionHeader('REQUIRED DOCUMENTS');
+    proposalBundle.required_documents.forEach((doc, index) => {
+      addTableRow(`Document ${index + 1}`, formatFieldValue('label', doc.label));
+    });
+  }
+
+  // Signature Section at the bottom
+  yPosition += 10;
+  
+  // Check if we need a new page for signatures
+  if (yPosition > pageHeight - 50) {
+    doc.addPage();
+    yPosition = 20;
+  }
+  
+  // Signature section header
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SIGNATURES', 10, yPosition);
+  yPosition += 10;
+  
+  // Broker signature section (left side)
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('BROKER:', 10, yPosition);
+  doc.text(brokerCompanyName, 10, yPosition + 8);
+  
+  // Signature line for broker
+  doc.line(10, yPosition + 20, 90, yPosition + 20);
+  doc.text('Broker Signature', 10, yPosition + 25);
+  doc.text('Name & Date', 10, yPosition + 30);
+  
+  // Insured signature section (right side)
+  const rightSideX = pageWidth - 90;
+  doc.text('INSURED:', rightSideX, yPosition);
+  const insuredName = proposalBundle.insured?.details?.insured_name || 'N/A';
+  doc.text(insuredName, rightSideX, yPosition + 8);
+  
+  // Signature line for insured
+  doc.line(rightSideX, yPosition + 20, pageWidth - 10, yPosition + 20);
+  doc.text('Insured Signature', rightSideX, yPosition + 25);
+  doc.text('Name & Date', rightSideX, yPosition + 30);
+
+  // Save the PDF
+  const fileName = `Proposal_${proposalBundle.quote_meta?.quote_id || 'Unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(fileName);
 };
 
 const QuoteDetails = () => {
@@ -343,23 +580,34 @@ const QuoteDetails = () => {
               <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
+              <div className="flex items-center gap-4">
               <div>
-              <h1 className="text-lg font-semibold text-gray-900">
-                Quote Details - {proposalBundle.quote_meta?.quote_id || 'Unknown'}
-              </h1>
-              <p className="text-sm text-gray-600">
-                {proposalBundle.insured?.details?.insured_name || proposalBundle.project?.client_name || 'Insurance Quote'}
-              </p>
+                <h1 className="text-lg font-semibold text-gray-900">
+                  Quote Details - {proposalBundle.quote_meta?.quote_id || 'Unknown'}
+                </h1>
+                <p className="text-sm text-gray-600">
+                  {proposalBundle.insured?.details?.insured_name || proposalBundle.project?.client_name || 'Insurance Quote'}
+                </p>
+              </div>
+              <div className="px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm">
+                {getHumanReadableStatus(proposalBundle.quote_meta?.status || '')}
               </div>
             </div>
-            <div className="flex items-center gap-3">
-            <div className="px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm">
-              {getHumanReadableStatus(proposalBundle.quote_meta?.status || '')}
             </div>
+            <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" className="flex items-center gap-2">
               <Edit className="h-4 w-4" />
                   Edit Quote
                 </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={() => proposalBundle && generateProposalPDF(proposalBundle)}
+            >
+              <Download className="h-4 w-4" />
+                Download Proposal
+              </Button>
             <Button variant="outline" size="sm" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
                 Download Quote
@@ -695,7 +943,7 @@ const QuoteDetails = () => {
                   <div className="grid lg:grid-cols-4">
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Insurer Name</div>
-                      <div className="text-sm font-medium">{plan.insurer_name || 'Not specified'}</div>
+                      <div className="text-sm font-medium">{formatFieldValue('insurer_name', plan.insurer_name)}</div>
                   </div>
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Premium Amount</div>
@@ -858,7 +1106,7 @@ const QuoteDetails = () => {
                 <div className="grid lg:grid-cols-4">
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Project Name</div>
-                    <div className="text-sm font-medium">{proposalBundle.project.project_name || 'Not specified'}</div>
+                    <div className="text-sm font-medium">{formatFieldValue('project_name', proposalBundle.project.project_name)}</div>
                   </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Project Type</div>
@@ -916,7 +1164,7 @@ const QuoteDetails = () => {
                   </div>
                   <div className="col-span-4 p-3">
                     <div className="text-xs text-gray-500 mb-1">Address</div>
-                    <div className="text-sm font-medium">{proposalBundle.project.address || 'Not specified'}</div>
+                    <div className="text-sm font-medium">{formatFieldValue('address', proposalBundle.project.address)}</div>
                   </div>
                   </div>
                 </div>
@@ -976,7 +1224,7 @@ const QuoteDetails = () => {
                 <div className="grid lg:grid-cols-4">
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Insured Name</div>
-                    <div className="text-sm font-medium">{proposalBundle.insured.details.insured_name || 'Not specified'}</div>
+                    <div className="text-sm font-medium">{formatFieldValue('insured_name', proposalBundle.insured.details.insured_name)}</div>
                   </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Role of Insured</div>
@@ -1138,11 +1386,11 @@ const QuoteDetails = () => {
                     <div className="grid lg:grid-cols-4">
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Main Contractor</div>
-                        <div className="text-sm font-medium">{proposalBundle.contract_structure.details.main_contractor || 'Not specified'}</div>
+                        <div className="text-sm font-medium">{formatFieldValue('main_contractor', proposalBundle.contract_structure.details.main_contractor)}</div>
                     </div>
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Principal Owner</div>
-                        <div className="text-sm font-medium">{proposalBundle.contract_structure.details.principal_owner || 'Not specified'}</div>
+                        <div className="text-sm font-medium">{formatFieldValue('principal_owner', proposalBundle.contract_structure.details.principal_owner)}</div>
                     </div>
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Contract Type</div>
@@ -1154,7 +1402,7 @@ const QuoteDetails = () => {
                     </div>
                       <div className="col-span-4 p-3">
                         <div className="text-xs text-gray-500 mb-1">Contract Number</div>
-                        <div className="text-sm font-medium">{proposalBundle.contract_structure.details.contract_number || 'Not specified'}</div>
+                        <div className="text-sm font-medium">{formatFieldValue('contract_number', proposalBundle.contract_structure.details.contract_number)}</div>
                   </div>
                 </div>
                 </div>
@@ -1171,7 +1419,7 @@ const QuoteDetails = () => {
                         <div className="grid lg:grid-cols-3">
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Name</div>
-                            <div className="text-sm font-medium">{subContract.name || 'Not specified'}</div>
+                            <div className="text-sm font-medium">{formatFieldValue('name', subContract.name)}</div>
                     </div>
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Contract Type</div>
@@ -1179,7 +1427,7 @@ const QuoteDetails = () => {
                     </div>
                           <div className="p-3 border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Contract Number</div>
-                            <div className="text-sm font-medium">{subContract.contract_number || 'Not specified'}</div>
+                            <div className="text-sm font-medium">{formatFieldValue('contract_number', subContract.contract_number)}</div>
                   </div>
                 </div>
                       </div>
@@ -1198,7 +1446,7 @@ const QuoteDetails = () => {
                         <div className="grid lg:grid-cols-3">
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Name</div>
-                            <div className="text-sm font-medium">{consultant.name || 'Not specified'}</div>
+                            <div className="text-sm font-medium">{formatFieldValue('name', consultant.name)}</div>
                                 </div>
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Role</div>
@@ -1206,7 +1454,7 @@ const QuoteDetails = () => {
                               </div>
                           <div className="p-3 border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">License Number</div>
-                            <div className="text-sm font-medium">{consultant.license_number || 'Not specified'}</div>
+                            <div className="text-sm font-medium">{formatFieldValue('license_number', consultant.license_number)}</div>
                               </div>
                         </div>
                       </div>
@@ -1345,7 +1593,7 @@ const QuoteDetails = () => {
                   <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
                     <div className="grid lg:grid-cols-3">
                       <div className="p-3 border-r border-b border-gray-200">
-                        <div className="text-sm font-medium">{doc.label || 'Not specified'}</div>
+                        <div className="text-sm font-medium">{formatFieldValue('label', doc.label)}</div>
                       </div>
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-sm font-medium">

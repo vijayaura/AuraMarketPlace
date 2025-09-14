@@ -987,8 +987,8 @@ export interface PolicyDetailsResponse {
   policyTimeline: PolicyTimelineEvent[];
 }
 
-export const getPolicyDetails = async (policyId: number): Promise<PolicyDetailsResponse> => {
-  const response = await apiGet<PolicyDetailsResponse>(`/policies/${policyId}`);
+export const getPolicyDetailsById = async (policyId: number): Promise<PolicyDetailsAPIResponse> => {
+  const response = await apiGet<PolicyDetailsAPIResponse>(`/api/v1/policies/${policyId}`);
   return response;
 };
 
