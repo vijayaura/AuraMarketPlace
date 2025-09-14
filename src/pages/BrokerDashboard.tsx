@@ -245,7 +245,6 @@ const exportQuotesToExcel = (quotesData: any) => {
     'Sum Insured': q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
     'Premium': q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
     'Status': q.status,
-    'Created Date': formatDateShort(q.created_at),
     'Validity Date': formatDateShort(q.validity_date),
   })) || [];
   
@@ -264,7 +263,6 @@ const exportPoliciesToExcel = (policiesData: any) => {
     'Premium': p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
     'Start Date': formatDateShort(p.start_date),
     'End Date': formatDateShort(p.end_date),
-    'Status': p.status,
   })) || [];
   
   const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -365,7 +363,6 @@ export default function BrokerDashboard() {
     projectType: q.project_type,
     status: q.status as any,
     premium: q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
-    createdDate: formatDateShort(q.created_at),
     validUntil: formatDateShort(q.validity_date),
     sumInsured: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
     insurer: '-', // API doesn't include insurer_name field
@@ -390,7 +387,6 @@ export default function BrokerDashboard() {
         premium: p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
         startDate: formatDateShort(p.start_date),
         endDate: formatDateShort(p.end_date),
-        status: p.status || '',
         clientName: p.client_name || '-',
       }));
     } catch (error) {
@@ -649,7 +645,6 @@ export default function BrokerDashboard() {
                       <TableHead className="w-[140px]">Sum Insured</TableHead>
                       <TableHead className="w-[120px]">Premium</TableHead>
                       <TableHead className="w-[130px]">Quote Status</TableHead>
-                      <TableHead className="w-[100px]">Created</TableHead>
                       <TableHead className="w-[120px]">Quote Validity</TableHead>
                       <TableHead className="w-[100px] text-right">Actions</TableHead>
                     </TableRow>
@@ -670,7 +665,6 @@ export default function BrokerDashboard() {
                         <TableCell className="w-[130px]">
                           <QuoteStatusDot status={quote.status} />
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground w-[100px]">{quote.createdDate}</TableCell>
                         <TableCell className="text-sm text-muted-foreground w-[120px]">{quote.validUntil}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
@@ -795,7 +789,6 @@ export default function BrokerDashboard() {
                       <TableHead className="w-[120px]">Premium</TableHead>
                       <TableHead className="w-[100px]">Start Date</TableHead>
                       <TableHead className="w-[100px]">End Date</TableHead>
-                      <TableHead className="w-[100px]">Status</TableHead>
                       <TableHead className="w-[100px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -814,11 +807,6 @@ export default function BrokerDashboard() {
                         <TableCell className="font-medium text-primary w-[120px]">{policy.premium}</TableCell>
                         <TableCell className="text-sm text-muted-foreground w-[100px]">{policy.startDate}</TableCell>
                         <TableCell className="text-sm text-muted-foreground w-[100px]">{policy.endDate}</TableCell>
-                        <TableCell className="w-[100px]">
-                          <Badge variant="outline" className="text-success border-success/20">
-                            {policy.status.charAt(0).toUpperCase() + policy.status.slice(1)}
-                          </Badge>
-                        </TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="outline"

@@ -404,7 +404,6 @@ const InsurerDashboard = () => {
         projectType: q.project_type || '',
         projectValue: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
         premium: q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
-        submittedDate: formatDateShort(q.created_at),
         status: q.status || '',
         validityDate: formatDateShort(q.validity_date),
       }));
@@ -431,7 +430,6 @@ const InsurerDashboard = () => {
         premium: p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
         startDate: formatDateShort(p.start_date),
         endDate: formatDateShort(p.end_date),
-        status: p.status || '',
       }));
     } catch (error) {
       console.error('Error mapping policies data:', error);
@@ -521,10 +519,6 @@ const InsurerDashboard = () => {
       value: 'Oman Insurance Brokers',
       label: 'Oman Insurance Brokers'
     }]
-  }, {
-    key: 'submittedDate',
-    label: 'Submitted Date',
-    type: 'date'
   }];
 
   // Configure filters for policies
@@ -636,8 +630,7 @@ const InsurerDashboard = () => {
       'Project Type': q.project_type,
       'Project Value': q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
       'Premium': q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
-      'Status': q.status,
-      'Submitted Date': q.created_at ? q.created_at.slice(0, 10) : '-'
+      'Status': q.status
     })) || [];
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
@@ -787,7 +780,6 @@ const InsurerDashboard = () => {
                     <th className="text-left p-4 font-medium text-foreground">Project</th>
                     <th className="text-left p-4 font-medium text-foreground">Value</th>
                     <th className="text-left p-4 font-medium text-foreground">Premium</th>
-                    <th className="text-left p-4 font-medium text-foreground">Date</th>
                     <th className="text-left p-4 font-medium text-foreground">Action</th>
                   </tr>
                 </thead>
@@ -825,9 +817,6 @@ const InsurerDashboard = () => {
                           <p className="font-medium text-foreground">{quote.premium}</p>
                         </td>
                         <td className="p-4">
-                          <p className="text-sm text-foreground">{quote.submittedDate}</p>
-                        </td>
-                        <td className="p-4">
                           <Button size="sm" variant="outline" onClick={() => navigate(`/insurer/quote/${quote.id}`)}>
                             <Eye className="w-4 h-4 mr-1" />
                             View Details
@@ -858,9 +847,6 @@ const InsurerDashboard = () => {
                         </td>
                         <td className="p-4">
                           <p className="font-medium text-foreground">{quote.premium}</p>
-                        </td>
-                        <td className="p-4">
-                          <p className="text-sm text-foreground">{quote.submittedDate}</p>
                         </td>
                         <td className="p-4">
                           <Button size="sm" variant="outline" onClick={() => navigate(`/insurer/quote/${quote.id}`)}>
@@ -946,7 +932,6 @@ const InsurerDashboard = () => {
                           <th className="text-left p-4 font-medium text-foreground">Premium</th>
                           <th className="text-left p-4 font-medium text-foreground">Start Date</th>
                           <th className="text-left p-4 font-medium text-foreground">End Date</th>
-                          <th className="text-left p-4 font-medium text-foreground">Status</th>
                           <th className="text-left p-4 font-medium text-foreground">Action</th>
                         </tr>
                       </thead>
@@ -984,11 +969,6 @@ const InsurerDashboard = () => {
                             </td>
                             <td className="p-4">
                               <p className="text-sm text-foreground">{policy.endDate}</p>
-                            </td>
-                            <td className="p-4">
-                              <Badge variant="outline" className="text-success border-success/20">
-                                {policy.status && policy.status !== '' ? policy.status.charAt(0).toUpperCase() + policy.status.slice(1) : 'Policy_status'}
-                              </Badge>
                             </td>
                             <td className="p-4">
                               <Button size="sm" variant="outline" onClick={e => {

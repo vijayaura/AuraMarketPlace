@@ -660,7 +660,7 @@ const QuoteDetails = () => {
               variant="outline" 
               size="sm" 
               className="flex items-center gap-2"
-              onClick={() => window.open(`/customer/proposal?new=true&resume=${quoteId}`, '_blank')}
+              onClick={() => window.location.href = `/customer/proposal?new=true&resume=${quoteId}`}
             >
               <Edit className="h-4 w-4" />
               Continue Editing

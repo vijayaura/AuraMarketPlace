@@ -840,7 +840,6 @@ const exportQuotesToExcel = (quotesData: any) => {
     'Sum Insured': q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
     'Premium': q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
     'Status': q.status,
-    'Created Date': formatDateShort(q.created_at),
     'Validity Date': formatDateShort(q.validity_date),
   })) || [];
   
@@ -859,7 +858,6 @@ const exportPoliciesToExcel = (policiesData: any) => {
     'Premium': p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
     'Start Date': formatDateShort(p.start_date),
     'End Date': formatDateShort(p.end_date),
-    'Status': p.status,
   })) || [];
   
   const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -974,7 +972,6 @@ const MarketAdminDashboard = () => {
         premium: p.base_premium ? `AED ${Number(p.base_premium).toLocaleString()}` : '-',
         startDate: formatDateShort(p.start_date),
         endDate: formatDateShort(p.end_date),
-        status: p.status || '',
         clientName: p.client_name || '-',
         broker: 'Admin', // Default for admin view
       }));
@@ -1010,7 +1007,6 @@ const MarketAdminDashboard = () => {
     sumInsured: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
     premium: q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
     status: q.status,
-    createdDate: formatDateShort(q.created_at),
     validUntil: formatDateShort(q.validity_date),
     quoteId: q.quote_id,
   }));
@@ -1369,7 +1365,6 @@ const MarketAdminDashboard = () => {
                           <TableHead>Sum Insured</TableHead>
                           <TableHead>Premium</TableHead>
                           <TableHead>Quote Status</TableHead>
-                          <TableHead>Created</TableHead>
                           <TableHead>Quote Validity</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -1391,7 +1386,6 @@ const MarketAdminDashboard = () => {
                             <TableCell>
                                <QuoteStatusDot status={quote.status} />
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{quote.createdDate}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">{quote.validUntil}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex gap-2 justify-end">
@@ -1577,7 +1571,6 @@ const MarketAdminDashboard = () => {
                            <TableHead>Premium</TableHead>
                            <TableHead>Start Date</TableHead>
                            <TableHead>End Date</TableHead>
-                           <TableHead>Status</TableHead>
                            <TableHead className="text-right">Actions</TableHead>
                          </TableRow>
                        </TableHeader>
@@ -1595,11 +1588,6 @@ const MarketAdminDashboard = () => {
                              <TableCell className="font-medium text-primary">{policy.premium}</TableCell>
                              <TableCell className="text-sm text-muted-foreground">{policy.startDate}</TableCell>
                              <TableCell className="text-sm text-muted-foreground">{policy.endDate}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="text-green-600 border-green-200">
-                                {policy.status.charAt(0).toUpperCase() + policy.status.slice(1)}
-                              </Badge>
-                            </TableCell>
                             <TableCell className="text-right">
                               <Button
                                 variant="outline"

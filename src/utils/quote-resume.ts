@@ -1,6 +1,161 @@
 import { ProposalBundleResponse } from '@/lib/api/quotes';
 
-// Map ProposalBundleResponse to ProposalForm data structure
+// Utility function to normalize strings for comparison
+const normalizeString = (str: string | null | undefined): string => {
+  if (!str) return '';
+  return str.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+};
+
+// Helper function to find matching option by normalized comparison
+const findMatchingOption = (value: string | null | undefined, options: any[], labelKey: string = 'label'): string => {
+  if (!value || !options || options.length === 0) return '';
+  
+  const normalizedValue = normalizeString(value);
+  
+  // Try exact match first
+  const exactMatch = options.find(option => {
+    const optionValue = option[labelKey] || option.name || option.value || option;
+    return normalizeString(optionValue) === normalizedValue;
+  });
+  
+  if (exactMatch) {
+    return exactMatch.id?.toString() || exactMatch.value?.toString() || exactMatch[labelKey] || exactMatch;
+  }
+  
+  // Try partial match
+  const partialMatch = options.find(option => {
+    const optionValue = option[labelKey] || option.name || option.value || option;
+    const normalizedOption = normalizeString(optionValue);
+    return normalizedOption.includes(normalizedValue) || normalizedValue.includes(normalizedOption);
+  });
+  
+  if (partialMatch) {
+    return partialMatch.id?.toString() || partialMatch.value?.toString() || partialMatch[labelKey] || partialMatch;
+  }
+  
+  // Return original value if no match found
+  return value;
+};
+
+// Enhanced mapping function with metadata for proper dropdown matching
+export const mapProposalBundleToFormDataWithMetadata = (
+  proposalBundle: ProposalBundleResponse, 
+  metadata: {
+    projectTypes: any[];
+    constructionTypes: any[];
+    roleTypes: any[];
+    contractTypes: any[];
+    soilTypes: any[];
+    countries: any[];
+    regions: any[];
+    zones: any[];
+  }
+) => {
+  const project = proposalBundle.project;
+  const insured = proposalBundle.insured?.details;
+  const contractStructure = proposalBundle.contract_structure?.details;
+  const siteRisks = proposalBundle.site_risks;
+  const coverRequirements = proposalBundle.cover_requirements;
+
+  return {
+    // Project Details Tab - with normalized dropdown matching
+    projectName: project?.project_name || "",
+    projectType: findMatchingOption(project?.project_type, metadata.projectTypes, 'label'),
+    subProjectType: project?.sub_project_type || "",
+    constructionType: findMatchingOption(project?.construction_type, metadata.constructionTypes, 'label'),
+    country: findMatchingOption(project?.country, metadata.countries, 'name'),
+    region: findMatchingOption(project?.region, metadata.regions, 'name'),
+    zone: findMatchingOption(project?.zone, metadata.zones, 'name'),
+    projectAddress: project?.address || "",
+    coordinates: project?.coordinates || "",
+    startDate: project?.start_date || "",
+    completionDate: project?.completion_date || "",
+    constructionPeriod: project?.construction_period_months?.toString() || "",
+    maintenancePeriod: project?.maintenance_period_months?.toString() || "",
+    
+    // Insured Details Tab - with normalized dropdown matching
+    insuredName: insured?.insured_name || "",
+    roleOfInsured: findMatchingOption(insured?.role_of_insured, metadata.roleTypes, 'label'),
+    contactEmail: insured?.contact_email || "",
+    phoneNumber: insured?.phone_number || "",
+    vatNumber: insured?.vat_number || "",
+    countryOfIncorporation: findMatchingOption(insured?.country_of_incorporation, metadata.countries, 'name'),
+    
+    // Contract Structure Tab - with normalized dropdown matching
+    mainContractor: contractStructure?.main_contractor || "",
+    principalOwner: contractStructure?.principal_owner || "",
+    contractType: findMatchingOption(contractStructure?.contract_type, metadata.contractTypes, 'label'),
+    contractNumber: contractStructure?.contract_number || "",
+    experienceYears: contractStructure?.experience_years?.toString() || "",
+    
+    // Site Risk Assessment Tab - with normalized dropdown matching
+    nearWaterBody: siteRisks?.near_water_body === 1 ? "yes" : "no",
+    floodProneZone: siteRisks?.flood_prone_zone === 1 ? "yes" : "no", 
+    withinCityCenter: siteRisks?.within_city_center === 1 ? "yes" : "no",
+    cityAreaType: siteRisks?.city_area_type || "",
+    soilType: findMatchingOption(siteRisks?.soil_type, metadata.soilTypes, 'label'),
+    existingStructure: siteRisks?.existing_structure === 1 ? "yes" : "no",
+    blastingExcavation: siteRisks?.blasting_excavation === 1 ? "yes" : "no",
+    siteSecurityArrangements: siteRisks?.site_security_arrangements || "",
+    
+    // Cover Requirements Tab
+    sumInsuredMaterial: coverRequirements?.contract_works?.toString() || "",
+    sumInsuredPlant: coverRequirements?.plant_and_equipment?.toString() || "",
+    sumInsuredTemporary: coverRequirements?.temporary_works?.toString() || "0",
+    principalsProperty: coverRequirements?.principals_property?.toString() || "",
+    thirdPartyLimit: coverRequirements?.tpl_limit?.toString() || "",
+    crossLiabilityCover: coverRequirements?.cross_liability_cover === 'yes' ? 'yes' : 'no',
+    removalDebrisLimit: coverRequirements?.removal_debris_limit?.toString() || "",
+    
+    // Additional required fields
+    projectValue: project?.sum_insured || "",
+    lossesInLastFiveYears: proposalBundle.insured?.details?.had_losses_last_5yrs ? "yes" : "no",
+    lossesDetails: "",
+    otherMaterials: coverRequirements?.other_materials?.toString() || "",
+    waterBodyDistance: "",
+    
+    // Contract Structure Arrays
+    consultants: proposalBundle.contract_structure?.consultants?.map(consultant => ({
+      name: consultant.name || "",
+      role: consultant.role || "",
+      licenseNumber: consultant.license_number || ""
+    })) || [],
+    
+    subContractors: proposalBundle.contract_structure?.sub_contractors?.map(subContract => ({
+      name: subContract.name || "",
+      contractType: subContract.contract_type || "",
+      contractNumber: subContract.contract_number || ""
+    })) || [],
+    
+    documents: {
+      boq: { uploaded: false, url: "", fileName: "", label: "Bill of Quantities (BOQ)" },
+      gantt_chart: { uploaded: false, url: "", fileName: "", label: "Gantt Chart / Work Schedule" },
+      contract_agreement: { uploaded: false, url: "", fileName: "", label: "Contract Agreement" },
+      site_layout_plan: { uploaded: false, url: "", fileName: "", label: "Site Layout Plan" },
+      other_supporting_docs: { uploaded: false, url: "", fileName: "", label: "Other Supporting Documents" }
+    },
+    
+    // Claims History
+    claimsHistory: proposalBundle.insured?.claims?.map(claim => ({
+      year: claim.year || new Date().getFullYear(),
+      claimCount: claim.claim_count || 0,
+      amount: claim.amount?.toString() || "",
+      description: claim.description || ""
+    })) || [],
+    
+    // Additional Cover Requirements fields
+    existingStructureDetails: "",
+    tplLimit: coverRequirements?.tpl_limit?.toString() || "",
+    principalExistingProperty: coverRequirements?.principals_property?.toString() || "",
+    surroundingPropertyLimit: "",
+    
+    // Extensions and CEW data
+    extensions: {},
+    selectedCEWItems: []
+  };
+};
+
+// Legacy mapping function for backward compatibility
 export const mapProposalBundleToFormData = (proposalBundle: ProposalBundleResponse) => {
   const project = proposalBundle.project;
   const insured = proposalBundle.insured?.details;

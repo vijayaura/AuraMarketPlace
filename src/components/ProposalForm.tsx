@@ -35,7 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DocumentUpload } from "./DocumentUpload";
 import { QuotesComparison } from "./QuotesComparison";
 import DeclarationTab from "./DeclarationTab";
-import { mapProposalBundleToFormData, determineCurrentStep, getStepCompletionStatus } from "@/utils/quote-resume";
+import { mapProposalBundleToFormData, mapProposalBundleToFormDataWithMetadata, determineCurrentStep, getStepCompletionStatus } from "@/utils/quote-resume";
 
 // Extend Window interface for global functions
 declare global {
@@ -130,6 +130,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const [isResumeMode, setIsResumeMode] = useState(false);
   const [resumeQuoteId, setResumeQuoteId] = useState<string | null>(null);
   const [isLoadingResumeData, setIsLoadingResumeData] = useState(false);
+  const [pendingResumeData, setPendingResumeData] = useState<ProposalBundleResponse | null>(null);
   
   // Insurer Pricing Configurations State
   const [insurerPricingConfigs, setInsurerPricingConfigs] = useState<Record<number, InsurerPricingConfigResponse>>({});
@@ -187,12 +188,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       const proposalBundle = await getProposalBundle(parseInt(quoteId));
       console.log('📋 Loaded proposal bundle for resume:', proposalBundle);
       
-      // Map proposal bundle data to form data
-      const mappedFormData = mapProposalBundleToFormData(proposalBundle);
-      console.log('🗂️ Mapped form data:', mappedFormData);
-      
-      // Set form data
-      setFormData(mappedFormData);
+      // Store proposal bundle for later processing after metadata loads
+      setPendingResumeData(proposalBundle);
       
       // Set current quote ID and reference
       setCurrentQuoteId(parseInt(quoteId));
@@ -230,6 +227,36 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       setIsLoadingResumeData(false);
     }
   };
+
+  // Process pending resume data after metadata loads
+  useEffect(() => {
+    if (pendingResumeData && masterData.projectTypes.length > 0 && brokerData && !brokerLoading.isLoading) {
+      console.log('📊 Metadata loaded, now processing resume data...');
+      console.log('📋 Available project types:', masterData.projectTypes);
+      console.log('🏢 Broker data loaded:', brokerData);
+      
+      // Map proposal bundle data to form data with metadata for proper dropdown matching
+      const mappedFormData = mapProposalBundleToFormDataWithMetadata(pendingResumeData, {
+        projectTypes: masterData.projectTypes,
+        constructionTypes: masterData.constructionTypes,
+        roleTypes: masterData.roleTypes,
+        contractTypes: masterData.contractTypes,
+        soilTypes: masterData.soilTypes,
+        countries: brokerData.operatingCountries || [],
+        regions: brokerData.operatingRegions || [],
+        zones: brokerData.operatingZones || []
+      });
+      console.log('🗂️ Mapped form data with metadata:', mappedFormData);
+      
+      // Set form data
+      setFormData(mappedFormData);
+      
+      // Clear pending data
+      setPendingResumeData(null);
+      
+      console.log('✅ Resume data applied successfully with metadata');
+    }
+  }, [pendingResumeData, masterData.projectTypes, brokerData, brokerLoading.isLoading]);
 
   // Initialize fresh temporary storage for new quote session
   const initializeFreshQuoteStorage = () => {
