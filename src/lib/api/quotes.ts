@@ -308,6 +308,8 @@ export const uploadFile = async (file: File): Promise<FileUploadResponse> => {
 // Types for Proposal Bundle API
 export interface QuoteMeta {
   quote_id: number;
+  quote_reference_number: string;
+  broker_id: number;
   insurer_id: number | null;
   status: string;
   validity_date: string;
@@ -1056,6 +1058,8 @@ export interface ProposalBundleResponse {
   project_id: number;
   quote_meta: {
     quote_id: number;
+    quote_reference_number: string;
+    broker_id: number;
     insurer_id: number;
     status: string;
     validity_date: string;

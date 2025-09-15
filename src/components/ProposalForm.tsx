@@ -193,7 +193,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       
       // Set current quote ID and reference
       setCurrentQuoteId(parseInt(quoteId));
-      setQuoteReferenceNumber(proposalBundle.quote_meta?.quote_id?.toString() || null);
+      setQuoteReferenceNumber(proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id?.toString() || null);
       
       // Set step completion status
       const completionStatus = getStepCompletionStatus(proposalBundle);
@@ -211,7 +211,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       
       toast({
         title: "Quote Resumed",
-        description: `Continuing quote ${proposalBundle.quote_meta?.quote_id || quoteId}`,
+        description: `Continuing quote ${proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || quoteId}`,
       });
       
     } catch (error) {

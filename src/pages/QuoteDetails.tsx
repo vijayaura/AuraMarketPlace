@@ -216,9 +216,9 @@ const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
   doc.text(`Broker: ${brokerCompanyName}`, pageWidth - 80, 15);
   doc.text(`Date: ${createdDate}`, pageWidth - 80, 22);
   
-  // Quote ID
+  // Quote Reference
   doc.setFontSize(8);
-  doc.text(`Quote ID: ${proposalBundle.quote_meta?.quote_id || 'N/A'}`, 10, 30);
+  doc.text(`Quote Reference: ${proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || 'N/A'}`, 10, 30);
   yPosition = 40;
 
   // Project Details
@@ -373,7 +373,7 @@ const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
   doc.text('Name & Date', rightSideX, yPosition + 30);
 
   // Save the PDF
-  const fileName = `Proposal_${proposalBundle.quote_meta?.quote_id || 'Unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const fileName = `Proposal_${proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || 'Unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
 };
 
@@ -610,14 +610,14 @@ const QuoteDetails = () => {
           <p className="text-gray-600 mb-4">{error}</p>
           <Button onClick={() => window.location.reload()}>
             Try Again
-          </Button>
+            </Button>
         </div>
       </div>
     );
   }
 
   if (!proposalBundle) {
-    return (
+  return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600">Quote not found</p>
@@ -644,7 +644,7 @@ const QuoteDetails = () => {
               <div className="flex items-center gap-4">
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
-                  Quote Details - {proposalBundle.quote_meta?.quote_id || 'Unknown'}
+                  Quote Details - {proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || 'Unknown'}
                 </h1>
                 <p className="text-sm text-gray-600">
                   {proposalBundle.insured?.details?.insured_name || proposalBundle.project?.client_name || 'Insurance Quote'}
@@ -653,7 +653,7 @@ const QuoteDetails = () => {
               <div className="px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm">
                 {getHumanReadableStatus(proposalBundle.quote_meta?.status || '')}
               </div>
-            </div>
+              </div>
             </div>
             <div className="flex items-center gap-3">
             <Button 
@@ -664,7 +664,7 @@ const QuoteDetails = () => {
             >
               <Edit className="h-4 w-4" />
               Continue Editing
-            </Button>
+                </Button>
             <Button 
               variant="outline" 
               size="sm" 
@@ -694,8 +694,8 @@ const QuoteDetails = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold text-gray-900">
               Quote Progress Journey
-            </CardTitle>
-          </CardHeader>
+                </CardTitle>
+              </CardHeader>
           <CardContent className="pt-0">
             <div className="relative">
               {/* Progress Line */}
@@ -808,10 +808,10 @@ const QuoteDetails = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <div className="text-xs text-gray-400">Quote ID</div>
+                    <div className="text-xs text-gray-400">Quote Reference</div>
                     <div className="text-sm text-gray-600 font-medium">
-                      {proposalBundle.quote_meta.quote_id}
-                    </div>
+                      {proposalBundle.quote_meta.quote_reference_number || proposalBundle.quote_meta.quote_id}
+                  </div>
                   </div>
                   {expandedSections.has('quote_summary') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
@@ -826,8 +826,8 @@ const QuoteDetails = () => {
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <div className="grid lg:grid-cols-4">
                     <div className="p-3 border-r border-b border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Quote ID</div>
-                      <div className="text-sm font-medium">{proposalBundle.quote_meta.quote_id}</div>
+                      <div className="text-xs text-gray-500 mb-1">Quote Reference</div>
+                      <div className="text-sm font-medium">{proposalBundle.quote_meta.quote_reference_number || proposalBundle.quote_meta.quote_id}</div>
                     </div>
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Status</div>
@@ -893,9 +893,9 @@ const QuoteDetails = () => {
                           hour12: true
                         }) : 'No date available'
                       }
-                    </div>
                   </div>
-                </div>
+                  </div>
+                  </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <div className="text-xs text-gray-400">Sum Insured</div>
@@ -906,7 +906,7 @@ const QuoteDetails = () => {
                           .find(([key]) => key.includes('sum_insured') || key.includes('computed_sum'))?.[1] || '0')).toLocaleString()}` : 
                         'Not calculated'
                       }
-                    </div>
+                </div>
                   </div>
                   {expandedSections.has('cover_requirements') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
@@ -974,7 +974,7 @@ const QuoteDetails = () => {
                   <div>
                     <CardTitle className="text-lg font-semibold text-gray-900">
                       Selected Plan Details
-                    </CardTitle>
+                </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
                       {proposalBundle.quote_meta.created_at ? 
                         new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
@@ -1019,16 +1019,16 @@ const QuoteDetails = () => {
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Premium Amount</div>
                       <div className="text-sm font-medium">{formatFieldValue('premium_amount', plan.premium_amount)}</div>
-                   </div>
+                  </div>
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Minimum Premium</div>
                       <div className="text-sm font-medium">{formatFieldValue('minimum_premium_value', plan.minimum_premium_value)}</div>
-                   </div>
+                  </div>
                     <div className="p-3 border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Minimum Applied</div>
                       <div className="text-sm font-medium">{plan.is_minimum_premium_applied ? 'Yes' : 'No'}</div>
-                   </div>
-                    </div>
+                  </div>
+                </div>
                 </div>
               ))}
               </CardContent>
@@ -1047,8 +1047,8 @@ const QuoteDetails = () => {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                     <Star className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
+                          </div>
+                          <div>
                     <CardTitle className="text-lg font-semibold text-gray-900">
                       Selected Extensions
                     </CardTitle>
@@ -1063,15 +1063,15 @@ const QuoteDetails = () => {
                           hour12: true
                         }) : 'No date available'
                       }
-                    </div>
-                  </div>
-                </div>
+                          </div>
+                          </div>
+                        </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <div className="text-xs text-gray-400">Extensions</div>
                     <div className="text-sm text-gray-600 font-medium">
                       {selectedExtensions.length} extension{selectedExtensions.length !== 1 ? 's' : ''}
-                    </div>
+                      </div>
                   </div>
                   {expandedSections.has('selected_extensions') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
@@ -1120,7 +1120,7 @@ const QuoteDetails = () => {
                     )}
                   </div>
                 ))}
-              </div>
+                </div>
               </CardContent>
             )}
             </Card>
@@ -1195,13 +1195,13 @@ const QuoteDetails = () => {
                     <div className="text-xs text-gray-500 mb-1">Project Start Date</div>
                     <div className="text-sm font-medium">
                       {formatFieldValue('start_date', proposalBundle.project.start_date)}
-                </div>
-                </div>
+                  </div>
+                  </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Completion Date</div>
                     <div className="text-sm font-medium">
                       {formatFieldValue('completion_date', proposalBundle.project.completion_date)}
-                          </div>
+                  </div>
                           </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Construction Period</div>
@@ -1296,15 +1296,15 @@ const QuoteDetails = () => {
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Insured Name</div>
                     <div className="text-sm font-medium">{formatFieldValue('insured_name', proposalBundle.insured.details.insured_name)}</div>
-                  </div>
+                    </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Role of Insured</div>
                     <div className="text-sm font-medium">{formatFieldValue('role_of_insured', proposalBundle.insured.details.role_of_insured)}</div>
-                  </div>
+                    </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Had Losses (Last 5 Years)</div>
                     <div className="text-sm font-medium">{proposalBundle.insured.details.had_losses_last_5yrs ? 'Yes' : 'No'}</div>
-                  </div>
+                    </div>
                   <div className="p-3 border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Created Date</div>
                     <div className="text-sm font-medium">
@@ -1322,7 +1322,7 @@ const QuoteDetails = () => {
                             {Object.entries(claim).map(([key, value]) => (
                               <div key={key}>{formatFieldName(key)}: {formatFieldValue(key, value)}</div>
                             ))}
-                          </div>
+                </div>
                         ))}
                       </div>
                     </div>
@@ -1345,8 +1345,8 @@ const QuoteDetails = () => {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                     <FileText className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
+                    </div>
+                    <div>
                     <CardTitle className="text-lg font-semibold text-gray-900">
                       Claims History
                     </CardTitle>
@@ -1361,22 +1361,22 @@ const QuoteDetails = () => {
                           hour12: true
                         }) : 'No date available'
                       }
-                  </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3">
                   <div className="text-right">
                     <div className="text-xs text-gray-400">Claims Count</div>
                     <div className="text-sm text-gray-600 font-medium">
                       {proposalBundle.insured.claims.length} claim{proposalBundle.insured.claims.length !== 1 ? 's' : ''}
-                    </div>
-                  </div>
+                                </div>
+                              </div>
                   {expandedSections.has('claims_history') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
                     <ChevronDown className="h-5 w-5 text-gray-500" />
                   )}
-                </div>
+                              </div>
               </div>
             </CardHeader>
             {expandedSections.has('claims_history') && (
@@ -1410,10 +1410,10 @@ const QuoteDetails = () => {
               onClick={() => toggleSectionExpansion('contract_structure')}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                     <Building className="h-4 w-4 text-white" />
-                  </div>
+                                </div>
                   <div>
                     <CardTitle className="text-lg font-semibold text-gray-900">
                       Contract Structure
@@ -1429,8 +1429,8 @@ const QuoteDetails = () => {
                           hour12: true
                         }) : 'No date available'
                       }
-                    </div>
-                  </div>
+                              </div>
+                              </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
@@ -1477,8 +1477,8 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
               {/* Sub Contractors */}
               {proposalBundle.contract_structure.sub_contractors && proposalBundle.contract_structure.sub_contractors.length > 0 && (
@@ -1491,15 +1491,15 @@ const QuoteDetails = () => {
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Name</div>
                             <div className="text-sm font-medium">{formatFieldValue('name', subContract.name)}</div>
-                    </div>
+                                </div>
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Contract Type</div>
                             <div className="text-sm font-medium">{formatFieldValue('contract_type', subContract.contract_type)}</div>
-                    </div>
+                              </div>
                           <div className="p-3 border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Contract Number</div>
                             <div className="text-sm font-medium">{formatFieldValue('contract_number', subContract.contract_number)}</div>
-                  </div>
+                              </div>
                 </div>
                       </div>
                         ))}
@@ -1518,7 +1518,7 @@ const QuoteDetails = () => {
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Name</div>
                             <div className="text-sm font-medium">{formatFieldValue('name', consultant.name)}</div>
-                                </div>
+                </div>
                           <div className="p-3 border-r border-b border-gray-200">
                             <div className="text-xs text-gray-500 mb-1">Role</div>
                             <div className="text-sm font-medium">{formatFieldValue('role', consultant.role)}</div>
@@ -1535,7 +1535,7 @@ const QuoteDetails = () => {
               )}
               </CardContent>
             )}
-          </Card>
+            </Card>
         )}
 
         {/* Site Risk Assessment */}
@@ -1550,7 +1550,7 @@ const QuoteDetails = () => {
                   <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                     <MapPin className="h-4 w-4 text-white" />
                                 </div>
-                  <div>
+                <div>
                     <CardTitle className="text-lg font-semibold text-gray-900">
                       Site Risk Assessment
                     </CardTitle>
@@ -1565,15 +1565,15 @@ const QuoteDetails = () => {
                           hour12: true
                         }) : 'No date available'
                       }
-                              </div>
-                              </div>
+                </div>
+                      </div>
                     </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <div className="text-xs text-gray-400">Assessment</div>
                     <div className="text-sm text-gray-600 font-medium">
                       Risk Factors
-                    </div>
+                  </div>
                   </div>
                   {expandedSections.has('site_risk_assessment') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
@@ -1656,7 +1656,7 @@ const QuoteDetails = () => {
                   )}
                 </div>
               </div>
-            </CardHeader>
+              </CardHeader>
             {expandedSections.has('required_documents') && (
               <CardContent className="pt-0">
                   <div className="space-y-4">
@@ -1665,7 +1665,7 @@ const QuoteDetails = () => {
                     <div className="grid lg:grid-cols-3">
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-sm font-medium">{formatFieldValue('label', doc.label)}</div>
-                      </div>
+                  </div>
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-sm font-medium">
                           {doc.url ? (
@@ -1673,8 +1673,8 @@ const QuoteDetails = () => {
                           ) : (
                             <Badge variant="outline" className="text-xs">Pending</Badge>
                           )}
-                    </div>
-                  </div>
+                   </div>
+                   </div>
                       <div className="p-3 border-b border-gray-200">
                         <div className="text-sm font-medium">
                           {doc.url ? (
@@ -1698,12 +1698,12 @@ const QuoteDetails = () => {
                           ) : (
                             <span className="text-gray-400 text-xs">No file available</span>
                           )}
-                        </div>
-                      </div>
+                   </div>
+                    </div>
                     </div>
                   </div>
                 ))}
-              </div>
+                </div>
               </CardContent>
             )}
             </Card>
@@ -1729,8 +1729,8 @@ const QuoteDetails = () => {
                   This quote is still being prepared. Information will appear here as it becomes available.
                 </p>
               </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
         )}
       </div>
     </div>
