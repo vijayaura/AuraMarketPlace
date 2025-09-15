@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Building, MapPin, Calendar, DollarSign, Shield, FileText, Plus, Trash2, Car, Umbrella } from "lucide-react";
+import { Building, MapPin, Calendar, DollarSign, Shield, FileText, Plus, Trash2, Car, Umbrella, RefreshCw } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { OpenStreetMapDialog } from "./OpenStreetMapDialog";
 import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesByProjectType } from "@/lib/masters-data";
@@ -131,6 +131,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const [resumeQuoteId, setResumeQuoteId] = useState<string | null>(null);
   const [isLoadingResumeData, setIsLoadingResumeData] = useState(false);
   const [pendingResumeData, setPendingResumeData] = useState<ProposalBundleResponse | null>(null);
+  const [storedResumeData, setStoredResumeData] = useState<ProposalBundleResponse | null>(null);
   
   // Insurer Pricing Configurations State
   const [insurerPricingConfigs, setInsurerPricingConfigs] = useState<Record<number, InsurerPricingConfigResponse>>({});
@@ -190,6 +191,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       
       // Store proposal bundle for later processing after metadata loads
       setPendingResumeData(proposalBundle);
+      // Also store it permanently for re-applying when switching tabs
+      setStoredResumeData(proposalBundle);
       
       // Set current quote ID and reference
       setCurrentQuoteId(parseInt(quoteId));
@@ -246,43 +249,107 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       });
       
       console.log('🗂️ Setting basic form data:', basicMappedData);
+      console.log('🌍 Geographic values to set:', {
+        country: basicMappedData.country,
+        region: basicMappedData.region, 
+        zone: basicMappedData.zone
+      });
+      console.log('🌍 Available geographic options:', {
+        countries: brokerData.operatingCountries?.slice(0, 3),
+        regions: brokerData.operatingRegions?.slice(0, 3),
+        zones: brokerData.operatingZones?.slice(0, 3)
+      });
+      
       setFormData(basicMappedData);
       
-      // Step 2: Set dependent fields with delays to allow hierarchy to load
+      // Step 2: Set country first and wait for regions to load
       setTimeout(() => {
-        console.log('🔄 Step 2: Setting country and project type dependent fields...');
+        console.log('🔄 Step 2: Setting country...');
+        console.log('🌍 Setting country to:', basicMappedData.country);
         setFormData(prev => ({
           ...prev,
           country: basicMappedData.country,
           projectType: basicMappedData.projectType
         }));
         
-        // Step 3: Set region and sub-project type after country/project type are set
+        // Step 3: Wait longer for region options to load, then set region
         setTimeout(() => {
-          console.log('🔄 Step 3: Setting region and sub-project type...');
+          console.log('🔄 Step 3: Setting region...');
+          console.log('🗺️ Setting region to:', basicMappedData.region);
           setFormData(prev => ({
             ...prev,
             region: basicMappedData.region,
             subProjectType: basicMappedData.subProjectType
           }));
           
-          // Step 4: Set zone after region is set
+          // Step 4: Wait for zone options to load, then set zone
           setTimeout(() => {
             console.log('🔄 Step 4: Setting zone...');
+            console.log('🏙️ Setting zone to:', basicMappedData.zone);
             setFormData(prev => ({
               ...prev,
               zone: basicMappedData.zone
             }));
             
             console.log('✅ All cascading form data applied successfully');
-          }, 300);
-        }, 300);
-      }, 300);
+          }, 500); // Increased delay for zone
+        }, 500); // Increased delay for region
+      }, 500); // Increased delay for country
       
       // Clear pending data
       setPendingResumeData(null);
     }
   }, [pendingResumeData, masterData.projectTypes, brokerData, brokerLoading.isLoading]);
+
+  // Function to re-apply resume data (for tab switching)
+  const reapplyResumeData = () => {
+    if (!storedResumeData || !masterData.projectTypes.length || !brokerData) {
+      console.log('⏭️ Cannot reapply resume data - missing requirements');
+      return;
+    }
+
+    console.log('🔄 Re-applying resume data for current tab...');
+    
+    // Map the data again with current metadata
+    const mappedFormData = mapProposalBundleToFormDataWithMetadata(storedResumeData, {
+      projectTypes: masterData.projectTypes,
+      constructionTypes: masterData.constructionTypes,
+      roleTypes: masterData.roleTypes,
+      contractTypes: masterData.contractTypes,
+      soilTypes: masterData.soilTypes,
+      countries: brokerData.operatingCountries || [],
+      regions: brokerData.operatingRegions || [],
+      zones: brokerData.operatingZones || []
+    });
+
+    // Apply with cascading updates
+    setFormData(mappedFormData);
+    
+    setTimeout(() => {
+      setFormData(prev => ({
+        ...prev,
+        country: mappedFormData.country,
+        projectType: mappedFormData.projectType
+      }));
+      
+      setTimeout(() => {
+        setFormData(prev => ({
+          ...prev,
+          region: mappedFormData.region,
+          subProjectType: mappedFormData.subProjectType
+        }));
+        
+        setTimeout(() => {
+          setFormData(prev => ({
+            ...prev,
+            zone: mappedFormData.zone
+          }));
+        }, 300);
+      }, 300);
+    }, 300);
+
+    console.log('✅ Resume data re-applied successfully');
+  };
 
   // Initialize fresh temporary storage for new quote session
   const initializeFreshQuoteStorage = () => {
@@ -2362,9 +2429,22 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
           <CardHeader className="px-4 sm:px-6">
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">
-                  {isResumeMode ? 'Resume Quote' : location.state?.editingQuote ? 'Edit Quote' : 'Create New Quote'}
-                </CardTitle>
+                <div className="flex items-center justify-between w-full">
+                  <CardTitle className="text-xl">
+                    {isResumeMode ? 'Resume Quote' : location.state?.editingQuote ? 'Edit Quote' : 'Create New Quote'}
+                  </CardTitle>
+                  {isResumeMode && storedResumeData && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={reapplyResumeData}
+                      className="flex items-center gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Reload Data
+                    </Button>
+                  )}
+                </div>
                 {quoteReferenceNumber && currentStep >= 1 && (
                   <div className="text-sm text-gray-900">
                     Quote No. : {quoteReferenceNumber}

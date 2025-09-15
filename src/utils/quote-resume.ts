@@ -56,7 +56,13 @@ const findContractOption = (value: string | null | undefined, options: any[]): s
 
 // For geographic dropdowns (country, region, zone) - returns value
 const findGeographicOption = (value: string | null | undefined, options: any[]): string => {
-  if (!value || !options || options.length === 0) return '';
+  if (!value || !options || options.length === 0) {
+    console.log(`🌍 Geographic matching failed - Value: ${value}, Options: ${options?.length || 0}`);
+    return '';
+  }
+  
+  console.log(`🌍 Finding geographic match for "${value}" in ${options.length} options`);
+  console.log(`🌍 Available options:`, options.slice(0, 3)); // Show first 3 for debugging
   
   const normalizedValue = normalizeString(value);
   
@@ -64,8 +70,14 @@ const findGeographicOption = (value: string | null | undefined, options: any[]):
   let match = options.find(option => {
     const optionLabel = option.label || option.name || option;
     const optionValue = option.value || option;
-    return normalizeString(optionLabel) === normalizedValue || 
-           normalizeString(optionValue) === normalizedValue;
+    const labelMatch = normalizeString(optionLabel) === normalizedValue;
+    const valueMatch = normalizeString(optionValue) === normalizedValue;
+    
+    if (labelMatch || valueMatch) {
+      console.log(`✅ Geographic exact match found: "${optionLabel}" or "${optionValue}" for "${value}"`);
+    }
+    
+    return labelMatch || valueMatch;
   });
   
   // For countries like "UNITED-ARAB-EMIRATES", try matching with spaces
@@ -75,11 +87,19 @@ const findGeographicOption = (value: string | null | undefined, options: any[]):
     
     match = options.find(option => {
       const optionLabel = option.label || option.name || option;
-      return normalizeString(optionLabel) === normalizedWithSpaces;
+      const spaceMatch = normalizeString(optionLabel) === normalizedWithSpaces;
+      
+      if (spaceMatch) {
+        console.log(`✅ Geographic space match found: "${optionLabel}" for "${value}" (with spaces: "${valueWithSpaces}")`);
+      }
+      
+      return spaceMatch;
     });
   }
   
-  return match ? (match.value || match.label || match.name || match) : '';
+  const result = match ? (match.value || match.label || match.name || match) : '';
+  console.log(`🎯 Geographic result for "${value}": "${result}"`);
+  return result;
 };
 
 // For soil type dropdown - returns label.toLowerCase()
