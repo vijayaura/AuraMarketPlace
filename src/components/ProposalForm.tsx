@@ -134,6 +134,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const [isLoadingResumeData, setIsLoadingResumeData] = useState(false);
   const [pendingResumeData, setPendingResumeData] = useState<ProposalBundleResponse | null>(null);
   const [storedResumeData, setStoredResumeData] = useState<ProposalBundleResponse | null>(null);
+  const [resumeDataProcessed, setResumeDataProcessed] = useState(false);
   
   // Insurer Pricing Configurations State
   const [insurerPricingConfigs, setInsurerPricingConfigs] = useState<Record<number, InsurerPricingConfigResponse>>({});
@@ -233,15 +234,18 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     }
   };
 
-  // Process pending resume data 5 seconds after all metadata is loaded
+  // Process pending resume data 5 seconds after all metadata is loaded (only once)
   useEffect(() => {
-    if (pendingResumeData && masterData.projectTypes.length > 0 && brokerData && !brokerLoading.isLoading) {
+    if (pendingResumeData && masterData.projectTypes.length > 0 && brokerData && !brokerLoading.isLoading && !resumeDataProcessed) {
       console.log('🎯 All metadata loaded, waiting 5 seconds before processing resume data...');
       console.log('- Master data loaded:', masterData.projectTypes.length, 'project types');
       console.log('- Broker data loaded:', !!brokerData);
       console.log('- Countries available:', brokerData.operatingCountries?.length || 0);
       console.log('- Regions available:', brokerData.operatingRegions?.length || 0);
       console.log('- Zones available:', brokerData.operatingZones?.length || 0);
+      
+      // Mark as processing to prevent multiple runs
+      setResumeDataProcessed(true);
       
       // Wait 5 seconds to ensure all dropdown options are fully loaded
       const delayTimer = setTimeout(() => {
@@ -273,19 +277,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
           projectType: pendingResumeData.project?.project_type,
           subProjectType: pendingResumeData.project?.sub_project_type
         });
-        console.log('🎯 Available options at time of mapping:');
-        console.log('  Countries:', brokerData.operatingCountries?.slice(0, 5));
-        console.log('  Regions:', brokerData.operatingRegions?.slice(0, 5));
-        console.log('  Zones:', brokerData.operatingZones?.slice(0, 5));
-        console.log('  Project Types:', masterData.projectTypes?.slice(0, 5));
-        
-        console.log('🔍 Detailed mapping input:');
-        console.log('  API country:', pendingResumeData.project?.country);
-        console.log('  API region:', pendingResumeData.project?.region);
-        console.log('  API zone:', pendingResumeData.project?.zone);
-        console.log('  API project_type:', pendingResumeData.project?.project_type);
-        console.log('  API sub_project_type:', pendingResumeData.project?.sub_project_type);
-        console.log('  API construction_type:', pendingResumeData.project?.construction_type);
         
         // Apply all form data at once (no cascading delays needed after 5-second wait)
         setFormData(mappedFormData);
@@ -301,7 +292,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         clearTimeout(delayTimer);
       };
     }
-  }, [pendingResumeData, masterData.projectTypes, brokerData, brokerLoading.isLoading]);
+  }, [pendingResumeData, masterData.projectTypes, brokerData, brokerLoading.isLoading, resumeDataProcessed]);
 
 
 
@@ -1178,23 +1169,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     return getDefaultFormData();
   });
 
-  // Additional debugging for dropdown values - placed after formData declaration
-  useEffect(() => {
-    if (isResumeMode && formData.country) {
-      console.log('🎯 Current form data state:');
-      console.log('  Country in formData:', formData.country);
-      console.log('  Region in formData:', formData.region);
-      console.log('  Zone in formData:', formData.zone);
-      console.log('  Project Type in formData:', formData.projectType);
-      console.log('  Sub Project Type in formData:', formData.subProjectType);
-      
-      console.log('🎯 Available options:');
-      console.log('  Countries:', brokerData?.operatingCountries?.slice(0, 5));
-      console.log('  Regions:', brokerData?.operatingRegions?.slice(0, 5));
-      console.log('  Zones:', brokerData?.operatingZones?.slice(0, 5));
-      console.log('  Project Types:', masterData.projectTypes?.slice(0, 5));
-    }
-  }, [isResumeMode, formData.country, formData.region, formData.zone, formData.projectType, formData.subProjectType, brokerData, masterData.projectTypes]);
 
   // Rule engine for default calculations
   const calculateDefaultValues = () => {
