@@ -228,20 +228,13 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     }
   };
 
-  // Process pending resume data after metadata loads
+  // Process pending resume data after metadata loads with cascading updates
   useEffect(() => {
     if (pendingResumeData && masterData.projectTypes.length > 0 && brokerData && !brokerLoading.isLoading) {
-      console.log('📊 Metadata loaded, now processing resume data...');
-      console.log('📋 Available project types:', masterData.projectTypes);
-      console.log('🏗️ Available construction types:', masterData.constructionTypes);
-      console.log('👤 Available role types:', masterData.roleTypes);
-      console.log('📄 Available contract types:', masterData.contractTypes);
-      console.log('🏢 Broker data loaded:', brokerData);
-      console.log('🌍 Operating countries:', brokerData?.operatingCountries);
-      console.log('🗺️ Operating regions:', brokerData?.operatingRegions);
+      console.log('📊 Metadata loaded, now processing resume data with cascading updates...');
       
-      // Map proposal bundle data to form data with metadata for proper dropdown matching
-      const mappedFormData = mapProposalBundleToFormDataWithMetadata(pendingResumeData, {
+      // Step 1: Set basic fields and top-level dropdowns first
+      const basicMappedData = mapProposalBundleToFormDataWithMetadata(pendingResumeData, {
         projectTypes: masterData.projectTypes,
         constructionTypes: masterData.constructionTypes,
         roleTypes: masterData.roleTypes,
@@ -251,15 +244,43 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         regions: brokerData.operatingRegions || [],
         zones: brokerData.operatingZones || []
       });
-      console.log('🗂️ Mapped form data with metadata:', mappedFormData);
       
-      // Set form data
-      setFormData(mappedFormData);
+      console.log('🗂️ Setting basic form data:', basicMappedData);
+      setFormData(basicMappedData);
+      
+      // Step 2: Set dependent fields with delays to allow hierarchy to load
+      setTimeout(() => {
+        console.log('🔄 Step 2: Setting country and project type dependent fields...');
+        setFormData(prev => ({
+          ...prev,
+          country: basicMappedData.country,
+          projectType: basicMappedData.projectType
+        }));
+        
+        // Step 3: Set region and sub-project type after country/project type are set
+        setTimeout(() => {
+          console.log('🔄 Step 3: Setting region and sub-project type...');
+          setFormData(prev => ({
+            ...prev,
+            region: basicMappedData.region,
+            subProjectType: basicMappedData.subProjectType
+          }));
+          
+          // Step 4: Set zone after region is set
+          setTimeout(() => {
+            console.log('🔄 Step 4: Setting zone...');
+            setFormData(prev => ({
+              ...prev,
+              zone: basicMappedData.zone
+            }));
+            
+            console.log('✅ All cascading form data applied successfully');
+          }, 300);
+        }, 300);
+      }, 300);
       
       // Clear pending data
       setPendingResumeData(null);
-      
-      console.log('✅ Resume data applied successfully with metadata');
     }
   }, [pendingResumeData, masterData.projectTypes, brokerData, brokerLoading.isLoading]);
 
