@@ -16,12 +16,13 @@ import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesBy
 import { getActiveCountries, getRegionsByCountry, getZonesByRegion } from "@/lib/location-data";
 import { 
   listMasterProjectTypes, 
-  listMasterSubProjectTypes, 
+  listMasterSubProjectTypes,
   listMasterConstructionTypes, 
   listMasterRoleTypes, 
   listMasterContractTypes, 
   listMasterSoilTypes, 
   listMasterSecurityTypes, 
+  listMasterAreaTypes,
   listMasterSubcontractorTypes, 
   listMasterConsultantRoles,
   type SimpleMasterItem,
@@ -74,6 +75,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     contractTypes: [] as SimpleMasterItem[],
     soilTypes: [] as SimpleMasterItem[],
     securityTypes: [] as SimpleMasterItem[],
+    areaTypes: [] as SimpleMasterItem[],
     subcontractorTypes: [] as SimpleMasterItem[],
     consultantRoles: [] as SimpleMasterItem[]
   });
@@ -252,6 +254,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
           roleTypes: masterData.roleTypes,
           contractTypes: masterData.contractTypes,
           soilTypes: masterData.soilTypes,
+          areaTypes: masterData.areaTypes,
           countries: brokerData.operatingCountries || [],
           regions: brokerData.operatingRegions || [],
           zones: brokerData.operatingZones || []
@@ -503,6 +506,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         listMasterContractTypes(),
         listMasterSoilTypes(),
         listMasterSecurityTypes(),
+        listMasterAreaTypes(),
         listMasterSubcontractorTypes(),
         listMasterConsultantRoles()
       ];
@@ -518,6 +522,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         contractTypesResult,
         soilTypesResult,
         securityTypesResult,
+        areaTypesResult,
         subcontractorTypesResult,
         consultantRolesResult
       ] = results;
@@ -530,6 +535,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       const contractTypes = contractTypesResult.status === 'fulfilled' ? contractTypesResult.value : [];
       const soilTypes = soilTypesResult.status === 'fulfilled' ? soilTypesResult.value : [];
       const securityTypes = securityTypesResult.status === 'fulfilled' ? securityTypesResult.value : [];
+      const areaTypes = areaTypesResult.status === 'fulfilled' ? areaTypesResult.value : [];
       const subcontractorTypes = subcontractorTypesResult.status === 'fulfilled' ? subcontractorTypesResult.value : [];
       const consultantRoles = consultantRolesResult.status === 'fulfilled' ? consultantRolesResult.value : [];
 
@@ -542,6 +548,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         contractTypes: contractTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
         soilTypes: soilTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
         securityTypes: securityTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
+        areaTypes: areaTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
         subcontractorTypes: subcontractorTypes.filter(item => item.active).sort((a, b) => a.order - b.order),
         consultantRoles: consultantRoles.filter(item => item.active).sort((a, b) => a.order - b.order)
       });
@@ -816,6 +823,20 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       { id: 2, label: 'CCTV', active: true, order: 2 },
       { id: 3, label: 'Fenced', active: true, order: 3 },
       { id: 4, label: 'None', active: true, order: 4 }
+    ];
+  };
+
+  const getAreaTypeOptions = () => {
+    if (masterData.areaTypes && masterData.areaTypes.length > 0) {
+      return masterData.areaTypes;
+    }
+    // Fallback to default options if master data is not available
+    return [
+      { id: 1, label: 'Urban', active: true, order: 1 },
+      { id: 2, label: 'Suburban', active: true, order: 2 },
+      { id: 3, label: 'Rural', active: true, order: 3 },
+      { id: 4, label: 'Industrial', active: true, order: 4 },
+      { id: 5, label: 'Commercial', active: true, order: 5 }
     ];
   };
 
@@ -3310,7 +3331,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         <p>No subcontractors added yet. Click "Add Sub-Contractor" to add one.</p>
                       </div>
                     ) : (
-                      formData.subContractors.map((subcontractor, index) => <div key={subcontractor.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-border rounded-lg bg-muted/30">
+                      formData.subContractors.map((subcontractor, index) => (
+                        <div key={subcontractor.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-border rounded-lg bg-muted/30">
                         <div className="space-y-2">
                           <Label htmlFor={`subcontractor-name-${subcontractor.id}`}>Name *</Label>
                           <Input id={`subcontractor-name-${subcontractor.id}`} value={subcontractor.name} onChange={e => updateSubcontractor(subcontractor.id, 'name', e.target.value)} placeholder="Subcontractor name" />
@@ -3349,7 +3371,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      </div>)
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>
@@ -3369,7 +3392,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         <p>No consultants added yet. Click "Add Consultant" to add one.</p>
                       </div>
                     ) : (
-                      formData.consultants.map((consultant, index) => <div key={consultant.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-border rounded-lg bg-muted/30">
+                      formData.consultants.map((consultant, index) => (
+                        <div key={consultant.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-border rounded-lg bg-muted/30">
                         <div className="space-y-2">
                           <Label htmlFor={`consultant-name-${consultant.id}`}>Name *</Label>
                           <Input id={`consultant-name-${consultant.id}`} value={consultant.name} onChange={e => updateConsultant(consultant.id, 'name', e.target.value)} placeholder="Consultant name" />
@@ -3408,7 +3432,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      </div>)
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>
@@ -3505,11 +3530,20 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       cityAreaType: value
                     })}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select urban or congested" />
+                            <SelectValue placeholder={
+                              loadingStates.isLoading ? "Loading area types..." : "Select area type"
+                            } />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="urban">Urban</SelectItem>
-                            <SelectItem value="congested">Congested Area</SelectItem>
+                            {loadingStates.isLoading ? (
+                              <div className="p-2 text-sm text-muted-foreground">Loading options...</div>
+                            ) : (
+                              getAreaTypeOptions().map(areaType => (
+                                <SelectItem key={areaType.id} value={areaType.label.toLowerCase().replace(/\s+/g, '-')}>
+                                  {areaType.label}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>}

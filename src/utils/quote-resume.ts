@@ -143,6 +143,33 @@ const findSoilTypeOption = (value: string | null | undefined, options: any[]): s
   return match ? match.label.toLowerCase() : value?.toLowerCase() || '';
 };
 
+// For area type dropdown - returns label.toLowerCase().replace(/\s+/g, '-')
+const findAreaTypeOption = (value: string | null | undefined, options: any[]): string => {
+  if (!value || !options || options.length === 0) return '';
+  
+  console.log(`🏙️ Finding area type match for "${value}" in ${options.length} options`);
+  console.log(`🏙️ Available area type options:`, options.slice(0, 5));
+  
+  const normalizedValue = normalizeString(value);
+  
+  const match = options.find(option => {
+    const optionLabel = option.label || option.name || option;
+    const optionValue = option.value || option;
+    const labelMatch = normalizeString(optionLabel) === normalizedValue;
+    const valueMatch = normalizeString(optionValue) === normalizedValue;
+    
+    if (labelMatch || valueMatch) {
+      console.log(`✅ Area type match found: "${optionLabel}" or "${optionValue}" for "${value}"`);
+    }
+    
+    return labelMatch || valueMatch;
+  });
+  
+  const result = match ? match.label.toLowerCase().replace(/\s+/g, '-') : '';
+  console.log(`🎯 Area type result for "${value}": "${result}"`);
+  return result;
+};
+
 // Enhanced mapping function with metadata for proper dropdown matching
 export const mapProposalBundleToFormDataWithMetadata = (
   proposalBundle: ProposalBundleResponse, 
@@ -150,11 +177,12 @@ export const mapProposalBundleToFormDataWithMetadata = (
     projectTypes: any[];
     constructionTypes: any[];
     roleTypes: any[];
-    contractTypes: any[];
-    soilTypes: any[];
-    countries: any[];
-    regions: any[];
-    zones: any[];
+  contractTypes: any[];
+  soilTypes: any[];
+  areaTypes: any[];
+  countries: any[];
+  regions: any[];
+  zones: any[];
   }
 ) => {
   const project = proposalBundle.project;
@@ -198,7 +226,7 @@ export const mapProposalBundleToFormDataWithMetadata = (
     nearWaterBody: siteRisks?.near_water_body === 1 ? "yes" : "no",
     floodProneZone: siteRisks?.flood_prone_zone === 1 ? "yes" : "no", 
     withinCityCenter: siteRisks?.within_city_center === "yes" || siteRisks?.within_city_center === 1 ? "yes" : "no",
-    cityAreaType: siteRisks?.area_type || siteRisks?.city_area_type || "",
+    cityAreaType: findAreaTypeOption(siteRisks?.area_type || siteRisks?.city_area_type, metadata.areaTypes),
     soilType: findSoilTypeOption(siteRisks?.soil_type, metadata.soilTypes),
     existingStructure: siteRisks?.existing_structure === 1 ? "yes" : "no",
     blastingExcavation: (siteRisks?.blasting_or_deep_excavation === 1 || siteRisks?.blasting_excavation === 1) ? "yes" : "no",
