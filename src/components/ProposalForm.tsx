@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Building, MapPin, Calendar, DollarSign, Shield, FileText, Plus, Trash2, Car, Umbrella, RefreshCw } from "lucide-react";
+import { Building, MapPin, Calendar, DollarSign, Shield, FileText, Plus, Trash2, Car, Umbrella } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { OpenStreetMapDialog } from "./OpenStreetMapDialog";
 import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesByProjectType } from "@/lib/masters-data";
@@ -231,125 +231,76 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     }
   };
 
-  // Process pending resume data after metadata loads with cascading updates
+  // Process pending resume data 5 seconds after all metadata is loaded
   useEffect(() => {
     if (pendingResumeData && masterData.projectTypes.length > 0 && brokerData && !brokerLoading.isLoading) {
-      console.log('📊 Metadata loaded, now processing resume data with cascading updates...');
+      console.log('🎯 All metadata loaded, waiting 5 seconds before processing resume data...');
+      console.log('- Master data loaded:', masterData.projectTypes.length, 'project types');
+      console.log('- Broker data loaded:', !!brokerData);
+      console.log('- Countries available:', brokerData.operatingCountries?.length || 0);
+      console.log('- Regions available:', brokerData.operatingRegions?.length || 0);
+      console.log('- Zones available:', brokerData.operatingZones?.length || 0);
       
-      // Step 1: Set basic fields and top-level dropdowns first
-      const basicMappedData = mapProposalBundleToFormDataWithMetadata(pendingResumeData, {
-        projectTypes: masterData.projectTypes,
-        constructionTypes: masterData.constructionTypes,
-        roleTypes: masterData.roleTypes,
-        contractTypes: masterData.contractTypes,
-        soilTypes: masterData.soilTypes,
-        countries: brokerData.operatingCountries || [],
-        regions: brokerData.operatingRegions || [],
-        zones: brokerData.operatingZones || []
-      });
-      
-      console.log('🗂️ Setting basic form data:', basicMappedData);
-      console.log('🌍 Geographic values to set:', {
-        country: basicMappedData.country,
-        region: basicMappedData.region, 
-        zone: basicMappedData.zone
-      });
-      console.log('🌍 Available geographic options:', {
-        countries: brokerData.operatingCountries?.slice(0, 3),
-        regions: brokerData.operatingRegions?.slice(0, 3),
-        zones: brokerData.operatingZones?.slice(0, 3)
-      });
-      
-      setFormData(basicMappedData);
-      
-      // Step 2: Set country first and wait for regions to load
-      setTimeout(() => {
-        console.log('🔄 Step 2: Setting country...');
-        console.log('🌍 Setting country to:', basicMappedData.country);
-        setFormData(prev => ({
-          ...prev,
-          country: basicMappedData.country,
-          projectType: basicMappedData.projectType
-        }));
+      // Wait 5 seconds to ensure all dropdown options are fully loaded
+      const delayTimer = setTimeout(() => {
+        console.log('⏰ 5 seconds passed, now processing resume data...');
         
-        // Step 3: Wait longer for region options to load, then set region
-        setTimeout(() => {
-          console.log('🔄 Step 3: Setting region...');
-          console.log('🗺️ Setting region to:', basicMappedData.region);
-          setFormData(prev => ({
-            ...prev,
-            region: basicMappedData.region,
-            subProjectType: basicMappedData.subProjectType
-          }));
-          
-          // Step 4: Wait for zone options to load, then set zone
-          setTimeout(() => {
-            console.log('🔄 Step 4: Setting zone...');
-            console.log('🏙️ Setting zone to:', basicMappedData.zone);
-            setFormData(prev => ({
-              ...prev,
-              zone: basicMappedData.zone
-            }));
-            
-            console.log('✅ All cascading form data applied successfully');
-          }, 500); // Increased delay for zone
-        }, 500); // Increased delay for region
-      }, 500); // Increased delay for country
+        // Map the proposal bundle data to form data with metadata
+        const mappedFormData = mapProposalBundleToFormDataWithMetadata(pendingResumeData, {
+          projectTypes: masterData.projectTypes,
+          constructionTypes: masterData.constructionTypes,
+          roleTypes: masterData.roleTypes,
+          contractTypes: masterData.contractTypes,
+          soilTypes: masterData.soilTypes,
+          countries: brokerData.operatingCountries || [],
+          regions: brokerData.operatingRegions || [],
+          zones: brokerData.operatingZones || []
+        });
+        
+        console.log('🗂️ Mapped form data after 5-second delay:', mappedFormData);
+        console.log('🌍 Geographic values to set:', {
+          country: mappedFormData.country,
+          region: mappedFormData.region, 
+          zone: mappedFormData.zone
+        });
+        console.log('🔍 Original API values:', {
+          country: pendingResumeData.project?.country,
+          region: pendingResumeData.project?.region,
+          zone: pendingResumeData.project?.zone,
+          projectType: pendingResumeData.project?.project_type,
+          subProjectType: pendingResumeData.project?.sub_project_type
+        });
+        console.log('🎯 Available options at time of mapping:');
+        console.log('  Countries:', brokerData.operatingCountries?.slice(0, 5));
+        console.log('  Regions:', brokerData.operatingRegions?.slice(0, 5));
+        console.log('  Zones:', brokerData.operatingZones?.slice(0, 5));
+        console.log('  Project Types:', masterData.projectTypes?.slice(0, 5));
+        
+        console.log('🔍 Detailed mapping input:');
+        console.log('  API country:', pendingResumeData.project?.country);
+        console.log('  API region:', pendingResumeData.project?.region);
+        console.log('  API zone:', pendingResumeData.project?.zone);
+        console.log('  API project_type:', pendingResumeData.project?.project_type);
+        console.log('  API sub_project_type:', pendingResumeData.project?.sub_project_type);
+        console.log('  API construction_type:', pendingResumeData.project?.construction_type);
+        
+        // Apply all form data at once (no cascading delays needed after 5-second wait)
+        setFormData(mappedFormData);
+        
+        console.log('✅ Resume data applied successfully after 5-second delay');
+        
+        // Clear pending data
+        setPendingResumeData(null);
+      }, 5000); // 5-second delay
       
-      // Clear pending data
-      setPendingResumeData(null);
+      // Cleanup timeout on unmount or dependency change
+      return () => {
+        clearTimeout(delayTimer);
+      };
     }
   }, [pendingResumeData, masterData.projectTypes, brokerData, brokerLoading.isLoading]);
 
-  // Function to re-apply resume data (for tab switching)
-  const reapplyResumeData = () => {
-    if (!storedResumeData || !masterData.projectTypes.length || !brokerData) {
-      console.log('⏭️ Cannot reapply resume data - missing requirements');
-      return;
-    }
 
-    console.log('🔄 Re-applying resume data for current tab...');
-    
-    // Map the data again with current metadata
-    const mappedFormData = mapProposalBundleToFormDataWithMetadata(storedResumeData, {
-      projectTypes: masterData.projectTypes,
-      constructionTypes: masterData.constructionTypes,
-      roleTypes: masterData.roleTypes,
-      contractTypes: masterData.contractTypes,
-      soilTypes: masterData.soilTypes,
-      countries: brokerData.operatingCountries || [],
-      regions: brokerData.operatingRegions || [],
-      zones: brokerData.operatingZones || []
-    });
-
-    // Apply with cascading updates
-    setFormData(mappedFormData);
-    
-    setTimeout(() => {
-      setFormData(prev => ({
-        ...prev,
-        country: mappedFormData.country,
-        projectType: mappedFormData.projectType
-      }));
-      
-      setTimeout(() => {
-        setFormData(prev => ({
-          ...prev,
-          region: mappedFormData.region,
-          subProjectType: mappedFormData.subProjectType
-        }));
-        
-        setTimeout(() => {
-          setFormData(prev => ({
-            ...prev,
-            zone: mappedFormData.zone
-          }));
-        }, 300);
-      }, 300);
-    }, 300);
-
-    console.log('✅ Resume data re-applied successfully');
-  };
 
   // Initialize fresh temporary storage for new quote session
   const initializeFreshQuoteStorage = () => {
@@ -1205,6 +1156,24 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     }
     return getDefaultFormData();
   });
+
+  // Additional debugging for dropdown values - placed after formData declaration
+  useEffect(() => {
+    if (isResumeMode && formData.country) {
+      console.log('🎯 Current form data state:');
+      console.log('  Country in formData:', formData.country);
+      console.log('  Region in formData:', formData.region);
+      console.log('  Zone in formData:', formData.zone);
+      console.log('  Project Type in formData:', formData.projectType);
+      console.log('  Sub Project Type in formData:', formData.subProjectType);
+      
+      console.log('🎯 Available options:');
+      console.log('  Countries:', brokerData?.operatingCountries?.slice(0, 5));
+      console.log('  Regions:', brokerData?.operatingRegions?.slice(0, 5));
+      console.log('  Zones:', brokerData?.operatingZones?.slice(0, 5));
+      console.log('  Project Types:', masterData.projectTypes?.slice(0, 5));
+    }
+  }, [isResumeMode, formData.country, formData.region, formData.zone, formData.projectType, formData.subProjectType, brokerData, masterData.projectTypes]);
 
   // Rule engine for default calculations
   const calculateDefaultValues = () => {
@@ -2416,6 +2385,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-gray-600">Loading quote data...</p>
             <p className="text-sm text-gray-500 mt-2">Resuming quote {resumeQuoteId}</p>
+            <p className="text-xs text-gray-400 mt-1">Preparing form data for optimal experience...</p>
           </div>
         </div>
       </section>
@@ -2429,22 +2399,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
           <CardHeader className="px-4 sm:px-6">
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <div className="flex items-center justify-between w-full">
-                  <CardTitle className="text-xl">
-                    {isResumeMode ? 'Resume Quote' : location.state?.editingQuote ? 'Edit Quote' : 'Create New Quote'}
-                  </CardTitle>
-                  {isResumeMode && storedResumeData && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={reapplyResumeData}
-                      className="flex items-center gap-2"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      Reload Data
-                    </Button>
-                  )}
-                </div>
+                <CardTitle className="text-xl">
+                  {isResumeMode ? 'Resume Quote' : location.state?.editingQuote ? 'Edit Quote' : 'Create New Quote'}
+                </CardTitle>
                 {quoteReferenceNumber && currentStep >= 1 && (
                   <div className="text-sm text-gray-900">
                     Quote No. : {quoteReferenceNumber}

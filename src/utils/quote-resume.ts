@@ -62,9 +62,14 @@ const findGeographicOption = (value: string | null | undefined, options: any[]):
   }
   
   console.log(`🌍 Finding geographic match for "${value}" in ${options.length} options`);
-  console.log(`🌍 Available options:`, options.slice(0, 3)); // Show first 3 for debugging
+  console.log(`🌍 Available options (first 5):`, options.slice(0, 5).map(opt => ({
+    label: opt.label || opt.name || opt,
+    value: opt.value || opt,
+    original: opt
+  })));
   
   const normalizedValue = normalizeString(value);
+  console.log(`🔍 Normalized search value: "${normalizedValue}"`);
   
   // Try exact match first
   let match = options.find(option => {
@@ -72,6 +77,10 @@ const findGeographicOption = (value: string | null | undefined, options: any[]):
     const optionValue = option.value || option;
     const labelMatch = normalizeString(optionLabel) === normalizedValue;
     const valueMatch = normalizeString(optionValue) === normalizedValue;
+    
+    console.log(`🔍 Checking option: label="${optionLabel}", value="${optionValue}"`);
+    console.log(`    Normalized: label="${normalizeString(optionLabel)}", value="${normalizeString(optionValue)}"`);
+    console.log(`    Matches: label=${labelMatch}, value=${valueMatch}`);
     
     if (labelMatch || valueMatch) {
       console.log(`✅ Geographic exact match found: "${optionLabel}" or "${optionValue}" for "${value}"`);
@@ -82,8 +91,10 @@ const findGeographicOption = (value: string | null | undefined, options: any[]):
   
   // For countries like "UNITED-ARAB-EMIRATES", try matching with spaces
   if (!match && value) {
+    console.log(`🔄 Trying space replacement for "${value}"`);
     const valueWithSpaces = value.replace(/-/g, ' ');
     const normalizedWithSpaces = normalizeString(valueWithSpaces);
+    console.log(`🔍 Space-replaced value: "${valueWithSpaces}" -> normalized: "${normalizedWithSpaces}"`);
     
     match = options.find(option => {
       const optionLabel = option.label || option.name || option;
@@ -94,6 +105,23 @@ const findGeographicOption = (value: string | null | undefined, options: any[]):
       }
       
       return spaceMatch;
+    });
+  }
+  
+  // Try partial matching for better coverage
+  if (!match && value) {
+    console.log(`🔄 Trying partial matching for "${value}"`);
+    match = options.find(option => {
+      const optionLabel = option.label || option.name || option;
+      const optionValue = option.value || option;
+      const partialLabelMatch = normalizeString(optionLabel).includes(normalizedValue) || normalizedValue.includes(normalizeString(optionLabel));
+      const partialValueMatch = normalizeString(optionValue).includes(normalizedValue) || normalizedValue.includes(normalizeString(optionValue));
+      
+      if (partialLabelMatch || partialValueMatch) {
+        console.log(`✅ Geographic partial match found: "${optionLabel}" or "${optionValue}" for "${value}"`);
+      }
+      
+      return partialLabelMatch || partialValueMatch;
     });
   }
   
