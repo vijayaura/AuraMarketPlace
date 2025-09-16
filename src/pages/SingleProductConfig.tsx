@@ -1345,11 +1345,11 @@ const SingleProductConfig = () => {
               ...prev,
               details: {
                 ...prev.details,
-                validityDays: String(configData.validity_days || ''),
-                backdateWindow: String(configData.backdate_days || ''),
-                countries: configData.operating_countries || [],
-                regions: configData.operating_regions || [],
-                zones: configData.operating_zones || [],
+                validityDays: String(configData?.validity_days || ''),
+                backdateWindow: String(configData?.backdate_days || ''),
+                countries: configData?.operating_countries || [],
+                regions: configData?.operating_regions || [],
+                zones: configData?.operating_zones || [],
               }
             }));
 
@@ -5059,6 +5059,66 @@ const SingleProductConfig = () => {
     }
   };
 
+  // Handle saving consultant roles configuration
+  const handleSaveConsultantRolesConfiguration = async (formData: {[key: string]: any}) => {
+    const insurerId = getInsurerCompanyId();
+    const productId = product?.id;
+    
+    if (!insurerId || !productId) {
+      toast({
+        title: 'Error',
+        description: 'Unable to determine insurer ID or product ID.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsSavingConsultantRolesConfig(true);
+    
+    try {
+      // Import the API function
+      const { saveConsultantRoles } = await import('@/lib/api/insurers');
+      
+      // Transform form data to API format
+      const consultantRolesData = Object.entries(formData || {}).map(([name, config]: [string, any]) => ({
+        name,
+        pricing_type: config.pricingType === 'fixed' ? 'FIXED_RATE' : 'PERCENTAGE' as any,
+        value: parseFloat(config.value || '0'),
+        quote_option: config.quoteOption === 'no-quote' ? 'NO_QUOTE' : 'QUOTE' as any,
+        display_order: 1,
+        is_active: true
+      }));
+
+      const requestBody = {
+        consultant_roles_config: {
+          items: consultantRolesData
+        }
+      };
+
+      console.log('💾 Saving consultant roles configuration:', requestBody);
+      
+      await saveConsultantRoles(insurerId, String(productId), requestBody);
+      
+      toast({
+        title: 'Success',
+        description: 'Consultant roles configuration saved successfully.',
+      });
+      
+      // Refresh the data
+      await fetchConsultantRolesConfig();
+      
+    } catch (error) {
+      console.error('❌ Error saving consultant roles configuration:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save consultant roles configuration. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSavingConsultantRolesConfig(false);
+    }
+  };
+
   // Placeholder for other save operations
   const saveConfiguration = () => {
     toast({
@@ -6303,6 +6363,8 @@ const SingleProductConfig = () => {
                            consultantRolesConfigData={consultantRolesConfigData}
                            isLoadingConsultantRolesConfig={isLoadingConsultantRolesConfig}
                            consultantRolesConfigError={consultantRolesConfigError}
+                           isSavingConsultantRolesConfig={isSavingConsultantRolesConfig}
+                           handleSaveConsultantRolesConfiguration={handleSaveConsultantRolesConfiguration}
                            securityTypesConfigData={securityTypesConfigData}
                            isLoadingSecurityTypesConfig={isLoadingSecurityTypesConfig}
                            securityTypesConfigError={securityTypesConfigError}

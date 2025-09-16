@@ -114,6 +114,8 @@ export type MasterDataTabsProps = {
   consultantRolesConfigData: any[];
   isLoadingConsultantRolesConfig: boolean;
   consultantRolesConfigError: string | null;
+  isSavingConsultantRolesConfig: boolean;
+  handleSaveConsultantRolesConfiguration: (formData: {[key: string]: any}) => Promise<void>;
 
   // Security Types Configuration props
   securityTypesConfigData: any[];
@@ -234,6 +236,8 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
   consultantRolesConfigData,
   isLoadingConsultantRolesConfig,
   consultantRolesConfigError,
+  isSavingConsultantRolesConfig,
+  handleSaveConsultantRolesConfiguration,
 
   // Security Types Configuration props
   securityTypesConfigData,
@@ -1215,6 +1219,8 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                 ? () => handleSaveSoilTypesConfiguration(soilTypesFormData)
                 : activePricingTab === "subcontractor-types"
                 ? () => handleSaveSubcontractorTypesConfiguration(subcontractorTypesFormData)
+                : activePricingTab === "consultant-roles"
+                ? () => handleSaveConsultantRolesConfiguration(consultantRolesFormData)
                 : activePricingTab === "security-types"
                 ? () => handleSaveSecurityTypesConfiguration(securityTypesFormData)
                 : activePricingTab === "area-types"
@@ -1239,6 +1245,8 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
                 ? (config.isLoading || isSavingSoilTypesConfig)
                 : activePricingTab === "subcontractor-types"
                 ? (config.isLoading || isSavingSubcontractorTypesConfig)
+                : activePricingTab === "consultant-roles"
+                ? (config.isLoading || isSavingConsultantRolesConfig)
                 : activePricingTab === "security-types"
                 ? (config.isLoading || isSavingSecurityTypesConfig)
                 : activePricingTab === "area-types"

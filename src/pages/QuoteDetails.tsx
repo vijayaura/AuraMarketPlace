@@ -377,64 +377,123 @@ const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
   doc.save(fileName);
 };
 
-// Quote PDF Generation Function (using same format as extensions dialog)
-const generateQuotePDF = (proposalBundle: ProposalBundleResponse, extensions: any[] = []) => {
-  // Convert ProposalBundleResponse to the format expected by generateInsuranceProposalPDF
-  const proposalData = {
-    project: {
-      project_id: proposalBundle.project?.project_id || proposalBundle.quote_meta?.quote_id,
-      project_name: proposalBundle.project?.project_name || 'Project Name',
-      client_name: proposalBundle.project?.client_name || proposalBundle.insured?.details?.insured_name || 'Client Name',
-      address: proposalBundle.project?.address || 'N/A',
-      region: proposalBundle.project?.region || 'N/A',
-      country: proposalBundle.project?.country || 'N/A'
-    },
-    insured: proposalBundle.insured,
-    contract_structure: proposalBundle.contract_structure,
-    cover_requirements: proposalBundle.cover_requirements,
-    quote: {
-      id: proposalBundle.quote_meta?.quote_id || 0,
-      planName: proposalBundle.plans?.[0]?.insurer_name || 'Insurance Plan',
-      insurerName: proposalBundle.plans?.[0]?.insurer_name || 'Insurer',
-      annualPremium: proposalBundle.plans?.[0]?.premium_amount || 0,
-      coverageAmount: parseFloat(proposalBundle.project?.sum_insured || '0'),
-      deductible: `AED ${proposalBundle.plans?.[0]?.extensions?.selected_plan?.deductible || 0}`,
-      rating: 5,
-      keyCoverage: ['Contractor All Risk', 'Third Party Liability'],
-      benefits: ['Material Damage', 'Third Party Liability', 'Professional Indemnity'],
-      validationResult: null,
-      pricingConfig: null
-    },
-    cewData: {
-      selectedItems: extensions.map(ext => ({
-        name: ext.title,
-        code: ext.clause_code,
-        isSelected: true,
-        isMandatory: ext.is_mandatory,
-        selectedOptionId: ext.policy_key,
-        options: [{
-          id: ext.policy_key,
-          label: ext.title,
-          code: ext.clause_code,
-          impact: ext.extension_data
-        }]
-      })),
-      mandatoryAdjustments: { percentage: 0, fixed: 0 },
-      optionalAdjustments: { percentage: 0, fixed: 0 },
-      tplAdjustment: 0
-    },
-    premiumSummary: {
-      basePremium: proposalBundle.plans?.[0]?.extensions?.selected_plan?.base_premium || 0,
-      tplAdjustment: 0,
-      mandatoryAdjustments: 0,
-      optionalAdjustments: 0,
-      totalBeforeCommission: proposalBundle.plans?.[0]?.premium_amount || 0,
-      brokerCommission: 0,
-      totalAnnualPremium: proposalBundle.plans?.[0]?.premium_amount || 0
-    }
+// Generate Contractors All Risks Insurance Quote PDF using jsPDF
+const generateCARQuotePDF = (proposalBundle: ProposalBundleResponse, productBundle: any) => {
+  const doc = new jsPDF("p", "mm", "a4");
+  doc.setFont("helvetica", "normal");
+
+  // Map proposal bundle data to PDF format
+  const data = {
+    quotation_reference: `${proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || 'REF123'} / ${new Date().toLocaleDateString('en-GB')}`,
+    proposer: `M/s ${proposalBundle.insured?.details?.insured_name || 'ABC Ltd'} as Principal &/or M/s ${proposalBundle.contract_structure?.details?.main_contractor || 'XYZ Ltd'} as Contractor`,
+    scope_of_work: `Construction of ${proposalBundle.project?.project_name || 'residential project'}`,
+    period_of_insurance: `${proposalBundle.project?.construction_period_months || 12} Months`,
+    maintenance_period: `${proposalBundle.project?.maintenance_period_months || 12} Months`,
+    site_of_erection: proposalBundle.project?.address || 'Dubai, UAE',
+    section_i_text: "Any unforeseen and sudden physical loss and/or damage to the contract works, temporary works, materials and other property insured whilst at the contract site from any cause other than those specifically excluded, occurring during the period of insurance.",
+    section_ii_text: "The Company will indemnify the Insured against legal liability for bodily injury to third parties and/or accidental damage to third party property arising in direct connection with the performance of the contract.",
+    contract_value: formatCurrency(proposalBundle.cover_requirements?.contract_works || 0),
+    surrounding_property: formatCurrency(proposalBundle.cover_requirements?.principals_property || 0),
+    plant_machinery: formatCurrency(proposalBundle.cover_requirements?.plant_and_equipment || 0),
+    total_sum: formatCurrency(
+      (parseFloat(String(proposalBundle.cover_requirements?.contract_works || 0))) + 
+      (parseFloat(String(proposalBundle.cover_requirements?.principals_property || 0))) + 
+      (parseFloat(String(proposalBundle.cover_requirements?.plant_and_equipment || 0)))
+    ),
+    limit_of_liability: `${formatCurrency((proposalBundle.cover_requirements as any)?.tpl_limit || 0)} any one accident`,
+    deductibles: `- AED ${proposalBundle.plans?.[0]?.extensions?.selected_plan?.deductible || 5000}/- per major peril loss\n- AED 3,500/- per other cause\n- AED 7,500/- for TPL damage\n- AED 10,000/- for underground property`,
+    premium: `AED ${formatCurrency(proposalBundle.plans?.[0]?.premium_amount || 0)} including policy fees`,
+    cover: "Standard CAR Cover with Munich Re wordings including all risks coverage for material damage and third party liability as per policy terms and conditions.",
+    exclusions: "- Seepage, Pollution and Contamination\n- Terrorism & Political risks\n- War, invasion, civil war, rebellion\n- Nuclear risks\n- Consequential loss\n- Professional indemnity\n- Defects in design, plan, specification\n- Wear and tear, gradual deterioration",
+    subjectivity: proposalBundle.insured?.claims && proposalBundle.insured.claims.length > 0 ? 
+      `Previous claims disclosed: ${proposalBundle.insured.claims.length} claim(s)` : 
+      "No known or reported claims at the time of binding",
+    validity: `30 days from Date of Issuance (${new Date().toLocaleDateString('en-GB')})`,
+    warranties: "- Warranty concerning construction material quality and standards\n- No smoking instruction to staff at construction site\n- Work areas properly cordoned off and secured\n- Compliance with local building codes and safety regulations"
   };
-  
-  generateInsuranceProposalPDF(proposalData);
+
+  // Helper function to format currency
+  function formatCurrency(amount) {
+    const num = parseFloat(amount) || 0;
+    return num.toLocaleString('en-US');
+  }
+
+  // Title
+  doc.setFontSize(14);
+  doc.text("UNITED INSURANCE COMPANY P", 10, 20);
+  doc.setFontSize(12);
+  doc.text("QUOTATION FOR CONTRACTORS ALL RISKS INSURANCE", 10, 30);
+
+  // Quotation Reference
+  doc.setFontSize(10);
+  doc.text(`Quotation Reference: ${data.quotation_reference}`, 10, 40);
+
+  // Proposer
+  doc.text(`Proposer: ${data.proposer}`, 10, 50);
+
+  // Scope of Work
+  doc.text(`Scope of Work: ${data.scope_of_work}`, 10, 60);
+
+  // Period & Maintenance
+  doc.text(`Period of Insurance: ${data.period_of_insurance}`, 10, 70);
+  doc.text(`Maintenance Period: ${data.maintenance_period}`, 10, 80);
+
+  // Site of erection
+  doc.text(`Site of Erection: ${data.site_of_erection}`, 10, 90);
+
+  // Section I & II
+  doc.setFontSize(11);
+  doc.text("Interest Covered", 10, 105);
+  doc.setFontSize(10);
+  doc.text("Section I – Material Damage", 10, 115);
+  doc.text(data.section_i_text, 10, 122, { maxWidth: 190 });
+  doc.text("Section II – Third Party Liability", 10, 140);
+  doc.text(data.section_ii_text, 10, 147, { maxWidth: 190 });
+
+  // Sum Insured Table
+  doc.setFontSize(11);
+  doc.text("Sum Insured (AED)", 10, 165);
+  doc.setFontSize(10);
+  doc.text(`Contract Value: ${data.contract_value}`, 10, 175);
+  doc.text(`Principal existing surrounding property: ${data.surrounding_property}`, 10, 182);
+  doc.text(`Contractors Plant & Machinery: ${data.plant_machinery}`, 10, 189);
+  doc.text(`Total: ${data.total_sum}`, 10, 196);
+
+  // Section II Limit
+  doc.text(`Section II Limit of Liability: ${data.limit_of_liability}`, 10, 210);
+
+  // Deductibles
+  doc.text("Deductibles:", 10, 220);
+  doc.text(data.deductibles, 10, 227, { maxWidth: 190 });
+
+  // Premium
+  doc.text(`Premium: ${data.premium}`, 10, 245);
+
+  // Cover
+  doc.text("Cover:", 10, 255);
+  doc.text(data.cover, 10, 262, { maxWidth: 190 });
+
+  // Exclusions
+  doc.addPage();
+  doc.setFontSize(12);
+  doc.text("Exclusions", 10, 20);
+  doc.setFontSize(10);
+  doc.text(data.exclusions, 10, 30, { maxWidth: 190 });
+
+  // Subjectivity
+  doc.text(`Subjectivity: ${data.subjectivity}`, 10, 100);
+
+  // Validity
+  doc.text(`Validity: ${data.validity}`, 10, 110);
+
+  // Warranties
+  doc.text("Warranties:", 10, 120);
+  doc.text(data.warranties, 10, 127, { maxWidth: 190 });
+
+  // Save
+  doc.save(`CAR_Quote_${proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || 'Unknown'}.pdf`);
+
+  console.log('📄 Generated CAR Quote PDF with mapped values:', data);
 };
 
 const QuoteDetails = () => {
@@ -678,7 +737,7 @@ const QuoteDetails = () => {
               variant="outline" 
               size="sm" 
               className="flex items-center gap-2"
-              onClick={() => proposalBundle && generateQuotePDF(proposalBundle, selectedExtensions)}
+              onClick={() => proposalBundle && generateCARQuotePDF(proposalBundle, productBundle)}
             >
               <Download className="h-4 w-4" />
                 Download Quote

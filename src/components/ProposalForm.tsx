@@ -2387,7 +2387,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     );
   }
 
-  return <section className="pt-6 pb-20 bg-background min-h-screen">
+  return (
+    <section className="pt-6 pb-20 bg-background min-h-screen">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <Card className="shadow-large border-border w-full overflow-hidden">
@@ -3934,5 +3935,6 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         </div>
       )}
 
-    </section>;
+    </section>
+  );
 };
