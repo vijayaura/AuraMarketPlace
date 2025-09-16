@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import InsurerForm, { InsurerFormData } from "@/components/InsurerForm";
 import { createInsurer, type CreateInsurerRequest, listMasterCountries, listMasterRegions, listMasterZones } from "@/lib/api";
 import FormSkeleton from "@/components/loaders/FormSkeleton";
@@ -18,10 +18,42 @@ const CreateInsurer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Helper function to convert file to base64
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('Failed to convert file to base64'));
+        }
+      };
+      reader.onerror = () => reject(new Error('Error reading file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
   const onSubmit = async (values: InsurerFormData) => {
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
+      // Convert logo file to base64 if present
+      let logoBase64 = null;
+      if (logoFile) {
+        try {
+          logoBase64 = await convertFileToBase64(logoFile);
+        } catch (error) {
+          console.error('Error converting logo to base64:', error);
+          toast({
+            title: 'Logo Upload Error',
+            description: 'Failed to process logo file. Please try again.',
+            variant: 'destructive'
+          });
+          return;
+        }
+      }
+
       // Load master lists to map selected ids to labels (ensures consistency with InsurerForm)
       const [masterCountries, masterRegions, masterZones] = await Promise.all([
         listMasterCountries(),
@@ -54,7 +86,7 @@ const CreateInsurer = () => {
         phone: values.phone,
         address: values.address,
         // website removed
-        company_logo: logoFile ? logoFile.name : null,
+        company_logo: logoBase64,
         operating_countries: selectedCountryLabels.length ? selectedCountryLabels : null,
         operating_regions: selectedRegionLabels.length ? selectedRegionLabels : null,
         operating_zones: selectedZoneLabels.length ? selectedZoneLabels : null,
@@ -85,17 +117,24 @@ const CreateInsurer = () => {
   };
 
   const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🖼️ Logo file change event triggered');
     const file = event.target.files?.[0];
+    console.log('📁 Selected file:', file);
+    
     if (file) {
       if (!file.type.startsWith('image/')) {
+        console.log('❌ Invalid file type:', file.type);
         toast({ title: 'Invalid File Type', description: 'Please upload an image file', variant: 'destructive' });
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
+        console.log('❌ File too large:', file.size);
         toast({ title: 'File Too Large', description: 'Please upload an image smaller than 5MB', variant: 'destructive' });
         return;
       }
+      console.log('✅ Logo file accepted:', file.name, file.size, 'bytes');
       setLogoFile(file);
+      toast({ title: 'Logo Uploaded', description: `${file.name} has been selected successfully` });
     }
   };
 
@@ -148,11 +187,30 @@ const CreateInsurer = () => {
               <CardContent>
                 {!logoFile ? (
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                    <label htmlFor="insurer-logo-file" className="cursor-pointer">
-                      <span className="text-sm font-medium text-primary hover:text-primary/80">Upload logo image</span>
-                      <input id="insurer-logo-file" type="file" className="sr-only" accept="image/*" onChange={handleLogoFileChange} />
-                    </label>
-                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 5MB</p>
+                    <input 
+                      id="insurer-logo-file" 
+                      type="file" 
+                      className="sr-only" 
+                      accept="image/*" 
+                      onChange={handleLogoFileChange} 
+                    />
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Plus className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">Upload Company Logo</p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => document.getElementById('insurer-logo-file')?.click()}
+                      >
+                        Choose File
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between p-3 bg-muted rounded-lg">

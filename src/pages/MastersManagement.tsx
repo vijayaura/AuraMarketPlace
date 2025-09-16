@@ -648,7 +648,7 @@ const MastersManagement = () => {
               Manage sub project types linked to project types
             </CardDescription>
           </div>
-          <Dialog>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
@@ -855,7 +855,7 @@ const MastersManagement = () => {
               Manage document types required for quote creation
             </CardDescription>
           </div>
-          <Dialog>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
@@ -1075,7 +1075,7 @@ const MastersManagement = () => {
               Manage {type.replace('-', ' ')} for location hierarchy
             </CardDescription>
           </div>
-          <Dialog>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
