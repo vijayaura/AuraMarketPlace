@@ -240,6 +240,7 @@ const MastersManagement = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [editDialogOpenId, setEditDialogOpenId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState<boolean>(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState<boolean>(false);
 
   const handleAddItem = async (type: string, setterFunction: any, currentItems: any[]) => {
     if (!newItem.label) {
@@ -315,6 +316,7 @@ const MastersManagement = () => {
         };
         setterFunction([...currentItems, added]);
         setNewItem({ label: "", active: true });
+        setIsAddDialogOpen(false); // Close the dialog
         toast({ title: 'Success', description: `${added.label} has been added successfully` });
       }
     } catch (err: any) {
@@ -474,7 +476,7 @@ const MastersManagement = () => {
               Manage {type.replace('-', ' ')} options for the proposal form
             </CardDescription>
           </div>
-          <Dialog>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
