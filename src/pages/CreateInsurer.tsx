@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, Plus } from "lucide-react";
 import InsurerForm, { InsurerFormData } from "@/components/InsurerForm";
 import { createInsurer, type CreateInsurerRequest, listMasterCountries, listMasterRegions, listMasterZones } from "@/lib/api";
+import { uploadFile } from "@/lib/api/quotes";
 import FormSkeleton from "@/components/loaders/FormSkeleton";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,39 +19,51 @@ const CreateInsurer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Helper function to convert file to base64
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          resolve(reader.result);
-        } else {
-          reject(new Error('Failed to convert file to base64'));
-        }
-      };
-      reader.onerror = () => reject(new Error('Error reading file'));
-      reader.readAsDataURL(file);
-    });
+  // Helper function to upload logo file using existing upload API
+  const uploadLogoFile = async (file: File): Promise<string> => {
+    try {
+      console.log('📤 Uploading logo file using existing upload API:', file.name);
+      const uploadResult = await uploadFile(file);
+      console.log('✅ Upload result:', uploadResult);
+      
+      // Extract the URL from the first uploaded file
+      if (uploadResult.files && uploadResult.files.length > 0) {
+        const uploadedFile = uploadResult.files[0];
+        console.log('📁 Uploaded file details:', uploadedFile);
+        return uploadedFile.url || uploadedFile.s3_uri || '';
+      } else {
+        throw new Error('No files in upload response');
+      }
+    } catch (error) {
+      console.error('❌ Logo upload error:', error);
+      throw new Error('Failed to upload logo file');
+    }
   };
 
   const onSubmit = async (values: InsurerFormData) => {
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      // Convert logo file to base64 if present
-      let logoBase64 = null;
+      // Upload logo file if present
+      let logoUrl = null;
       if (logoFile) {
         try {
-          logoBase64 = await convertFileToBase64(logoFile);
+          console.log('🚀 Uploading logo file:', logoFile.name);
+          logoUrl = await uploadLogoFile(logoFile);
+          console.log('✅ Logo uploaded successfully:', logoUrl);
+          toast({
+            title: 'Logo Uploaded',
+            description: 'Company logo uploaded successfully',
+          });
         } catch (error) {
-          console.error('Error converting logo to base64:', error);
+          console.error('Error uploading logo:', error);
           toast({
             title: 'Logo Upload Error',
-            description: 'Failed to process logo file. Please try again.',
+            description: 'Failed to upload logo file. Creating insurer without logo.',
             variant: 'destructive'
           });
-          return;
+          // Continue without logo instead of failing completely
+          logoUrl = null;
         }
       }
 
@@ -86,7 +99,7 @@ const CreateInsurer = () => {
         phone: values.phone,
         address: values.address,
         // website removed
-        company_logo: logoBase64,
+        company_logo: logoUrl,
         operating_countries: selectedCountryLabels.length ? selectedCountryLabels : null,
         operating_regions: selectedRegionLabels.length ? selectedRegionLabels : null,
         operating_zones: selectedZoneLabels.length ? selectedZoneLabels : null,
