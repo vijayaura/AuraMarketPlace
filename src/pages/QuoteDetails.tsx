@@ -497,7 +497,7 @@ const generateCARQuotePDF = (proposalBundle: ProposalBundleResponse, productBund
 };
 
 const QuoteDetails = () => {
-  const { id: quoteId } = useParams<{ id: string }>();
+  const { quoteId } = useParams<{ quoteId: string }>();
   const location = useLocation();
   const [proposalBundle, setProposalBundle] = useState<ProposalBundleResponse | null>(null);
   const [productBundle, setProductBundle] = useState<InsurerPricingConfigResponse | null>(null);
