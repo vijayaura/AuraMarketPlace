@@ -29,6 +29,18 @@ const InsurerLogin = () => {
       setIsSubmitting(true);
       setErrorMessage(null);
       const res = await login({ email: formData.email, password: formData.password });
+      
+      // Validate user role for insurer portal
+      if (res.user?.role !== 'insurer') {
+        setErrorMessage("Invalid credentials. This portal is for insurers only.");
+        toast({ 
+          title: "Access Denied", 
+          description: "Invalid credentials. This portal is for insurers only.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       setAuthToken(res.accessToken);
       setAuthTokens(res.accessToken, res.refreshToken);
       setAuthUser(res.user);

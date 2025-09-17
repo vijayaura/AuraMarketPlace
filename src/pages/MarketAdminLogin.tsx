@@ -29,6 +29,17 @@ const MarketAdminLogin = () => {
     try {
       setIsSubmitting(true);
       const res = await login({ email: formData.email, password: formData.password });
+      
+      // Validate user role for market admin portal
+      if (res.user?.role !== 'admin') {
+        toast({
+          title: "Access Denied",
+          description: "Invalid credentials. This portal is for administrators only.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       setAuthToken(res.accessToken);
       setAuthTokens(res.accessToken, res.refreshToken);
       setAuthUser(res.user);

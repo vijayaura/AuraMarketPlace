@@ -29,6 +29,18 @@ const BrokerLogin = () => {
       setIsSubmitting(true);
       setErrorMessage(null);
       const res = await login({ email: formData.email, password: formData.password });
+      
+      // Validate user role for broker portal
+      if (res.user?.role !== 'broker') {
+        setErrorMessage("Invalid credentials. This portal is for brokers only.");
+        toast({ 
+          title: "Access Denied", 
+          description: "Invalid credentials. This portal is for brokers only.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       setAuthToken(res.accessToken);
       setAuthTokens(res.accessToken, res.refreshToken);
       setAuthUser(res.user);
