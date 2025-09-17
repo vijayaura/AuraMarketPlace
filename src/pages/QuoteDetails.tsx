@@ -497,8 +497,13 @@ const generateCARQuotePDF = (proposalBundle: ProposalBundleResponse, productBund
 };
 
 const QuoteDetails = () => {
-  const { quoteId } = useParams<{ quoteId: string }>();
+  const { quoteId, id } = useParams<{ quoteId?: string; id?: string }>();
+  const actualQuoteId = quoteId || id;
   const location = useLocation();
+  
+  console.log('🔍 QuoteDetails component rendered');
+  console.log('🔍 URL params:', { quoteId, id, actualQuoteId });
+  console.log('🔍 Current location:', location.pathname);
   const [proposalBundle, setProposalBundle] = useState<ProposalBundleResponse | null>(null);
   const [productBundle, setProductBundle] = useState<InsurerPricingConfigResponse | null>(null);
   const [selectedExtensions, setSelectedExtensions] = useState<any[]>([]);
@@ -509,7 +514,7 @@ const QuoteDetails = () => {
 
   useEffect(() => {
     const loadQuoteData = async () => {
-      if (!quoteId) {
+      if (!actualQuoteId) {
         setError("Quote ID not found");
         setLoading(false);
         return;
@@ -519,11 +524,13 @@ const QuoteDetails = () => {
         setLoading(true);
         
         console.log('%cQuote Details Debug:', 'color: #ff1493; font-weight: bold;');
-        console.log('- Quote ID:', quoteId);
-        console.log('- API Endpoint: /api/v1/quotes/getProposalBundle/' + quoteId);
+        console.log('- Quote ID:', actualQuoteId);
+        console.log('- API Endpoint: /api/v1/quotes/getProposalBundle/' + actualQuoteId);
         console.log('- Current URL:', location.pathname);
+        console.log('- About to call getProposalBundle with:', parseInt(actualQuoteId));
         
-        const data = await getProposalBundle(parseInt(quoteId));
+        const data = await getProposalBundle(parseInt(actualQuoteId));
+        console.log('✅ API call successful, data received:', data);
         setProposalBundle(data);
         
         console.log('%cProposal Bundle loaded successfully:', 'color: #ff1493; font-weight: bold;', data);
@@ -548,7 +555,7 @@ const QuoteDetails = () => {
     };
 
     loadQuoteData();
-  }, [quoteId]);
+  }, [actualQuoteId]);
 
   // Process selected extensions when both proposalBundle and productBundle are loaded
   useEffect(() => {
