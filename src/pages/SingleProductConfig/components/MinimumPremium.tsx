@@ -77,7 +77,7 @@ const MinimumPremium: React.FC<MinimumPremiumProps> = ({
                         <th className="h-10 px-3 text-left align-middle font-medium w-[15%]">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
                         </th>
-                        <th className="h-10 px-3 text-left align-middle font-medium w-[35%]">
+                        <th className="h-10 px-3 text-left align-middle font-medium w-[30%]">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
                         </th>
                         <th className="h-10 px-3 text-left align-middle font-medium w-[20%]">
@@ -86,7 +86,7 @@ const MinimumPremium: React.FC<MinimumPremiumProps> = ({
                         <th className="h-10 px-3 text-left align-middle font-medium w-[15%]">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
                         </th>
-                        <th className="h-10 px-3 text-left align-middle font-medium w-[15%]">
+                        <th className="h-10 px-3 text-left align-middle font-medium w-[20%]">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
                         </th>
                       </tr>

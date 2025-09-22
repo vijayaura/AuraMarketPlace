@@ -110,10 +110,10 @@ export const SubProjectBaseRates = ({
             <TableHeader>
               <TableRow className="bg-muted/10">
                 <TableHead className="font-medium text-muted-foreground w-[15%] px-3">Project Type</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[35%] px-3">Sub Project Type</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[30%] px-3">Sub Project Type</TableHead>
                 <TableHead className="font-medium text-muted-foreground w-[20%] px-3">Pricing Type</TableHead>
                 <TableHead className="font-medium text-muted-foreground w-[15%] px-3">Base Rate</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[15%] px-3">Quote Option</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[20%] px-3">Quote Option</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
