@@ -425,6 +425,8 @@ export interface CoverRequirements {
   other_materials: string;
   principals_property: string;
   cross_liability_cover: string;
+  sum_insured: string;
+  computed_sum_insured: number;
   // Add more fields as needed based on the complete response
 }
 

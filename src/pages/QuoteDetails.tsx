@@ -722,15 +722,18 @@ const QuoteDetails = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-2"
-              onClick={() => window.location.href = `/customer/proposal?new=true&resume=${quoteId}`}
-            >
-              <Edit className="h-4 w-4" />
-              Continue Editing
-                </Button>
+            {/* Only show Continue Editing button for broker portal */}
+            {location.pathname.includes('/broker/') && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-2"
+                onClick={() => window.location.href = `/customer/proposal?new=true&resume=${actualQuoteId}`}
+              >
+                <Edit className="h-4 w-4" />
+                Continue Editing
+              </Button>
+            )}
             <Button 
               variant="outline" 
               size="sm" 
@@ -740,15 +743,18 @@ const QuoteDetails = () => {
               <Download className="h-4 w-4" />
                 Download Proposal
               </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-2"
-              onClick={() => proposalBundle && generateCARQuotePDF(proposalBundle, productBundle)}
-            >
-              <Download className="h-4 w-4" />
+            {/* Only show Download Quote button when plan selection is done */}
+            {proposalBundle?.plans && proposalBundle.plans.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-2"
+                onClick={() => proposalBundle && generateCARQuotePDF(proposalBundle, productBundle)}
+              >
+                <Download className="h-4 w-4" />
                 Download Quote
               </Button>
+            )}
           </div>
         </div>
       </div>

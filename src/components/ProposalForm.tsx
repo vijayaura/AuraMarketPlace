@@ -56,6 +56,18 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // For testing: Check if we want to go directly to declaration step
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('step') === 'declaration') {
+      setCurrentStep(7);
+      // Set mock data for testing declaration tab
+      localStorage.setItem('selected_insurer_id', '1');
+      localStorage.setItem('selected_product_id', '1');
+      localStorage.setItem('currentQuoteId', '123');
+    }
+  }, [location.search]);
   const { toast } = useToast();
   const {
     navigateBack
@@ -197,6 +209,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       // Also store it permanently for re-applying when switching tabs
       setStoredResumeData(proposalBundle);
       
+      // Set current proposal immediately for QuotesComparison component
+      setCurrentProposal(proposalBundle);
+      console.log('📋 Set currentProposal immediately for QuotesComparison:', proposalBundle);
+      
       // Set current quote ID and reference
       setCurrentQuoteId(parseInt(quoteId));
       setQuoteReferenceNumber(proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id?.toString() || null);
@@ -280,6 +296,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         
         // Apply all form data at once (no cascading delays needed after 5-second wait)
         setFormData(mappedFormData);
+        
+        // Set current proposal for QuotesComparison component
+        setCurrentProposal(pendingResumeData);
+        console.log('📋 Set currentProposal for QuotesComparison:', pendingResumeData);
         
         console.log('✅ Resume data applied successfully after 5-second delay');
         
@@ -1282,6 +1302,81 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     };
   };
 
+  // Helper function to check if a field should be validated
+  // Skip validation if the field is null, undefined, empty, or missing in the proposal bundle
+  const shouldValidateField = (fieldName: string, currentValue: any): boolean => {
+    // If we have stored resume data, check if the field was originally null/blank/missing
+    if (storedResumeData) {
+      const fieldValue = getFieldValueFromProposalBundle(storedResumeData, fieldName);
+      // If the original value was null, undefined, empty, or missing, don't validate
+      if (fieldValue === null || fieldValue === undefined || fieldValue === '' || fieldValue === 0 || fieldValue === false) {
+        console.log(`🚫 Skipping validation for ${fieldName} - original value was:`, fieldValue);
+        return false;
+      }
+    }
+    // If no resume data or field had a value, validate normally
+    return true;
+  };
+
+  // Helper function to get field value from proposal bundle
+  const getFieldValueFromProposalBundle = (proposalBundle: any, fieldName: string): any => {
+    // Map form field names to proposal bundle structure
+    const fieldMapping: Record<string, string> = {
+      projectName: 'project_details?.project_name',
+      projectType: 'project_details?.project_type',
+      subProjectType: 'project_details?.sub_project_type',
+      constructionType: 'project_details?.construction_type',
+      projectAddress: 'project_details?.project_address',
+      country: 'project_details?.country',
+      region: 'project_details?.region',
+      zone: 'project_details?.zone',
+      startDate: 'project_details?.start_date',
+      completionDate: 'project_details?.completion_date',
+      insuredName: 'insured_details?.insured_name',
+      roleOfInsured: 'insured_details?.role_of_insured',
+      mainContractor: 'contract_structure?.main_contractor',
+      principalOwner: 'contract_structure?.principal_owner',
+      contractType: 'contract_structure?.contract_type',
+      contractNumber: 'contract_structure?.contract_number',
+      experienceYears: 'contract_structure?.experience_years',
+      nearWaterBody: 'site_risks?.near_water_body',
+      floodProneZone: 'site_risks?.flood_prone_zone',
+      withinCityCenter: 'site_risks?.within_city_center',
+      cityAreaType: 'site_risks?.area_type',
+      soilType: 'site_risks?.soil_type',
+      existingStructure: 'site_risks?.existing_structure',
+      blastingExcavation: 'site_risks?.blasting_or_deep_excavation',
+      siteSecurityArrangements: 'site_risks?.site_security_arrangements',
+      sumInsuredMaterial: 'cover_requirements?.sum_insured_material',
+      sumInsuredPlant: 'cover_requirements?.sum_insured_plant',
+      sumInsuredTemporary: 'cover_requirements?.sum_insured_temporary',
+      otherMaterials: 'cover_requirements?.other_materials',
+      principalExistingProperty: 'cover_requirements?.principal_existing_property'
+    };
+
+    const fieldPath = fieldMapping[fieldName];
+    if (!fieldPath) {
+      console.log(`⚠️ No field mapping found for: ${fieldName}`);
+      return undefined;
+    }
+
+    // Navigate through the nested object path
+    const pathParts = fieldPath.split('?.');
+    let value = proposalBundle;
+    
+    for (const part of pathParts) {
+      if (value && typeof value === 'object' && part in value) {
+        value = value[part];
+      } else {
+        console.log(`⚠️ Field path not found for ${fieldName}: ${fieldPath} (stopped at: ${part})`);
+        return undefined;
+      }
+    }
+    
+    console.log(`📋 Field ${fieldName} value from proposal bundle:`, value);
+    return value;
+  };
+
   // Validate current step fields only
   const validateCurrentStep = (): boolean => {
     const errors: Record<string, string> = {};
@@ -1290,40 +1385,40 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
     switch (currentStep) {
       case 0: // Project Details step
         // Required text fields
-        if (!formData.projectName?.trim()) {
+        if (shouldValidateField('projectName', formData.projectName) && !formData.projectName?.trim()) {
           errors.projectName = "Project name is required";
         }
         
         // Required dropdown selections
-        if (!formData.projectType) {
+        if (shouldValidateField('projectType', formData.projectType) && !formData.projectType) {
           errors.projectType = "Project type must be selected";
         }
-        if (!formData.subProjectType) {
+        if (shouldValidateField('subProjectType', formData.subProjectType) && !formData.subProjectType) {
           errors.subProjectType = "Sub project type must be selected";
         }
-        if (!formData.constructionType) {
+        if (shouldValidateField('constructionType', formData.constructionType) && !formData.constructionType) {
           errors.constructionType = "Construction type must be selected";
         }
         
         // Required address fields
-        if (!formData.projectAddress?.trim()) {
+        if (shouldValidateField('projectAddress', formData.projectAddress) && !formData.projectAddress?.trim()) {
           errors.projectAddress = "Project address is required";
         }
-        if (!formData.country) {
+        if (shouldValidateField('country', formData.country) && !formData.country) {
           errors.country = "Country must be selected";
         }
-        if (!formData.region) {
+        if (shouldValidateField('region', formData.region) && !formData.region) {
           errors.region = "Region must be selected";
         }
-        if (!formData.zone) {
+        if (shouldValidateField('zone', formData.zone) && !formData.zone) {
           errors.zone = "Zone must be selected";
         }
         
         // Required date fields
-        if (!formData.startDate) {
+        if (shouldValidateField('startDate', formData.startDate) && !formData.startDate) {
           errors.startDate = "Start date is required";
         }
-        if (!formData.completionDate) {
+        if (shouldValidateField('completionDate', formData.completionDate) && !formData.completionDate) {
           errors.completionDate = "Completion date is required";
         }
         
@@ -1341,10 +1436,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         break;
         
       case 1: // Insured Details step
-        if (!formData.insuredName?.trim()) {
+        if (shouldValidateField('insuredName', formData.insuredName) && !formData.insuredName?.trim()) {
           errors.insuredName = "Insured name is required";
         }
-        if (!formData.roleOfInsured) {
+        if (shouldValidateField('roleOfInsured', formData.roleOfInsured) && !formData.roleOfInsured) {
           errors.roleOfInsured = "Role of insured must be selected";
         }
         if (!claimsDisclaimerAccepted) {
@@ -1353,43 +1448,54 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         break;
         
       case 2: // Contract Structure step
-        if (!formData.mainContractor?.trim()) {
+        if (shouldValidateField('mainContractor', formData.mainContractor) && !formData.mainContractor?.trim()) {
           errors.mainContractor = "Main contractor is required";
         }
-        if (!formData.principalOwner?.trim()) {
+        if (shouldValidateField('principalOwner', formData.principalOwner) && !formData.principalOwner?.trim()) {
           errors.principalOwner = "Principal owner is required";
         }
-        if (!formData.contractType) {
+        if (shouldValidateField('contractType', formData.contractType) && !formData.contractType) {
           errors.contractType = "Contract type must be selected";
         }
-        if (!formData.contractNumber?.trim()) {
+        if (shouldValidateField('contractNumber', formData.contractNumber) && !formData.contractNumber?.trim()) {
           errors.contractNumber = "Contract number is required";
         }
-        if (!formData.experienceYears || parseInt(formData.experienceYears) < 0) {
+        if (shouldValidateField('experienceYears', formData.experienceYears) && (!formData.experienceYears || parseInt(formData.experienceYears) < 0)) {
           errors.experienceYears = "Experience years must be 0 or greater";
         }
         break;
         
       case 3: // Site Risks step
-        if (!formData.nearWaterBody) {
+        if (shouldValidateField('nearWaterBody', formData.nearWaterBody) && !formData.nearWaterBody) {
           errors.nearWaterBody = "Water body proximity must be selected";
         }
-        if (!formData.floodProneZone) {
+        if (shouldValidateField('floodProneZone', formData.floodProneZone) && !formData.floodProneZone) {
           errors.floodProneZone = "Flood prone zone must be selected";
         }
-        if (!formData.withinCityCenter) {
+        if (shouldValidateField('withinCityCenter', formData.withinCityCenter) && !formData.withinCityCenter) {
           errors.withinCityCenter = "City center location must be selected";
         }
-        if (!formData.soilType) {
+        // Only validate cityAreaType if withinCityCenter is "yes" and field should be validated
+        // Also check if the original area_type was not null/blank in the proposal bundle
+        if (formData.withinCityCenter === "yes" && shouldValidateField('cityAreaType', formData.cityAreaType) && !formData.cityAreaType) {
+          // Double-check: if area_type was null in proposal bundle, don't validate
+          const originalAreaType = storedResumeData?.site_risks?.area_type;
+          if (originalAreaType !== null && originalAreaType !== undefined && originalAreaType !== '') {
+            errors.cityAreaType = "Area type must be selected when site is within city center";
+          } else {
+            console.log(`🚫 Skipping area type validation - original value was: ${originalAreaType}`);
+          }
+        }
+        if (shouldValidateField('soilType', formData.soilType) && !formData.soilType) {
           errors.soilType = "Soil type must be selected";
         }
-        if (!formData.existingStructure) {
+        if (shouldValidateField('existingStructure', formData.existingStructure) && !formData.existingStructure) {
           errors.existingStructure = "Existing structure must be selected";
         }
-        if (!formData.blastingExcavation) {
+        if (shouldValidateField('blastingExcavation', formData.blastingExcavation) && !formData.blastingExcavation) {
           errors.blastingExcavation = "Blasting or deep excavation must be selected";
         }
-        if (!formData.siteSecurityArrangements?.trim()) {
+        if (shouldValidateField('siteSecurityArrangements', formData.siteSecurityArrangements) && !formData.siteSecurityArrangements?.trim()) {
           errors.siteSecurityArrangements = "Site security arrangements are required";
         }
         break;
@@ -1397,25 +1503,25 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       case 4: // Cover Requirements step
         // Contract works cannot be 0, but other fields can accept 0 values
         const materialValue = parseFloat(formData.sumInsuredMaterial?.replace(/[^0-9.]/g, '') || '0');
-        if (!formData.sumInsuredMaterial || formData.sumInsuredMaterial.trim() === '' || isNaN(materialValue) || materialValue <= 0) {
+        if (shouldValidateField('sumInsuredMaterial', formData.sumInsuredMaterial) && (!formData.sumInsuredMaterial || formData.sumInsuredMaterial.trim() === '' || isNaN(materialValue) || materialValue <= 0)) {
           errors.sumInsuredMaterial = "Contract works amount must be greater than 0";
         }
         
         // Other fields can be 0, just validate they're valid numbers if provided
         const plantValue = parseFloat(formData.sumInsuredPlant?.replace(/[^0-9.]/g, '') || '0');
-        if (formData.sumInsuredPlant && formData.sumInsuredPlant.trim() !== '' && (isNaN(plantValue) || plantValue < 0)) {
+        if (shouldValidateField('sumInsuredPlant', formData.sumInsuredPlant) && formData.sumInsuredPlant && formData.sumInsuredPlant.trim() !== '' && (isNaN(plantValue) || plantValue < 0)) {
           errors.sumInsuredPlant = "Valid plant and equipment amount is required";
         }
         const temporaryValue = parseFloat(formData.sumInsuredTemporary?.replace(/[^0-9.]/g, '') || '0');
-        if (formData.sumInsuredTemporary && formData.sumInsuredTemporary.trim() !== '' && (isNaN(temporaryValue) || temporaryValue < 0)) {
+        if (shouldValidateField('sumInsuredTemporary', formData.sumInsuredTemporary) && formData.sumInsuredTemporary && formData.sumInsuredTemporary.trim() !== '' && (isNaN(temporaryValue) || temporaryValue < 0)) {
           errors.sumInsuredTemporary = "Valid temporary works amount is required";
         }
         const otherMaterialsValue = parseFloat(formData.otherMaterials?.replace(/[^0-9.]/g, '') || '0');
-        if (formData.otherMaterials && formData.otherMaterials.trim() !== '' && (isNaN(otherMaterialsValue) || otherMaterialsValue < 0)) {
+        if (shouldValidateField('otherMaterials', formData.otherMaterials) && formData.otherMaterials && formData.otherMaterials.trim() !== '' && (isNaN(otherMaterialsValue) || otherMaterialsValue < 0)) {
           errors.otherMaterials = "Valid other materials amount is required";
         }
         const principalValue = parseFloat(formData.principalExistingProperty?.replace(/[^0-9.]/g, '') || '0');
-        if (formData.principalExistingProperty && formData.principalExistingProperty.trim() !== '' && (isNaN(principalValue) || principalValue < 0)) {
+        if (shouldValidateField('principalExistingProperty', formData.principalExistingProperty) && formData.principalExistingProperty && formData.principalExistingProperty.trim() !== '' && (isNaN(principalValue) || principalValue < 0)) {
           errors.principalExistingProperty = "Valid principals property amount is required";
         }
         break;
@@ -1799,7 +1905,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       existing_structure: formData.existingStructure === "yes",
       blasting_or_deep_excavation: formData.blastingExcavation === "yes",
       site_security_arrangements: formData.siteSecurityArrangements || '',
-      area_type: formData.cityAreaType || 'Urban',
+      area_type: formData.withinCityCenter === "yes" ? (formData.cityAreaType || '') : '',
       describe_existing_structure: formData.existingStructureDetails || ''
     };
   };
@@ -3488,7 +3594,9 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     <Label htmlFor="withinCityCenter">Is site within city center? *</Label>
                     <Select value={formData.withinCityCenter || undefined} onValueChange={value => setFormData({
                     ...formData,
-                    withinCityCenter: value
+                    withinCityCenter: value,
+                    // Clear cityAreaType when withinCityCenter is "no"
+                    cityAreaType: value === "no" ? "" : formData.cityAreaType
                   })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select yes or no" />
@@ -3802,17 +3910,10 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
               </TabsContent>
 
               <TabsContent value="declaration">
-                <div className="p-8 text-center text-muted-foreground">
-                  Declaration step content
-                </div>
+                <DeclarationTab onPolicyIssued={() => markStepCompleted('policy_issued')} />
               </TabsContent>
 
             </Tabs>
-
-            {/* Declaration Tab */}
-            <div style={{ display: currentStep === 7 ? 'block' : 'none' }}>
-              <DeclarationTab onPolicyIssued={() => markStepCompleted('policy_issued')} />
-            </div>
 
           </CardContent>
         </Card>

@@ -398,9 +398,31 @@ export async function getMinimumPremiums(
   insurerId: number | string,
   productId: number | string
 ): Promise<GetMinimumPremiumsResponse> {
-  return apiGet<GetMinimumPremiumsResponse>(
-    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premium-rates`
-  );
+  try {
+    console.log(`[getMinimumPremiums] Making API call for insurer ${insurerId}, product ${productId}`);
+    const result = await apiGet<any>(
+      `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/minimum-premium-rates`
+    );
+    console.log('[getMinimumPremiums] API call successful:', result);
+    
+    // The API returns an object with minimum_premium_rates property
+    if (result && result.minimum_premium_rates && Array.isArray(result.minimum_premium_rates)) {
+      console.log('[getMinimumPremiums] Returning minimum_premium_rates array:', result.minimum_premium_rates);
+      return result.minimum_premium_rates;
+    }
+    
+    console.log('[getMinimumPremiums] No minimum_premium_rates found, returning empty array');
+    return [];
+  } catch (error: any) {
+    console.log('[getMinimumPremiums] API call failed:', error);
+    // Handle 204 (No Content) as success - return empty array
+    if (error?.status === 204) {
+      console.log('[getMinimumPremiums] API returned 204 (No Content) - returning empty array');
+      return [];
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 // Construction Types Config
@@ -1312,41 +1334,45 @@ export interface SaveQuoteFormatParams {
   company_name: string;
   company_address: string;
   quotation_prefix: string;
-  contact_info: string;
+  contact_info: {
+    phone: string;
+    email: string;
+    website: string;
+  };
   header_bg_color: string;
   header_text_color: string;
   logo_position: string; // LEFT | CENTER | RIGHT
-  show_project_details: string; // boolean string
-  show_coverage_types: string;
-  show_coverage_limits: string;
-  show_deductibles: string;
-  show_contractor_info: string;
+  url: string; // logo URL
+  show_project_details: boolean;
+  show_coverage_types: boolean;
+  show_coverage_limits: boolean;
+  show_deductibles: boolean;
+  show_contractor_info: boolean;
   risk_section_title: string;
-  show_base_premium: string;
-  show_risk_adjustments: string;
-  show_fees_charges: string;
-  show_taxes_vat: string;
-  show_total_premium: string;
+  show_base_premium: boolean;
+  show_risk_adjustments: boolean;
+  show_fees_charges: boolean;
+  show_taxes_vat: boolean;
+  show_total_premium: boolean;
   premium_section_title: string;
   premium_currency: string;
-  show_warranties: string;
-  show_exclusions: string;
-  show_deductible_details: string;
-  show_policy_conditions: string;
+  show_warranties: boolean;
+  show_exclusions: boolean;
+  show_deductible_details: boolean;
+  show_policy_conditions: boolean;
   terms_section_title: string;
   additional_terms_text: string;
-  show_signature_block: string;
+  show_signature_block: boolean;
   authorized_signatory_name: string;
   signatory_title: string;
   signature_block_text: string;
-  show_footer: string;
-  show_general_disclaimer: string;
+  show_footer: boolean;
+  show_general_disclaimer: boolean;
   general_disclaimer_text: string;
-  show_regulatory_info: string;
+  show_regulatory_info: boolean;
   regulatory_info_text: string;
   footer_bg_color: string;
   footer_text_color: string;
-  logo?: File | null;
 }
 
 export async function createQuoteFormat(
@@ -1354,18 +1380,9 @@ export async function createQuoteFormat(
   productId: number | string,
   params: SaveQuoteFormatParams
 ): Promise<SaveQuoteFormatResponse> {
-  const form = new FormData();
-  Object.entries(params).forEach(([k, v]) => {
-    if (k === 'logo') {
-      if (v instanceof File) form.append('logo', v);
-    } else {
-      form.append(k, String(v ?? ''));
-    }
-  });
   return apiPost<SaveQuoteFormatResponse>(
     `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/quote-format`,
-    form,
-    { headers: { 'Content-Type': 'multipart/form-data' } }
+    params
   );
 }
 
@@ -1374,19 +1391,9 @@ export async function updateQuoteFormat(
   productId: number | string,
   params: Partial<SaveQuoteFormatParams>
 ): Promise<SaveQuoteFormatResponse> {
-  const form = new FormData();
-  Object.entries(params).forEach(([k, v]) => {
-    if (v == null) return;
-    if (k === 'logo') {
-      if (v instanceof File) form.append('logo', v);
-    } else {
-      form.append(k, String(v));
-    }
-  });
   return apiPatch<SaveQuoteFormatResponse>(
     `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/quote-format`,
-    form,
-    { headers: { 'Content-Type': 'multipart/form-data' } }
+    params
   );
 }
 

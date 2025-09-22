@@ -546,31 +546,46 @@ const SingleProductConfig = () => {
         baseRate: 0,
         quoteOption: 'quote',
       }));
+      console.log('[MinimumPremiums] Initial mappedEntries:', mappedEntries);
       try {
         if (insurerId && pid) {
+          console.log('[MinimumPremiums] Calling getMinimumPremiums with:', { insurerId, pid });
           const minimumPremiums = await getMinimumPremiums(insurerId, String(pid));
+          console.log('[MinimumPremiums] Received data:', minimumPremiums);
+          
           const byProject = new Map<string, Array<{ name: string; currency: 'AED' | '%'; base_rate: number; pricing_type: string; quote_option: string }>>();
           (minimumPremiums || []).forEach((item) => {
             const slug = (item.project_type || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            console.log(`[MinimumPremiums] Processing project type: "${item.project_type}" -> slug: "${slug}"`);
+            console.log(`[MinimumPremiums] Sub-projects:`, item.sub_projects);
             byProject.set(slug, Array.isArray(item.sub_projects) ? item.sub_projects : []);
           });
+          console.log('[MinimumPremiums] byProject map:', Array.from(byProject.entries()));
           mappedEntries = mappedEntries.map((e) => {
             const list = byProject.get(e.projectType) || [];
             const match = list.find(sp => (sp.name || '').toLowerCase() === e.subProjectType.toLowerCase());
-            if (!match) return e;
+            if (!match) {
+              console.log(`[MinimumPremiums] No match found for project: ${e.projectType}, subProject: ${e.subProjectType}`);
+              return e;
+            }
+            console.log(`[MinimumPremiums] Found match for ${e.subProjectType}:`, match);
             // Append values into UI without overwriting metadata structure
             const normalizedPricing = String(match.pricing_type || '').toUpperCase() === 'FIXED_AMOUNT' ? 'fixed' : 'percentage';
             const normalizedQuote = String(match.quote_option || '').toUpperCase() === 'NO_QUOTE' ? 'no-quote' : 'quote';
-            return {
+            const updatedEntry = {
               ...e,
               pricingType: normalizedPricing as 'fixed' | 'percentage',
               baseRate: Number(match.base_rate || 0),
               // currency informs display; UI already shows % vs AED based on pricingType
               quoteOption: normalizedQuote as 'quote' | 'no-quote',
             };
+            console.log(`[MinimumPremiums] Updated entry for ${e.subProjectType}:`, updatedEntry);
+            return updatedEntry;
           });
+          console.log('[MinimumPremiums] Mapped entries:', mappedEntries);
         }
       } catch (err: any) {
+        console.error('[MinimumPremiums] Error in fetchMinimumPremiumsMasters:', err);
         const status = err?.status;
         const errorMessage = err?.message || '';
         
@@ -584,6 +599,7 @@ const SingleProductConfig = () => {
             : status === 403 ? 'Forbidden. You do not have access.'
             : status >= 500 ? 'Server error while loading minimum premiums.'
             : 'Failed to load minimum premiums.';
+          console.error('[MinimumPremiums] Setting error message:', msg);
           setMinimumPremiumsMastersError(msg);
         }
         // Still show UI even if API fails - just log the error
@@ -1536,10 +1552,11 @@ const SingleProductConfig = () => {
             ...prev.header,
             companyName: data.company_name || '',
             companyAddress: data.company_address || '',
-            contactInfo: data.contact_info?.raw || '',
+            contactInfo: data.contact_info ? JSON.stringify(data.contact_info) : '',
             headerColor: data.header_bg_color || '#1f2937',
             headerTextColor: data.header_text_color || '#ffffff',
             logoPosition: (data.logo_position || 'LEFT').toLowerCase(),
+            logoUrl: data.logo_path || '',
           },
           details: {
             ...prev.details,
@@ -1547,44 +1564,44 @@ const SingleProductConfig = () => {
           },
           risk: {
             ...prev.risk,
-            showProjectDetails: data.show_project_details === 1,
-            showCoverageTypes: data.show_coverage_types === 1,
-            showCoverageLimits: data.show_coverage_limits === 1,
-            showDeductibles: data.show_deductibles === 1,
-            showContractorInfo: data.show_contractor_info === 1,
+            showProjectDetails: !!data.show_project_details,
+            showCoverageTypes: !!data.show_coverage_types,
+            showCoverageLimits: !!data.show_coverage_limits,
+            showDeductibles: !!data.show_deductibles,
+            showContractorInfo: !!data.show_contractor_info,
             riskSectionTitle: data.risk_section_title || 'Risk Details',
           },
           premium: {
             ...prev.premium,
             currency: data.premium_currency || 'AED',
             premiumSectionTitle: data.premium_section_title || 'Premium Breakdown',
-            showBasePremium: data.show_base_premium === 1,
-            showRiskAdjustments: data.show_risk_adjustments === 1,
-            showFees: data.show_fees_charges === 1,
-            showTaxes: data.show_taxes_vat === 1,
-            showTotalPremium: data.show_total_premium === 1,
+            showBasePremium: !!data.show_base_premium,
+            showRiskAdjustments: !!data.show_risk_adjustments,
+            showFees: !!data.show_fees_charges,
+            showTaxes: !!data.show_taxes_vat,
+            showTotalPremium: !!data.show_total_premium,
           },
           terms: {
             ...prev.terms,
-            showWarranties: data.show_warranties === 1,
-            showExclusions: data.show_exclusions === 1,
-            showDeductibleDetails: data.show_deductible_details === 1,
-            showPolicyConditions: data.show_policy_conditions === 1,
+            showWarranties: !!data.show_warranties,
+            showExclusions: !!data.show_exclusions,
+            showDeductibleDetails: !!data.show_deductible_details,
+            showPolicyConditions: !!data.show_policy_conditions,
             termsSectionTitle: data.terms_section_title || 'Terms & Conditions',
             additionalTerms: data.additional_terms_text || '',
           },
           signature: {
             ...prev.signature,
-            showSignatureBlock: data.show_signature_block === 1,
+            showSignatureBlock: !!data.show_signature_block,
             authorizedSignatory: data.authorized_signatory_name || '',
             signatoryTitle: data.signatory_title || '',
             signatureText: data.signature_block_text || '',
           },
           footer: {
             ...prev.footer,
-            showFooter: data.show_footer === 1,
-            showDisclaimer: data.show_general_disclaimer === 1,
-            showRegulatoryInfo: data.show_regulatory_info === 1,
+            showFooter: !!data.show_footer,
+            showDisclaimer: !!data.show_general_disclaimer,
+            showRegulatoryInfo: !!data.show_regulatory_info,
             generalDisclaimer: data.general_disclaimer_text || prev.footer.generalDisclaimer,
             regulatoryText: data.regulatory_info_text || prev.footer.regulatoryText,
             footerBgColor: data.footer_bg_color || prev.footer.footerBgColor,
@@ -1776,7 +1793,8 @@ const SingleProductConfig = () => {
       contactInfo: "",
       headerColor: "#1f2937",
       headerTextColor: "#ffffff",
-      logoPosition: "left"
+      logoPosition: "left",
+      logoUrl: ""
     },
     details: {
       quotePrefix: "",
@@ -5858,52 +5876,53 @@ const SingleProductConfig = () => {
           ...prev.header,
           companyName: data.company_name || prev.header.companyName,
           companyAddress: data.company_address || prev.header.companyAddress,
-          contactInfo: data.contact_info?.raw || prev.header.contactInfo,
+          contactInfo: data.contact_info ? JSON.stringify(data.contact_info) : prev.header.contactInfo,
           headerColor: data.header_bg_color || prev.header.headerColor,
           headerTextColor: data.header_text_color || prev.header.headerTextColor,
           logoPosition: (data.logo_position || prev.header.logoPosition || 'LEFT').toLowerCase(),
+          logoUrl: data.logo_path || prev.header.logoUrl,
         },
         details: { ...prev.details, quotePrefix: data.quotation_prefix || prev.details.quotePrefix },
         risk: {
           ...prev.risk,
-          showProjectDetails: data.show_project_details === 1,
-          showCoverageTypes: data.show_coverage_types === 1,
-          showCoverageLimits: data.show_coverage_limits === 1,
-          showDeductibles: data.show_deductibles === 1,
-          showContractorInfo: data.show_contractor_info === 1,
+          showProjectDetails: !!data.show_project_details,
+          showCoverageTypes: !!data.show_coverage_types,
+          showCoverageLimits: !!data.show_coverage_limits,
+          showDeductibles: !!data.show_deductibles,
+          showContractorInfo: !!data.show_contractor_info,
           riskSectionTitle: data.risk_section_title || prev.risk.riskSectionTitle,
         },
         premium: {
           ...prev.premium,
           currency: data.premium_currency || prev.premium.currency,
           premiumSectionTitle: data.premium_section_title || prev.premium.premiumSectionTitle,
-          showBasePremium: data.show_base_premium === 1,
-          showRiskAdjustments: data.show_risk_adjustments === 1,
-          showFees: data.show_fees_charges === 1,
-          showTaxes: data.show_taxes_vat === 1,
-          showTotalPremium: data.show_total_premium === 1,
+          showBasePremium: !!data.show_base_premium,
+          showRiskAdjustments: !!data.show_risk_adjustments,
+          showFees: !!data.show_fees_charges,
+          showTaxes: !!data.show_taxes_vat,
+          showTotalPremium: !!data.show_total_premium,
         },
         terms: {
           ...prev.terms,
-          showWarranties: data.show_warranties === 1,
-          showExclusions: data.show_exclusions === 1,
-          showDeductibleDetails: data.show_deductible_details === 1,
-          showPolicyConditions: data.show_policy_conditions === 1,
+          showWarranties: !!data.show_warranties,
+          showExclusions: !!data.show_exclusions,
+          showDeductibleDetails: !!data.show_deductible_details,
+          showPolicyConditions: !!data.show_policy_conditions,
           termsSectionTitle: data.terms_section_title || prev.terms.termsSectionTitle,
           additionalTerms: data.additional_terms_text || prev.terms.additionalTerms,
         },
         signature: {
           ...prev.signature,
-          showSignatureBlock: data.show_signature_block === 1,
+          showSignatureBlock: !!data.show_signature_block,
           authorizedSignatory: data.authorized_signatory_name || prev.signature.authorizedSignatory,
           signatoryTitle: data.signatory_title || prev.signature.signatoryTitle,
           signatureText: data.signature_block_text || prev.signature.signatureText,
         },
         footer: {
           ...prev.footer,
-          showFooter: data.show_footer === 1,
-          showDisclaimer: data.show_general_disclaimer === 1,
-          showRegulatoryInfo: data.show_regulatory_info === 1,
+          showFooter: !!data.show_footer,
+          showDisclaimer: !!data.show_general_disclaimer,
+          showRegulatoryInfo: !!data.show_regulatory_info,
           generalDisclaimer: data.general_disclaimer_text || prev.footer.generalDisclaimer,
           regulatoryText: data.regulatory_info_text || prev.footer.regulatoryText,
           footerBgColor: data.footer_bg_color || prev.footer.footerBgColor,
@@ -6840,46 +6859,65 @@ const SingleProductConfig = () => {
                         if (!insurerId || !product.id) return;
                         try {
                           setIsSavingQuoteFormat(true);
+                          // Parse contact info from the raw string format
+                          const parseContactInfo = (contactInfo: string) => {
+                            try {
+                              // Try to parse as JSON first
+                              return JSON.parse(contactInfo);
+                            } catch {
+                              // If not JSON, try to extract from a structured string format
+                              const phoneMatch = contactInfo.match(/Phone:\s*([^\n]+)/i);
+                              const emailMatch = contactInfo.match(/Email:\s*([^\n]+)/i);
+                              const websiteMatch = contactInfo.match(/Website:\s*([^\n]+)/i);
+                              
+                              return {
+                                phone: phoneMatch?.[1]?.trim() || '',
+                                email: emailMatch?.[1]?.trim() || '',
+                                website: websiteMatch?.[1]?.trim() || ''
+                              };
+                            }
+                          };
+
                           const common = {
                             product_id: String(product.id),
                             company_name: quoteConfig.header.companyName || '',
                             company_address: quoteConfig.header.companyAddress || '',
                             quotation_prefix: quoteConfig.details.quotePrefix || '',
-                            contact_info: quoteConfig.header.contactInfo || '',
+                            contact_info: parseContactInfo(quoteConfig.header.contactInfo || ''),
                             header_bg_color: quoteConfig.header.headerColor || '#000000',
                             header_text_color: quoteConfig.header.headerTextColor || '#FFFFFF',
                             logo_position: (quoteConfig.header.logoPosition || 'left').toUpperCase(),
-                            show_project_details: String(!!quoteConfig.risk.showProjectDetails),
-                            show_coverage_types: String(!!quoteConfig.risk.showCoverageTypes),
-                            show_coverage_limits: String(!!quoteConfig.risk.showCoverageLimits),
-                            show_deductibles: String(!!quoteConfig.risk.showDeductibles),
-                            show_contractor_info: String(!!quoteConfig.risk.showContractorInfo),
+                            url: quoteConfig.header.logoUrl || '', // Use logo URL instead of file
+                            show_project_details: !!quoteConfig.risk.showProjectDetails,
+                            show_coverage_types: !!quoteConfig.risk.showCoverageTypes,
+                            show_coverage_limits: !!quoteConfig.risk.showCoverageLimits,
+                            show_deductibles: !!quoteConfig.risk.showDeductibles,
+                            show_contractor_info: !!quoteConfig.risk.showContractorInfo,
                             risk_section_title: quoteConfig.risk.riskSectionTitle || 'Risk Details',
-                            show_base_premium: String(!!quoteConfig.premium.showBasePremium),
-                            show_risk_adjustments: String(!!quoteConfig.premium.showRiskAdjustments),
-                            show_fees_charges: String(!!quoteConfig.premium.showFees),
-                            show_taxes_vat: String(!!quoteConfig.premium.showTaxes),
-                            show_total_premium: String(!!quoteConfig.premium.showTotalPremium),
+                            show_base_premium: !!quoteConfig.premium.showBasePremium,
+                            show_risk_adjustments: !!quoteConfig.premium.showRiskAdjustments,
+                            show_fees_charges: !!quoteConfig.premium.showFees,
+                            show_taxes_vat: !!quoteConfig.premium.showTaxes,
+                            show_total_premium: !!quoteConfig.premium.showTotalPremium,
                             premium_section_title: quoteConfig.premium.premiumSectionTitle || 'Premium Breakdown',
                             premium_currency: quoteConfig.premium.currency || 'AED',
-                            show_warranties: String(!!quoteConfig.terms.showWarranties),
-                            show_exclusions: String(!!quoteConfig.terms.showExclusions),
-                            show_deductible_details: String(!!quoteConfig.terms.showDeductibleDetails),
-                            show_policy_conditions: String(!!quoteConfig.terms.showPolicyConditions),
+                            show_warranties: !!quoteConfig.terms.showWarranties,
+                            show_exclusions: !!quoteConfig.terms.showExclusions,
+                            show_deductible_details: !!quoteConfig.terms.showDeductibleDetails,
+                            show_policy_conditions: !!quoteConfig.terms.showPolicyConditions,
                             terms_section_title: quoteConfig.terms.termsSectionTitle || 'Terms & Conditions',
                             additional_terms_text: quoteConfig.terms.additionalTerms || '',
-                            show_signature_block: String(!!quoteConfig.signature.showSignatureBlock),
+                            show_signature_block: !!quoteConfig.signature.showSignatureBlock,
                             authorized_signatory_name: quoteConfig.signature.authorizedSignatory || '',
                             signatory_title: quoteConfig.signature.signatoryTitle || '',
                             signature_block_text: quoteConfig.signature.signatureText || '',
-                            show_footer: String(!!quoteConfig.footer.showFooter),
-                            show_general_disclaimer: String(!!quoteConfig.footer.showDisclaimer),
+                            show_footer: !!quoteConfig.footer.showFooter,
+                            show_general_disclaimer: !!quoteConfig.footer.showDisclaimer,
                             general_disclaimer_text: quoteConfig.footer.generalDisclaimer || '',
-                            show_regulatory_info: String(!!quoteConfig.footer.showRegulatoryInfo),
+                            show_regulatory_info: !!quoteConfig.footer.showRegulatoryInfo,
                             regulatory_info_text: quoteConfig.footer.regulatoryText || '',
                             footer_bg_color: quoteConfig.footer.footerBgColor || '#FFFFFF',
                             footer_text_color: quoteConfig.footer.footerTextColor || '#000000',
-                            logo: quoteLogoFile || null,
                           };
                           if (!quoteFormatId) {
                             const res = await createQuoteFormat(insurerId, product.id as string, common);
@@ -6898,52 +6936,53 @@ const SingleProductConfig = () => {
                               ...prev.header,
                               companyName: refreshed.company_name || '',
                               companyAddress: refreshed.company_address || '',
-                              contactInfo: refreshed.contact_info?.raw || '',
+                              contactInfo: refreshed.contact_info ? JSON.stringify(refreshed.contact_info) : '',
                               headerColor: refreshed.header_bg_color || '#1f2937',
                               headerTextColor: refreshed.header_text_color || '#ffffff',
                               logoPosition: (refreshed.logo_position || 'LEFT').toLowerCase(),
+                              logoUrl: refreshed.logo_path || '',
                             },
                             details: { ...prev.details, quotePrefix: refreshed.quotation_prefix || '' },
                             risk: {
                               ...prev.risk,
-                              showProjectDetails: refreshed.show_project_details === 1,
-                              showCoverageTypes: refreshed.show_coverage_types === 1,
-                              showCoverageLimits: refreshed.show_coverage_limits === 1,
-                              showDeductibles: refreshed.show_deductibles === 1,
-                              showContractorInfo: refreshed.show_contractor_info === 1,
+                              showProjectDetails: !!refreshed.show_project_details,
+                              showCoverageTypes: !!refreshed.show_coverage_types,
+                              showCoverageLimits: !!refreshed.show_coverage_limits,
+                              showDeductibles: !!refreshed.show_deductibles,
+                              showContractorInfo: !!refreshed.show_contractor_info,
                               riskSectionTitle: refreshed.risk_section_title || 'Risk Details',
                             },
                             premium: {
                               ...prev.premium,
                               currency: refreshed.premium_currency || 'AED',
                               premiumSectionTitle: refreshed.premium_section_title || 'Premium Breakdown',
-                              showBasePremium: refreshed.show_base_premium === 1,
-                              showRiskAdjustments: refreshed.show_risk_adjustments === 1,
-                              showFees: refreshed.show_fees_charges === 1,
-                              showTaxes: refreshed.show_taxes_vat === 1,
-                              showTotalPremium: refreshed.show_total_premium === 1,
+                              showBasePremium: !!refreshed.show_base_premium,
+                              showRiskAdjustments: !!refreshed.show_risk_adjustments,
+                              showFees: !!refreshed.show_fees_charges,
+                              showTaxes: !!refreshed.show_taxes_vat,
+                              showTotalPremium: !!refreshed.show_total_premium,
                             },
                             terms: {
                               ...prev.terms,
-                              showWarranties: refreshed.show_warranties === 1,
-                              showExclusions: refreshed.show_exclusions === 1,
-                              showDeductibleDetails: refreshed.show_deductible_details === 1,
-                              showPolicyConditions: refreshed.show_policy_conditions === 1,
+                              showWarranties: !!refreshed.show_warranties,
+                              showExclusions: !!refreshed.show_exclusions,
+                              showDeductibleDetails: !!refreshed.show_deductible_details,
+                              showPolicyConditions: !!refreshed.show_policy_conditions,
                               termsSectionTitle: refreshed.terms_section_title || 'Terms & Conditions',
                               additionalTerms: refreshed.additional_terms_text || '',
                             },
                             signature: {
                               ...prev.signature,
-                              showSignatureBlock: refreshed.show_signature_block === 1,
+                              showSignatureBlock: !!refreshed.show_signature_block,
                               authorizedSignatory: refreshed.authorized_signatory_name || '',
                               signatoryTitle: refreshed.signatory_title || '',
                               signatureText: refreshed.signature_block_text || '',
                             },
                             footer: {
                               ...prev.footer,
-                              showFooter: refreshed.show_footer === 1,
-                              showDisclaimer: refreshed.show_general_disclaimer === 1,
-                              showRegulatoryInfo: refreshed.show_regulatory_info === 1,
+                              showFooter: !!refreshed.show_footer,
+                              showDisclaimer: !!refreshed.show_general_disclaimer,
+                              showRegulatoryInfo: !!refreshed.show_regulatory_info,
                               generalDisclaimer: refreshed.general_disclaimer_text || '',
                               regulatoryText: refreshed.regulatory_info_text || '',
                               footerBgColor: refreshed.footer_bg_color || '#ffffff',

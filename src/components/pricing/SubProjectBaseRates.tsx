@@ -106,34 +106,34 @@ export const SubProjectBaseRates = ({
       
       <CardContent>
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-[800px]">
             <TableHeader>
               <TableRow className="bg-muted/10">
-                <TableHead className="font-medium text-muted-foreground w-[20%] px-3">Project Type</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[25%] px-3">Sub Project Type</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[15%] px-2">Pricing Type</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[14%] px-2">Base Rate</TableHead>
-                <TableHead className="font-medium text-muted-foreground w-[16%] px-2">Quote Option</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[15%] px-3">Project Type</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[35%] px-3">Sub Project Type</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[20%] px-3">Pricing Type</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[15%] px-3">Base Rate</TableHead>
+                <TableHead className="font-medium text-muted-foreground w-[15%] px-3">Quote Option</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {flatEntries.map((entry) => (
                 <TableRow key={entry.originalIndex} className="hover:bg-muted/5">
                   <TableCell className="font-medium py-4 px-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center justify-center w-6 h-6 rounded bg-primary/10 text-primary">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center justify-center w-6 h-6 rounded bg-primary/10 text-primary flex-shrink-0">
                         {getProjectTypeIcon(entry.projectType)}
                       </div>
-                      <span className="text-sm font-medium">{entry.projectTypeLabel}</span>
+                      <span className="text-sm font-medium truncate">{entry.projectTypeLabel}</span>
                     </div>
                   </TableCell>
                   <TableCell className="font-medium py-4 px-3">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                      <span>{entry.subProjectType}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <TrendingUp className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{entry.subProjectType}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="py-4 px-2">
+                  <TableCell className="py-4 px-3">
                     <Select
                       value={entry.pricingType}
                       onValueChange={(value) => onSubProjectEntryChange(entry.originalIndex, 'pricingType', value)}
@@ -147,7 +147,7 @@ export const SubProjectBaseRates = ({
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell className="py-4 px-2">
+                  <TableCell className="py-4 px-3">
                     <Input
                       type="number"
                       step="0.01"
@@ -158,7 +158,7 @@ export const SubProjectBaseRates = ({
                       placeholder="0.00"
                     />
                   </TableCell>
-                  <TableCell className="py-4 px-2">
+                  <TableCell className="py-4 px-3">
                     <Select
                       value={entry.quoteOption}
                       onValueChange={(value) => onSubProjectEntryChange(entry.originalIndex, 'quoteOption', value)}

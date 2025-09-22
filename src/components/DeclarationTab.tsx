@@ -469,138 +469,149 @@ const DeclarationTab: React.FC<DeclarationTabProps> = ({ onPolicyIssued }) => {
 
   return (
     <div className="w-full">
-      <div className="text-left mb-6">
-        <h2 className="text-lg font-semibold text-foreground mb-1">
+      <div className="text-left mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">
           Declaration Documents
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-gray-600">
           Please upload the required documents to complete your policy application
         </p>
       </div>
 
       {/* Document List */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         {documents.map((doc) => (
-          <Card 
+          <div 
             key={doc.id} 
-            className={`transition-all duration-200 border-2 ${
+            className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
               doc.uploadedFile 
-                ? 'border-green-200 bg-green-50 shadow-md' 
-                : doc.is_required 
-                  ? 'border-blue-200 bg-blue-50 shadow-sm hover:shadow-md'
-                  : 'border-gray-200 bg-white hover:border-blue-200'
+                ? 'bg-green-50 hover:bg-green-100 border border-green-200' 
+                : 'bg-blue-50 hover:bg-blue-100 border border-blue-200'
             }`}
           >
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4 flex-1">
-                  <div className="mt-1">
-                    {doc.uploadedFile ? (
-                      <Check className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-amber-600" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h4 className="font-semibold text-base text-foreground">{doc.label}</h4>
-                      {doc.is_required && (
-                        <Badge variant="outline" className="text-amber-600 border-amber-600">Required</Badge>
-                      )}
-                      {doc.uploadedFile && (
-                        <Badge variant="outline" className="text-green-600 border-green-600">Uploaded</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {doc.description}
-                    </p>
-                    {doc.uploadedFile && (
-                      <div className="flex items-center space-x-4 text-sm">
-                        <span className="text-muted-foreground">Size: {doc.uploadedFile.size}</span>
-                        <span className="text-green-600 font-medium">Uploaded successfully</span>
-                      </div>
-                    )}
-                  </div>
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">{doc.label}</span>
+                  {doc.is_required && (
+                    <Badge variant="destructive" className="text-xs">
+                      Required
+                    </Badge>
+                  )}
+                  {doc.uploadedFile && (
+                    <Badge variant="default" className="text-xs bg-green-600">
+                      <Check className="w-3 h-3 mr-1" />
+                      Uploaded
+                    </Badge>
+                  )}
                 </div>
-                
-                <div className="flex items-center space-x-2 ml-4">
-                  {/* Template download button */}
+                {doc.description && (
+                  <p className="text-xs text-gray-600 mt-1">{doc.description}</p>
+                )}
+                {doc.uploadedFile && (
+                  <p className="text-xs text-green-600 mt-1">
+                    {doc.uploadedFile.name} ({doc.uploadedFile.size}) - Uploaded on {doc.uploadedFile.uploadDate}
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {doc.uploadedFile ? (
+                <>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDownloadTemplate(doc.url, doc.label)}
-                    className="bg-white text-foreground border-gray-300 hover:bg-gray-50"
+                    onClick={() => window.open(doc.uploadedFile?.url, '_blank')}
+                    className="h-8 px-3 text-xs text-green-600 hover:text-green-700"
                   >
-                    <Download className="w-4 h-4 mr-1" />
-                    Template
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
                   </Button>
-                  
-                  {/* Upload/File management buttons */}
-                  {doc.uploadedFile ? (
-                    <>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        onClick={() => removeUploadedFile(doc.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </>
-                  ) : doc.uploadStatus === 'uploading' ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled
-                      className="bg-blue-100 text-blue-800 border-blue-200"
-                    >
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Uploading...
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
-                      onClick={() => document.getElementById(`file-${doc.id}`)?.click()}
-                    >
-                      <Upload className="w-4 h-4 mr-1" />
-                      Upload
-                    </Button>
-                  )}
-
-                  <input
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeUploadedFile(doc.id)}
+                    className="h-8 px-3 text-xs text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Remove
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Input
                     type="file"
                     id={`file-${doc.id}`}
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                     onChange={(e) => handleFileUpload(e, doc.id)}
+                    disabled={uploading.has(doc.id)}
                     className="hidden"
                   />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  <Label
+                    htmlFor={`file-${doc.id}`}
+                    className={`cursor-pointer inline-flex items-center gap-1 px-3 py-1 text-xs border rounded transition-colors ${
+                      uploading.has(doc.id)
+                        ? 'border-gray-300 bg-gray-50 cursor-not-allowed text-gray-500'
+                        : 'border-blue-300 hover:border-blue-400 hover:bg-blue-100 text-blue-600'
+                    }`}
+                  >
+                    {uploading.has(doc.id) ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3 h-3" />
+                        Upload
+                      </>
+                    )}
+                  </Label>
+                  
+                  {doc.url && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadTemplate(doc.url, doc.label)}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      Template
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         ))}
       </div>
 
       {/* Submit Button */}
-      <div className="mt-8 flex justify-end">
-        <Button
-          variant="default"
-          size="lg"
-          onClick={handleSubmitDocuments}
-          disabled={submitting}
-          className="px-8"
-        >
-          {submitting ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Creating Policy...
-            </>
-          ) : (
-            'Complete Payment and Get Policy'
-          )}
-        </Button>
+      <div className="mt-6 pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            {documents.filter(doc => doc.is_required).length} required documents
+          </div>
+          <Button
+            onClick={handleSubmitDocuments}
+            disabled={submitting || documents.filter(doc => doc.is_required).length === 0}
+            className="px-8 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {submitting ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Creating Policy...
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4 mr-2" />
+                Submit & Create Policy
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -29,10 +29,23 @@ interface QuotesComparisonProps {
 
 // Generate real quotes from validation results
 const generateRealQuotes = (insurerValidationResults: Record<number, any>, eligibleInsurers: any[], insurerPricingConfigs: Record<number, any>) => {
-  return eligibleInsurers
+  console.log('🔄 Generating real quotes from validation results:', {
+    validationResultsCount: Object.keys(insurerValidationResults).length,
+    eligibleInsurersCount: eligibleInsurers.length,
+    pricingConfigsCount: Object.keys(insurerPricingConfigs).length
+  });
+
+  const quotes = eligibleInsurers
     .filter(insurer => {
       const result = insurerValidationResults[insurer.insurer_id];
-      return result && result.overallDecision === 'Auto Quote' && result.basePremium > 0;
+      const isValid = result && result.overallDecision === 'Auto Quote' && result.basePremium > 0;
+      console.log(`🔍 Insurer ${insurer.insurer_name} (${insurer.insurer_id}):`, {
+        hasResult: !!result,
+        overallDecision: result?.overallDecision,
+        basePremium: result?.basePremium,
+        isValid
+      });
+      return isValid;
     })
     .map(insurer => {
       const result = insurerValidationResults[insurer.insurer_id];
@@ -41,6 +54,12 @@ const generateRealQuotes = (insurerValidationResults: Record<number, any>, eligi
       // Get maximum cover from insurer's product configuration
       const pricingConfig = insurerPricingConfigs[insurer.insurer_id];
       const maximumCover = pricingConfig?.policy_limits_and_deductible?.policy_limits?.maximum_cover?.value || sumInsured;
+      
+      console.log(`✅ Generated quote for ${insurer.insurer_name}:`, {
+        basePremium: result.basePremium,
+        maximumCover,
+        sumInsured
+      });
       
       return {
         id: insurer.insurer_id,
@@ -67,6 +86,9 @@ const generateRealQuotes = (insurerValidationResults: Record<number, any>, eligi
         pricingConfig: pricingConfig // Store pricing config for reference
       };
     });
+
+  console.log('📊 Generated quotes:', quotes.length, 'quotes');
+  return quotes;
 };
 
 const QuotesComparison = ({ 
@@ -552,7 +574,10 @@ const QuotesComparison = ({
       
       const configMappings = [
         { field: 'construction_type', config: 'construction_types_config', proposal: proposal.project?.construction_type },
-        { field: 'area_type', config: 'area_types_config', proposal: proposal.site_risks?.area_type },
+        // Only include area_type if it has a value (not null, undefined, or empty)
+        ...(proposal.site_risks?.area_type && proposal.site_risks.area_type !== '' 
+          ? [{ field: 'area_type', config: 'area_types_config', proposal: proposal.site_risks.area_type }]
+          : []),
         { field: 'soil_type', config: 'soil_types_config', proposal: proposal.site_risks?.soil_type },
         { field: 'contract_type', config: 'contract_types_config', proposal: proposal.contract_structure?.details?.contract_type?.replace(/-/g, ' ') },
         { field: 'role_of_insured', config: 'role_types_config', proposal: proposal.insured?.details?.role_of_insured },
@@ -1117,7 +1142,10 @@ const QuotesComparison = ({
         existing_structure: normalizeBoolean(proposal.site_risks?.existing_structure),
         blasting_or_deep_excavation: normalizeBoolean(proposal.site_risks?.blasting_or_deep_excavation),
         site_security_arrangements: proposal.site_risks?.site_security_arrangements,
-        area_type: proposal.site_risks?.area_type
+        // Only include area_type if it has a value (not null, undefined, or empty)
+        ...(proposal.site_risks?.area_type && proposal.site_risks.area_type !== '' 
+          ? { area_type: proposal.site_risks.area_type }
+          : {})
       };
 
       console.log('🔍 Proposal risk values:', proposalRiskValues);
@@ -1411,12 +1439,22 @@ const QuotesComparison = ({
 
   // Validate proposals against pricing configs when both are available
   React.useEffect(() => {
+    console.log('🔍 Validation effect triggered:', {
+      hasCurrentProposal: !!currentProposal,
+      hasInsurerPricingConfigs: !!insurerPricingConfigs,
+      eligibleInsurersCount: eligibleInsurers.length,
+      validationCompletedCount: validationCompleted.current.size
+    });
+
     if (currentProposal && insurerPricingConfigs && eligibleInsurers.length > 0) {
       // Check if we need to validate any new insurers
       const insurersToValidate = eligibleInsurers.filter(insurer => 
         insurerPricingConfigs[insurer.insurer_id] && 
         !validationCompleted.current.has(insurer.insurer_id)
       );
+
+      console.log('🔍 Insurers to validate:', insurersToValidate.map(i => i.insurer_name));
+      console.log('🔍 Already validated insurers:', Array.from(validationCompleted.current));
 
       if (insurersToValidate.length === 0) {
         console.log('⏭️ All insurers already validated, skipping...');
@@ -1448,7 +1486,19 @@ const QuotesComparison = ({
     }
   }, [currentProposal, insurerPricingConfigs, eligibleInsurers]);
 
+  // Reset validation state when resuming a quote (when currentProposal changes)
+  React.useEffect(() => {
+    if (currentProposal) {
+      console.log('🔄 Resuming quote - resetting validation state');
+      console.log('📋 Current proposal data:', currentProposal);
+      // Clear validation results and completed tracking
+      setInsurerValidationResults({});
+      validationCompleted.current.clear();
+    }
+  }, [currentProposal]);
+
   const [tplAdjustment, setTPLAdjustment] = useState(0);
+  const [selectedTPLLimitValue, setSelectedTPLLimitValue] = useState(0);
   const [cewAdjustment, setCEWAdjustment] = useState(0);
   const [brokerCommissionPercent, setBrokerCommissionPercent] = useState(10);
   const [selectedCEWItems, setSelectedCEWItems] = useState<any[]>([]);
@@ -1569,6 +1619,14 @@ const QuotesComparison = ({
   };
 
   const proceedWithSelection = (quoteId: number) => {
+    // Find the selected quote to get insurer information
+    const selectedQuote = realQuotes.find(q => q.id === quoteId);
+    if (selectedQuote) {
+      // Store insurer and product IDs for DeclarationTab
+      localStorage.setItem('selected_insurer_id', selectedQuote.id.toString());
+      localStorage.setItem('selected_product_id', '1'); // Default product ID, can be made dynamic later
+    }
+    
     // Check if we're in the proposal form context by looking for a parent function
     if (window.onQuoteSelected) {
       // We're in the proposal form, navigate to declaration step
@@ -1603,6 +1661,7 @@ const QuotesComparison = ({
 
         // Restore adjustments to component state
         setTPLAdjustment(storedRequest.tplAdjustment || 0);
+        setSelectedTPLLimitValue(storedRequest.tplSelection?.value || 0);
         setCEWAdjustment(storedRequest.cewAdjustment || 0);
         setBrokerCommissionPercent(storedRequest.brokerCommissionPercent || 10);
 
@@ -1774,6 +1833,9 @@ const QuotesComparison = ({
 
   const handleTPLSelectionChange = (tplOption: any) => {
     if (tplOption) {
+      // Store the TPL limit value
+      setSelectedTPLLimitValue(tplOption.value);
+      
       // Add TPL extension to selected items
       const tplExtension = {
         id: 'tpl-extension',
@@ -1798,6 +1860,9 @@ const QuotesComparison = ({
         return [...filtered, tplExtension];
       });
     } else {
+      // Clear the TPL limit value
+      setSelectedTPLLimitValue(0);
+      
       // Remove TPL extension from selected items
       setSelectedCEWItems(prev => prev.filter(item => item.id !== 'tpl-extension'));
     }
@@ -1851,6 +1916,7 @@ const QuotesComparison = ({
       premium_amount: finalPremiumValue, // Use the calculated final premium value
       lastUpdated: new Date().toISOString(),
       tplAdjustment,
+      tplSelection: { value: selectedTPLLimitValue },
       cewAdjustment,
       brokerCommissionPercent,
       selectedCEWItems: selectedCEWItems.filter(item => item.isSelected),
@@ -2100,6 +2166,9 @@ const QuotesComparison = ({
       // Update storage flags and save selection data
       localStorage.setItem('coverages_selected', 'true');
       localStorage.setItem('plans_selected', 'true');
+      // Store insurer and product IDs for DeclarationTab
+      localStorage.setItem('selected_insurer_id', selectedQuote.id.toString());
+      localStorage.setItem('selected_product_id', '1'); // Default product ID, can be made dynamic later
       // Note: selected_plan_id is already set above when storing the API response
       localStorage.setItem('selected_plan_data', JSON.stringify({
         quoteId,
@@ -2485,6 +2554,14 @@ const QuotesComparison = ({
   // Generate real quotes from validation results
   const realQuotes = generateRealQuotes(insurerValidationResults, eligibleInsurers, insurerPricingConfigs || {});
   const comparedQuotes = realQuotes.filter(q => selectedQuotes.includes(q.id));
+  
+  console.log('📊 Quote generation summary:', {
+    validationResultsCount: Object.keys(insurerValidationResults).length,
+    eligibleInsurersCount: eligibleInsurers.length,
+    realQuotesCount: realQuotes.length,
+    comparedQuotesCount: comparedQuotes.length,
+    selectedQuotesCount: selectedQuotes.length
+  });
   
   // Helper function to get current premium for a quote (updated or original)
   const getCurrentPremium = (quote: any) => {
@@ -2914,6 +2991,12 @@ const QuotesComparison = ({
                           <Separator />
                           
                           <div className="space-y-3">
+                             {/* Sum Insured - Get from proposal data */}
+                             <div className="flex justify-between items-center">
+                               <span className="text-xs">Sum Insured</span>
+                               <span className="font-medium text-sm">{formatCurrency((currentProposal?.cover_requirements as any)?.computed_sum_insured || 0)}</span>
+                             </div>
+                             
                              <div className="flex justify-between items-center">
                                <span className="text-xs">Base Premium</span>
                                <span className="font-medium text-sm">{formatCurrency(selectedQuoteForCEW.annualPremium)}</span>
@@ -2923,19 +3006,31 @@ const QuotesComparison = ({
                                <span className="text-xs text-muted-foreground/60">Coverage Amount</span>
                                <span className="text-sm text-muted-foreground/60">
                                  {(() => {
-                                   // Try to get coverage amount from multiple sources
+                                   // Calculate Coverage Amount as: TPL Limit Value + Maximum Coverage
                                    const productConfigCoverage = productConfigBundle?.policy_limits_and_deductible?.policy_limits?.maximum_cover?.value;
                                    const pricingConfigCoverage = insurerPricingConfigs?.[selectedQuoteForCEW?.id]?.policy_limits_and_deductible?.policy_limits?.maximum_cover?.value;
-                                   const fallbackCoverage = selectedQuoteForCEW?.coverageAmount;
+                                   const maximumCoverage = productConfigCoverage || pricingConfigCoverage || selectedQuoteForCEW?.coverageAmount || 0;
                                    
-                                   console.log('🔍 Coverage Amount Debug:', {
-                                     productConfigBundle: productConfigBundle?.policy_limits_and_deductible?.policy_limits?.maximum_cover,
-                                     pricingConfig: insurerPricingConfigs?.[selectedQuoteForCEW?.id]?.policy_limits_and_deductible?.policy_limits?.maximum_cover,
-                                     selectedQuoteCoverage: selectedQuoteForCEW?.coverageAmount,
-                                     finalValue: productConfigCoverage || pricingConfigCoverage || fallbackCoverage
+                                   // Get TPL limit value (selected or default)
+                                   const tplLimitValue = (() => {
+                                     // If TPL option is selected, use selected value
+                                     if (selectedTPLLimitValue > 0) {
+                                       return selectedTPLLimitValue;
+                                     }
+                                     // If no selection, use default TPL limit from product config
+                                     const defaultTPLLimit = productConfigBundle?.tpl_limits?.default_limit;
+                                     return defaultTPLLimit ? parseFloat(defaultTPLLimit) : 0;
+                                   })();
+                                   
+                                   const totalCoverageAmount = tplLimitValue + maximumCoverage;
+                                   
+                                   console.log('🔍 Coverage Amount Calculation:', {
+                                     tplLimitValue,
+                                     maximumCoverage,
+                                     totalCoverageAmount
                                    });
                                    
-                                   return formatCurrency(productConfigCoverage || pricingConfigCoverage || fallbackCoverage || 0);
+                                   return formatCurrency(totalCoverageAmount);
                                  })()}
                                </span>
                              </div>
@@ -3215,26 +3310,10 @@ const QuotesComparison = ({
         <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
           <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Proposal Validation Results & Debug Information</DialogTitle>
+              <DialogTitle>Proposal Validation Results</DialogTitle>
             </DialogHeader>
             
             <div className="space-y-6 mt-6">
-              {/* Debug Information */}
-              <Card className="border-blue-200 bg-blue-50">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base text-blue-800">Debug Information</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="text-sm text-blue-700 space-y-1">
-                    <div>Current Proposal: {currentProposal ? '✅ Available' : '❌ Missing'}</div>
-                    <div>Insurer Pricing Configs: {insurerPricingConfigs ? `✅ ${Object.keys(insurerPricingConfigs).length} configs` : '❌ Missing'}</div>
-                    <div>Eligible Insurers: {eligibleInsurers.length} insurers</div>
-                    <div>Validation Results: {Object.keys(insurerValidationResults).length} results</div>
-                    <div>Validation Completed: {Array.from(validationCompleted.current).join(', ') || 'None'}</div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Validation Results */}
               {Object.keys(insurerValidationResults).length > 0 && (
                 <div className="space-y-4">

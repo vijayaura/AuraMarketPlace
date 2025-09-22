@@ -71,19 +71,22 @@ const MinimumPremium: React.FC<MinimumPremiumProps> = ({
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-[800px]">
                     <thead>
                       <tr className="border-b bg-muted/10">
-                        <th className="h-10 px-4 text-left align-middle font-medium w-[22%]">
+                        <th className="h-10 px-3 text-left align-middle font-medium w-[15%]">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
                         </th>
-                        <th className="h-10 px-4 text-left align-middle font-medium w-[28%]">
+                        <th className="h-10 px-3 text-left align-middle font-medium w-[35%]">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
                         </th>
-                        <th className="h-10 px-4 text-left align-middle font-medium w-[18%]">
+                        <th className="h-10 px-3 text-left align-middle font-medium w-[20%]">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-18"></div>
                         </th>
-                        <th className="h-10 px-4 text-left align-middle font-medium w-[16%]">
+                        <th className="h-10 px-3 text-left align-middle font-medium w-[15%]">
+                          <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                        </th>
+                        <th className="h-10 px-3 text-left align-middle font-medium w-[15%]">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
                         </th>
                       </tr>
@@ -91,22 +94,25 @@ const MinimumPremium: React.FC<MinimumPremiumProps> = ({
                     <tbody>
                       {[1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
                         <tr key={j} className="border-b">
-                          <td className="p-4 align-middle">
+                          <td className="py-4 px-3 align-middle">
                             <div className="flex items-center gap-2">
                               <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
                               <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
                             </div>
                           </td>
-                          <td className="p-4 align-middle">
+                          <td className="py-4 px-3 align-middle">
                             <div className="flex items-center gap-2">
                               <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
                               <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
                             </div>
                           </td>
-                          <td className="p-4 align-middle">
+                          <td className="py-4 px-3 align-middle">
                             <div className="h-8 bg-gray-200 rounded animate-pulse w-full"></div>
                           </td>
-                          <td className="p-4 align-middle">
+                          <td className="py-4 px-3 align-middle">
+                            <div className="h-8 bg-gray-200 rounded animate-pulse w-full"></div>
+                          </td>
+                          <td className="py-4 px-3 align-middle">
                             <div className="h-8 bg-gray-200 rounded animate-pulse w-full"></div>
                           </td>
                         </tr>

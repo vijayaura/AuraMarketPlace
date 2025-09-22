@@ -83,11 +83,11 @@ const App = () => (
             <Route path="user-management" element={<BrokerUserManagement />} />
             <Route path="add-user" element={<AddUser />} />
             <Route path="edit-user/:userId" element={<EditUser />} />
+            <Route path="quote/:id/edit" element={<Proposal />} />
+            <Route path="quote/:id" element={<QuoteDetails />} />
+            <Route path="policy/:id" element={<PolicyDetails />} />
           </Route>
           <Route path="/broker/edit-user/:userId" element={<EditUser />} />
-          <Route path="/broker/quote/:id/edit" element={<Proposal />} />
-          <Route path="/broker/quote/:id" element={<QuoteDetails />} />
-          <Route path="/broker/policy/:id" element={<PolicyDetails />} />
           <Route path="/broker/manage-insurers" element={<ManageInsurers />} />
           <Route path="/broker/insurer/:insurerId/dashboard" element={<InsurerDetailDashboard />} />
           <Route path="/insurer/:insurerId/product-config" element={<InsurerProductConfig />} />
@@ -142,9 +142,9 @@ const App = () => (
             <Route path="product-config/quote-format" element={<QuoteFormat />} />
             <Route path="add-user" element={<AddInsurerUser />} />
             <Route path="edit-user/:userId" element={<EditInsurerUser />} />
+            <Route path="quote/:id" element={<QuoteDetails />} />
+            <Route path="policy/:id" element={<PolicyDetails />} />
           </Route>
-          <Route path="/insurer/quote/:id" element={<QuoteDetails />} />
-          <Route path="/insurer/policy/:id" element={<PolicyDetails />} />
           <Route path="/insurer/products" element={<ProductsList />} />
           <Route path="/insurer/products/:productId" element={<SingleProductConfig />} />
           <Route path="/insurer/product-config/new" element={<CreatePlan />} />
