@@ -1,26 +1,111 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FileText, Download, CheckCircle, Calendar, Building, DollarSign, Shield, AlertCircle } from "lucide-react";
+import { FileText, Download, CheckCircle, Calendar, Building, DollarSign, Shield, AlertCircle, ChevronDown, ChevronUp, User, MapPin, CreditCard, Star, Users, FileCheck, ArrowLeft, FolderOpen } from "lucide-react";
 import { getProposalBundle, ProposalBundleResponse, getPolicyDetailsById, PolicyDetailsAPIResponse } from "@/lib/api/quotes";
 import { getPolicyWordings, PolicyWording } from "@/lib/api/insurers";
 import { getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
 import { toast } from "@/components/ui/sonner";
 import { generatePolicyPDF } from "@/utils/pdfGenerator";
 
+// Helper functions for formatting
+const formatFieldName = (key: string): string => {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, l => l.toUpperCase())
+    .replace(/Id\b/g, 'ID')
+    .replace(/Tpl\b/g, 'TPL')
+    .replace(/Cew\b/g, 'CEW');
+};
+
+const formatFieldValue = (key: string, value: any): string => {
+  if (value === null || value === undefined || value === '') {
+    if (key.includes('date') || key.includes('_at') || key.includes('time')) {
+      return 'Not set';
+    }
+    if (key.includes('amount') || key.includes('premium') || key.includes('sum_insured') || key.includes('value')) {
+      return 'Not calculated';
+    }
+    if (key.includes('count') || key.includes('number') || key.includes('period')) {
+      return '0';
+    }
+    return 'Not specified';
+  }
+  
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+  
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  
+  if (key.includes('date') || key.includes('_at') || key.includes('time')) {
+    try {
+      return new Date(value).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return value.toString();
+    }
+  }
+  
+  if (key.includes('amount') || key.includes('premium') || key.includes('sum_insured') || key.includes('value')) {
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+      return `AED ${num.toLocaleString()}`;
+    }
+  }
+  
+  if (typeof value === 'string') {
+    let formatted = value
+      .replace(/[_-]/g, ' ')
+      .replace(/([A-Z])/g, ' $1')
+      .trim()
+      .replace(/\s+/g, ' ');
+    
+    return formatted
+      .split(' ')
+      .map(word => {
+        if (word.length === 0) return word;
+        const upper = word.toUpperCase();
+        if (['ID', 'CEO', 'CTO', 'CFO', 'VP', 'HR', 'IT', 'API', 'URL', 'PDF', 'CSV', 'XLS', 'XLSX', 'JSON', 'XML', 'HTML', 'CSS', 'JS', 'TS', 'SQL', 'DB', 'UI', 'UX', 'AI', 'ML', 'AR', 'VR', 'IoT', 'SaaS', 'PaaS', 'IaaS', 'CRM', 'ERP', 'POS', 'GPS', 'RFID', 'NFC', 'QR', 'USB', 'HDMI', 'WiFi', 'Bluetooth', '4G', '5G', 'LTE', 'WiMAX', 'VPN', 'LAN', 'WAN', 'DNS', 'HTTP', 'HTTPS', 'FTP', 'SMTP', 'POP', 'IMAP', 'SSH', 'SSL', 'TLS', 'AES', 'RSA', 'MD5', 'SHA', 'JWT', 'OAuth', 'REST', 'SOAP', 'GraphQL', 'gRPC', 'WebSocket', 'TCP', 'UDP', 'IP', 'IPv4', 'IPv6', 'MAC', 'OS', 'iOS', 'Android', 'Windows', 'Linux', 'macOS', 'Unix', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP', 'S3', 'EC2', 'RDS', 'Lambda', 'SQS', 'SNS', 'CloudFront', 'Route53', 'VPC', 'IAM', 'SES', 'SNS', 'SQS', 'DynamoDB', 'ElastiCache', 'Redshift', 'EMR', 'Kinesis', 'CloudWatch', 'CloudTrail', 'Config', 'TrustedAdvisor', 'Support', 'Billing', 'CostExplorer', 'Budgets', 'Organizations', 'ControlTower', 'SecurityHub', 'GuardDuty', 'Inspector', 'Macie', 'WAF', 'Shield', 'CertificateManager', 'SecretsManager', 'KMS', 'CloudHSM', 'DirectoryService', 'Cognito', 'WorkSpaces', 'WorkDocs', 'Chime', 'Connect', 'Pinpoint', 'MobileHub', 'Amplify', 'AppSync', 'API Gateway', 'Step Functions', 'SWF', 'ECS', 'EKS', 'Fargate', 'Batch', 'Glue', 'Athena', 'QuickSight', 'SageMaker', 'Rekognition', 'Polly', 'Transcribe', 'Translate', 'Comprehend', 'Lex', 'Textract', 'Forecast', 'Personalize', 'FraudDetector', 'Bedrock', 'CodeGuru', 'CodeCommit', 'CodeBuild', 'CodeDeploy', 'CodePipeline', 'CodeStar', 'Cloud9', 'X-Ray', 'CloudFormation', 'CDK', 'SAM', 'Serverless'].includes(upper)) {
+          return upper;
+        }
+        if (['LLC', 'Inc', 'Corp', 'Ltd', 'Co', 'LLP', 'LP', 'PC', 'PA', 'PLLC'].includes(upper)) {
+          return upper;
+        }
+        if (/^\d+$/.test(word)) {
+          return word;
+        }
+        if (word.length > 1 && word[0] === word[0].toLowerCase() && word[1] === word[1].toUpperCase()) {
+          return word;
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(' ');
+  }
+  
+  return value.toString();
+};
+
 const Success = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [proposalBundle, setProposalBundle] = useState<ProposalBundleResponse | null>(null);
   const [policyWordings, setPolicyWordings] = useState<PolicyWording[]>([]);
   const [policyDetails, setPolicyDetails] = useState<PolicyDetailsAPIResponse | null>(null);
   const [productBundle, setProductBundle] = useState<InsurerPricingConfigResponse | null>(null);
   const [selectedExtensions, setSelectedExtensions] = useState<any[]>([]);
   const [expandedWordings, setExpandedWordings] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [policyData, setPolicyData] = useState<{
@@ -194,42 +279,61 @@ const Success = () => {
     });
   };
 
+  const toggleSectionExpansion = (sectionKey: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionKey)) {
+        newSet.delete(sectionKey);
+      } else {
+        newSet.add(sectionKey);
+      }
+      return newSet;
+    });
+  };
+
   const handleDownloadDocument = async (url: string, filename: string) => {
     try {
-      console.log('Open document - URL:', url);
-      console.log('Open document - Filename:', filename);
+      // Show download toast first
+      toast.success('Download Started', {
+        description: `Downloading ${filename}...`
+      });
       
-      // Try to open in new tab first
-      const newWindow = window.open('', '_blank', 'noopener,noreferrer');
+      // Fetch the document from the JWT token URL
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/pdf,application/octet-stream,*/*',
+        },
+      });
       
-      if (newWindow) {
-        // If we can open a new window, navigate to the URL
-        newWindow.location.href = url;
-        newWindow.focus();
-        
-        toast.success('Document Opened', {
-          description: `Opening ${filename} in new tab...`
-        });
-      } else {
-        // Fallback: create a link element
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.style.display = 'none';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        toast.success('Document Opened', {
-          description: `Opening ${filename} in new tab...`
-        });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch document: ${response.status} ${response.statusText}`);
       }
+      
+      // Create blob from response
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Create temporary link element for download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      
+      // Add to DOM, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up blob URL after a short delay
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+      
     } catch (error) {
-      console.error('Open document error:', error);
-      toast.error('Failed to Open Document', {
-        description: error instanceof Error ? error.message : 'Failed to open document. Please try again.'
+      console.error('Download error:', error);
+      toast.error('Download Failed', {
+        description: error instanceof Error ? error.message : 'Failed to download document. Please try again.'
       });
     }
   };
@@ -294,428 +398,696 @@ const Success = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f8fafc' }}>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
       <Header />
-      <div className="container mx-auto px-4 py-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Success Header - Prominent */}
-          <div className="text-left mb-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 animate-pulse">
-                  <CheckCircle className="h-10 w-10 text-green-600" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Policy Created Successfully!</h1>
-                  <p className="text-base text-gray-600">
-                    Your insurance policy has been created.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  Print Policy
-                </Button>
-                <Button className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Create New Policy
-                </Button>
-              </div>
+      <div className="max-w-7xl mx-auto space-y-8 p-6">
+        {/* Success Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 animate-pulse">
+              <CheckCircle className="h-10 w-10 text-green-600" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Policy Created Successfully!</h1>
+              <p className="text-lg text-gray-600 mt-1">
+                Your insurance policy has been created.
+              </p>
             </div>
           </div>
+          <div className="flex gap-3">
+            <Button onClick={handlePrintPolicy} variant="outline" className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Print Policy
+            </Button>
+            <Button onClick={() => navigate('/broker/dashboard')} className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Create New Policy
+            </Button>
+          </div>
+        </div>
 
-          {/* Vertical Summary List */}
-          {proposalBundle && (
-            <Card className="bg-white shadow-lg border-0 mb-6">
-              <CardContent className="p-4">
-                <div className="space-y-4">
+        {/* Policy Summary */}
+        {policyDetails && (
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Policy Summary
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Policy overview and key details
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-400">Total Premium</div>
+                  <div className="text-sm text-gray-600 font-medium">
+                    {formatFieldValue('base_premium', policyDetails.policyInfo.base_premium)}
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="grid lg:grid-cols-4">
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Policy ID</div>
+                    <div className="text-sm font-medium">{policyDetails.policyInfo.policy_reference}</div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Policy Start Date</div>
+                    <div className="text-sm font-medium">{formatFieldValue('start_date', policyDetails.policyInfo.start_date)}</div>
+                  </div>
+                  <div className="p-3 border-r border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Policy End Date</div>
+                    <div className="text-sm font-medium">{formatFieldValue('end_date', policyDetails.policyInfo.end_date)}</div>
+                  </div>
+                  <div className="p-3 border-b border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">Status</div>
+                    <div className="text-sm font-medium">
+                      <Badge variant="default" className="bg-green-100 text-green-800">
+                        {formatFieldValue('status', policyDetails.policyInfo.status)}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
+        {/* Project Details */}
+        {policyDetails && (
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('project_details')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <Building className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Project Details
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Construction project information
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Project Name</div>
+                    <div className="text-sm font-medium">
+                      {formatFieldValue('project_name', policyDetails.policyInfo.proposal_bundle.project.project_name)}
+                    </div>
+                  </div>
+                  {expandedSections.has('project_details') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            {expandedSections.has('project_details') && (
+              <CardContent className="pt-0">
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="grid lg:grid-cols-3">
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Project Name</div>
+                      <div className="text-sm font-medium">{formatFieldValue('project_name', policyDetails.policyInfo.proposal_bundle.project.project_name)}</div>
+                    </div>
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Project Type</div>
+                      <div className="text-sm font-medium">{formatFieldValue('project_type', policyDetails.policyInfo.proposal_bundle.project.project_type)}</div>
+                    </div>
+                    <div className="p-3 border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Completion Date</div>
+                      <div className="text-sm font-medium">{formatFieldValue('completion_date', policyDetails.policyInfo.proposal_bundle.project.completion_date)}</div>
+                    </div>
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Sub Project Type</div>
+                      <div className="text-sm font-medium">{formatFieldValue('sub_project_type', policyDetails.policyInfo.proposal_bundle.project.sub_project_type)}</div>
+                    </div>
+                    <div className="p-3 border-r border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Construction Type</div>
+                      <div className="text-sm font-medium">{formatFieldValue('construction_type', policyDetails.policyInfo.proposal_bundle.project.construction_type)}</div>
+                    </div>
+                    <div className="p-3 border-b border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">Maintenance Period Months</div>
+                      <div className="text-sm font-medium">{formatFieldValue('maintenance_period_months', policyDetails.policyInfo.proposal_bundle.project.maintenance_period_months)}</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
 
-                  {/* Policy Details Section */}
-                  <div className="border-b border-gray-100 pb-3">
-                    <h3 className="text-base font-semibold text-gray-900 mb-3">Policy Details</h3>
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                        <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Policy ID</span>
-                          <p className="text-sm font-medium">{policyDetails?.policyInfo.policy_id || policyData.policyId || proposalBundle?.quote_meta.quote_id || 'N/A'}</p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Insurer</span>
-                          <p className="text-sm font-medium">{policyDetails?.policyInfo.insurer_name || proposalBundle?.plans[0]?.insurer_name || 'N/A'}</p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Premium Amount</span>
-                          <p className="text-sm font-semibold text-green-600">
-                            AED {policyDetails?.policyInfo.base_premium ? parseFloat(policyDetails.policyInfo.base_premium).toLocaleString() : proposalBundle?.plans[0]?.base_premium?.toLocaleString() || 'N/A'}
-                          </p>
-                        </div>
-                        <div className="p-3">
-                          <span className="text-xs text-gray-500">Sum Insured</span>
-                          <p className="text-sm font-semibold">
-                            AED {policyDetails?.policyInfo.sum_insured ? parseFloat(policyDetails.policyInfo.sum_insured).toLocaleString() : proposalBundle?.project.sum_insured ? parseFloat(proposalBundle.project.sum_insured).toLocaleString() : 'N/A'}
-                          </p>
-                        </div>
+        {/* Insured Details */}
+        {policyDetails && (
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('insured_details')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Insured Details
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {formatFieldValue('insured_name', policyDetails.policyInfo.proposal_bundle.insured.details.insured_name)}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Role</div>
+                    <div className="text-sm font-medium">
+                      {formatFieldValue('role_of_insured', policyDetails.policyInfo.proposal_bundle.insured.details.role_of_insured)}
+                    </div>
+                  </div>
+                  {expandedSections.has('insured_details') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            {expandedSections.has('insured_details') && (
+              <CardContent className="pt-0">
+                <div className="space-y-6">
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="grid lg:grid-cols-3">
+                      <div className="p-3 border-r border-b border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Insured Name</div>
+                        <div className="text-sm font-medium">{formatFieldValue('insured_name', policyDetails.policyInfo.proposal_bundle.insured.details.insured_name)}</div>
+                      </div>
+                      <div className="p-3 border-r border-b border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Role of Insured</div>
+                        <div className="text-sm font-medium">{formatFieldValue('role_of_insured', policyDetails.policyInfo.proposal_bundle.insured.details.role_of_insured)}</div>
+                      </div>
+                      <div className="p-3 border-b border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Had Losses Last 5 Years</div>
+                        <div className="text-sm font-medium">{formatFieldValue('had_losses_last_5yrs', policyDetails.policyInfo.proposal_bundle.insured.details.had_losses_last_5yrs)}</div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Project Details Section */}
-                  <div className="border-b border-gray-100 pb-3">
-                    <h3 className="text-base font-semibold text-gray-900 mb-3">Project Details</h3>
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                        <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Project Name</span>
-                          <p className="text-sm font-medium">{policyDetails?.policyInfo.project_name || proposalBundle?.project.project_name || 'N/A'}</p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Client Name</span>
-                          <p className="text-sm font-medium">{policyDetails?.policyInfo.client_name || proposalBundle?.project.client_name || 'N/A'}</p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3 col-span-2">
-                          <span className="text-xs text-gray-500">Location</span>
-                          <p className="text-sm font-medium">{policyDetails?.policyInfo.address || proposalBundle?.project.address || 'N/A'}</p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Project Type</span>
-                          <p className="text-sm font-medium capitalize">{policyDetails?.policyInfo.project_type || proposalBundle?.project.project_type || 'N/A'}</p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Construction Type</span>
-                          <p className="text-sm font-medium capitalize">{policyDetails?.policyInfo.construction_type || proposalBundle?.project.construction_type || 'N/A'}</p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Project Start Time</span>
-                          <p className="text-sm font-medium">
-                            {policyDetails?.policyInfo.start_date 
-                              ? new Date(policyDetails.policyInfo.start_date).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })
-                              : proposalBundle?.project.start_date 
-                                ? new Date(proposalBundle.project.start_date).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                  })
-                                : 'N/A'
-                            }
-                          </p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Project End Time</span>
-                          <p className="text-sm font-medium">
-                            {policyDetails?.policyInfo.end_date 
-                              ? new Date(policyDetails.policyInfo.end_date).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })
-                              : proposalBundle?.project.end_date 
-                                ? new Date(proposalBundle.project.end_date).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                  })
-                                : 'N/A'
-                            }
-                          </p>
-                        </div>
-                        <div className="border-r border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Construction Period</span>
-                          <p className="text-sm font-medium">{policyDetails?.policyInfo.construction_period_months || proposalBundle?.project.construction_period_months || 'N/A'} months</p>
-                        </div>
-                        <div className="border-b border-gray-200 p-3">
-                          <span className="text-xs text-gray-500">Maintenance Period</span>
-                          <p className="text-sm font-medium">{policyDetails?.policyInfo.maintenance_period_months || proposalBundle?.project.maintenance_period_months || 'N/A'} months</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Policy Timeline Section */}
-                  {policyDetails?.policyTimeline && policyDetails.policyTimeline.length > 0 && (
-                    <div className="border-b border-gray-100 pb-3">
-                      <h3 className="text-base font-semibold text-gray-900 mb-3">Policy Timeline</h3>
+                  
+                  {/* Claims History */}
+                  {policyDetails.policyInfo.proposal_bundle.insured.claims && policyDetails.policyInfo.proposal_bundle.insured.claims.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">Claims History</h4>
                       <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="flex flex-wrap">
-                          {policyDetails.policyTimeline.map((event, index) => (
-                            <div key={index} className="flex items-center space-x-3 min-w-0 flex-1 border-r border-b border-gray-200 p-3 last:border-r-0">
-                              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-gray-900">{event.event}</p>
-                                <p className="text-xs text-gray-500">
-                                  {new Date(event.date).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                  })}
-                                </p>
+                        <div className="grid grid-cols-4 gap-0">
+                          <div className="p-3 bg-gray-50 border-r border-b border-gray-200">
+                            <div className="text-xs text-gray-500 mb-1">Claim Year</div>
+                          </div>
+                          <div className="p-3 bg-gray-50 border-r border-b border-gray-200">
+                            <div className="text-xs text-gray-500 mb-1">Description</div>
+                          </div>
+                          <div className="p-3 bg-gray-50 border-r border-b border-gray-200">
+                            <div className="text-xs text-gray-500 mb-1">Count of Claims</div>
+                          </div>
+                          <div className="p-3 bg-gray-50 border-b border-gray-200">
+                            <div className="text-xs text-gray-500 mb-1">Amount of Claims</div>
+                          </div>
+                          {policyDetails.policyInfo.proposal_bundle.insured.claims.map((claim, index) => (
+                            <>
+                              <div key={`year-${index}`} className="p-3 border-r border-b border-gray-200">
+                                <div className="text-sm font-medium">{claim.claim_year}</div>
                               </div>
-                            </div>
+                              <div key={`desc-${index}`} className="p-3 border-r border-b border-gray-200">
+                                <div className="text-sm font-medium">{claim.description}</div>
+                              </div>
+                              <div key={`count-${index}`} className="p-3 border-r border-b border-gray-200">
+                                <div className="text-sm font-medium">{claim.count_of_claims}</div>
+                              </div>
+                              <div key={`amount-${index}`} className="p-3 border-b border-gray-200">
+                                <div className="text-sm font-medium">AED {parseFloat(claim.amount_of_claims).toLocaleString()}</div>
+                              </div>
+                            </>
                           ))}
                         </div>
                       </div>
                     </div>
                   )}
-
                 </div>
               </CardContent>
-            </Card>
-          )}
+            )}
+          </Card>
+        )}
 
-          {/* Extensions Section */}
-          {proposalBundle && proposalBundle.plans[0]?.extensions && (
-            <Card className="bg-white shadow-lg border-0 mb-8">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-gray-900">
-                  Extensions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-4">
-                  {/* TPL Limit - Show all */}
-                  {proposalBundle.plans[0].extensions.tpl_limit && (
-                    <div className="border-b border-gray-100 pb-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Third Party Liability Limit</h4>
-                      <div className="p-3 bg-blue-50 rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-gray-900">
-                            {proposalBundle.plans[0].extensions.tpl_limit.label}
-                          </span>
-                        </div>
-                      </div>
+        {/* Site Risk Assessment */}
+        {policyDetails && (
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('site_risks')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <MapPin className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Site Risk Assessment
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Risk factors and site conditions
                     </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Soil Type</div>
+                    <div className="text-sm font-medium">
+                      {formatFieldValue('soil_type', policyDetails.policyInfo.proposal_bundle.site_risks.soil_type)}
+                    </div>
+                  </div>
+                  {expandedSections.has('site_risks') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
                   )}
-
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Selected Extensions Section */}
-          {selectedExtensions.length > 0 && (
-            <Card className="bg-white shadow-lg border-0 mb-8">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-gray-900">
-                  Selected Extensions
-                </CardTitle>
-              </CardHeader>
+              </div>
+            </CardHeader>
+            {expandedSections.has('site_risks') && (
               <CardContent className="pt-0">
-                <div className="space-y-3">
-                  {selectedExtensions.map((extension) => {
-                    const isExpanded = expandedWordings.has(extension.policy_key);
-                    return (
-                      <div key={extension.policy_key} className="p-4 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-semibold text-foreground">{extension.title}</h3>
-                            <Badge variant="outline" className="text-xs px-1 py-0">{extension.clause_code}</Badge>
-                            <Badge 
-                              variant={extension.clause_type === "CLAUSE" ? "default" : extension.clause_type === "WARRANTY" ? "secondary" : "outline"}
-                              className="text-xs px-1 py-0"
-                            >
-                              {extension.clause_type}
-                            </Badge>
-                            {extension.show_type === 'mandatory' && (
-                              <Badge variant="destructive" className="text-xs px-1 py-0">Mandatory</Badge>
-                            )}
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs h-7"
-                            onClick={() => toggleWordingExpansion(extension.policy_key)}
-                          >
-                            {isExpanded ? 'Hide Wordings' : 'View Wordings'}
-                          </Button>
-                        </div>
-                        
-                        {isExpanded && extension.clause_wording && (
-                          <div className="mt-3 pt-3 border-t border-gray-200">
-                            <p className="text-xs text-gray-600 leading-relaxed">
-                              {extension.clause_wording}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Documents Section - Three Separate Cards */}
-          <div className="space-y-6 mb-8">
-            {/* Policy Documents - Only Active Items */}
-            {console.log('Success page - policyWordings:', policyWordings)}
-            {console.log('Success page - active wordings:', policyWordings.filter(wording => wording.is_active))}
-            <Card className="bg-white shadow-lg border-0">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-gray-900">
-                  Policy Documents
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {policyWordings.filter(wording => wording.is_active).length > 0 ? (
-                  <div className="space-y-2">
-                    {policyWordings
-                      .filter(wording => wording.is_active)
-                      .map((wording, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <span className="text-sm font-medium block">{wording.label}</span>
-                              <span className="text-xs text-gray-500">
-                                {wording.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {wording.url && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDownloadDocument(wording.url, wording.label)}
-                                className="h-8 px-3 text-xs"
-                              >
-                                <FileText className="h-3 w-3 mr-1" />
-                                View
-                              </Button>
-                            )}
-                          </div>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="grid lg:grid-cols-3">
+                    {Object.entries(policyDetails.policyInfo.proposal_bundle.site_risks)
+                      .filter(([key]) => !['id', 'project_id', 'created_at', 'updated_at'].includes(key))
+                      .map(([key, value], idx) => (
+                        <div key={key} className="p-3 border-r border-b border-gray-200 last:border-r-0">
+                          <div className="text-xs text-gray-500 mb-1">{formatFieldName(key)}</div>
+                          <div className="text-sm font-medium">{formatFieldValue(key, value)}</div>
                         </div>
                       ))}
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p className="text-sm">No policy documents available</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {policyWordings.length === 0 ? 'No wordings loaded' : 'No active wordings found'}
-                    </p>
-                  </div>
-                )}
+                </div>
               </CardContent>
-            </Card>
-
-            {/* Project Documents */}
-            {proposalBundle && Object.keys(proposalBundle.required_documents).length > 0 && (
-              <Card className="bg-white shadow-lg border-0">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-semibold text-gray-900">
-                    Project Documents
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    {Object.entries(proposalBundle.required_documents).map(([key, doc]) => (
-                      <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-sm font-medium">{doc.label}</span>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownloadDocument(doc.url, doc.label)}
-                          className="h-8 px-3 text-xs"
-                        >
-                          <FileText className="h-3 w-3 mr-1" />
-                          View
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             )}
+          </Card>
+        )}
 
-            {/* Declaration Documents */}
-            {proposalBundle && proposalBundle.required_documents_for_policy_issue && (
-              <Card className="bg-white shadow-lg border-0">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-semibold text-gray-900">
-                    Declaration Documents
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    {Array.isArray(proposalBundle.required_documents_for_policy_issue) ? (
-                      proposalBundle.required_documents_for_policy_issue.map((doc: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                            <span className="text-sm font-medium">{doc.label || doc.name || `Document ${index + 1}`}</span>
-                          </div>
-                          {doc.url && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownloadDocument(doc.url, doc.label || doc.name)}
-                              className="h-8 px-3 text-xs"
-                            >
-                              <FileText className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                          )}
-                        </div>
-                      ))
-                    ) : typeof proposalBundle.required_documents_for_policy_issue === 'object' ? (
-                      Object.entries(proposalBundle.required_documents_for_policy_issue).map(([key, doc]: [string, any]) => (
-                        <div key={key} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <span className="text-sm font-medium">{doc.label || key}</span>
-                              {doc.uploaded_at && (
-                                <span className="text-xs text-gray-500 block">
-                                  Uploaded on {new Date(doc.uploaded_at).toLocaleDateString()}
-                                </span>
-                              )}
+        {/* Cover Requirements */}
+        {policyDetails && (
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('cover_requirements')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Cover Requirements
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Insurance coverage details
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Sum Insured</div>
+                    <div className="text-sm font-medium">
+                      {formatFieldValue('sum_insured', policyDetails.policyInfo.proposal_bundle.cover_requirements.sum_insured)}
+                    </div>
+                  </div>
+                  {expandedSections.has('cover_requirements') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            {expandedSections.has('cover_requirements') && (
+              <CardContent className="pt-0">
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="grid lg:grid-cols-3">
+                    {Object.entries(policyDetails.policyInfo.proposal_bundle.cover_requirements)
+                      .filter(([key]) => !['id', 'project_id', 'created_at', 'updated_at', 'cross_liability_cover'].includes(key))
+                      .map(([key, value], idx) => {
+                        let displayValue = value;
+                        if (key.includes('works') || key.includes('equipment') || key.includes('materials') || 
+                            key.includes('property') || key.includes('sum_insured') || key.includes('computed_sum_insured')) {
+                          const num = parseFloat(String(value));
+                          if (!isNaN(num) && num >= 0) {
+                            displayValue = `AED ${num.toLocaleString()}`;
+                          }
+                        }
+                        
+                        return (
+                          <div key={key} className="p-3 border-r border-b border-gray-200 last:border-r-0">
+                            <div className="text-xs text-gray-500 mb-1">{formatFieldName(key)}</div>
+                            <div className="text-sm font-medium">
+                              {typeof displayValue === 'string' && displayValue.startsWith('AED') ? 
+                                displayValue : 
+                                formatFieldValue(key, displayValue)
+                              }
                             </div>
                           </div>
-                          {doc.url ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownloadDocument(doc.url, doc.label || key)}
-                              className="h-8 px-3 text-xs"
-                            >
-                              <FileText className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                          ) : (
-                            <span className="text-xs text-gray-400 px-2 py-1">Not uploaded</span>
+                        );
+                      })}
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
+
+        {/* Selected Plan Details */}
+        {policyDetails && (
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader 
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSectionExpansion('selected_plan_details')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <CreditCard className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Selected Plan Details
+                    </CardTitle>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Insurance plan configuration
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Premium Amount</div>
+                    <div className="text-sm text-gray-600 font-medium">
+                      AED {parseFloat(policyDetails.policyInfo.proposal_bundle.plans[0]?.premium_amount || '0').toLocaleString()}
+                    </div>
+                  </div>
+                  {expandedSections.has('selected_plan_details') ? (
+                    <ChevronUp className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            {expandedSections.has('selected_plan_details') && (
+              <CardContent className="pt-0">
+                {policyDetails.policyInfo.proposal_bundle.plans.map((plan, index) => (
+                  <div key={plan.id || index} className="border border-gray-200 rounded-lg overflow-hidden mb-4 last:mb-0">
+                    <div className="grid lg:grid-cols-3">
+                      <div className="p-3 border-r border-b border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Premium Amount</div>
+                        <div className="text-sm font-medium">{formatFieldValue('premium_amount', plan.premium_amount)}</div>
+                      </div>
+                      <div className="p-3 border-r border-b border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Minimum Premium</div>
+                        <div className="text-sm font-medium">{formatFieldValue('minimum_premium_value', plan.minimum_premium_value)}</div>
+                      </div>
+                      <div className="p-3 border-b border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Minimum Applied</div>
+                        <div className="text-sm font-medium">{plan.is_minimum_premium_applied ? 'Yes' : 'No'}</div>
+                      </div>
+                    </div>
+                    
+                    {/* Extensions */}
+                    {plan.extensions && (
+                      <div className="p-4 bg-gray-50">
+                        <h4 className="font-medium text-gray-900 mb-3">Extensions</h4>
+                        <div className="space-y-4">
+                          {plan.extensions.tpl_limit && (
+                            <div className="border border-gray-200 rounded-lg p-3">
+                              <div className="text-sm font-medium text-gray-900 mb-2">TPL Limit Extension</div>
+                              <div className="grid lg:grid-cols-3 gap-4">
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Label</div>
+                                  <div className="text-sm font-medium">{plan.extensions.tpl_limit.label}</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Impact %</div>
+                                  <div className="text-sm font-medium">{plan.extensions.tpl_limit.impact_pct}%</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Description</div>
+                                  <div className="text-sm font-medium">{plan.extensions.tpl_limit.description}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {plan.extensions.selected_plan && (
+                            <div className="border border-gray-200 rounded-lg p-3">
+                              <div className="text-sm font-medium text-gray-900 mb-2">Selected Plan Details</div>
+                              <div className="grid lg:grid-cols-3 gap-4">
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Deductible</div>
+                                  <div className="text-sm font-medium">AED {plan.extensions.selected_plan.deductible?.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Base Premium</div>
+                                  <div className="text-sm font-medium">AED {plan.extensions.selected_plan.base_premium?.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Coverage Amount</div>
+                                  <div className="text-sm font-medium">AED {plan.extensions.selected_plan.coverage_amount?.toLocaleString()}</div>
+                                </div>
+                              </div>
+                            </div>
                           )}
                         </div>
-                      ))
-                    ) : (
-                      <div className="p-3 bg-blue-50 rounded-lg">
-                        <span className="text-sm text-gray-600">
-                          {typeof proposalBundle.required_documents_for_policy_issue === 'string' 
-                            ? proposalBundle.required_documents_for_policy_issue 
-                            : JSON.stringify(proposalBundle.required_documents_for_policy_issue)}
-                        </span>
                       </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                ))}
+              </CardContent>
             )}
+          </Card>
+        )}
 
-          </div>
+        {/* Required Documents (Underwriting Documents) */}
+        {proposalBundle && proposalBundle.required_documents && Object.keys(proposalBundle.required_documents).length > 0 && (
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                  <FolderOpen className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    Underwriting Documents
+                  </CardTitle>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {Object.keys(proposalBundle.required_documents).length} document(s)
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                {Object.entries(proposalBundle.required_documents).map(([key, doc]) => (
+                  <div key={key} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <div className="text-sm font-medium">{doc.label}</div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadDocument(doc.url, doc.label)}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        </div>
+        {/* Declaration Documents */}
+        {proposalBundle && proposalBundle.required_documents_for_policy_issue && (
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                  <FileCheck className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    Declaration Documents
+                  </CardTitle>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {Array.isArray(proposalBundle.required_documents_for_policy_issue) 
+                      ? `${proposalBundle.required_documents_for_policy_issue.length} document(s)`
+                      : typeof proposalBundle.required_documents_for_policy_issue === 'object'
+                        ? `${Object.keys(proposalBundle.required_documents_for_policy_issue).length} document(s)`
+                        : 'Document(s) available'
+                    }
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                {Array.isArray(proposalBundle.required_documents_for_policy_issue) ? (
+                  proposalBundle.required_documents_for_policy_issue.map((doc: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <div className="text-sm font-medium">{doc.label || doc.name || `Document ${index + 1}`}</div>
+                          {doc.uploaded_at && (
+                            <div className="text-xs text-gray-500">
+                              Uploaded: {new Date(doc.uploaded_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {doc.url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadDocument(doc.url, doc.label || doc.name)}
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      )}
+                    </div>
+                  ))
+                ) : typeof proposalBundle.required_documents_for_policy_issue === 'object' ? (
+                  Object.entries(proposalBundle.required_documents_for_policy_issue).map(([key, doc]: [string, any]) => (
+                    <div key={key} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <div className="text-sm font-medium">{doc.label || key}</div>
+                          {doc.uploaded_at && (
+                            <div className="text-xs text-gray-500">
+                              Uploaded: {new Date(doc.uploaded_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {doc.url ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadDocument(doc.url, doc.label || key)}
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-gray-400 px-2 py-1">Not uploaded</span>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">
+                      {typeof proposalBundle.required_documents_for_policy_issue === 'string' 
+                        ? proposalBundle.required_documents_for_policy_issue 
+                        : JSON.stringify(proposalBundle.required_documents_for_policy_issue)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Policy Documents */}
+        {policyWordings && policyWordings.length > 0 && (
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    Policy Documents
+                  </CardTitle>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Download policy documents and wordings
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                {policyWordings.map((wording, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <div className="text-sm font-medium">{wording.label}</div>
+                        <div className="text-xs text-gray-500">
+                          {wording.is_active ? 'Active' : 'Inactive'}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadDocument(wording.url, wording.label)}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
       <Footer />
     </div>

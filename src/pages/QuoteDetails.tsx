@@ -1383,19 +1383,39 @@ const QuoteDetails = () => {
                       {formatFieldValue('created_at', proposalBundle.insured.details.created_at)}
                     </div>
                   </div>
-                  {/* Claims List */}
+                  {/* Claims History Table */}
                   {proposalBundle.insured?.claims && proposalBundle.insured.claims.length > 0 && (
                     <div className="col-span-4 p-3 border-t border-gray-200">
-                      <div className="text-xs text-gray-500 mb-2">Claims History ({proposalBundle.insured.claims.length} claims)</div>
-                      <div className="space-y-2">
-                        {proposalBundle.insured.claims.map((claim, index) => (
-                          <div key={index} className="text-sm bg-gray-50 p-2 rounded">
-                            <div className="font-medium">Claim {index + 1}</div>
-                            {Object.entries(claim).map(([key, value]) => (
-                              <div key={key}>{formatFieldName(key)}: {formatFieldValue(key, value)}</div>
+                      <div className="text-xs text-gray-500 mb-3 font-medium">Claims History ({proposalBundle.insured.claims.length} claims)</div>
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <table className="w-full">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Claim Year</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Description</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Count of Claims</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount of Claims</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {proposalBundle.insured.claims.map((claim, index) => (
+                              <tr key={index}>
+                                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200">
+                                  {formatFieldValue('claim_year', claim.claim_year)}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200">
+                                  {formatFieldValue('description', claim.description)}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200">
+                                  {formatFieldValue('count_of_claims', claim.count_of_claims)}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {formatFieldValue('amount_of_claims', claim.amount_of_claims)}
+                                </td>
+                              </tr>
                             ))}
-                </div>
-                        ))}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   )}
@@ -1406,73 +1426,6 @@ const QuoteDetails = () => {
           </Card>
         )}
 
-        {/* Claims History */}
-        {proposalBundle.insured?.claims && proposalBundle.insured.claims.length > 0 && (
-          <Card className="bg-white border border-blue-200 mb-4" data-section="claims_history">
-            <CardHeader 
-              className="pb-3 cursor-pointer"
-              onClick={() => toggleSectionExpansion('claims_history')}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-                    <FileText className="h-4 w-4 text-white" />
-                    </div>
-                    <div>
-                    <CardTitle className="text-lg font-semibold text-gray-900">
-                      Claims History
-                    </CardTitle>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {proposalBundle.quote_meta.created_at ? 
-                        new Date(proposalBundle.quote_meta.created_at).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        }) : 'No date available'
-                      }
-                    </div>
-                  </div>
-                </div>
-                                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className="text-xs text-gray-400">Claims Count</div>
-                    <div className="text-sm text-gray-600 font-medium">
-                      {proposalBundle.insured.claims.length} claim{proposalBundle.insured.claims.length !== 1 ? 's' : ''}
-                                </div>
-                              </div>
-                  {expandedSections.has('claims_history') ? (
-                    <ChevronUp className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-gray-500" />
-                  )}
-                              </div>
-              </div>
-            </CardHeader>
-            {expandedSections.has('claims_history') && (
-              <CardContent className="pt-0">
-              <div className="space-y-4">
-                {proposalBundle.insured.claims.map((claim, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="grid lg:grid-cols-4">
-                      {Object.entries(claim).map(([key, value], idx) => (
-                        <div key={key} className="p-3 border-r border-b border-gray-200 last:border-r-0">
-                          <div className="text-xs text-gray-500 mb-1">{formatFieldName(key)}</div>
-                          <div className="text-sm font-medium">
-                            {formatFieldValue(key, value)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                </div>
-              </CardContent>
-            )}
-            </Card>
-        )}
 
         {/* Contract Structure */}
         {proposalBundle.contract_structure && (

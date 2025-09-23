@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit, Download, Check, Circle, ChevronDown, ChevronUp, FileText, User, Building, MapPin, Shield, FolderOpen, CreditCard, Star, Calendar, DollarSign, Users, FileCheck, AlertTriangle } from "lucide-react";
 import { getPolicyDetailsById, PolicyDetailsAPIResponse } from "@/lib/api/quotes";
-import { handleDocumentDownload } from "@/utils/downloadHelper";
 import { toast } from "@/hooks/use-toast";
 
 // Helper functions for formatting
@@ -62,9 +61,41 @@ const formatFieldValue = (key: string, value: any): string => {
     }
   }
   
-  // Format string values to sentence case
+  // Format string values to human-readable format
   if (typeof value === 'string') {
-    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+    // Remove special characters and convert to human-readable format
+    let formatted = value
+      .replace(/[_-]/g, ' ')  // Replace underscores and hyphens with spaces
+      .replace(/([A-Z])/g, ' $1')  // Add space before capital letters
+      .trim()  // Remove leading/trailing spaces
+      .replace(/\s+/g, ' ');  // Replace multiple spaces with single space
+    
+    // Convert to proper sentence case
+    return formatted
+      .split(' ')
+      .map(word => {
+        if (word.length === 0) return word;
+        // Handle common abbreviations and special cases
+        const upper = word.toUpperCase();
+        if (['ID', 'CEO', 'CTO', 'CFO', 'VP', 'HR', 'IT', 'API', 'URL', 'PDF', 'CSV', 'XLS', 'XLSX', 'JSON', 'XML', 'HTML', 'CSS', 'JS', 'TS', 'SQL', 'DB', 'UI', 'UX', 'AI', 'ML', 'AR', 'VR', 'IoT', 'SaaS', 'PaaS', 'IaaS', 'CRM', 'ERP', 'POS', 'GPS', 'RFID', 'NFC', 'QR', 'USB', 'HDMI', 'WiFi', 'Bluetooth', '4G', '5G', 'LTE', 'WiMAX', 'VPN', 'LAN', 'WAN', 'DNS', 'HTTP', 'HTTPS', 'FTP', 'SMTP', 'POP', 'IMAP', 'SSH', 'SSL', 'TLS', 'AES', 'RSA', 'MD5', 'SHA', 'JWT', 'OAuth', 'REST', 'SOAP', 'GraphQL', 'gRPC', 'WebSocket', 'TCP', 'UDP', 'IP', 'IPv4', 'IPv6', 'MAC', 'OS', 'iOS', 'Android', 'Windows', 'Linux', 'macOS', 'Unix', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP', 'S3', 'EC2', 'RDS', 'Lambda', 'SQS', 'SNS', 'CloudFront', 'Route53', 'VPC', 'IAM', 'SES', 'SNS', 'SQS', 'DynamoDB', 'ElastiCache', 'Redshift', 'EMR', 'Kinesis', 'CloudWatch', 'CloudTrail', 'Config', 'TrustedAdvisor', 'Support', 'Billing', 'CostExplorer', 'Budgets', 'Organizations', 'ControlTower', 'SecurityHub', 'GuardDuty', 'Inspector', 'Macie', 'WAF', 'Shield', 'CertificateManager', 'SecretsManager', 'KMS', 'CloudHSM', 'DirectoryService', 'Cognito', 'WorkSpaces', 'WorkDocs', 'Chime', 'Connect', 'Pinpoint', 'MobileHub', 'Amplify', 'AppSync', 'API Gateway', 'Step Functions', 'SWF', 'ECS', 'EKS', 'Fargate', 'Batch', 'Glue', 'Athena', 'QuickSight', 'SageMaker', 'Rekognition', 'Polly', 'Transcribe', 'Translate', 'Comprehend', 'Lex', 'Textract', 'Forecast', 'Personalize', 'FraudDetector', 'Bedrock', 'CodeGuru', 'CodeCommit', 'CodeBuild', 'CodeDeploy', 'CodePipeline', 'CodeStar', 'Cloud9', 'X-Ray', 'CloudFormation', 'CDK', 'SAM', 'Serverless', 'Lambda', 'API Gateway', 'DynamoDB', 'S3', 'CloudFront', 'Route53', 'VPC', 'EC2', 'RDS', 'ElastiCache', 'Redshift', 'EMR', 'Kinesis', 'CloudWatch', 'CloudTrail', 'Config', 'TrustedAdvisor', 'Support', 'Billing', 'CostExplorer', 'Budgets', 'Organizations', 'ControlTower', 'SecurityHub', 'GuardDuty', 'Inspector', 'Macie', 'WAF', 'Shield', 'CertificateManager', 'SecretsManager', 'KMS', 'CloudHSM', 'DirectoryService', 'Cognito', 'WorkSpaces', 'WorkDocs', 'Chime', 'Connect', 'Pinpoint', 'MobileHub', 'Amplify', 'AppSync', 'API Gateway', 'Step Functions', 'SWF', 'ECS', 'EKS', 'Fargate', 'Batch', 'Glue', 'Athena', 'QuickSight', 'SageMaker', 'Rekognition', 'Polly', 'Transcribe', 'Translate', 'Comprehend', 'Lex', 'Textract', 'Forecast', 'Personalize', 'FraudDetector', 'Bedrock', 'CodeGuru', 'CodeCommit', 'CodeBuild', 'CodeDeploy', 'CodePipeline', 'CodeStar', 'Cloud9', 'X-Ray', 'CloudFormation', 'CDK', 'SAM', 'Serverless'].includes(upper)) {
+          return upper;
+        }
+        // Handle common business terms
+        if (['LLC', 'Inc', 'Corp', 'Ltd', 'Co', 'LLP', 'LP', 'PC', 'PA', 'PLLC'].includes(upper)) {
+          return upper;
+        }
+        // Handle numbers
+        if (/^\d+$/.test(word)) {
+          return word;
+        }
+        // Handle mixed case words (like "iPhone", "eBay")
+        if (word.length > 1 && word[0] === word[0].toLowerCase() && word[1] === word[1].toUpperCase()) {
+          return word;
+        }
+        // Default to title case
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(' ');
   }
   
   return value.toString();
@@ -91,12 +122,36 @@ const PolicyDetails = () => {
 
   const handleDownloadDocument = async (url: string, filename: string) => {
     try {
-      await handleDocumentDownload(url, filename);
+      // Show download toast first
       toast({
         title: "Download Started",
         description: `Downloading ${filename}...`,
         variant: "default",
       });
+      
+      // Fetch the file directly and create blob for download
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Create a temporary link element to trigger download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      
+      // Add to DOM, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the blob URL
+      window.URL.revokeObjectURL(blobUrl);
+      
     } catch (error) {
       console.error('Download error:', error);
       toast({
@@ -211,9 +266,9 @@ const PolicyDetails = () => {
                   <FileText className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-semibold text-gray-900">
-                    Policy Summary
-                  </CardTitle>
+            <CardTitle className="text-lg font-semibold text-gray-900">
+              Policy Summary
+            </CardTitle>
                   <div className="text-xs text-gray-400 mt-1">
                     Policy Reference: {policyData.policyInfo?.policy_reference || 'N/A'}
                   </div>
@@ -235,11 +290,11 @@ const PolicyDetails = () => {
             </div>
           </CardHeader>
           {expandedSections.has('policy_summary') && (
-            <CardContent className="pt-0">
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="grid lg:grid-cols-4">
-                  <div className="p-3 border-r border-b border-gray-200">
-                    <div className="text-xs text-gray-500 mb-1">Policy ID</div>
+          <CardContent className="pt-0">
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="grid lg:grid-cols-4">
+                <div className="p-3 border-r border-b border-gray-200">
+                  <div className="text-xs text-gray-500 mb-1">Policy ID</div>
                     <div className="text-sm font-medium">{policyData.policyInfo?.policy_reference}</div>
                   </div>
                   <div className="p-3 border-r border-b border-gray-200">
@@ -360,7 +415,7 @@ const PolicyDetails = () => {
                       <div className="text-sm font-medium">{policyData.policyInfo.proposal_bundle.project.country?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
                     </div>
                     {/* Construction Period Months */}
-                    <div className="p-3 border-r border-b border-gray-200">
+                <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Construction Period Months</div>
                       <div className="text-sm font-medium">{policyData.policyInfo.proposal_bundle.project.construction_period_months}</div>
                     </div>
@@ -468,10 +523,10 @@ const PolicyDetails = () => {
                       </div>
                     </div>
                   )}
-                </div>
-              </CardContent>
+            </div>
+          </CardContent>
             )}
-          </Card>
+        </Card>
         )}
 
 
@@ -488,9 +543,9 @@ const PolicyDetails = () => {
                     <FileText className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-semibold text-gray-900">
+              <CardTitle className="text-lg font-semibold text-gray-900">
                       Contract Structure
-                    </CardTitle>
+              </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
                       {policyData.policyInfo.proposal_bundle.contract_structure.details?.main_contractor}
                     </div>
@@ -512,8 +567,8 @@ const PolicyDetails = () => {
               </div>
             </CardHeader>
             {expandedSections.has('contract_structure') && (
-              <CardContent className="pt-0">
-                <div className="space-y-4">
+            <CardContent className="pt-0">
+              <div className="space-y-4">
                   {/* Contract Details */}
                   {policyData.policyInfo.proposal_bundle.contract_structure.details && (
                     <div className="border border-gray-200 rounded-lg p-4">
@@ -596,6 +651,12 @@ const PolicyDetails = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Soil Type</div>
+                    <div className="text-sm font-medium">
+                      {formatFieldValue('soil_type', policyData.policyInfo.proposal_bundle.site_risks.soil_type)}
+                    </div>
+                  </div>
                   {expandedSections.has('site_risks') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
@@ -670,7 +731,7 @@ const PolicyDetails = () => {
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <div className="grid lg:grid-cols-4">
                     {Object.entries(policyData.policyInfo.proposal_bundle.cover_requirements)
-                      .filter(([key]) => !['id', 'project_id', 'created_at', 'updated_at'].includes(key))
+                      .filter(([key]) => !['id', 'project_id', 'created_at', 'updated_at', 'cross_liability_cover'].includes(key))
                       .map(([key, value], idx) => {
                         let displayValue = value;
                         if (key.includes('works') || key.includes('equipment') || key.includes('materials') || 
@@ -717,7 +778,7 @@ const PolicyDetails = () => {
                       Selected Plan Details
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
-                      {policyData.policyInfo.proposal_bundle.plans[0]?.insurer_name}
+                      Insurance plan configuration
                     </div>
                   </div>
                 </div>
@@ -740,11 +801,7 @@ const PolicyDetails = () => {
               <CardContent className="pt-0">
                 {policyData.policyInfo.proposal_bundle.plans.map((plan, index) => (
                   <div key={plan.id || index} className="border border-gray-200 rounded-lg overflow-hidden mb-4 last:mb-0">
-                    <div className="grid lg:grid-cols-4">
-                      <div className="p-3 border-r border-b border-gray-200">
-                        <div className="text-xs text-gray-500 mb-1">Insurer Name</div>
-                        <div className="text-sm font-medium">{formatFieldValue('insurer_name', plan.insurer_name)}</div>
-                      </div>
+                    <div className="grid lg:grid-cols-3">
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Premium Amount</div>
                         <div className="text-sm font-medium">{formatFieldValue('premium_amount', plan.premium_amount)}</div>
@@ -763,41 +820,43 @@ const PolicyDetails = () => {
                     {plan.extensions && (
                       <div className="p-4 bg-gray-50">
                         <h4 className="font-medium text-gray-900 mb-3">Extensions</h4>
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {plan.extensions.tpl_limit && (
-                            <div className="grid lg:grid-cols-3 gap-4">
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">TPL Limit</div>
-                                <div className="text-sm font-medium">{plan.extensions.tpl_limit.label}</div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">Impact %</div>
-                                <div className="text-sm font-medium">{plan.extensions.tpl_limit.impact_pct}%</div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">Description</div>
-                                <div className="text-sm font-medium">{plan.extensions.tpl_limit.description}</div>
+                            <div className="border border-gray-200 rounded-lg p-3">
+                              <div className="text-sm font-medium text-gray-900 mb-2">TPL Limit Extension</div>
+                              <div className="grid lg:grid-cols-3 gap-4">
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Label</div>
+                                  <div className="text-sm font-medium">{plan.extensions.tpl_limit.label}</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Impact %</div>
+                                  <div className="text-sm font-medium">{plan.extensions.tpl_limit.impact_pct}%</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Description</div>
+                                  <div className="text-sm font-medium">{plan.extensions.tpl_limit.description}</div>
+                                </div>
                               </div>
                             </div>
                           )}
                           
                           {plan.extensions.selected_plan && (
-                            <div className="grid lg:grid-cols-4 gap-4">
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">Deductible</div>
-                                <div className="text-sm font-medium">AED {plan.extensions.selected_plan.deductible?.toLocaleString()}</div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">Base Premium</div>
-                                <div className="text-sm font-medium">AED {plan.extensions.selected_plan.base_premium?.toLocaleString()}</div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">Coverage Amount</div>
-                                <div className="text-sm font-medium">AED {plan.extensions.selected_plan.coverage_amount?.toLocaleString()}</div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">Insurer Name</div>
-                                <div className="text-sm font-medium">{plan.extensions.selected_plan.insurer_name}</div>
+                            <div className="border border-gray-200 rounded-lg p-3">
+                              <div className="text-sm font-medium text-gray-900 mb-2">Selected Plan Details</div>
+                              <div className="grid lg:grid-cols-3 gap-4">
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Deductible</div>
+                                  <div className="text-sm font-medium">AED {plan.extensions.selected_plan.deductible?.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Base Premium</div>
+                                  <div className="text-sm font-medium">AED {plan.extensions.selected_plan.base_premium?.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Coverage Amount</div>
+                                  <div className="text-sm font-medium">AED {plan.extensions.selected_plan.coverage_amount?.toLocaleString()}</div>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -869,7 +928,7 @@ const PolicyDetails = () => {
           </Card>
         )}
 
-        {/* Policy Issue Documents */}
+        {/* Declaration Documents */}
         {policyData.policyInfo?.proposal_bundle?.required_documents_for_policy_issue && policyData.policyInfo.proposal_bundle.required_documents_for_policy_issue.length > 0 && (
           <Card className="bg-white border border-blue-200 mb-4" data-section="policy_issue_documents">
             <CardHeader 
@@ -883,7 +942,7 @@ const PolicyDetails = () => {
                   </div>
                   <div>
                     <CardTitle className="text-lg font-semibold text-gray-900">
-                      Policy Issue Documents
+                      Declaration Documents
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
                       {policyData.policyInfo.proposal_bundle.required_documents_for_policy_issue.length} document(s)
@@ -930,10 +989,10 @@ const PolicyDetails = () => {
                         <Download className="h-4 w-4" />
                         Download
                       </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
             )}
           </Card>
         )}
