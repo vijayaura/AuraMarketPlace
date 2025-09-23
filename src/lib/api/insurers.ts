@@ -1117,12 +1117,9 @@ export async function updateAreaTypesConfiguration(
 
 // Policy Wordings
 export interface PolicyWording {
-  id: number;
-  document_title: string;
-  file_size_kb: number;
-  upload_date: string;
-  is_active: number;
-  created_at: string;
+  label: string;
+  url: string; // Direct URL for downloading the document
+  is_active: boolean;
 }
 
 export interface GetPolicyWordingsResponse {
@@ -1148,7 +1145,7 @@ export interface UploadPolicyWordingResponse {
 
 export interface UploadPolicyWordingParams {
   product_id: string; // e.g. "1"
-  document_title: string; // e.g. "Professional Liability Policy Wording v2.1"
+  label: string; // e.g. "Professional Liability Policy Wording v2.1"
   is_active: string; // boolean string: "true" | "false"
   document: File; // PDF file
 }
@@ -1160,7 +1157,7 @@ export async function uploadPolicyWording(
 ): Promise<UploadPolicyWordingResponse> {
   const form = new FormData();
   form.append('product_id', params.product_id);
-  form.append('document_title', params.document_title);
+  form.append('label', params.label);
   form.append('is_active', params.is_active);
   form.append('document', params.document);
 
@@ -1171,9 +1168,33 @@ export async function uploadPolicyWording(
   );
 }
 
+// New JSON-based Policy Wordings API
+export interface PolicyWordingRequest {
+  wordings: Array<{
+    label: string;
+    url: string;
+    is_active: boolean;
+  }>;
+}
+
+export interface PolicyWordingResponse {
+  wordings: PolicyWording[];
+}
+
+export async function savePolicyWordings(
+  insurerId: number | string,
+  productId: number | string,
+  params: PolicyWordingRequest
+): Promise<PolicyWordingResponse> {
+  return apiPost<PolicyWordingResponse>(
+    `/insurers/${encodeURIComponent(String(insurerId))}/products/${encodeURIComponent(String(productId))}/policy-wordings`,
+    params
+  );
+}
+
 // Update Policy Wording (multipart/form-data, all fields optional)
 export interface UpdatePolicyWordingParams {
-  document_title?: string;
+  label?: string;
   is_active?: string; // "true" | "false"
   document?: File; // optional
 }
@@ -1190,7 +1211,7 @@ export async function updatePolicyWording(
   params: UpdatePolicyWordingParams
 ): Promise<UpdatePolicyWordingResponse> {
   const form = new FormData();
-  if (typeof params.document_title === 'string') form.append('document_title', params.document_title);
+  if (typeof params.label === 'string') form.append('label', params.label);
   if (typeof params.is_active === 'string') form.append('is_active', params.is_active);
   if (params.document instanceof File) form.append('document', params.document);
 

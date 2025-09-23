@@ -992,7 +992,7 @@ export interface PolicyDetailsResponse {
 }
 
 export const getPolicyDetailsById = async (policyId: number): Promise<PolicyDetailsAPIResponse> => {
-  const response = await apiGet<PolicyDetailsAPIResponse>(`/api/v1/policies/${policyId}`);
+  const response = await apiGet<PolicyDetailsAPIResponse>(`/policies/${policyId}`);
   return response;
 };
 

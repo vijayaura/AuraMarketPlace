@@ -63,6 +63,7 @@ export async function getBrokerDashboardQuotes(): Promise<BrokerDashboardQuotesR
 
 // Broker Dashboard Policies
 export interface BrokerDashboardPolicyItem {
+  id: number;
   policy_id: string | null;
   quote_id: number;
   broker_id: number;

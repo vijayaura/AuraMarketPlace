@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileText, Download, CheckCircle, Calendar, Building, DollarSign, Shield, AlertCircle } from "lucide-react";
-import { getProposalBundle, ProposalBundleResponse, getPolicyDetailsByIdById, PolicyDetailsAPIResponse } from "@/lib/api/quotes";
+import { getProposalBundle, ProposalBundleResponse, getPolicyDetailsById, PolicyDetailsAPIResponse } from "@/lib/api/quotes";
 import { getPolicyWordings, PolicyWording } from "@/lib/api/insurers";
 import { getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
 import { toast } from "@/components/ui/sonner";
@@ -74,8 +74,11 @@ const Success = () => {
         setProposalBundle(bundleData);
 
         // Get policy wordings
+        console.log('Success page - Fetching policy wordings for insurer:', bundleData.quote_meta.insurer_id);
         const wordingsData = await getPolicyWordings(bundleData.quote_meta.insurer_id, 1); // Using product_id = 1 as per the API
+        console.log('Success page - Policy wordings response:', wordingsData);
         setPolicyWordings(wordingsData.wordings);
+        console.log('Success page - Policy wordings set:', wordingsData.wordings);
 
         // Get product bundle configuration with clause_pricing_config and meta data
         // API: /api/v1/insurers/{insurer_id}/products/1/product-config-bundle
@@ -191,23 +194,42 @@ const Success = () => {
     });
   };
 
-  const handleDownloadDocument = (url: string, filename: string) => {
+  const handleDownloadDocument = async (url: string, filename: string) => {
     try {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      console.log('Open document - URL:', url);
+      console.log('Open document - Filename:', filename);
       
-      toast.success('Download Started', {
-        description: `Downloading ${filename}...`
-      });
+      // Try to open in new tab first
+      const newWindow = window.open('', '_blank', 'noopener,noreferrer');
+      
+      if (newWindow) {
+        // If we can open a new window, navigate to the URL
+        newWindow.location.href = url;
+        newWindow.focus();
+        
+        toast.success('Document Opened', {
+          description: `Opening ${filename} in new tab...`
+        });
+      } else {
+        // Fallback: create a link element
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.success('Document Opened', {
+          description: `Opening ${filename} in new tab...`
+        });
+      }
     } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Download Failed', {
-        description: 'Failed to download document. Please try again.'
+      console.error('Open document error:', error);
+      toast.error('Failed to Open Document', {
+        description: error instanceof Error ? error.message : 'Failed to open document. Please try again.'
       });
     }
   };
@@ -534,47 +556,57 @@ const Success = () => {
           {/* Documents Section - Three Separate Cards */}
           <div className="space-y-6 mb-8">
             {/* Policy Documents - Only Active Items */}
-            {policyWordings.filter(wording => wording.is_active).length > 0 && (
-              <Card className="bg-white shadow-lg border-0">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-semibold text-gray-900">
-                    Policy Documents
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
+            {console.log('Success page - policyWordings:', policyWordings)}
+            {console.log('Success page - active wordings:', policyWordings.filter(wording => wording.is_active))}
+            <Card className="bg-white shadow-lg border-0">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-gray-900">
+                  Policy Documents
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {policyWordings.filter(wording => wording.is_active).length > 0 ? (
                   <div className="space-y-2">
                     {policyWordings
                       .filter(wording => wording.is_active)
-                      .map((wording) => (
-                        <div key={wording.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      .map((wording, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
                             <div className="min-w-0 flex-1">
-                              <span className="text-sm font-medium block">{wording.document_title}</span>
+                              <span className="text-sm font-medium block">{wording.label}</span>
                               <span className="text-xs text-gray-500">
-                                Created on {new Date(wording.created_at).toLocaleDateString()}
+                                {wording.is_active ? 'Active' : 'Inactive'}
                               </span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {wording.document_url && (
+                            {wording.url && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleDownloadDocument(wording.document_url!, wording.document_title)}
+                                onClick={() => handleDownloadDocument(wording.url, wording.label)}
                                 className="h-8 px-3 text-xs"
                               >
-                                <Download className="h-3 w-3 mr-1" />
-                                Download
+                                <FileText className="h-3 w-3 mr-1" />
+                                View
                               </Button>
                             )}
                           </div>
                         </div>
                       ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p className="text-sm">No policy documents available</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {policyWordings.length === 0 ? 'No wordings loaded' : 'No active wordings found'}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Project Documents */}
             {proposalBundle && Object.keys(proposalBundle.required_documents).length > 0 && (
@@ -598,8 +630,8 @@ const Success = () => {
                           onClick={() => handleDownloadDocument(doc.url, doc.label)}
                           className="h-8 px-3 text-xs"
                         >
-                          <Download className="h-3 w-3 mr-1" />
-                          Download
+                          <FileText className="h-3 w-3 mr-1" />
+                          View
                         </Button>
                       </div>
                     ))}
@@ -632,8 +664,8 @@ const Success = () => {
                               onClick={() => handleDownloadDocument(doc.url, doc.label || doc.name)}
                               className="h-8 px-3 text-xs"
                             >
-                              <Download className="h-3 w-3 mr-1" />
-                              Download
+                              <FileText className="h-3 w-3 mr-1" />
+                              View
                             </Button>
                           )}
                         </div>
@@ -659,8 +691,8 @@ const Success = () => {
                               onClick={() => handleDownloadDocument(doc.url, doc.label || key)}
                               className="h-8 px-3 text-xs"
                             >
-                              <Download className="h-3 w-3 mr-1" />
-                              Download
+                              <FileText className="h-3 w-3 mr-1" />
+                              View
                             </Button>
                           ) : (
                             <span className="text-xs text-gray-400 px-2 py-1">Not uploaded</span>

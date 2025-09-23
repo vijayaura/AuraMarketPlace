@@ -378,7 +378,7 @@ export default function BrokerDashboard() {
         return [];
       }
       return policiesData.issuedPolicies.map(p => ({
-        id: p.policy_id || `Q${p.quote_id}`,
+        id: p.id, // Use the actual id field from the API response
         policyNumber: p.policy_id || `Q${p.quote_id}`,
         projectName: p.project_name || '',
         projectType: 'Construction', // Default since not provided in API

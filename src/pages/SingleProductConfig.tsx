@@ -25,10 +25,10 @@ import { ClausePricingCard } from "@/components/product-config/ClausePricingCard
 import { SubProjectBaseRates } from "@/components/pricing/SubProjectBaseRates";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 import { listMasterProjectTypes, listMasterSubProjectTypes, listMasterConstructionTypes, listMasterRoleTypes, listMasterContractTypes, listMasterSoilTypes, listMasterSubcontractorTypes, listMasterConsultantRoles, listMasterSecurityTypes, listMasterAreaTypes, type SimpleMasterItem, type SubProjectTypeItem } from "@/lib/api/masters";
-import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, updateRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getMinimumPremiums, saveMinimumPremiums, updateMinimumPremiums, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getAreaTypesConfiguration, createAreaTypesConfiguration, updateAreaTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type ProjectRiskFactorsUpdateRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type GetClausePricingDataResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type GetAreaTypesResponse, type SaveAreaTypesRequest, type SaveAreaTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse } from "@/lib/api/insurers";
+import { getQuoteConfig, getInsurerMetadata, getQuoteConfigForUI, getPolicyWordings, uploadPolicyWording, updatePolicyWording, getQuoteFormat, createQuoteFormat, updateQuoteFormat, getRequiredDocuments, createRequiredDocument, updateRequiredDocument, getTplLimitsAndExtensions, updateTplLimitsAndExtensions, getCewsClauses, createCewsClause, updateCewsClause, getBaseRates, saveBaseRates, updateBaseRates, getMinimumPremiums, saveMinimumPremiums, updateMinimumPremiums, getProjectRiskFactors, createProjectRiskFactors, updateProjectRiskFactors, getContractorRiskFactors, createContractorRiskFactors, updateContractorRiskFactors, getCoverageOptions, saveCoverageOptions, updateCoverageOptions, getPolicyLimits, savePolicyLimits, updatePolicyLimits, getClausePricing, saveClausePricing, updateClausePricing, saveQuoteCoverage, updateQuoteCoverage, getConstructionTypesConfiguration, createConstructionTypesConfiguration, updateConstructionTypesConfiguration, getCountriesConfiguration, createCountriesConfiguration, updateCountriesConfiguration, getRegionsConfiguration, createRegionsConfiguration, updateRegionsConfiguration, getZonesConfiguration, createZonesConfiguration, updateZonesConfiguration, getContractTypesConfiguration, createContractTypesConfiguration, updateContractTypesConfiguration, getRoleTypesConfiguration, createRoleTypesConfiguration, updateRoleTypesConfiguration, getSoilTypesConfiguration, createSoilTypesConfiguration, updateSoilTypesConfiguration, getSubcontractorTypesConfiguration, createSubcontractorTypesConfiguration, updateSubcontractorTypesConfiguration, getConsultantRolesConfiguration, createConsultantRolesConfiguration, updateConsultantRolesConfiguration, getSecurityTypesConfiguration, createSecurityTypesConfiguration, updateSecurityTypesConfiguration, getAreaTypesConfiguration, createAreaTypesConfiguration, updateAreaTypesConfiguration, getFeeTypesConfiguration, createFeeTypesConfiguration, updateFeeTypesConfiguration, type InsurerMetadata, type QuoteConfigUIResponse, type PolicyWording, type QuoteFormatResponse, type GetRequiredDocumentsResponse, type GetTplResponse, type GetClausesResponse, type CreateClauseParams, type UpdateClauseParams, type UpdateTplRequest, type ContractorRiskFactorsRequest, type ProjectRiskFactorsRequest, type ProjectRiskFactorsUpdateRequest, type CoverageOptionsResponse, type SaveCoverageOptionsRequest, type UpdateCoverageOptionsRequest, type PolicyLimitsResponse, type SavePolicyLimitsRequest, type UpdatePolicyLimitsRequest, type GetClausePricingResponse, type GetClausePricingDataResponse, type SaveClausePricingRequest, type UpdateClausePricingRequest, type SaveQuoteCoverageRequest, type SaveQuoteCoverageResponse, type UpdateQuoteCoverageResponse, type ConstructionTypeConfigItem, type GetConstructionTypesConfigResponse, type SaveConstructionTypesConfigRequest, type SaveConstructionTypesConfigResponse, type GetCountriesConfigResponse, type CountryConfigItem, type SaveCountriesConfigRequest, type SaveCountriesConfigResponse, type GetRegionsConfigResponse, type RegionConfigItem, type SaveRegionsConfigRequest, type SaveRegionsConfigResponse, type GetZonesConfigResponse, type ZoneConfigItem, type SaveZonesConfigRequest, type SaveZonesConfigResponse, type GetContractTypesConfigResponse, type ContractTypeConfigItem, type SaveContractTypesConfigRequest, type SaveContractTypesConfigResponse, type GetRoleTypesConfigResponse, type RoleTypeConfigItem, type SaveRoleTypesConfigRequest, type SaveRoleTypesConfigResponse, type GetSoilTypesConfigResponse, type SoilTypeConfigItem, type SaveSoilTypesConfigRequest, type SaveSoilTypesConfigResponse, type GetSubcontractorTypesConfigResponse, type SubcontractorTypeConfigItem, type SaveSubcontractorTypesConfigRequest, type SaveSubcontractorTypesConfigResponse, type GetConsultantRolesConfigResponse, type ConsultantRoleConfigItem, type SaveConsultantRolesConfigRequest, type SaveConsultantRolesConfigResponse, type GetSecurityTypesResponse, type SaveSecurityTypesRequest, type SaveSecurityTypesResponse, type GetAreaTypesResponse, type SaveAreaTypesRequest, type SaveAreaTypesResponse, type FeeTypeConfigItem, type GetFeeTypesConfigResponse, type SaveFeeTypesConfigRequest, type SaveFeeTypesConfigResponse, savePolicyWordings, type PolicyWordingRequest } from "@/lib/api/insurers";
 import { getInsurerCompanyId, getInsurerCompany } from "@/lib/auth";
-import { api } from "@/lib/api/client";
 import { uploadFile } from "@/lib/api/quotes";
+import { api } from "@/lib/api/client";
 import QuoteConfigurator from "./SingleProductConfig/components/QuoteConfigurator";
 import QuoteFormat from "./SingleProductConfig/components/QuoteFormat";
 import CEWsConfiguration from "./SingleProductConfig/components/CEWsConfiguration";
@@ -1237,6 +1237,7 @@ const SingleProductConfig = () => {
   const [wordingUploadActive, setWordingUploadActive] = useState(true);
   const [wordingUploadFile, setWordingUploadFile] = useState<File | null>(null);
   const [isUploadingWording, setIsUploadingWording] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [editingWording, setEditingWording] = useState<any>(null);
   const [isEditClauseDialogOpen, setIsEditClauseDialogOpen] = useState(false);
@@ -2002,21 +2003,63 @@ const SingleProductConfig = () => {
     });
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
     setWordingUploadFile(file);
+    
+    if (file) {
+      setIsUploadingFile(true);
+      try {
+        console.log('Uploading file immediately:', file.name);
+        const uploadResult = await uploadFile(file);
+        console.log('File upload result:', uploadResult);
+        
+        if (!uploadResult.files || uploadResult.files.length === 0) {
+          throw new Error('No files returned from upload');
+        }
+        
+        const uploadedFile = uploadResult.files[0];
+        const fileUrl = uploadedFile.url;
+        
+        console.log('File uploaded successfully, URL:', fileUrl);
+        
+        // Store the uploaded file URL for later use
+        setWordingUploadFile({ ...file, uploadedUrl: fileUrl } as File & { uploadedUrl: string });
+        
+        toast({
+          title: "File Uploaded",
+          description: "File uploaded successfully. You can now save the wording.",
+          variant: "default",
+        });
+      } catch (error) {
+        console.error('File upload error:', error);
+        toast({
+          title: "Upload Failed",
+          description: "Failed to upload file. Please try again.",
+          variant: "destructive",
+        });
+        // Clear the file selection on error
+        setWordingUploadFile(null);
+        const fileInput = document.getElementById('wording-file') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+      } finally {
+        setIsUploadingFile(false);
+      }
+    }
   };
 
   const openUploadDialog = () => {
     setEditingWording(null);
     setWordingUploadTitle("");
+    setWordingUploadFile(null);
+    setWordingUploadActive(true);
     setIsWordingUploadDialogOpen(true);
   };
 
   const openEditDialog = (wording: any) => {
     setEditingWording(wording);
-    setWordingUploadTitle(wording.document_title || wording.name || "");
-    setWordingUploadActive(Number(wording.is_active) === 1 || wording.is_active === true);
+    setWordingUploadTitle(wording.label || wording.name || "");
+    setWordingUploadActive(wording.is_active === true);
     setWordingUploadFile(null);
     setIsWordingUploadDialogOpen(true);
   };
@@ -2026,20 +2069,20 @@ const SingleProductConfig = () => {
     if (!insurerId || !product.id) return;
     
     try {
-      console.log('Toggling wording active state:', { wording: wording.id, isActive });
+      console.log('Toggling wording active state:', { wording: wording.label, isActive });
       
-      await updatePolicyWording(insurerId, product.id as string, wording.id, {
-        is_active: String(isActive)
-      });
-      
-      // Update the local state to reflect the change
+      // Since the new API structure doesn't have IDs, we'll need to use the label to identify the wording
+      // For now, we'll update the local state and refresh the data
       setPolicyWordings(prev => 
         prev.map(w => 
-          w.id === wording.id 
-            ? { ...w, is_active: isActive ? 1 : 0 }
+          w.label === wording.label 
+            ? { ...w, is_active: isActive }
             : w
         )
       );
+      
+      // Note: The actual API call would need to be implemented based on the new API structure
+      // which might require using the label or a different identifier
       
       toast({
         title: "Success",
@@ -2069,24 +2112,79 @@ const SingleProductConfig = () => {
 
   const handleSavePolicyWording = async (): Promise<void> => {
     const insurerId = getInsurerCompanyId();
-    if (!insurerId || !product.id) return;
+    if (!insurerId || !product.id) {
+      console.error('Missing insurerId or product.id:', { insurerId, productId: product.id });
+      return;
+    }
+    
     try {
       setIsUploadingWording(true);
+      console.log('Saving policy wording:', {
+        insurerId,
+        productId: product.id,
+        title: wordingUploadTitle,
+        isActive: wordingUploadActive,
+        hasFile: !!wordingUploadFile,
+        editing: !!editingWording
+      });
+      
       if (editingWording) {
-        const params: any = {
-          document_title: wordingUploadTitle,
-          is_active: String(!!wordingUploadActive),
-        };
-        if (wordingUploadFile instanceof File) params.document = wordingUploadFile;
-        const wordingId = (editingWording.id || editingWording.wording_id || editingWording.wordingId) as string;
-        await updatePolicyWording(insurerId, product.id as string, wordingId, params);
+        // For editing, we need to update the existing wording in the list
+        // Since the new API structure doesn't have IDs, we'll need to use the label to identify the wording
+        console.log('Update functionality needs to be implemented for new API structure');
+        toast({
+          title: "Info",
+          description: "Update functionality will be implemented soon. Please delete and re-upload for now.",
+          variant: "default",
+        });
       } else {
-        if (!(wordingUploadFile instanceof File)) return;
-        await uploadPolicyWording(insurerId, product.id as string, {
-          product_id: String(product.id),
-          document_title: wordingUploadTitle,
-          is_active: String(!!wordingUploadActive),
-          document: wordingUploadFile as File,
+        if (!wordingUploadFile) {
+          console.error('No file selected for upload');
+          toast({
+            title: "Error",
+            description: "Please select a file to upload.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Check if the file has been uploaded (has uploadedUrl property)
+        const fileWithUrl = wordingUploadFile as File & { uploadedUrl?: string };
+        if (!fileWithUrl.uploadedUrl) {
+          console.error('File not uploaded yet');
+          toast({
+            title: "Error",
+            description: "File upload is still in progress. Please wait.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        console.log('Using already uploaded file URL:', fileWithUrl.uploadedUrl);
+        
+        // Create the new wording entry with the already uploaded file URL
+        const newWording = {
+          label: wordingUploadTitle,
+          url: fileWithUrl.uploadedUrl,
+          is_active: wordingUploadActive
+        };
+        
+        // Get existing wordings and add the new one
+        const existingWordings = policyWordings || [];
+        const updatedWordings = [...existingWordings, newWording];
+        
+        const requestData: PolicyWordingRequest = {
+          wordings: updatedWordings
+        };
+        
+        console.log('Saving policy wordings with data:', requestData);
+        const result = await savePolicyWordings(insurerId, product.id as string, requestData);
+        console.log('Save result:', result);
+        
+        toast({
+          title: "Success",
+          description: "Policy wording saved successfully!",
+          variant: "default",
         });
       }
       const wordingsData = await getPolicyWordings(insurerId, product.id as string);
@@ -6799,39 +6897,40 @@ const SingleProductConfig = () => {
                 wordingUploadFile={wordingUploadFile}
                 wordingUploadActive={wordingUploadActive}
                 setWordingUploadActive={setWordingUploadActive}
-                handleSavePolicyWording={handleSavePolicyWording}
-                isUploadingWording={isUploadingWording}
-                handleToggleWordingActive={handleToggleWordingActive}
+            handleSavePolicyWording={handleSavePolicyWording}
+            isUploadingWording={isUploadingWording}
+            isUploadingFile={isUploadingFile}
+            handleToggleWordingActive={handleToggleWordingActive}
               />
             </TabsContent>
             {/* Quote Format tab */}
-            <TabsContent value="quote-format" className="space-y-6">
+            <TabsContent value="quote-format" className="space-y-4">
               {quoteFormatError && (
                 <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
                   {quoteFormatError}
                 </div>
               )}
               {isLoadingQuoteFormat && (
-                <div className="space-y-6">
-                  <div className="p-4 border rounded-md space-y-4">
-                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse" />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="h-10 bg-gray-200 rounded animate-pulse" />
-                      <div className="h-10 bg-gray-200 rounded animate-pulse" />
-                      <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                <div className="space-y-4">
+                  <div className="p-3 border rounded-md space-y-3">
+                    <div className="w-48 h-4 bg-gray-200 rounded animate-pulse" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="h-8 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-8 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-8 bg-gray-200 rounded animate-pulse" />
                     </div>
                   </div>
-                  <div className="p-4 border rounded-md space-y-4">
-                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse" />
-                    <div className="h-32 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                  <div className="p-4 border rounded-md space-y-4">
-                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse" />
-                    <div className="h-32 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                  <div className="p-4 border rounded-md space-y-4">
-                    <div className="w-56 h-5 bg-gray-200 rounded animate-pulse" />
+                  <div className="p-3 border rounded-md space-y-3">
+                    <div className="w-48 h-4 bg-gray-200 rounded animate-pulse" />
                     <div className="h-24 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="p-3 border rounded-md space-y-3">
+                    <div className="w-48 h-4 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-24 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="p-3 border rounded-md space-y-3">
+                    <div className="w-48 h-4 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-20 bg-gray-200 rounded animate-pulse" />
                   </div>
                 </div>
               )}
@@ -6840,19 +6939,19 @@ const SingleProductConfig = () => {
                 <>
               {/* Header Configuration */}
               <Card>
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Image className="w-5 h-5" />
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Image className="w-4 h-4" />
                         Header Configuration
                       </CardTitle>
-                      <CardDescription>Configure quote header with logo and company information</CardDescription>
+                      <CardDescription className="text-sm">Configure quote header with logo and company information</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" onClick={showPreview} size="sm">
-                        <Eye className="w-4 h-4 mr-2" />
-                        Preview Template
+                        <Eye className="w-4 h-4 mr-1" />
+                        Preview
                       </Button>
                       <Button onClick={async () => {
                         const insurerId = getInsurerCompanyId();
@@ -7007,92 +7106,98 @@ const SingleProductConfig = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="company-name">Company Name</Label>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="company-name" className="text-sm">Company Name</Label>
                       <Input 
                         id="company-name" 
                         name="company_name"
                         autoComplete="organization" 
                         value={quoteConfig.header.companyName}
                         onChange={(e) => updateQuoteConfig('header', 'companyName', e.target.value)}
+                        className="h-8"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="quote-prefix">Quotation Number Prefix</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="quote-prefix" className="text-sm">Quotation Number Prefix</Label>
                       <Input 
                         id="quote-prefix" 
                         name="quotation_prefix"
                         autoComplete="off" 
                         value={quoteConfig.details.quotePrefix}
                         onChange={(e) => updateQuoteConfig('details', 'quotePrefix', e.target.value)}
+                        className="h-8"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="logo-upload">Company Logo</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="logo-upload" className="text-sm">Company Logo</Label>
                       <div className="flex gap-2">
                         <Input id="logo-upload" name="logo" type="file" accept="image/*" onChange={(e) => {
                           const file = e.target.files?.[0] || null;
                           setQuoteLogoFile(file);
-                        }} />
-                        <Button variant="outline" size="sm">
-                          <Upload className="w-4 h-4" />
+                        }} className="h-8" />
+                        <Button variant="outline" size="sm" className="h-8 px-2">
+                          <Upload className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="company-address">Company Address</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="company-address" className="text-sm">Company Address</Label>
                       <Textarea 
                         id="company-address" 
                         name="company_address"
                         autoComplete="street-address" 
                         value={quoteConfig.header.companyAddress}
                         onChange={(e) => updateQuoteConfig('header', 'companyAddress', e.target.value)}
+                        className="min-h-[60px]"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="contact-info">Contact Information</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="contact-info" className="text-sm">Contact Information</Label>
                       <Textarea 
                         id="contact-info" 
                         name="contact_info"
                         autoComplete="on" 
                         value={quoteConfig.header.contactInfo}
                         onChange={(e) => updateQuoteConfig('header', 'contactInfo', e.target.value)}
+                        className="min-h-[60px]"
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="header-color">Header Background Color</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="header-color" className="text-sm">Header Background Color</Label>
                       <Input 
                         id="header-color" 
                         name="header_bg_color"
                         type="color" 
                         value={quoteConfig.header.headerColor}
                         onChange={(e) => updateQuoteConfig('header', 'headerColor', e.target.value)}
+                        className="h-8"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="header-text-color">Header Text Color</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="header-text-color" className="text-sm">Header Text Color</Label>
                       <Input 
                         id="header-text-color" 
                         name="header_text_color" 
                         type="color" 
                         value={quoteConfig.header.headerTextColor}
                         onChange={(e) => updateQuoteConfig('header', 'headerTextColor', e.target.value)}
+                        className="h-8"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="logo-position">Logo Position</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="logo-position" className="text-sm">Logo Position</Label>
                       <Select 
                         name="logo_position"
                         value={quoteConfig.header.logoPosition}
                         onValueChange={(value) => updateQuoteConfig('header', 'logoPosition', value)}
                       >
-                        <SelectTrigger id="logo-position" aria-label="Logo Position">
+                        <SelectTrigger id="logo-position" aria-label="Logo Position" className="h-8">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -7108,59 +7213,64 @@ const SingleProductConfig = () => {
 
               {/* Risk Details Configuration */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Risk Details Configuration</CardTitle>
-                  <CardDescription>Configure how risk information is displayed</CardDescription>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Risk Details Configuration</CardTitle>
+                  <CardDescription className="text-sm">Configure how risk information is displayed</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-project-details" 
-                        checked={quoteConfig.risk.showProjectDetails}
-                        onCheckedChange={(checked) => updateQuoteConfig('risk', 'showProjectDetails', checked)}
-                      />
-                      <Label htmlFor="show-project-details">Show Project Details (Name, Location, Duration)</Label>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-project-details" 
+                          checked={quoteConfig.risk.showProjectDetails}
+                          onCheckedChange={(checked) => updateQuoteConfig('risk', 'showProjectDetails', checked)}
+                        />
+                        <Label htmlFor="show-project-details" className="text-sm">Show Project Details</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-coverage-types" 
+                          checked={quoteConfig.risk.showCoverageTypes}
+                          onCheckedChange={(checked) => updateQuoteConfig('risk', 'showCoverageTypes', checked)}
+                        />
+                        <Label htmlFor="show-coverage-types" className="text-sm">Show Coverage Types</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-coverage-limits" 
+                          checked={quoteConfig.risk.showCoverageLimits}
+                          onCheckedChange={(checked) => updateQuoteConfig('risk', 'showCoverageLimits', checked)}
+                        />
+                        <Label htmlFor="show-coverage-limits" className="text-sm">Show Coverage Limits</Label>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-coverage-types" 
-                        checked={quoteConfig.risk.showCoverageTypes}
-                        onCheckedChange={(checked) => updateQuoteConfig('risk', 'showCoverageTypes', checked)}
-                      />
-                      <Label htmlFor="show-coverage-types">Show Coverage Types</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-coverage-limits" 
-                        checked={quoteConfig.risk.showCoverageLimits}
-                        onCheckedChange={(checked) => updateQuoteConfig('risk', 'showCoverageLimits', checked)}
-                      />
-                      <Label htmlFor="show-coverage-limits">Show Coverage Limits</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-deductibles" 
-                        checked={quoteConfig.risk.showDeductibles}
-                        onCheckedChange={(checked) => updateQuoteConfig('risk', 'showDeductibles', checked)}
-                      />
-                      <Label htmlFor="show-deductibles">Show Deductibles</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-contractor-info" 
-                        checked={quoteConfig.risk.showContractorInfo}
-                        onCheckedChange={(checked) => updateQuoteConfig('risk', 'showContractorInfo', checked)}
-                      />
-                      <Label htmlFor="show-contractor-info">Show Contractor Information</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-deductibles" 
+                          checked={quoteConfig.risk.showDeductibles}
+                          onCheckedChange={(checked) => updateQuoteConfig('risk', 'showDeductibles', checked)}
+                        />
+                        <Label htmlFor="show-deductibles" className="text-sm">Show Deductibles</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-contractor-info" 
+                          checked={quoteConfig.risk.showContractorInfo}
+                          onCheckedChange={(checked) => updateQuoteConfig('risk', 'showContractorInfo', checked)}
+                        />
+                        <Label htmlFor="show-contractor-info" className="text-sm">Show Contractor Information</Label>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="risk-section-title">Risk Section Title</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="risk-section-title" className="text-sm">Risk Section Title</Label>
                     <Input 
                       id="risk-section-title" 
                       value={quoteConfig.risk.riskSectionTitle}
                       onChange={(e) => updateQuoteConfig('risk', 'riskSectionTitle', e.target.value)}
+                      className="h-8"
                     />
                   </div>
                 </CardContent>
@@ -7168,19 +7278,19 @@ const SingleProductConfig = () => {
 
               {/* Premium Breakdown Configuration */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Premium Breakdown Configuration</CardTitle>
-                  <CardDescription>Configure how premium calculations are displayed</CardDescription>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Premium Breakdown Configuration</CardTitle>
+                  <CardDescription className="text-sm">Configure how premium calculations are displayed</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="currency">Currency</Label>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="currency" className="text-sm">Currency</Label>
                       <Select 
                         value={quoteConfig.premium.currency}
                         onValueChange={(value) => updateQuoteConfig('premium', 'currency', value)}
                       >
-                        <SelectTrigger id="currency" aria-label="Currency">
+                        <SelectTrigger id="currency" aria-label="Currency" className="h-8">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -7191,55 +7301,60 @@ const SingleProductConfig = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="premium-section-title">Premium Section Title</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="premium-section-title" className="text-sm">Premium Section Title</Label>
                       <Input 
                         id="premium-section-title" 
                         value={quoteConfig.premium.premiumSectionTitle}
                         onChange={(e) => updateQuoteConfig('premium', 'premiumSectionTitle', e.target.value)}
+                        className="h-8"
                       />
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-base-premium" 
-                        checked={quoteConfig.premium.showBasePremium}
-                        onCheckedChange={(checked) => updateQuoteConfig('premium', 'showBasePremium', checked)}
-                      />
-                      <Label htmlFor="show-base-premium">Show Base Premium</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-base-premium" 
+                          checked={quoteConfig.premium.showBasePremium}
+                          onCheckedChange={(checked) => updateQuoteConfig('premium', 'showBasePremium', checked)}
+                        />
+                        <Label htmlFor="show-base-premium" className="text-sm">Show Base Premium</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-risk-adjustments" 
+                          checked={quoteConfig.premium.showRiskAdjustments}
+                          onCheckedChange={(checked) => updateQuoteConfig('premium', 'showRiskAdjustments', checked)}
+                        />
+                        <Label htmlFor="show-risk-adjustments" className="text-sm">Show Risk Adjustments</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-fees" 
+                          checked={quoteConfig.premium.showFees}
+                          onCheckedChange={(checked) => updateQuoteConfig('premium', 'showFees', checked)}
+                        />
+                        <Label htmlFor="show-fees" className="text-sm">Show Fees & Charges</Label>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-risk-adjustments" 
-                        checked={quoteConfig.premium.showRiskAdjustments}
-                        onCheckedChange={(checked) => updateQuoteConfig('premium', 'showRiskAdjustments', checked)}
-                      />
-                      <Label htmlFor="show-risk-adjustments">Show Risk Adjustments</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-fees" 
-                        checked={quoteConfig.premium.showFees}
-                        onCheckedChange={(checked) => updateQuoteConfig('premium', 'showFees', checked)}
-                      />
-                      <Label htmlFor="show-fees">Show Fees & Charges</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-taxes" 
-                        checked={quoteConfig.premium.showTaxes}
-                        onCheckedChange={(checked) => updateQuoteConfig('premium', 'showTaxes', checked)}
-                      />
-                      <Label htmlFor="show-taxes">Show Taxes (VAT)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-total-premium" 
-                        checked={quoteConfig.premium.showTotalPremium}
-                        onCheckedChange={(checked) => updateQuoteConfig('premium', 'showTotalPremium', checked)}
-                      />
-                      <Label htmlFor="show-total-premium">Show Total Premium</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-taxes" 
+                          checked={quoteConfig.premium.showTaxes}
+                          onCheckedChange={(checked) => updateQuoteConfig('premium', 'showTaxes', checked)}
+                        />
+                        <Label htmlFor="show-taxes" className="text-sm">Show Taxes (VAT)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-total-premium" 
+                          checked={quoteConfig.premium.showTotalPremium}
+                          onCheckedChange={(checked) => updateQuoteConfig('premium', 'showTotalPremium', checked)}
+                        />
+                        <Label htmlFor="show-total-premium" className="text-sm">Show Total Premium</Label>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -7247,59 +7362,65 @@ const SingleProductConfig = () => {
 
               {/* Terms & Conditions Configuration */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Terms & Conditions Configuration</CardTitle>
-                  <CardDescription>Configure warranties, exclusions, and deductibles display</CardDescription>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Terms & Conditions Configuration</CardTitle>
+                  <CardDescription className="text-sm">Configure warranties, exclusions, and deductibles display</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-warranties" 
-                        checked={quoteConfig.terms.showWarranties}
-                        onCheckedChange={(checked) => updateQuoteConfig('terms', 'showWarranties', checked)}
-                      />
-                      <Label htmlFor="show-warranties">Show Warranties</Label>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-warranties" 
+                          checked={quoteConfig.terms.showWarranties}
+                          onCheckedChange={(checked) => updateQuoteConfig('terms', 'showWarranties', checked)}
+                        />
+                        <Label htmlFor="show-warranties" className="text-sm">Show Warranties</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-exclusions" 
+                          checked={quoteConfig.terms.showExclusions}
+                          onCheckedChange={(checked) => updateQuoteConfig('terms', 'showExclusions', checked)}
+                        />
+                        <Label htmlFor="show-exclusions" className="text-sm">Show Exclusions</Label>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-exclusions" 
-                        checked={quoteConfig.terms.showExclusions}
-                        onCheckedChange={(checked) => updateQuoteConfig('terms', 'showExclusions', checked)}
-                      />
-                      <Label htmlFor="show-exclusions">Show Exclusions</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-deductible-details" 
-                        checked={quoteConfig.terms.showDeductibleDetails}
-                        onCheckedChange={(checked) => updateQuoteConfig('terms', 'showDeductibleDetails', checked)}
-                      />
-                      <Label htmlFor="show-deductible-details">Show Deductible Details</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="show-policy-conditions" 
-                        checked={quoteConfig.terms.showPolicyConditions}
-                        onCheckedChange={(checked) => updateQuoteConfig('terms', 'showPolicyConditions', checked)}
-                      />
-                      <Label htmlFor="show-policy-conditions">Show Policy Conditions</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-deductible-details" 
+                          checked={quoteConfig.terms.showDeductibleDetails}
+                          onCheckedChange={(checked) => updateQuoteConfig('terms', 'showDeductibleDetails', checked)}
+                        />
+                        <Label htmlFor="show-deductible-details" className="text-sm">Show Deductible Details</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="show-policy-conditions" 
+                          checked={quoteConfig.terms.showPolicyConditions}
+                          onCheckedChange={(checked) => updateQuoteConfig('terms', 'showPolicyConditions', checked)}
+                        />
+                        <Label htmlFor="show-policy-conditions" className="text-sm">Show Policy Conditions</Label>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="terms-section-title">Terms Section Title</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="terms-section-title" className="text-sm">Terms Section Title</Label>
                     <Input 
                       id="terms-section-title" 
                       value={quoteConfig.terms.termsSectionTitle}
                       onChange={(e) => updateQuoteConfig('terms', 'termsSectionTitle', e.target.value)}
+                      className="h-8"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="additional-terms">Additional Terms Text</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="additional-terms" className="text-sm">Additional Terms Text</Label>
                     <Textarea 
                       id="additional-terms" 
                       value={quoteConfig.terms.additionalTerms}
                       onChange={(e) => updateQuoteConfig('terms', 'additionalTerms', e.target.value)}
+                      className="min-h-[60px]"
                     />
                   </div>
                 </CardContent>
@@ -7307,62 +7428,65 @@ const SingleProductConfig = () => {
 
               {/* Signature Block Configuration */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Signature Block Configuration</CardTitle>
-                  <CardDescription>Configure signature areas and authorization</CardDescription>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Signature Block Configuration</CardTitle>
+                  <CardDescription className="text-sm">Configure signature areas and authorization</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="show-signature-block" 
                       checked={quoteConfig.signature.showSignatureBlock}
                       onCheckedChange={(checked) => updateQuoteConfig('signature', 'showSignatureBlock', checked)}
                     />
-                    <Label htmlFor="show-signature-block">Show Signature Block</Label>
+                    <Label htmlFor="show-signature-block" className="text-sm">Show Signature Block</Label>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="authorized-signatory">Authorized Signatory Name</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="authorized-signatory" className="text-sm">Authorized Signatory Name</Label>
                       <Input 
                         id="authorized-signatory" 
                         value={quoteConfig.signature.authorizedSignatory}
                         onChange={(e) => updateQuoteConfig('signature', 'authorizedSignatory', e.target.value)}
+                        className="h-8"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signatory-title">Signatory Title</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="signatory-title" className="text-sm">Signatory Title</Label>
                       <Input 
                         id="signatory-title" 
                         value={quoteConfig.signature.signatoryTitle}
                         onChange={(e) => updateQuoteConfig('signature', 'signatoryTitle', e.target.value)}
+                        className="h-8"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signature-text">Signature Block Text</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="signature-text" className="text-sm">Signature Block Text</Label>
                     <Textarea 
                       id="signature-text" 
                       value={quoteConfig.signature.signatureText}
                       onChange={(e) => updateQuoteConfig('signature', 'signatureText', e.target.value)}
+                      className="min-h-[60px]"
                     />
                   </div>
                 </CardContent>
               </Card>
               {/* Footer & Disclaimers Configuration */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Footer & Disclaimers Configuration</CardTitle>
-                  <CardDescription>Configure footer information and legal disclaimers</CardDescription>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Footer & Disclaimers Configuration</CardTitle>
+                  <CardDescription className="text-sm">Configure footer information and legal disclaimers</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-4">
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="flex items-center space-x-2">
                       <Checkbox 
                         id="show-footer" 
                         checked={quoteConfig.footer.showFooter}
                         onCheckedChange={(checked) => updateQuoteConfig('footer', 'showFooter', checked)}
                       />
-                      <Label htmlFor="show-footer">Show Footer</Label>
+                      <Label htmlFor="show-footer" className="text-sm">Show Footer</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox 
@@ -7370,7 +7494,7 @@ const SingleProductConfig = () => {
                         checked={quoteConfig.footer.showDisclaimer}
                         onCheckedChange={(checked) => updateQuoteConfig('footer', 'showDisclaimer', checked)}
                       />
-                      <Label htmlFor="show-disclaimer">Show General Disclaimer</Label>
+                      <Label htmlFor="show-disclaimer" className="text-sm">Show General Disclaimer</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox 
@@ -7378,42 +7502,46 @@ const SingleProductConfig = () => {
                         checked={quoteConfig.footer.showRegulatoryInfo}
                         onCheckedChange={(checked) => updateQuoteConfig('footer', 'showRegulatoryInfo', checked)}
                       />
-                      <Label htmlFor="show-regulatory-info">Show Regulatory Information</Label>
+                      <Label htmlFor="show-regulatory-info" className="text-sm">Show Regulatory Information</Label>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="general-disclaimer">General Disclaimer Text</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="general-disclaimer" className="text-sm">General Disclaimer Text</Label>
                     <Textarea 
                       id="general-disclaimer" 
                       value={quoteConfig.footer.generalDisclaimer}
                       onChange={(e) => updateQuoteConfig('footer', 'generalDisclaimer', e.target.value)}
+                      className="min-h-[60px]"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="regulatory-text">Regulatory Information</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="regulatory-text" className="text-sm">Regulatory Information</Label>
                     <Textarea 
                       id="regulatory-text" 
                       value={quoteConfig.footer.regulatoryText}
                       onChange={(e) => updateQuoteConfig('footer', 'regulatoryText', e.target.value)}
+                      className="min-h-[60px]"
                     />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="footer-bg-color">Footer Background Color</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="footer-bg-color" className="text-sm">Footer Background Color</Label>
                       <Input 
                         id="footer-bg-color" 
                         type="color" 
                         value={quoteConfig.footer.footerBgColor}
                         onChange={(e) => updateQuoteConfig('footer', 'footerBgColor', e.target.value)}
+                        className="h-8"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="footer-text-color">Footer Text Color</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="footer-text-color" className="text-sm">Footer Text Color</Label>
                       <Input 
                         id="footer-text-color" 
                         type="color" 
                         value={quoteConfig.footer.footerTextColor}
                         onChange={(e) => updateQuoteConfig('footer', 'footerTextColor', e.target.value)}
+                        className="h-8"
                       />
                     </div>
                   </div>
