@@ -11,7 +11,7 @@ import { getProposalBundle, ProposalBundleResponse, getPolicyDetailsById, Policy
 import { getPolicyWordings, PolicyWording } from "@/lib/api/insurers";
 import { getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
 import { toast } from "@/components/ui/sonner";
-import { generatePolicyPDF } from "@/utils/pdfGenerator";
+import { generateQuotePDF } from "@/utils/pdfGenerator";
 
 // Helper functions for formatting
 const formatFieldName = (key: string): string => {
@@ -347,7 +347,7 @@ const Success = () => {
     }
 
     try {
-      generatePolicyPDF(proposalBundle);
+      generateQuotePDF(proposalBundle);
       toast.success('PDF Generated', {
         description: 'Policy PDF has been generated and downloaded.'
       });

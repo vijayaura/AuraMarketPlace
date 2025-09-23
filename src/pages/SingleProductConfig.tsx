@@ -1258,6 +1258,8 @@ const SingleProductConfig = () => {
   const [quoteFormatId, setQuoteFormatId] = useState<number | null>(null);
   const [quoteLogoFile, setQuoteLogoFile] = useState<File | null>(null);
   const [isSavingQuoteFormat, setIsSavingQuoteFormat] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string | null>(null);
   
   // Required Documents state
   const [isLoadingRequiredDocs, setIsLoadingRequiredDocs] = useState(false);
@@ -1522,6 +1524,57 @@ const SingleProductConfig = () => {
     loadClauses();
   }, [activeTab, product.id]);
 
+  // Handle logo file upload
+  const handleLogoUpload = async (file: File) => {
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please select an image file (PNG, JPG, GIF, etc.)',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please select an image smaller than 5MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      setIsUploadingLogo(true);
+      console.log('📤 Uploading logo file:', file.name);
+      
+      const uploadResponse = await uploadFile(file);
+      console.log('✅ Logo uploaded successfully:', uploadResponse);
+      
+      // Extract the URL from the response
+      const uploadedUrl = uploadResponse.files?.[0]?.url || '';
+      setUploadedLogoUrl(uploadedUrl);
+      toast({
+        title: 'Logo uploaded successfully',
+        description: 'Your company logo has been uploaded and will be saved with the quote format.'
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Error uploading logo:', error);
+      toast({
+        title: 'Upload failed',
+        description: error?.message || 'Failed to upload logo. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
   // Load Quote Format when Quote Format tab is active
   useEffect(() => {
     const loadQuoteFormat = async () => {
@@ -1547,6 +1600,7 @@ const SingleProductConfig = () => {
         console.log('✅ Quote Format API response:', data);
         // Map API -> UI state
         setQuoteFormatId(data?.id ?? null);
+        setUploadedLogoUrl(data.logo_path || null);
         setQuoteConfig(prev => ({
           ...prev,
           header: {
@@ -5968,6 +6022,7 @@ const SingleProductConfig = () => {
       setIsPreviewLoading(true);
       const data = await getQuoteFormat(insurerId, product.id as string);
       // Map API -> UI in case user hasn't manually opened Quote Format tab yet
+      setUploadedLogoUrl(data.logo_path || null);
       setQuoteConfig(prev => ({
         ...prev,
         header: {
@@ -7017,6 +7072,7 @@ const SingleProductConfig = () => {
                             regulatory_info_text: quoteConfig.footer.regulatoryText || '',
                             footer_bg_color: quoteConfig.footer.footerBgColor || '#FFFFFF',
                             footer_text_color: quoteConfig.footer.footerTextColor || '#000000',
+                            url: uploadedLogoUrl || quoteConfig.header.logoUrl || '',
                           };
                           if (!quoteFormatId) {
                             const res = await createQuoteFormat(insurerId, product.id as string, common);
@@ -7133,14 +7189,43 @@ const SingleProductConfig = () => {
                     <div className="space-y-1">
                       <Label htmlFor="logo-upload" className="text-sm">Company Logo</Label>
                       <div className="flex gap-2">
-                        <Input id="logo-upload" name="logo" type="file" accept="image/*" onChange={(e) => {
-                          const file = e.target.files?.[0] || null;
-                          setQuoteLogoFile(file);
-                        }} className="h-8" />
-                        <Button variant="outline" size="sm" className="h-8 px-2">
+                        <Input 
+                          id="logo-upload" 
+                          name="logo" 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            if (file) {
+                              setQuoteLogoFile(file);
+                              handleLogoUpload(file);
+                            }
+                          }} 
+                          className="h-8" 
+                          disabled={isUploadingLogo}
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 px-2"
+                          disabled={isUploadingLogo}
+                          onClick={() => document.getElementById('logo-upload')?.click()}
+                        >
                           <Upload className="w-3 h-3" />
                         </Button>
                       </div>
+                      {isUploadingLogo && (
+                        <div className="text-xs text-blue-600 flex items-center gap-1">
+                          <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                          Uploading...
+                        </div>
+                      )}
+                      {uploadedLogoUrl && !isUploadingLogo && (
+                        <div className="text-xs text-green-600 flex items-center gap-1">
+                          <Image className="w-3 h-3" />
+                          Logo uploaded
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

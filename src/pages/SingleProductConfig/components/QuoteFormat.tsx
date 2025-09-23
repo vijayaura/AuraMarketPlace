@@ -18,6 +18,9 @@ export type QuoteFormatProps = {
   updateQuoteConfig: (section: string, field: string, value: any) => void;
   quoteLogoFile: File | null;
   setQuoteLogoFile: (file: File | null) => void;
+  isUploadingLogo: boolean;
+  uploadedLogoUrl: string | null;
+  onLogoUpload: (file: File) => void;
 };
 
 const QuoteFormat: React.FC<QuoteFormatProps> = ({
@@ -30,6 +33,9 @@ const QuoteFormat: React.FC<QuoteFormatProps> = ({
   updateQuoteConfig,
   quoteLogoFile,
   setQuoteLogoFile,
+  isUploadingLogo,
+  uploadedLogoUrl,
+  onLogoUpload,
 }) => {
   return (
     <div className="space-y-6">
@@ -114,14 +120,41 @@ const QuoteFormat: React.FC<QuoteFormatProps> = ({
                 <div className="space-y-2">
                   <Label htmlFor="logo-upload">Company Logo</Label>
                   <div className="flex gap-2">
-                    <Input id="logo-upload" name="logo" type="file" accept="image/*" onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      setQuoteLogoFile(file);
-                    }} />
-                    <Button variant="outline" size="sm">
+                    <Input 
+                      id="logo-upload" 
+                      name="logo" 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (file) {
+                          setQuoteLogoFile(file);
+                          onLogoUpload(file);
+                        }
+                      }}
+                      disabled={isUploadingLogo}
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      disabled={isUploadingLogo}
+                      onClick={() => document.getElementById('logo-upload')?.click()}
+                    >
                       <Upload className="w-4 h-4" />
                     </Button>
                   </div>
+                  {isUploadingLogo && (
+                    <div className="text-sm text-blue-600 flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      Uploading logo...
+                    </div>
+                  )}
+                  {uploadedLogoUrl && !isUploadingLogo && (
+                    <div className="text-sm text-green-600 flex items-center gap-2">
+                      <Image className="w-4 h-4" />
+                      Logo uploaded successfully
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

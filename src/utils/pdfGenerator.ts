@@ -39,7 +39,7 @@ interface ProposalData {
 
 
 // Wrapper function for backward compatibility with ProposalBundleResponse
-export const generatePolicyPDF = (proposalBundle: ProposalBundleResponse): void => {
+export const generateQuotePDF = (proposalBundle: ProposalBundleResponse): void => {
   // Convert ProposalBundleResponse to ProposalData format
   const proposalData: ProposalData = {
     project: {
@@ -87,7 +87,7 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData): void =
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
+  const margin = 15;
   const contentWidth = pageWidth - (margin * 2);
   let yPosition = margin;
 
@@ -100,12 +100,12 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData): void =
   };
 
   // Helper function to add text with word wrapping
-  const addText = (text: string, x: number, y: number, maxWidth?: number, fontSize: number = 10, fontStyle: string = 'normal') => {
+  const addText = (text: string, x: number, y: number, maxWidth?: number, fontSize: number = 10, fontStyle: string = 'normal', align: string = 'left') => {
     const lines = doc.splitTextToSize(text, maxWidth || contentWidth);
-    doc.setTextColor(0, 0, 0); // Ensure text is always black
+    doc.setTextColor(0, 0, 0);
     doc.setFontSize(fontSize);
     doc.setFont(undefined, fontStyle);
-    doc.text(lines, x, y);
+    doc.text(lines, x, y, { align: align as any });
     return y + (lines.length * (fontSize * 0.35));
   };
 
@@ -121,443 +121,156 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData): void =
     return `AED ${amount.toLocaleString()}`;
   };
 
-  // Helper function to add a table row
-  const addTableRow = (label: string, value: string, y: number, isBold: boolean = false) => {
-    const labelWidth = contentWidth * 0.4;
-    const valueWidth = contentWidth * 0.6;
+  // Helper function to create a table with borders
+  const createTable = (data: Array<{label: string, value: string}>, startY: number, title?: string) => {
+    let currentY = startY;
     
-    // Label
-    doc.setTextColor(0, 0, 0); // Ensure text is always black
-    doc.setFontSize(9);
-    doc.setFont(undefined, 'bold');
-    doc.text(label, margin, y);
+    if (title) {
+      // Table title
+      doc.setFillColor(240, 240, 240);
+      doc.rect(margin, currentY, contentWidth, 10, 'F');
+      doc.setDrawColor(0, 0, 0);
+      doc.rect(margin, currentY, contentWidth, 10);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text(title, margin + 3, currentY + 7);
+      currentY += 10;
+    }
     
-    // Value
-    doc.setTextColor(0, 0, 0); // Ensure text is always black
-    doc.setFont(undefined, isBold ? 'bold' : 'normal');
-    const valueLines = doc.splitTextToSize(value, valueWidth);
-    doc.text(valueLines, margin + labelWidth, y);
-    
-    return y + Math.max(5, valueLines.length * 3.5);
-  };
-
-  // Header Section - Company Logo and Info
-  // Company Information (left side)
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const companyInfo = [
-    'Insurer One',
-    '+971 555-5555',
-    'www.insurerone.com'
-  ];
-  
-  let companyY = margin;
-  companyInfo.forEach(line => {
-    companyY = addText(line, margin, companyY, 50, 9);
-  });
-
-  // Company Logo (right side)
-  doc.setFillColor(255, 165, 0); // Orange color
-  doc.rect(pageWidth - 60, margin, 40, 15, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(12);
-  doc.setFont(undefined, 'bold');
-  doc.text('INSURER', pageWidth - 40, margin + 8, { align: 'center' });
-  doc.text('ONE', pageWidth - 40, margin + 12, { align: 'center' });
-
-  yPosition = margin + 25;
-
-  // Proposal Title
-  doc.setTextColor(0, 0, 0); // Ensure text is black
-  yPosition = addText('Insurance Proposal Prepared Exclusively For:', margin, yPosition, contentWidth, 12, 'bold');
-  yPosition += 5;
-
-  // Client Information with proper sentence case
-  const clientInfo = [
-    proposalData.project.client_name || 'Al Habtoor Construction LLC',
-    proposalData.project.address || 'Sheikh Zayed Road, Business Bay, Dubai, UAE',
-    `${(proposalData.project.region || 'Dubai').toLowerCase()}, ${(proposalData.project.country || 'United Arab Emirates').toUpperCase()}`
-  ];
-  
-  clientInfo.forEach(line => {
-    doc.setTextColor(0, 0, 0); // Ensure text is black
-    yPosition = addText(line, margin, yPosition, contentWidth, 10);
-  });
-
-  // Prepared By Information
-  const preparedByY = margin + 25;
-  const preparedByInfo = [
-    'Prepared By',
-    'Insurance Broker',
-    '(555) 123-4567',
-    'broker@insurance.com',
-    new Date().toLocaleDateString()
-  ];
-  
-  let preparedY = preparedByY;
-  preparedByInfo.forEach(line => {
-    doc.setTextColor(0, 0, 0); // Ensure text is black
-    preparedY = addText(line, pageWidth - 60, preparedY, 50, 9);
-  });
-
-  yPosition = Math.max(yPosition, preparedY) + 10;
-
-  // Introduction Paragraph
-  const introText = 'Thank you for the opportunity to assist you in assessing your insurance needs. I am pleased to present to you the following construction insurance proposal:';
-  doc.setTextColor(0, 0, 0); // Ensure text is black
-  yPosition = addText(introText, margin, yPosition, contentWidth, 8); // 10 * 0.8
-  yPosition += 10;
-
-  // Policy Details Section
-  doc.setTextColor(0, 0, 0); // Ensure text is black
-  yPosition = addText('Contractors All Risk Insurance Quote - ' + (proposalData.project.project_name || 'Project Name'), margin, yPosition, contentWidth, 9.6, 'bold'); // 12 * 0.8
-  yPosition += 5;
-
-  // Insured Details Section
-  if (proposalData.insured?.details) {
-    // Table title with grey background and outline
-    doc.setFillColor(240, 240, 240);
-    doc.rect(margin, yPosition, contentWidth, 8, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(margin, yPosition, contentWidth, 8);
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'bold');
-    doc.text('Insured Details', margin + 2, yPosition + 5);
-    yPosition += 8;
-    
-    // Create table for insured details
-    const tableWidth = contentWidth;
-    const col1Width = tableWidth * 0.4;
-    const col2Width = tableWidth * 0.6;
-    
-    // Table rows (no header)
-    const insuredData = [
-      { label: 'Insured Name', value: proposalData.insured.details.insured_name || 'N/A' },
-      { label: 'Role of Insured', value: proposalData.insured.details.role_of_insured || 'N/A' }
-    ];
-    
-    insuredData.forEach((item, index) => {
-      // Alternate row colors
-      if (index % 2 === 0) {
-        doc.setFillColor(250, 250, 250);
-        doc.rect(margin, yPosition, tableWidth, 6, 'F');
+    // Table rows
+    data.forEach((item, index) => {
+      const baseRowHeight = 8;
+      
+      // Split long text into multiple lines
+      const labelLines = doc.splitTextToSize(item.label, contentWidth * 0.3);
+      const valueLines = doc.splitTextToSize(item.value, contentWidth * 0.65);
+      
+      // Calculate the height needed for this row
+      const maxLines = Math.max(labelLines.length, valueLines.length);
+      const actualRowHeight = Math.max(baseRowHeight, maxLines * 3.5 + 3);
+      
+      // Check for page break before drawing the row
+      if (currentY + actualRowHeight > pageHeight - margin) {
+        // Add new page
+        doc.addPage();
+        currentY = margin;
+        
+        // Add page number to footer
+        doc.setFontSize(6);
+        doc.setTextColor(128, 128, 128);
+        doc.text('Page ' + doc.getCurrentPageInfo().pageNumber, pageWidth - margin - 15, pageHeight - 10);
       }
       
-      // Row border
-      doc.setDrawColor(200, 200, 200);
-      doc.rect(margin, yPosition, tableWidth, 6);
-      doc.line(margin + col1Width, yPosition, margin + col1Width, yPosition + 6);
+      // Row background
+      if (index % 2 === 0) {
+        doc.setFillColor(250, 250, 250);
+        doc.rect(margin, currentY, contentWidth, actualRowHeight, 'F');
+      }
       
-      // Text (reduced font size by 20%)
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(6.4); // 8 * 0.8
-      doc.setFont(undefined, 'normal');
-      doc.text(item.label, margin + 2, yPosition + 4);
-      doc.text(item.value, margin + col1Width + 2, yPosition + 4);
+      // Row borders
+      doc.setDrawColor(0, 0, 0);
+      doc.rect(margin, currentY, contentWidth, actualRowHeight);
+      doc.line(margin + contentWidth * 0.3, currentY, margin + contentWidth * 0.3, currentY + actualRowHeight);
       
-      yPosition += 6;
-    });
-    
-  }
-
-  // Combined Project Structure & Contract Structure Table (4 columns)
-  // Check for page break before this section
-  checkPageBreak(50);
-  
-  // Table title with grey background and outline
-  doc.setFillColor(240, 240, 240);
-  doc.rect(margin, yPosition, contentWidth, 8, 'F');
-  doc.setDrawColor(200, 200, 200);
-  doc.rect(margin, yPosition, contentWidth, 8);
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(8);
-  doc.setFont(undefined, 'bold');
-  doc.text('Project Structure & Subcontractors/Consultants', margin + 2, yPosition + 5);
-  yPosition += 8;
-  
-  // Create 4-column table
-  const tableWidth = contentWidth;
-  const col1Width = tableWidth * 0.25; // Project Structure
-  const col2Width = tableWidth * 0.25; // Project Values
-  const col3Width = tableWidth * 0.25; // Contract Structure
-  const col4Width = tableWidth * 0.25; // Contract Values
-  
-  // Project Structure Data
-  const projectStructureData = [
-    { label: 'Project Value', value: formatCurrency(proposalData.cover_requirements?.project_value || 0) },
-    { label: 'Contract Works', value: formatCurrency(proposalData.cover_requirements?.contract_works || 0) },
-    { label: 'Plant & Equipment', value: formatCurrency(proposalData.cover_requirements?.plant_and_equipment || 0) },
-    { label: 'Temporary Works', value: formatCurrency(proposalData.cover_requirements?.temporary_works || 0) },
-    { label: 'Other Materials', value: formatCurrency(proposalData.cover_requirements?.other_materials || 0) },
-    { label: 'Principal\'s Property', value: formatCurrency(proposalData.cover_requirements?.principals_property || 0) },
-    { label: 'Cross Liability Cover', value: proposalData.cover_requirements?.cross_liability_cover === 'yes' ? 'Yes' : 'No' },
-    { label: 'Sum Insured', value: formatCurrency(proposalData.cover_requirements?.sum_insured || proposalData.quote.coverageAmount) }
-  ];
-  
-  // Contract Structure Data - removed main contractor details
-  const contractStructureData = [];
-  
-  // Subcontractors Data
-  const subcontractorsData = proposalData.contract_structure?.sub_contractors || [];
-  
-  // Consultants Data
-  const consultantsData = proposalData.contract_structure?.consultants || [];
-  
-  // Calculate maximum rows needed (including consultants)
-  const maxRows = Math.max(projectStructureData.length, subcontractorsData.length, consultantsData.length);
-  
-  // Create table rows
-  for (let i = 0; i < maxRows; i++) {
-    // Check for page break before each row
-    checkPageBreak(10);
-    
-    // Alternate row colors
-    if (i % 2 === 0) {
-      doc.setFillColor(250, 250, 250);
-      doc.rect(margin, yPosition, tableWidth, 6, 'F');
-    }
-    
-    // Row border
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(margin, yPosition, tableWidth, 6);
-    doc.line(margin + col1Width, yPosition, margin + col1Width, yPosition + 6);
-    doc.line(margin + col1Width + col2Width, yPosition, margin + col1Width + col2Width, yPosition + 6);
-    doc.line(margin + col1Width + col2Width + col3Width, yPosition, margin + col1Width + col2Width + col3Width, yPosition + 6);
-    
-    // Text (reduced font size by 20%)
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(6.4); // 8 * 0.8
-    doc.setFont(undefined, 'normal');
-    
-    // Column 1: Project Structure Label
-    const projectItem = projectStructureData[i];
-    if (projectItem) {
-      doc.text(projectItem.label, margin + 2, yPosition + 4);
-    }
-    
-    // Column 2: Project Structure Value
-    if (projectItem) {
-      doc.text(projectItem.value, margin + col1Width + 2, yPosition + 4);
-    }
-    
-    // Column 3: Subcontractor Name or Consultant Name
-    if (i < subcontractorsData.length) {
-      // Show subcontractor name
-      doc.text(subcontractorsData[i].name, margin + col1Width + col2Width + 2, yPosition + 4);
-    } else if (i < subcontractorsData.length + consultantsData.length) {
-      // Show consultant name
-      const consultantIndex = i - subcontractorsData.length;
-      doc.text(consultantsData[consultantIndex].name, margin + col1Width + col2Width + 2, yPosition + 4);
-    }
-    
-    // Column 4: Subcontractor Details or Consultant Details
-    if (i < subcontractorsData.length) {
-      // Show subcontractor details
-      doc.text(`${subcontractorsData[i].contract_type} (${subcontractorsData[i].contract_number})`, margin + col1Width + col2Width + col3Width + 2, yPosition + 4);
-    } else if (i < subcontractorsData.length + consultantsData.length) {
-      // Show consultant details
-      const consultantIndex = i - subcontractorsData.length;
-      doc.text(`${consultantsData[consultantIndex].role} (${consultantsData[consultantIndex].license_number})`, margin + col1Width + col2Width + col3Width + 2, yPosition + 4);
-    }
-    
-    yPosition += 6;
-  }
-  
-  // Consultants are now integrated into the main table above
-
-  // Selected Extensions Section
-  if (proposalData.cewData && proposalData.cewData.selectedItems.length > 0) {
-    checkPageBreak(30);
-    
-    // Filter to only show actually selected items (not just available ones)
-    const actuallySelectedItems = proposalData.cewData.selectedItems.filter(item => 
-      item.isSelected || item.selectedOptionId || (item.isMandatory && item.selectedOptionId)
-    );
-    
-    if (actuallySelectedItems.length > 0) {
-      // Table title with grey background and outline
-      doc.setFillColor(240, 240, 240);
-      doc.rect(margin, yPosition, contentWidth, 8, 'F');
-      doc.setDrawColor(200, 200, 200);
-      doc.rect(margin, yPosition, contentWidth, 8);
+      // Text
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(8);
-      doc.setFont(undefined, 'bold');
-      doc.text('Selected Extensions & Conditions', margin + 2, yPosition + 5);
-      yPosition += 8;
-
-      // Create table for selected extensions
-      const extensionTableWidth = contentWidth;
-      const extensionCol1Width = extensionTableWidth * 0.4;
-      const extensionCol2Width = extensionTableWidth * 0.6;
-
-      actuallySelectedItems.forEach((item, index) => {
-        // Alternate row colors
-        if (index % 2 === 0) {
-          doc.setFillColor(250, 250, 250);
-          doc.rect(margin, yPosition, extensionTableWidth, 6, 'F');
-        }
-        
-        // Row border
-        doc.setDrawColor(200, 200, 200);
-        doc.rect(margin, yPosition, extensionTableWidth, 6);
-        doc.line(margin + extensionCol1Width, yPosition, margin + extensionCol1Width, yPosition + 6);
-        
-        // Text (reduced font size by 20%)
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(6.4); // 8 * 0.8
-        doc.setFont(undefined, 'normal');
-        
-        const impactText = item.isMandatory ? 'Mandatory' : 'Optional';
-        
-        // Show specific option selected and its impact
-        let adjustmentText = item.code || 'N/A'; // Show the code instead of Base Rate
-        if (item.selectedOptionId && item.options) {
-          const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
-          if (selectedOption) {
-            adjustmentText = selectedOption.code || selectedOption.label || item.code || 'N/A';
-            // Add impact information if available
-            if (selectedOption.impact) {
-              if (selectedOption.impact.percentage) {
-                adjustmentText += ` (+${selectedOption.impact.percentage}%)`;
-              }
-              if (selectedOption.impact.fixed) {
-                adjustmentText += ` (+${formatCurrency(selectedOption.impact.fixed)})`;
-              }
-            }
-          }
-        }
-        
-        doc.text(`${item.name} (${impactText})`, margin + 2, yPosition + 4);
-        doc.text(adjustmentText, margin + extensionCol1Width + 2, yPosition + 4);
-        
-        yPosition += 6;
-      });
+      doc.setFont(undefined, 'normal');
       
-      yPosition += 5;
-    }
-  }
-
-  // TPL Limit Extensions
-  if (proposalData.cewData && proposalData.cewData.tplAdjustment !== 0) {
-    checkPageBreak(20);
-    yPosition = addText('TPL Limit Extensions', margin, yPosition, contentWidth, 11, 'bold');
-    yPosition += 3;
+      // Draw label text
+      doc.text(labelLines, margin + 2, currentY + 5);
+      
+      // Draw value text
+      doc.text(valueLines, margin + contentWidth * 0.3 + 2, currentY + 5);
+      
+      currentY += actualRowHeight;
+    });
     
-    const tplText = proposalData.cewData.tplAdjustment > 0 ? 
-      `Enhanced TPL Coverage (+${proposalData.cewData.tplAdjustment}%)` : 
-      `Standard TPL Coverage (${proposalData.cewData.tplAdjustment}%)`;
-    
-    yPosition = addTableRow('Third Party Liability', tplText, yPosition);
-  }
+    return currentY;
+  };
 
-  // Premium Summary Section
-  checkPageBreak(40);
-  // Table title with grey background and outline
-  doc.setFillColor(240, 240, 240);
-  doc.rect(margin, yPosition, contentWidth, 8, 'F');
-  doc.setDrawColor(200, 200, 200);
-  doc.rect(margin, yPosition, contentWidth, 8);
+  // Main Title - Updated Table Structure
   doc.setTextColor(0, 0, 0);
-  doc.setFontSize(9.6); // 12 * 0.8
+  doc.setFontSize(14);
   doc.setFont(undefined, 'bold');
-  doc.text('Premium Summary', margin + 2, yPosition + 5);
-  yPosition += 8;
+  doc.text('QUOTE FOR CONTRACTORS ALL RISKS INSURANCE', margin, yPosition, { align: 'center' });
+  yPosition += 15;
 
-  const premiumData = [
-    { label: 'Nett Premium', value: formatCurrency(proposalData.premiumSummary.basePremium) }
+  // Combined Single Table Structure
+  const combinedTableData = [
+    { label: 'QUOTATION REFERENCE', value: '................................dated.................................' },
+    { 
+      label: 'Proposer', 
+      value: 'M/s ________________ as Principal &/or M/s. ________________ as Contractor &/o their sub-contractors for their respective rights and interests' 
+    },
+    { label: 'Scope of Work', value: '' },
+    { label: 'Period of insurance', value: 'Not exceeding 12 Months' },
+    { label: 'Maintenance Period', value: '12 Months from the date of handing over the project' },
+    { 
+      label: 'Site of erection', 
+      value: 'Anywhere in UAE (excluding any work within 100 meter of water body/ Wet risk)' 
+    },
+    { 
+      label: 'Interest covered', 
+      value: 'Section I Material Damage\nAny unforeseen and sudden physical loss and/or damage to the insured items as mentioned below from any cause other than those specifically excluded as per Standard Munich Re Wordings\n\nSection II Third Party Liability\nThe Company will indemnify The Participant against such sums which The Participant shall become legally liable to pay as damage consequent upon\n• accidental bodily injury to or illness of third parties (whether fatal or not),\n• accidental loss of or damage to property belonging to third parties\nOccurring in direct connection with the construction or erection of the items Covered under Section 1 and happening on or in the immediate vicinity of the contract site during the period of cover' 
+    },
+    { 
+      label: 'Sum Insured', 
+      value: `(AED) Description\nContract Value\nPrincipal existing surrounding property\nContractors Plant & Machinery\nTotal\nSection I` 
+    },
+    { 
+      label: '', 
+      value: 'Section II\nLimit of liability AED --------/- any one accident or series of accidents arising out of one event and in the aggregate' 
+    },
+    { 
+      label: 'Deductible', 
+      value: 'Section I:\nAED 5,000/- each and every loss in respect of major perils / Act of God perils\nAED 3,500/- each and every loss in respect of loss or damage from any other cause\n\nSection II:\nAED 7,500/- each and every loss for Third Party Property damage\nUnderground Property / Vibration/Weakening of Support - AED 10,000/- each and every loss' 
+    },
+    { 
+      label: 'Premium', 
+      value: `AED ${proposalData.premiumSummary.totalAnnualPremium.toLocaleString()}/- including policy fees` 
+    }
   ];
 
-  // Only add TPL adjustment if it has a value
-  if (proposalData.premiumSummary.tplAdjustment !== 0) {
-    premiumData.push({ label: 'TPL Adjustment', value: formatCurrency(proposalData.premiumSummary.tplAdjustment) });
-  }
-
-  // Only add mandatory CEW adjustments if they have values
-  if (proposalData.premiumSummary.mandatoryAdjustments !== 0) {
-    premiumData.push({ label: 'Mandatory CEW Adjustments', value: formatCurrency(proposalData.premiumSummary.mandatoryAdjustments) });
-  }
-
-  // Only add optional CEW adjustments if they have values
-  if (proposalData.premiumSummary.optionalAdjustments !== 0) {
-    premiumData.push({ label: 'Optional CEW Adjustments', value: formatCurrency(proposalData.premiumSummary.optionalAdjustments) });
-  }
-
-  premiumData.push(
-    { label: 'Subtotal', value: formatCurrency(proposalData.premiumSummary.totalBeforeCommission) },
-    { label: 'Broker Commission', value: formatCurrency(proposalData.premiumSummary.brokerCommission) }
+  // Add remaining sections to the combined table
+  combinedTableData.push(
+    { 
+      label: 'Cover', 
+      value: 'As per standard Contractors All Risks Takaful Cover - Munich Re wordings\n• Strike, Riot and Civil Commotion\n• Maintenance visit cover -12 Months\n• Cross Liability\n• Professional Fees Clause -10% of the claim amount subject to a maximum of AED 10,000/- in the aggregate\n• Debris Removal clause -10% of the claim amount subject to a maximum of AED 10,000/- in the aggregate\n• Fire Brigade and Extinguishing Charges -10% of the claim amount subject to a maximum of AED 10,000/- in the aggregate\n• Automatic Reinstatement of Sum Covered Clause subject to additional premium\n• 72 Hours Clause\n• Public Authorities Clause\n• Primary Insurance Cover Clause\n• 30 days\' Notice of cancellation by either parties' 
+    },
+    { 
+      label: 'Exclusions', 
+      value: '(only indicative in nature and not exhaustive. Full list of exclusions available in the Policy document)\n• Seepage, Pollution and Contamination Exclusion Clause\n• Terrorism & Political risks Exclusion Clause\n• Nuclear Exclusion Clause\n• Cyber Clause / IT Clarification Agreement Exclusion Clause\n• Electronic Date Recognition Endorsement\n• Toxic Mould Exclusion Clause\n• Loss or damage due to Subsidence Exclusion Clause\n• Third party claims arising from Asbestos and /or derivatives thereof Excluded\n• Offshore / Marine / Wet works Excluded\n• Loss or damage to Crops, Forests and Culture Exclusion\n• UN Sanction Exclusion Clause' 
+    },
+    { 
+      label: 'Subjectivity', 
+      value: 'No Known or reported claims at the time of binding the cover' 
+    },
+    { 
+      label: 'Validity', 
+      value: '30 days from the Date of Issuance of the Quote' 
+    },
+    { 
+      label: 'Warranties', 
+      value: '• Warranty concerning construction material\n• Warranty that work areas to be cordoned off and no Visitors are allowed entry to such areas unless authorized\n• Warranted No Smoking instruction to all staff / workers' 
+    }
   );
 
-  // Create table for premium summary
-  const premiumTableWidth = contentWidth;
-  const premiumCol1Width = premiumTableWidth * 0.5;
-  const premiumCol2Width = premiumTableWidth * 0.5;
-  
-  // Table rows (no header)
-  premiumData.forEach((item, index) => {
-    // Check for page break before each row
-    checkPageBreak(10);
-    
-    // Alternate row colors
-    if (index % 2 === 0) {
-      doc.setFillColor(250, 250, 250);
-      doc.rect(margin, yPosition, premiumTableWidth, 6, 'F');
-    }
-    
-    // Row border
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(margin, yPosition, premiumTableWidth, 6);
-    doc.line(margin + premiumCol1Width, yPosition, margin + premiumCol1Width, yPosition + 6);
-    
-    // Text (reduced font size by 20%)
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(6.4); // 8 * 0.8
-    doc.setFont(undefined, 'normal');
-    doc.text(item.label, margin + 2, yPosition + 4);
-    doc.text(item.value, margin + premiumCol1Width + 2, yPosition + 4);
-    
-    yPosition += 6;
-  });
+  yPosition = createTable(combinedTableData, yPosition);
 
-  // Total Line with bold text
-  yPosition += 2;
-  // Total row with bold text
-  doc.setFillColor(250, 250, 250);
-  doc.rect(margin, yPosition, tableWidth, 8, 'F');
-  doc.setDrawColor(200, 200, 200);
-  doc.rect(margin, yPosition, tableWidth, 8);
-  doc.line(margin + col1Width, yPosition, margin + col1Width, yPosition + 8);
-  
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(6.4);
-  doc.setFont(undefined, 'bold');
-  doc.text('Total Annual Premium', margin + 2, yPosition + 5);
-  doc.text(formatCurrency(proposalData.premiumSummary.totalAnnualPremium), margin + col1Width + 2, yPosition + 5);
-  yPosition += 8;
-
-  // Add proper spacing before disclosure
-  yPosition += 10;
-
-  // Additional Comments
-  // yPosition = addText('Underwritten through AM BEST rated company.', margin, yPosition, contentWidth, 9);
-  // yPosition += 10;
-
-  // Disclosure Statement
-  const disclosureText = 'Disclosure: The premium estimates and coverage limits outlined in the proposal above are based upon the accuracy of the information you provided and may not represent all coverages available. This proposal does not constitute a contract or binder of insurance and premium amounts cannot be guaranteed until coverage is purchased. For additional information regarding the assumptions used to prepare this proposal or to purchase insurance coverage, please contact your agent at the phone number listed above.';
-  
-  yPosition = addText(disclosureText, margin, yPosition, contentWidth * 0.95, 7); // Use 95% of content width and reduced font size
-  yPosition += 5;
-
-  // Footer
-  const footerY = pageHeight - 10;
-  doc.setFontSize(6);
-  doc.setTextColor(128, 128, 128);
-  doc.text('Generated on ' + new Date().toLocaleString(), margin, footerY);
-  doc.text('Page ' + doc.getCurrentPageInfo().pageNumber, pageWidth - margin - 15, footerY);
+  // Footer for all pages
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const footerY = pageHeight - 10;
+    doc.setFontSize(6);
+    doc.setTextColor(128, 128, 128);
+    doc.text('Generated on ' + new Date().toLocaleString(), margin, footerY);
+    doc.text('Page ' + i + ' of ' + totalPages, pageWidth - margin - 15, footerY);
+  }
 
   // Save the PDF
-  const fileName = `Insurance_Proposal_${proposalData.project.project_id || 'CAR'}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const fileName = `Contractors_All_Risks_Quote_${proposalData.project.project_id || 'CAR'}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
 };
