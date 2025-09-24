@@ -270,7 +270,15 @@ const PolicyDetails = () => {
               Policy Summary
             </CardTitle>
                   <div className="text-xs text-gray-400 mt-1">
-                    Policy Reference: {policyData.policyInfo?.policy_reference || 'N/A'}
+                    {policyData.policyInfo?.created_at ? 
+                      new Date(policyData.policyInfo.created_at).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'Policy Reference: ' + (policyData.policyInfo?.policy_reference || 'N/A')
+                    }
                   </div>
                 </div>
               </div>
@@ -341,7 +349,15 @@ const PolicyDetails = () => {
                       Project Details
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
-                      {policyData.policyInfo.proposal_bundle.project.project_name}
+                      {policyData.policyInfo.proposal_bundle.project.created_at ? 
+                        new Date(policyData.policyInfo.proposal_bundle.project.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : policyData.policyInfo.proposal_bundle.project.project_name
+                      }
                     </div>
                   </div>
                 </div>
@@ -448,7 +464,15 @@ const PolicyDetails = () => {
                       Insured Details
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
-                      {policyData.policyInfo.proposal_bundle.insured.details.insured_name}
+                      {policyData.policyInfo.proposal_bundle.insured.details.updated_at ? 
+                        new Date(policyData.policyInfo.proposal_bundle.insured.details.updated_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : policyData.policyInfo.proposal_bundle.insured.details.insured_name
+                      }
                     </div>
                   </div>
                 </div>
@@ -547,7 +571,15 @@ const PolicyDetails = () => {
                       Contract Structure
               </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
-                      {policyData.policyInfo.proposal_bundle.contract_structure.details?.main_contractor}
+                      {policyData.policyInfo.proposal_bundle.contract_structure.details?.created_at ? 
+                        new Date(policyData.policyInfo.proposal_bundle.contract_structure.details.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : policyData.policyInfo.proposal_bundle.contract_structure.details?.main_contractor
+                      }
                     </div>
                   </div>
                 </div>
@@ -646,7 +678,15 @@ const PolicyDetails = () => {
                       Site Risk Assessment
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
-                      Risk factors and site conditions
+                      {policyData.policyInfo.proposal_bundle.site_risks?.created_at ? 
+                        new Date(policyData.policyInfo.proposal_bundle.site_risks.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'Risk factors and site conditions'
+                      }
                     </div>
                   </div>
                 </div>
@@ -707,7 +747,15 @@ const PolicyDetails = () => {
                       Cover Requirements
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
-                      Insurance coverage details
+                      {policyData.policyInfo.proposal_bundle.cover_requirements?.created_at ? 
+                        new Date(policyData.policyInfo.proposal_bundle.cover_requirements.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'Insurance coverage details'
+                      }
                     </div>
                   </div>
                 </div>
@@ -778,7 +826,15 @@ const PolicyDetails = () => {
                       Selected Plan Details
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
-                      Insurance plan configuration
+                      {policyData.policyInfo.proposal_bundle.selected_plan?.created_at ? 
+                        new Date(policyData.policyInfo.proposal_bundle.selected_plan.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'Insurance plan configuration'
+                      }
                     </div>
                   </div>
                 </div>
@@ -887,7 +943,15 @@ const PolicyDetails = () => {
                       Underwriting Documents
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
-                      {policyData.policyInfo.proposal_bundle.required_documents.length} document(s)
+                      {policyData.policyInfo.created_at ? 
+                        new Date(policyData.policyInfo.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : `${policyData.policyInfo.proposal_bundle.required_documents.length} document(s)`
+                      }
                     </div>
                   </div>
                 </div>
@@ -945,7 +1009,15 @@ const PolicyDetails = () => {
                       Declaration Documents
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
-                      {policyData.policyInfo.proposal_bundle.required_documents_for_policy_issue.length} document(s)
+                      {policyData.policyInfo.created_at ? 
+                        new Date(policyData.policyInfo.created_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : `${policyData.policyInfo.proposal_bundle.required_documents_for_policy_issue.length} document(s)`
+                      }
                     </div>
                   </div>
                 </div>

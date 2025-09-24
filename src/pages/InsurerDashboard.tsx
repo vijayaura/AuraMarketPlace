@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -314,17 +315,14 @@ const InsurerDashboard = () => {
   // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
-      console.log('🚀 Fetching dashboard data...');
       setIsLoadingDashboard(true);
       setDashboardError(null);
       
       const response = await getInsurerDashboard();
-      console.log('✅ Dashboard data fetched successfully:', response);
-      
       setDashboardData(response);
       
     } catch (err: any) {
-      console.error('❌ Error fetching dashboard data:', err);
+      console.error('Error fetching dashboard data:', err);
       const status = err?.status as number | undefined;
       const message = err?.message as string | undefined;
       
@@ -354,6 +352,7 @@ const InsurerDashboard = () => {
       const data = await getInsurerDashboardQuotes();
       setQuotesData(data);
     } catch (err: any) {
+      console.error('Error fetching quotes:', err);
       setQuotesError(err?.message || 'Failed to load quotes');
     } finally {
       setQuotesLoading(false);
@@ -384,7 +383,6 @@ const InsurerDashboard = () => {
   // Fetch dashboard data when quotes tab is selected
   useEffect(() => {
     if (activeTab === "quotes") {
-      console.log('📊 Quote Requests tab clicked - fetching dashboard data...');
       fetchDashboardData();
     }
   }, [activeTab]);
@@ -393,14 +391,13 @@ const InsurerDashboard = () => {
   const activeQuotes = useMemo(() => {
     try {
       if (!quotesData?.recentQuotes || !Array.isArray(quotesData.recentQuotes)) {
-        console.log('No quotes data available or invalid structure:', quotesData);
         return [];
       }
       return quotesData.recentQuotes.map(q => ({
-        id: q.id.toString(),
+        id: q.quote_id || q.id.toString(),
         customerName: q.client_name || '',
         companyName: q.project_name || '',
-        brokerName: q.broker_name || '',
+        brokerName: q.broker_name || 'Broker Name',
         projectType: q.project_type || '',
         projectValue: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
         premium: q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
@@ -421,7 +418,7 @@ const InsurerDashboard = () => {
         return [];
       }
       return policiesData.issuedPolicies.map(p => ({
-        id: p.policy_id || `Q${p.quote_id}`,
+        id: p.id, // Use the actual id field from API response
         policyNumber: p.policy_id || `Q${p.quote_id}`,
         customerName: p.client_name || '',
         companyName: p.project_name || '',
@@ -604,23 +601,21 @@ const InsurerDashboard = () => {
     updateFilter: updatePolicyFilter,
     clearFilters: clearPolicyFilters
   } = useTableSearch({
-    data: policies,
+    data: recentPolicies,
     searchableFields: ['policyNumber', 'customerName', 'companyName', 'projectType'],
     initialFilters: {}
   });
 
   // Pagination logic for quotes - limit to max 3 pages
-  const quotesDataSource = dashboardData?.quoteRequests || filteredQuotes;
-  const totalQuotePages = Math.min(3, Math.ceil(quotesDataSource.length / itemsPerPage));
+  const totalQuotePages = Math.min(3, Math.ceil(activeQuotes.length / itemsPerPage));
   const startQuoteIndex = (currentQuotePage - 1) * itemsPerPage;
   const endQuoteIndex = startQuoteIndex + itemsPerPage;
-  const currentQuotes = filteredQuotes.slice(startQuoteIndex, endQuoteIndex);
 
   // Pagination logic for policies - limit to max 3 pages
-  const totalPolicyPages = Math.min(3, Math.ceil(filteredPolicies.length / itemsPerPage));
+  const totalPolicyPages = Math.min(3, Math.ceil(recentPolicies.length / itemsPerPage));
   const startPolicyIndex = (currentPolicyPage - 1) * itemsPerPage;
   const endPolicyIndex = startPolicyIndex + itemsPerPage;
-  const currentPolicies = filteredPolicies.slice(startPolicyIndex, endPolicyIndex);
+  const currentPolicies = recentPolicies.slice(startPolicyIndex, endPolicyIndex);
   const exportQuotesToExcel = () => {
     const exportData = quotesData?.recentQuotes?.map((q: any) => ({
       'Quote ID': q.quote_id,
@@ -654,7 +649,8 @@ const InsurerDashboard = () => {
     XLSX.utils.book_append_sheet(wb, ws, 'Policies');
     XLSX.writeFile(wb, 'insurer-policies.xlsx');
   };
-  return <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-6">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex justify-between items-center">
@@ -676,60 +672,45 @@ const InsurerDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
-                  <FileText className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Quotes</p>
-                  {isLoadingDashboard ? (
-                    <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
-                  ) : (
-                    <p className="text-2xl font-bold text-foreground">
-                      {dashboardData?.totalQuotes !== undefined ? dashboardData.totalQuotes : quotes.length}
-                    </p>
-                  )}
-                </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Quotes</p>
+                {isLoadingDashboard ? (
+                  <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  <p className="text-2xl font-bold text-foreground">
+                    {dashboardData?.totalQuotes !== undefined ? dashboardData.totalQuotes : quotes.length}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
           
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg">
-                  <Shield className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Policies</p>
-                  {isLoadingDashboard ? (
-                    <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
-                  ) : (
-                    <p className="text-2xl font-bold text-foreground">
-                      {dashboardData?.totalPolicies !== undefined ? dashboardData.totalPolicies : policies.length}
-                    </p>
-                  )}
-                </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Policies</p>
+                {isLoadingDashboard ? (
+                  <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  <p className="text-2xl font-bold text-foreground">
+                    {dashboardData?.totalPolicies !== undefined ? dashboardData.totalPolicies : policies.length}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Value</p>
-                  {isLoadingDashboard ? (
-                    <div className="w-20 h-8 bg-gray-200 rounded animate-pulse" />
-                  ) : (
-                    <p className="text-2xl font-bold text-foreground">
-                      {dashboardData?.totalValue !== undefined ? `AED ${(dashboardData.totalValue / 1000000).toFixed(1)}M` : "AED 46.3M"}
-                    </p>
-                  )}
-                </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Value</p>
+                {isLoadingDashboard ? (
+                  <div className="w-20 h-8 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  <p className="text-2xl font-bold text-foreground">
+                    {dashboardData?.totalValue !== undefined ? `AED ${(dashboardData.totalValue / 1000000).toFixed(1)}M` : "AED 46.3M"}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -785,15 +766,15 @@ const InsurerDashboard = () => {
                 </thead>
                 <tbody>
                   {quotesLoading ? (
-                    <TableSkeleton rowCount={5} colCount={8} />
+                    <TableSkeleton rowCount={5} colCount={7} />
                   ) : quotesError ? (
                     <tr>
-                      <td colSpan={8} className="p-4 text-center text-destructive">
+                      <td colSpan={7} className="p-4 text-center text-destructive">
                         {quotesError}
                       </td>
                     </tr>
-                  ) : filteredQuotes.length > 0 ? (
-                    filteredQuotes.slice(startQuoteIndex, endQuoteIndex).map(quote => (
+                  ) : activeQuotes.length > 0 ? (
+                    activeQuotes.slice(startQuoteIndex, endQuoteIndex).map(quote => (
                       <tr key={quote.id} className="border-b hover:bg-muted/30 transition-colors">
                         <td className="p-4">
                           <p className="font-medium text-foreground">{quote.id}</p>
@@ -825,37 +806,11 @@ const InsurerDashboard = () => {
                       </tr>
                     ))
                   ) : (
-                    currentQuotes.map(quote => (
-                      <tr key={quote.id} className="border-b hover:bg-muted/30 transition-colors">
-                        <td className="p-4">
-                          <p className="font-medium text-foreground">{quote.id}</p>
-                        </td>
-                        <td className="p-4">
-                          <div>
-                            <p className="font-medium text-foreground">{quote.customerName}</p>
-                            <p className="text-sm text-muted-foreground">{quote.companyName}</p>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <p className="font-medium text-foreground">{quote.brokerName}</p>
-                        </td>
-                        <td className="p-4">
-                          <p className="font-medium text-foreground">{quote.projectType}</p>
-                        </td>
-                        <td className="p-4">
-                          <p className="font-medium text-foreground">{quote.projectValue}</p>
-                        </td>
-                        <td className="p-4">
-                          <p className="font-medium text-foreground">{quote.premium}</p>
-                        </td>
-                        <td className="p-4">
-                          <Button size="sm" variant="outline" onClick={() => navigate(`/insurer/quote/${quote.id}`)}>
-                            <Eye className="w-4 h-4 mr-1" />
-                            View Details
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
+                    <tr>
+                      <td colSpan={7} className="p-4 text-center text-muted-foreground">
+                        No quotes found
+                      </td>
+                    </tr>
                   )}
                 </tbody>
                  </table>
@@ -864,8 +819,8 @@ const InsurerDashboard = () => {
                    {/* Pagination for Quotes */}
                    <div className="px-6 py-4 border-t">
                      <div className="text-sm text-muted-foreground mb-4">
-                       Showing {currentQuotes.length} of {Math.min(filteredQuotes.length, totalQuotePages * itemsPerPage)} quotes (Page {currentQuotePage} of {totalQuotePages})
-                       {filteredQuotes.length > totalQuotePages * itemsPerPage && (
+                       Showing {Math.min(activeQuotes.length - startQuoteIndex, itemsPerPage)} of {activeQuotes.length} quotes (Page {currentQuotePage} of {totalQuotePages})
+                       {activeQuotes.length > totalQuotePages * itemsPerPage && (
                          <span className="ml-2 text-amber-600">• Showing first {totalQuotePages * itemsPerPage} results</span>
                        )}
                      </div>
@@ -921,113 +876,96 @@ const InsurerDashboard = () => {
                   {/* Search and Filter Controls for Policies */}
                   <TableSearchFilter searchTerm={policySearchTerm} onSearchChange={setPolicySearchTerm} searchPlaceholder="Search policies by customer name, company, or policy number..." filters={policyFilters} activeFilters={policyFiltersState} onFilterChange={updatePolicyFilter} onClearFilters={clearPolicyFilters} />
                   
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="border-b bg-muted/50">
-                        <tr>
-                          <th className="text-left p-4 font-medium text-foreground">Policy Number</th>
-                          <th className="text-left p-4 font-medium text-foreground">Customer</th>
-                          <th className="text-left p-4 font-medium text-foreground">Project</th>
-                          <th className="text-left p-4 font-medium text-foreground">Sum Insured</th>
-                          <th className="text-left p-4 font-medium text-foreground">Premium</th>
-                          <th className="text-left p-4 font-medium text-foreground">Start Date</th>
-                          <th className="text-left p-4 font-medium text-foreground">End Date</th>
-                          <th className="text-left p-4 font-medium text-foreground">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {policiesLoading ? (
-                          <TableSkeleton rowCount={5} colCount={9} />
-                        ) : policiesError ? (
-                          <tr>
-                            <td colSpan={9} className="p-4 text-center text-destructive">
-                              {policiesError}
-                            </td>
-                          </tr>
-                        ) : filteredPolicies.length > 0 ? (
-                          filteredPolicies.slice(startPolicyIndex, endPolicyIndex).map(policy => <tr key={policy.id} className="border-b hover:bg-muted/30 transition-colors">
-                            <td className="p-4">
-                              <p className="font-medium text-foreground">{policy.policyNumber}</p>
-                            </td>
-                            <td className="p-4">
-                              <div>
-                                <p className="font-medium text-foreground">{policy.customerName}</p>
-                                <p className="text-sm text-muted-foreground">{policy.companyName}</p>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <p className="font-medium text-foreground">{policy.projectType}</p>
-                            </td>
-                            <td className="p-4">
-                              <p className="font-medium text-foreground">{policy.sumInsured}</p>
-                            </td>
-                            <td className="p-4">
-                              <p className="font-medium text-foreground">{policy.premium}</p>
-                            </td>
-                            <td className="p-4">
-                              <p className="text-sm text-foreground">{policy.startDate}</p>
-                            </td>
-                            <td className="p-4">
-                              <p className="text-sm text-foreground">{policy.endDate}</p>
-                            </td>
-                            <td className="p-4">
-                              <Button size="sm" variant="outline" onClick={e => {
-                          e.stopPropagation();
-                          navigate(`/insurer/policy/${policy.id}`);
-                        }}>
-                                View Policy
-                              </Button>
-                            </td>
-                          </tr>)
-                        ) : (
-                          <tr>
-                            <td colSpan={9} className="p-4 text-center text-muted-foreground">
-                              No policies found
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                     </table>
-                   </div>
+                  {policiesLoading ? (
+                    <TableSkeleton rowCount={5} colCount={7} />
+                  ) : policiesError ? (
+                    <div className="rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">{policiesError}</div>
+                  ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[140px]">Policy Number</TableHead>
+                        <TableHead className="w-[120px]">Project Name</TableHead>
+                        <TableHead className="w-[140px]">Sum Insured</TableHead>
+                        <TableHead className="w-[120px]">Premium</TableHead>
+                        <TableHead className="w-[100px]">Start Date</TableHead>
+                        <TableHead className="w-[100px]">End Date</TableHead>
+                        <TableHead className="w-[100px] text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentPolicies.slice(startPolicyIndex, endPolicyIndex).map((policy) => (
+                        <TableRow 
+                          key={policy.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => navigate(`/insurer/policy/${policy.id}`)}
+                        >
+                          <TableCell className="font-medium w-[140px]">{policy.policyNumber}</TableCell>
+                          <TableCell className="w-[120px] truncate" title={policy.companyName}>
+                            {policy.companyName.length > 15 ? `${policy.companyName.substring(0, 15)}...` : policy.companyName}
+                          </TableCell>
+                          <TableCell className="font-medium w-[140px]">{policy.sumInsured}</TableCell>
+                          <TableCell className="font-medium text-primary w-[120px]">{policy.premium}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground w-[100px]">{policy.startDate}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground w-[100px]">{policy.endDate}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/insurer/policy/${policy.id}`);
+                              }}
+                            >
+                              View Policy
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  )}
                  
-                   {/* Pagination for Policies */}
-                   <div className="px-6 py-4 border-t">
-                     <div className="text-sm text-muted-foreground mb-4">
-                       Showing {currentPolicies.length} of {Math.min(filteredPolicies.length, totalPolicyPages * itemsPerPage)} policies (Page {currentPolicyPage} of {totalPolicyPages})
-                       {filteredPolicies.length > totalPolicyPages * itemsPerPage && (
-                         <span className="ml-2 text-amber-600">• Showing first {totalPolicyPages * itemsPerPage} results</span>
-                       )}
-                     </div>
-                     <Pagination>
-                       <PaginationContent>
-                         <PaginationItem>
-                           <PaginationPrevious href="#" onClick={e => {
-                        e.preventDefault();
-                        if (currentPolicyPage > 1) setCurrentPolicyPage(currentPolicyPage - 1);
-                      }} className={currentPolicyPage === 1 ? "pointer-events-none opacity-50" : ""} />
-                         </PaginationItem>
-                         {[...Array(totalPolicyPages)].map((_, i) => <PaginationItem key={i + 1}>
-                             <PaginationLink href="#" isActive={currentPolicyPage === i + 1} onClick={e => {
-                        e.preventDefault();
-                        setCurrentPolicyPage(i + 1);
-                      }}>
-                               {i + 1}
-                             </PaginationLink>
-                           </PaginationItem>)}
-                         <PaginationItem>
-                           <PaginationNext href="#" onClick={e => {
-                        e.preventDefault();
-                        if (currentPolicyPage < totalPolicyPages) setCurrentPolicyPage(currentPolicyPage + 1);
-                      }} className={currentPolicyPage === totalPolicyPages ? "pointer-events-none opacity-50" : ""} />
-                         </PaginationItem>
-                       </PaginationContent>
-                     </Pagination>
+                  {/* Pagination for Policies */}
+                  <div className="px-6 py-4 border-t">
+                    <div className="text-sm text-muted-foreground mb-4">
+                      Showing {Math.min(recentPolicies.length - startPolicyIndex, itemsPerPage)} of {recentPolicies.length} policies (Page {currentPolicyPage} of {totalPolicyPages})
+                      {recentPolicies.length > totalPolicyPages * itemsPerPage && (
+                        <span className="ml-2 text-amber-600">• Showing first {totalPolicyPages * itemsPerPage} results</span>
+                      )}
                     </div>
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious href="#" onClick={e => {
+                            e.preventDefault();
+                            if (currentPolicyPage > 1) setCurrentPolicyPage(currentPolicyPage - 1);
+                          }} className={currentPolicyPage === 1 ? "pointer-events-none opacity-50" : ""} />
+                        </PaginationItem>
+                        {[...Array(totalPolicyPages)].map((_, i) => <PaginationItem key={i + 1}>
+                            <PaginationLink href="#" isActive={currentPolicyPage === i + 1} onClick={e => {
+                            e.preventDefault();
+                            setCurrentPolicyPage(i + 1);
+                          }}>
+                              {i + 1}
+                            </PaginationLink>
+                          </PaginationItem>)}
+                        <PaginationItem>
+                          <PaginationNext href="#" onClick={e => {
+                            e.preventDefault();
+                            if (currentPolicyPage < totalPolicyPages) setCurrentPolicyPage(currentPolicyPage + 1);
+                          }} className={currentPolicyPage === totalPolicyPages ? "pointer-events-none opacity-50" : ""} />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
                   </CardContent>
                 </Card>
               </TabsContent>
         </Tabs>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default InsurerDashboard;
