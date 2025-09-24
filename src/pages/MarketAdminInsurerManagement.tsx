@@ -95,7 +95,7 @@ const MarketAdminInsurerManagement = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col cityscape-bg">
       <div className="flex-1 p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}

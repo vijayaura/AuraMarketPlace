@@ -517,7 +517,7 @@ const EditBroker = () => {
 
   if (isLoading || !initialLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col cityscape-bg">
         <div className="flex-1 p-6">
           <div className="w-full max-w-7xl mx-auto">
             <FormSkeleton pairs={6} />

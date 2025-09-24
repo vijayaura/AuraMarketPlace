@@ -63,6 +63,11 @@ const formatFieldValue = (key: string, value: any): string => {
   
   // Format string values to human-readable format
   if (typeof value === 'string') {
+    // Special handling for contract numbers - show as-is
+    if (key.includes('contract_number') || key === 'contract_number') {
+      return value;
+    }
+    
     // Remove special characters and convert to human-readable format
     let formatted = value
       .replace(/[_-]/g, ' ')  // Replace underscores and hyphens with spaces

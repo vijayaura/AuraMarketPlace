@@ -60,7 +60,7 @@ const MarketAdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex">
+    <div className="min-h-screen w-full flex cityscape-bg">
       {/* Left hero panel */}
       <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-primary to-primary/70 text-white">
         <div className="max-w-xl mx-auto my-auto px-12 py-16">

@@ -46,9 +46,6 @@ import CreateBroker from "./pages/CreateBroker";
 import EditBroker from "./pages/EditBroker";
 import BrokerDetailsView from "./pages/BrokerDetailsView";
 import BrokerConfiguration from "./pages/BrokerConfiguration";
-import MarketAdminInsurerPolicyDetails from "./pages/MarketAdminInsurerPolicyDetails";
-import MarketAdminBrokerPolicyDetails from "./pages/MarketAdminBrokerPolicyDetails";
-import MarketAdminPolicyDetails from "./pages/MarketAdminPolicyDetails";
 import ProductsList from "./pages/ProductsList";
 import MarketAdminProductsList from "./pages/MarketAdminProductsList";
 import MarketAdminSingleProductConfig from "./pages/MarketAdminSingleProductConfig";
@@ -110,10 +107,10 @@ const App = () => (
             
             <Route path="insurer/:insurerId/dashboard" element={<InsurerDetailDashboard />} />
             <Route path="insurer/:insurerId/quote/:quoteId" element={<QuoteDetails />} />
-            <Route path="insurer/:insurerId/policy/:policyId" element={<MarketAdminInsurerPolicyDetails />} />
-            <Route path="broker/:brokerId/policy/:policyId" element={<MarketAdminBrokerPolicyDetails />} />
+            <Route path="insurer/:insurerId/policy/:id" element={<PolicyDetails />} />
+            <Route path="broker/:brokerId/policy/:id" element={<PolicyDetails />} />
             <Route path="quote/:quoteId" element={<QuoteDetails />} />
-            <Route path="policy/:policyId" element={<MarketAdminPolicyDetails />} />
+            <Route path="policy/:id" element={<PolicyDetails />} />
             <Route path="insurer/:insurerId/product-config" element={<InsurerProductConfig />} />
             <Route path="insurer/:insurerId/product-config/broker-configurator" element={<MarketAdminBrokerConfigurator />} />
             <Route path="insurer/:insurerId/product-config/quote-format" element={<MarketAdminQuoteFormat />} />

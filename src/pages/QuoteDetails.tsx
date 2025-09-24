@@ -135,6 +135,11 @@ const formatFieldValue = (key: string, value: any): string => {
   // Format text to sentence case
   const str = String(value);
   if (str.length > 0) {
+    // Special handling for contract numbers - show as-is
+    if (key.includes('contract_number') || key === 'contract_number') {
+      return str;
+    }
+    
     // Handle special cases for better formatting
     if (str.includes('-')) {
       // Handle hyphenated words like "design-and-build"

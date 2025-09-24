@@ -37,6 +37,7 @@ import { DocumentUpload } from "./DocumentUpload";
 import { QuotesComparison } from "./QuotesComparison";
 import DeclarationTab from "./DeclarationTab";
 import { mapProposalBundleToFormData, mapProposalBundleToFormDataWithMetadata, determineCurrentStep, getStepCompletionStatus } from "@/utils/quote-resume";
+import { formatNumberWithCommas, removeCommasFromNumber, handleNumberInputChange, formatDisplayValue } from "@/utils/numberFormat";
 
 // Extend Window interface for global functions
 declare global {
@@ -1203,7 +1204,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   // Validation logic
   const validateCoverageRequirements = () => {
     const errors: Record<string, string> = {};
-    const sumInsuredTotal = parseInt(formData.sumInsuredMaterial || "0") + parseInt(formData.sumInsuredPlant || "0") + parseInt(formData.sumInsuredTemporary || "0") + parseInt(formData.otherMaterials || "0") + parseInt(formData.principalExistingProperty || "0");
+    const sumInsuredTotal = parseInt(removeCommasFromNumber(formData.sumInsuredMaterial || "0")) + parseInt(removeCommasFromNumber(formData.sumInsuredPlant || "0")) + parseInt(removeCommasFromNumber(formData.sumInsuredTemporary || "0")) + parseInt(removeCommasFromNumber(formData.otherMaterials || "0")) + parseInt(removeCommasFromNumber(formData.principalExistingProperty || "0"));
     // Allow 0 values - removed the validation that prevented 0 sum insured
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -1502,25 +1503,25 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
         
       case 4: // Cover Requirements step
         // Contract works cannot be 0, but other fields can accept 0 values
-        const materialValue = parseFloat(formData.sumInsuredMaterial?.replace(/[^0-9.]/g, '') || '0');
+        const materialValue = parseFloat(removeCommasFromNumber(formData.sumInsuredMaterial || '0'));
         if (shouldValidateField('sumInsuredMaterial', formData.sumInsuredMaterial) && (!formData.sumInsuredMaterial || formData.sumInsuredMaterial.trim() === '' || isNaN(materialValue) || materialValue <= 0)) {
           errors.sumInsuredMaterial = "Contract works amount must be greater than 0";
         }
         
         // Other fields can be 0, just validate they're valid numbers if provided
-        const plantValue = parseFloat(formData.sumInsuredPlant?.replace(/[^0-9.]/g, '') || '0');
+        const plantValue = parseFloat(removeCommasFromNumber(formData.sumInsuredPlant || '0'));
         if (shouldValidateField('sumInsuredPlant', formData.sumInsuredPlant) && formData.sumInsuredPlant && formData.sumInsuredPlant.trim() !== '' && (isNaN(plantValue) || plantValue < 0)) {
           errors.sumInsuredPlant = "Valid plant and equipment amount is required";
         }
-        const temporaryValue = parseFloat(formData.sumInsuredTemporary?.replace(/[^0-9.]/g, '') || '0');
+        const temporaryValue = parseFloat(removeCommasFromNumber(formData.sumInsuredTemporary || '0'));
         if (shouldValidateField('sumInsuredTemporary', formData.sumInsuredTemporary) && formData.sumInsuredTemporary && formData.sumInsuredTemporary.trim() !== '' && (isNaN(temporaryValue) || temporaryValue < 0)) {
           errors.sumInsuredTemporary = "Valid temporary works amount is required";
         }
-        const otherMaterialsValue = parseFloat(formData.otherMaterials?.replace(/[^0-9.]/g, '') || '0');
+        const otherMaterialsValue = parseFloat(removeCommasFromNumber(formData.otherMaterials || '0'));
         if (shouldValidateField('otherMaterials', formData.otherMaterials) && formData.otherMaterials && formData.otherMaterials.trim() !== '' && (isNaN(otherMaterialsValue) || otherMaterialsValue < 0)) {
           errors.otherMaterials = "Valid other materials amount is required";
         }
-        const principalValue = parseFloat(formData.principalExistingProperty?.replace(/[^0-9.]/g, '') || '0');
+        const principalValue = parseFloat(removeCommasFromNumber(formData.principalExistingProperty || '0'));
         if (shouldValidateField('principalExistingProperty', formData.principalExistingProperty) && formData.principalExistingProperty && formData.principalExistingProperty.trim() !== '' && (isNaN(principalValue) || principalValue < 0)) {
           errors.principalExistingProperty = "Valid principals property amount is required";
         }
@@ -1981,11 +1982,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   const transformCoverRequirementsToAPI = (): CoverRequirementsRequest => {
     return {
       project_value: 0, // Always set to 0 as requested
-      contract_works: parseFloat(formData.sumInsuredMaterial?.replace(/[^0-9.]/g, '') || '0'),
-      plant_and_equipment: parseFloat(formData.sumInsuredPlant?.replace(/[^0-9.]/g, '') || '0'),
-      temporary_works: parseFloat(formData.sumInsuredTemporary?.replace(/[^0-9.]/g, '') || '0'),
-      other_materials: parseFloat(formData.otherMaterials?.replace(/[^0-9.]/g, '') || '0'),
-      principals_property: parseFloat(formData.principalExistingProperty?.replace(/[^0-9.]/g, '') || '0'),
+      contract_works: parseFloat(removeCommasFromNumber(formData.sumInsuredMaterial || '0')),
+      plant_and_equipment: parseFloat(removeCommasFromNumber(formData.sumInsuredPlant || '0')),
+      temporary_works: parseFloat(removeCommasFromNumber(formData.sumInsuredTemporary || '0')),
+      other_materials: parseFloat(removeCommasFromNumber(formData.otherMaterials || '0')),
+      principals_property: parseFloat(removeCommasFromNumber(formData.principalExistingProperty || '0')),
       cross_liability_cover: 'no' // Always send 'no' as requested
     };
   };
@@ -3181,10 +3182,12 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="maintenancePeriod">Maintenance Period (Months) *</Label>
-                    <Input id="maintenancePeriod" value={formData.maintenancePeriod} onChange={e => setFormData({
-                    ...formData,
-                    maintenancePeriod: e.target.value
-                  })} placeholder="12" />
+                    <Input 
+                      id="maintenancePeriod" 
+                      value={formatDisplayValue(formData.maintenancePeriod)} 
+                      onChange={e => handleNumberInputChange(e.target.value, setFormData, 'maintenancePeriod')}
+                      placeholder="12" 
+                    />
                     <p className="text-xs text-hint">Typically 12-24 months</p>
                   </div>
                 </div>
@@ -3275,7 +3278,19 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                                       <Input type="number" min="0" max="99" value={claim.claimCount} onChange={e => updateClaimsHistory(claim.year, 'claimCount', parseInt(e.target.value) || 0)} className="w-20" placeholder="0" />
                                     </TableCell>
                                     <TableCell>
-                                      <Input type="number" min="0" value={claim.amount} onChange={e => updateClaimsHistory(claim.year, 'amount', e.target.value)} className="w-36" placeholder="0" disabled={claim.claimCount === 0} required={claim.claimCount > 0} />
+                                      <Input 
+                                        type="text" 
+                                        min="0" 
+                                        value={formatDisplayValue(claim.amount)} 
+                                        onChange={e => {
+                                          const cleanValue = removeCommasFromNumber(e.target.value);
+                                          updateClaimsHistory(claim.year, 'amount', cleanValue);
+                                        }} 
+                                        className="w-36" 
+                                        placeholder="0" 
+                                        disabled={claim.claimCount === 0} 
+                                        required={claim.claimCount > 0} 
+                                      />
                                     </TableCell>
                                     <TableCell>
                                       <Input value={claim.description} onChange={e => updateClaimsHistory(claim.year, 'description', e.target.value)} placeholder="Description of claim" disabled={claim.claimCount === 0} required={claim.claimCount > 0} />
@@ -3384,14 +3399,11 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                     <Label htmlFor="experienceYears">Experience in years *</Label>
                     <Input 
                       id="experienceYears" 
-                      type="number" 
+                      type="text" 
                       min="0" 
                       max="100" 
-                      value={formData.experienceYears || "0"} 
-                      onChange={e => setFormData({
-                        ...formData,
-                        experienceYears: e.target.value
-                      })} 
+                      value={formatDisplayValue(formData.experienceYears || "0")} 
+                      onChange={e => handleNumberInputChange(e.target.value, setFormData, 'experienceYears')}
                       placeholder="0" 
                     />
                   </div>
@@ -3748,18 +3760,24 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="contractWorks">Contract Works *</Label>
-                          <Input id="contractWorks" type="number" value={formData.sumInsuredMaterial || "0"} onChange={e => setFormData({
-                          ...formData,
-                          sumInsuredMaterial: e.target.value
-                        })} placeholder="0" />
+                          <Input 
+                            id="contractWorks" 
+                            type="text" 
+                            value={formatDisplayValue(formData.sumInsuredMaterial || "0")} 
+                            onChange={e => handleNumberInputChange(e.target.value, setFormData, 'sumInsuredMaterial')}
+                            placeholder="0" 
+                          />
                           <p className="text-xs text-hint">Main construction value</p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="plantEquipment">Plant & Equipment (CPM)</Label>
-                          <Input id="plantEquipment" type="number" value={formData.sumInsuredPlant || "0"} onChange={e => setFormData({
-                          ...formData,
-                          sumInsuredPlant: e.target.value
-                        })} placeholder="0" />
+                          <Input 
+                            id="plantEquipment" 
+                            type="text" 
+                            value={formatDisplayValue(formData.sumInsuredPlant || "0")} 
+                            onChange={e => handleNumberInputChange(e.target.value, setFormData, 'sumInsuredPlant')}
+                            placeholder="0" 
+                          />
                           <p className="text-xs text-hint">Construction Plant & Machinery</p>
                         </div>
                       </div>
@@ -3767,18 +3785,24 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="temporaryWorks">Temporary Works</Label>
-                          <Input id="temporaryWorks" type="number" value={formData.sumInsuredTemporary || "0"} onChange={e => setFormData({
-                          ...formData,
-                          sumInsuredTemporary: e.target.value
-                        })} placeholder="0" />
+                          <Input 
+                            id="temporaryWorks" 
+                            type="text" 
+                            value={formatDisplayValue(formData.sumInsuredTemporary || "0")} 
+                            onChange={e => handleNumberInputChange(e.target.value, setFormData, 'sumInsuredTemporary')}
+                            placeholder="0" 
+                          />
                           <p className="text-xs text-hint">Temporary structures and formwork</p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="otherMaterials">Other Materials</Label>
-                          <Input id="otherMaterials" type="number" value={formData.otherMaterials || "0"} onChange={e => setFormData({
-                          ...formData,
-                          otherMaterials: e.target.value
-                        })} placeholder="0" />
+                          <Input 
+                            id="otherMaterials" 
+                            type="text" 
+                            value={formatDisplayValue(formData.otherMaterials || "0")} 
+                            onChange={e => handleNumberInputChange(e.target.value, setFormData, 'otherMaterials')}
+                            placeholder="0" 
+                          />
                           <p className="text-xs text-hint">Additional materials coverage</p>
                         </div>
                       </div>
@@ -3786,10 +3810,13 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                       <div className="grid md:grid-cols-1 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="principalExistingProperty">Principal's Existing/Surrounding Property</Label>
-                          <Input id="principalExistingProperty" type="number" value={formData.principalExistingProperty || "0"} onChange={e => setFormData({
-                          ...formData,
-                          principalExistingProperty: e.target.value
-                        })} placeholder="0" />
+                          <Input 
+                            id="principalExistingProperty" 
+                            type="text" 
+                            value={formatDisplayValue(formData.principalExistingProperty || "0")} 
+                            onChange={e => handleNumberInputChange(e.target.value, setFormData, 'principalExistingProperty')}
+                            placeholder="0" 
+                          />
                           <p className="text-xs text-hint">Value of adjacent structures owned by principal</p>
                         </div>
                       </div>
@@ -3798,7 +3825,7 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                         <div className="flex items-center justify-between">
                           <Label className="font-semibold">Sum Insured - Contract Value</Label>
                           <span className={`text-lg font-bold ${validationErrors.sumInsured ? 'text-destructive' : 'text-primary'}`}>
-                            AED {(parseInt(formData.sumInsuredMaterial || "0") + parseInt(formData.sumInsuredPlant || "0") + parseInt(formData.sumInsuredTemporary || "0") + parseInt(formData.otherMaterials || "0") + parseInt(formData.principalExistingProperty || "0")).toLocaleString()}
+                            AED {(parseInt(removeCommasFromNumber(formData.sumInsuredMaterial || "0")) + parseInt(removeCommasFromNumber(formData.sumInsuredPlant || "0")) + parseInt(removeCommasFromNumber(formData.sumInsuredTemporary || "0")) + parseInt(removeCommasFromNumber(formData.otherMaterials || "0")) + parseInt(removeCommasFromNumber(formData.principalExistingProperty || "0"))).toLocaleString()}
                           </span>
                         </div>
                         {validationErrors.sumInsured && <p className="text-xs text-destructive mt-2">{validationErrors.sumInsured}</p>}

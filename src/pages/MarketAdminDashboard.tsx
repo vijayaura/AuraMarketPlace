@@ -963,7 +963,7 @@ const MarketAdminDashboard = () => {
         return [];
       }
       return policiesData.issuedPolicies.map(p => ({
-        id: p.policy_id || `Q${p.quote_id}`,
+        id: p.id,
         policyNumber: p.policy_id || `Q${p.quote_id}`,
         projectName: p.project_name || '',
         projectType: 'Construction', // Default since not provided in API
@@ -1037,7 +1037,7 @@ const MarketAdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col cityscape-bg">
       <div className="flex-1 p-6">
         <div className="max-w-7xl mx-auto">
           {/* Stats Cards - Full Width */}
@@ -1561,34 +1561,33 @@ const MarketAdminDashboard = () => {
                       <div className="rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">{policiesError}</div>
                     ) : (
                     <Table>
-                       <TableHeader>
-                         <TableRow>
-                           <TableHead>Policy Number</TableHead>
-                           <TableHead>Broker</TableHead>
-                           <TableHead>Project Name</TableHead>
-                           <TableHead>Insurer</TableHead>
-                           <TableHead>Sum Insured</TableHead>
-                           <TableHead>Premium</TableHead>
-                           <TableHead>Start Date</TableHead>
-                           <TableHead>End Date</TableHead>
-                           <TableHead className="text-right">Actions</TableHead>
-                         </TableRow>
-                       </TableHeader>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[140px]">Policy Number</TableHead>
+                          <TableHead className="w-[120px]">Project Name</TableHead>
+                          <TableHead className="w-[140px]">Sum Insured</TableHead>
+                          <TableHead className="w-[120px]">Premium</TableHead>
+                          <TableHead className="w-[100px]">Start Date</TableHead>
+                          <TableHead className="w-[100px]">End Date</TableHead>
+                          <TableHead className="w-[100px] text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
                       <TableBody>
                         {currentPolicies.map((policy) => (
                           <TableRow 
                             key={policy.id}
                             className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => navigate(`/market-admin/policy/${policy.id}`)}
                           >
-                             <TableCell className="font-medium">{policy.policyNumber}</TableCell>
-                             <TableCell className="font-medium text-primary">{policy.broker}</TableCell>
-                             <TableCell>{policy.projectName}</TableCell>
-                             <TableCell className="font-medium text-primary">{policy.insurer}</TableCell>
-                             <TableCell className="font-medium">{policy.sumInsured}</TableCell>
-                             <TableCell className="font-medium text-primary">{policy.premium}</TableCell>
-                             <TableCell className="text-sm text-muted-foreground">{policy.startDate}</TableCell>
-                             <TableCell className="text-sm text-muted-foreground">{policy.endDate}</TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="font-medium w-[140px]">{policy.policyNumber}</TableCell>
+                            <TableCell className="w-[120px] truncate" title={policy.projectName}>
+                              {policy.projectName.length > 15 ? `${policy.projectName.substring(0, 15)}...` : policy.projectName}
+                            </TableCell>
+                            <TableCell className="font-medium w-[140px]">{policy.sumInsured}</TableCell>
+                            <TableCell className="font-medium text-primary w-[120px]">{policy.premium}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground w-[100px]">{policy.startDate}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground w-[100px]">{policy.endDate}</TableCell>
+                            <TableCell className="text-right w-[100px]">
                               <Button
                                 variant="outline"
                                 size="sm"

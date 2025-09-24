@@ -11,7 +11,7 @@ const FlowSelection = () => {
   const { navigateBack } = useNavigationHistory();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col cityscape-bg">
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-4xl w-full">
           <div className="text-center mb-12">

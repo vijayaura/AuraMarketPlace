@@ -62,7 +62,7 @@ export default function AddInsurerUser() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-6">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-6 cityscape-bg">
       <div className="w-full max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center gap-4">
