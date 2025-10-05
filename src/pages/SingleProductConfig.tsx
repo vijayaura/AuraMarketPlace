@@ -6952,10 +6952,10 @@ const SingleProductConfig = () => {
                 wordingUploadFile={wordingUploadFile}
                 wordingUploadActive={wordingUploadActive}
                 setWordingUploadActive={setWordingUploadActive}
-            handleSavePolicyWording={handleSavePolicyWording}
-            isUploadingWording={isUploadingWording}
+                handleSavePolicyWording={handleSavePolicyWording}
+                isUploadingWording={isUploadingWording}
             isUploadingFile={isUploadingFile}
-            handleToggleWordingActive={handleToggleWordingActive}
+                handleToggleWordingActive={handleToggleWordingActive}
               />
             </TabsContent>
             {/* Quote Format tab */}
@@ -7195,9 +7195,9 @@ const SingleProductConfig = () => {
                           type="file" 
                           accept="image/*" 
                           onChange={(e) => {
-                            const file = e.target.files?.[0] || null;
+                          const file = e.target.files?.[0] || null;
                             if (file) {
-                              setQuoteLogoFile(file);
+                          setQuoteLogoFile(file);
                               handleLogoUpload(file);
                             }
                           }} 
@@ -7218,13 +7218,13 @@ const SingleProductConfig = () => {
                         <div className="text-xs text-blue-600 flex items-center gap-1">
                           <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                           Uploading...
-                        </div>
+                    </div>
                       )}
                       {uploadedLogoUrl && !isUploadingLogo && (
                         <div className="text-xs text-green-600 flex items-center gap-1">
                           <Image className="w-3 h-3" />
                           Logo uploaded
-                        </div>
+                  </div>
                       )}
                     </div>
                   </div>
@@ -7305,49 +7305,49 @@ const SingleProductConfig = () => {
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-project-details" 
-                          checked={quoteConfig.risk.showProjectDetails}
-                          onCheckedChange={(checked) => updateQuoteConfig('risk', 'showProjectDetails', checked)}
-                        />
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-project-details" 
+                        checked={quoteConfig.risk.showProjectDetails}
+                        onCheckedChange={(checked) => updateQuoteConfig('risk', 'showProjectDetails', checked)}
+                      />
                         <Label htmlFor="show-project-details" className="text-sm">Show Project Details</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-coverage-types" 
-                          checked={quoteConfig.risk.showCoverageTypes}
-                          onCheckedChange={(checked) => updateQuoteConfig('risk', 'showCoverageTypes', checked)}
-                        />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-coverage-types" 
+                        checked={quoteConfig.risk.showCoverageTypes}
+                        onCheckedChange={(checked) => updateQuoteConfig('risk', 'showCoverageTypes', checked)}
+                      />
                         <Label htmlFor="show-coverage-types" className="text-sm">Show Coverage Types</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-coverage-limits" 
-                          checked={quoteConfig.risk.showCoverageLimits}
-                          onCheckedChange={(checked) => updateQuoteConfig('risk', 'showCoverageLimits', checked)}
-                        />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-coverage-limits" 
+                        checked={quoteConfig.risk.showCoverageLimits}
+                        onCheckedChange={(checked) => updateQuoteConfig('risk', 'showCoverageLimits', checked)}
+                      />
                         <Label htmlFor="show-coverage-limits" className="text-sm">Show Coverage Limits</Label>
-                      </div>
+                    </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-deductibles" 
-                          checked={quoteConfig.risk.showDeductibles}
-                          onCheckedChange={(checked) => updateQuoteConfig('risk', 'showDeductibles', checked)}
-                        />
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-deductibles" 
+                        checked={quoteConfig.risk.showDeductibles}
+                        onCheckedChange={(checked) => updateQuoteConfig('risk', 'showDeductibles', checked)}
+                      />
                         <Label htmlFor="show-deductibles" className="text-sm">Show Deductibles</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-contractor-info" 
-                          checked={quoteConfig.risk.showContractorInfo}
-                          onCheckedChange={(checked) => updateQuoteConfig('risk', 'showContractorInfo', checked)}
-                        />
-                        <Label htmlFor="show-contractor-info" className="text-sm">Show Contractor Information</Label>
-                      </div>
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-contractor-info" 
+                        checked={quoteConfig.risk.showContractorInfo}
+                        onCheckedChange={(checked) => updateQuoteConfig('risk', 'showContractorInfo', checked)}
+                      />
+                        <Label htmlFor="show-contractor-info" className="text-sm">Show Contractor Information</Label>
+                    </div>
+                  </div>
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="risk-section-title" className="text-sm">Risk Section Title</Label>
@@ -7398,46 +7398,46 @@ const SingleProductConfig = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-base-premium" 
-                          checked={quoteConfig.premium.showBasePremium}
-                          onCheckedChange={(checked) => updateQuoteConfig('premium', 'showBasePremium', checked)}
-                        />
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-base-premium" 
+                        checked={quoteConfig.premium.showBasePremium}
+                        onCheckedChange={(checked) => updateQuoteConfig('premium', 'showBasePremium', checked)}
+                      />
                         <Label htmlFor="show-base-premium" className="text-sm">Show Base Premium</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-risk-adjustments" 
-                          checked={quoteConfig.premium.showRiskAdjustments}
-                          onCheckedChange={(checked) => updateQuoteConfig('premium', 'showRiskAdjustments', checked)}
-                        />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-risk-adjustments" 
+                        checked={quoteConfig.premium.showRiskAdjustments}
+                        onCheckedChange={(checked) => updateQuoteConfig('premium', 'showRiskAdjustments', checked)}
+                      />
                         <Label htmlFor="show-risk-adjustments" className="text-sm">Show Risk Adjustments</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-fees" 
-                          checked={quoteConfig.premium.showFees}
-                          onCheckedChange={(checked) => updateQuoteConfig('premium', 'showFees', checked)}
-                        />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-fees" 
+                        checked={quoteConfig.premium.showFees}
+                        onCheckedChange={(checked) => updateQuoteConfig('premium', 'showFees', checked)}
+                      />
                         <Label htmlFor="show-fees" className="text-sm">Show Fees & Charges</Label>
-                      </div>
+                    </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-taxes" 
-                          checked={quoteConfig.premium.showTaxes}
-                          onCheckedChange={(checked) => updateQuoteConfig('premium', 'showTaxes', checked)}
-                        />
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-taxes" 
+                        checked={quoteConfig.premium.showTaxes}
+                        onCheckedChange={(checked) => updateQuoteConfig('premium', 'showTaxes', checked)}
+                      />
                         <Label htmlFor="show-taxes" className="text-sm">Show Taxes (VAT)</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-total-premium" 
-                          checked={quoteConfig.premium.showTotalPremium}
-                          onCheckedChange={(checked) => updateQuoteConfig('premium', 'showTotalPremium', checked)}
-                        />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-total-premium" 
+                        checked={quoteConfig.premium.showTotalPremium}
+                        onCheckedChange={(checked) => updateQuoteConfig('premium', 'showTotalPremium', checked)}
+                      />
                         <Label htmlFor="show-total-premium" className="text-sm">Show Total Premium</Label>
                       </div>
                     </div>
@@ -7454,41 +7454,41 @@ const SingleProductConfig = () => {
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-warranties" 
-                          checked={quoteConfig.terms.showWarranties}
-                          onCheckedChange={(checked) => updateQuoteConfig('terms', 'showWarranties', checked)}
-                        />
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-warranties" 
+                        checked={quoteConfig.terms.showWarranties}
+                        onCheckedChange={(checked) => updateQuoteConfig('terms', 'showWarranties', checked)}
+                      />
                         <Label htmlFor="show-warranties" className="text-sm">Show Warranties</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-exclusions" 
-                          checked={quoteConfig.terms.showExclusions}
-                          onCheckedChange={(checked) => updateQuoteConfig('terms', 'showExclusions', checked)}
-                        />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-exclusions" 
+                        checked={quoteConfig.terms.showExclusions}
+                        onCheckedChange={(checked) => updateQuoteConfig('terms', 'showExclusions', checked)}
+                      />
                         <Label htmlFor="show-exclusions" className="text-sm">Show Exclusions</Label>
-                      </div>
+                    </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-deductible-details" 
-                          checked={quoteConfig.terms.showDeductibleDetails}
-                          onCheckedChange={(checked) => updateQuoteConfig('terms', 'showDeductibleDetails', checked)}
-                        />
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-deductible-details" 
+                        checked={quoteConfig.terms.showDeductibleDetails}
+                        onCheckedChange={(checked) => updateQuoteConfig('terms', 'showDeductibleDetails', checked)}
+                      />
                         <Label htmlFor="show-deductible-details" className="text-sm">Show Deductible Details</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="show-policy-conditions" 
-                          checked={quoteConfig.terms.showPolicyConditions}
-                          onCheckedChange={(checked) => updateQuoteConfig('terms', 'showPolicyConditions', checked)}
-                        />
-                        <Label htmlFor="show-policy-conditions" className="text-sm">Show Policy Conditions</Label>
-                      </div>
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="show-policy-conditions" 
+                        checked={quoteConfig.terms.showPolicyConditions}
+                        onCheckedChange={(checked) => updateQuoteConfig('terms', 'showPolicyConditions', checked)}
+                      />
+                        <Label htmlFor="show-policy-conditions" className="text-sm">Show Policy Conditions</Label>
+                    </div>
+                  </div>
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="terms-section-title" className="text-sm">Terms Section Title</Label>

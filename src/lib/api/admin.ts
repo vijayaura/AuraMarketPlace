@@ -44,17 +44,20 @@ export interface BrokerDashboardQuoteItem {
   updated_at: string;
   project_name: string;
   client_name: string;
-  project_type: string;
+  broker_name: string;
+  required_documents: Array<{
+    url: string;
+    label: string;
+  }>;
+  insurer_offers: Array<any>;
+  req_doc_for_policy_issue?: Array<any>;
 }
 
 export interface BrokerDashboardQuotesResponse {
   totalQuotes: number;
-  totalActiveQuotes: number;
   totalPolicies: number;
-  totalActivePolicies: number;
-  totalPremiumValue: number | string;
-  totalCommission: number | string;
-  recentQuotes: BrokerDashboardQuoteItem[];
+  totalValue: string;
+  quoteRequests: BrokerDashboardQuoteItem[];
 }
 
 export async function getBrokerDashboardQuotes(): Promise<BrokerDashboardQuotesResponse> {

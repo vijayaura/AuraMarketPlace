@@ -380,25 +380,29 @@ const InsurerDashboard = () => {
     fetchPoliciesData();
   }, []);
 
-  // Fetch dashboard data when quotes tab is selected
+  // Fetch data when tabs are selected
   useEffect(() => {
     if (activeTab === "quotes") {
-      fetchDashboardData();
+      fetchQuotesData(); // Refresh quotes data when quotes tab is clicked
+    } else if (activeTab === "policies") {
+      fetchPoliciesData(); // Refresh policies data when policies tab is clicked
     }
   }, [activeTab]);
 
   // Map quotes data from API
   const activeQuotes = useMemo(() => {
     try {
-      if (!quotesData?.recentQuotes || !Array.isArray(quotesData.recentQuotes)) {
+      if (!quotesData?.quoteRequests || !Array.isArray(quotesData.quoteRequests)) {
+        console.log('No quote requests data available:', quotesData);
         return [];
       }
-      return quotesData.recentQuotes.map(q => ({
-        id: q.quote_id || q.id.toString(),
+      return quotesData.quoteRequests.map(q => ({
+        id: q.id.toString(), // Use the actual id field for routing
+        quoteId: q.quote_id, // Display quote_id in table (e.g., AMQ00017)
         customerName: q.client_name || '',
         companyName: q.project_name || '',
         brokerName: q.broker_name || 'Broker Name',
-        projectType: q.project_type || '',
+        projectType: 'Construction', // Default since project_type is not in API response
         projectValue: q.total_premium ? `AED ${Number(q.total_premium).toLocaleString()}` : '-',
         premium: q.base_premium ? `AED ${Number(q.base_premium).toLocaleString()}` : '-',
         status: q.status || '',
@@ -777,7 +781,7 @@ const InsurerDashboard = () => {
                     activeQuotes.slice(startQuoteIndex, endQuoteIndex).map(quote => (
                       <tr key={quote.id} className="border-b hover:bg-muted/30 transition-colors">
                         <td className="p-4">
-                          <p className="font-medium text-foreground">{quote.id}</p>
+                          <p className="font-medium text-foreground">{quote.quoteId}</p>
                         </td>
                         <td className="p-4">
                           <div>

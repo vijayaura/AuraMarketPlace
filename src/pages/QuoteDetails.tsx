@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowLeft, Edit, Download, Check, Circle, ChevronDown, ChevronUp, FileText, User, Building, MapPin, Shield, FolderOpen, CreditCard, Star } from "lucide-react";
 import { getProposalBundle, ProposalBundleResponse, getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
+import { getQuoteFormat, QuoteFormatResponse } from "@/lib/api/insurers";
 import jsPDF from 'jspdf';
 import { generateQuotePDF } from '@/utils/pdfGenerator';
 
@@ -340,48 +341,38 @@ const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
     });
   }
 
-  // Signature Section at the bottom
-  yPosition += 10;
-  
-  // Check if we need a new page for signatures
-  if (yPosition > pageHeight - 50) {
-    doc.addPage();
-    yPosition = 20;
-  }
-  
-  // Signature section header
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SIGNATURES', 10, yPosition);
-  yPosition += 10;
-  
-  // Broker signature section (left side)
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.text('BROKER:', 10, yPosition);
-  doc.text(brokerCompanyName, 10, yPosition + 8);
-  
-  // Signature line for broker
-  doc.line(10, yPosition + 20, 90, yPosition + 20);
-  doc.text('Broker Signature', 10, yPosition + 25);
-  doc.text('Name & Date', 10, yPosition + 30);
-  
-  // Insured signature section (right side)
-  const rightSideX = pageWidth - 90;
-  doc.text('INSURED:', rightSideX, yPosition);
-  const insuredName = proposalBundle.insured?.details?.insured_name || 'N/A';
-  doc.text(insuredName, rightSideX, yPosition + 8);
-  
-  // Signature line for insured
-  doc.line(rightSideX, yPosition + 20, pageWidth - 10, yPosition + 20);
-  doc.text('Insured Signature', rightSideX, yPosition + 25);
-  doc.text('Name & Date', rightSideX, yPosition + 30);
 
   // Save the PDF
   const fileName = `Proposal_${proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || 'Unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
 };
 
+// Handle quote download with format data
+const handleDownloadQuote = async (proposalBundle: ProposalBundleResponse, setDownloadingQuote: (loading: boolean) => void) => {
+  setDownloadingQuote(true);
+  try {
+    // Get insurer ID from the proposal bundle
+    const insurerId = proposalBundle.quote_meta?.insurer_id;
+    if (!insurerId) {
+      console.error('No insurer ID found in proposal bundle');
+      generateQuotePDF(proposalBundle); // Fallback to without format
+      return;
+    }
+
+    // Fetch quote format data
+    const quoteFormat = await getQuoteFormat(insurerId, 1); // Product ID is always 1
+    console.log('📄 Quote format data:', quoteFormat);
+    
+    // Generate PDF with quote format
+    await generateQuotePDF(proposalBundle, quoteFormat);
+  } catch (error) {
+    console.error('Error fetching quote format:', error);
+    // Fallback to generate PDF without format
+    generateQuotePDF(proposalBundle);
+  } finally {
+    setDownloadingQuote(false);
+  }
+};
 
 const QuoteDetails = () => {
   const { quoteId, id } = useParams<{ quoteId?: string; id?: string }>();
@@ -397,6 +388,7 @@ const QuoteDetails = () => {
   const [expandedWordings, setExpandedWordings] = useState<Set<string>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['quote_summary', 'quote_journey']));
   const [loading, setLoading] = useState(true);
+  const [downloadingQuote, setDownloadingQuote] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -636,10 +628,11 @@ const QuoteDetails = () => {
                 variant="outline" 
                 size="sm" 
                 className="flex items-center gap-2"
-                onClick={() => proposalBundle && generateQuotePDF(proposalBundle)}
+                onClick={() => proposalBundle && handleDownloadQuote(proposalBundle, setDownloadingQuote)}
+                disabled={downloadingQuote}
               >
                 <Download className="h-4 w-4" />
-                Download Quote
+                {downloadingQuote ? 'Generating...' : 'Download Quote'}
               </Button>
             )}
           </div>

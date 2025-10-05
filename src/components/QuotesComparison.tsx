@@ -13,10 +13,10 @@ import { Separator } from "@/components/ui/separator";
 import { Building, ArrowLeft, Download, Eye, FileText, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 import { CEWSelection } from "./CEWSelection";
 import { useToast } from "@/hooks/use-toast";
-import jsPDF from 'jspdf';
-import { generateInsuranceProposalPDF } from '@/utils/pdfGenerator';
+import { generateQuotePDF } from '@/utils/pdfGenerator';
 import { type BrokerInsurersResponse } from "@/lib/api/brokers";
 import { type ProposalBundleResponse, type InsurerPricingConfigResponse, getInsurerPricingConfig, createPlanSelection, updatePlanSelection, type PlanSelectionRequest } from "@/lib/api/quotes";
+import { getQuoteFormat } from "@/lib/api/insurers";
 
 interface QuotesComparisonProps {
   assignedInsurers?: BrokerInsurersResponse | null;
@@ -107,6 +107,30 @@ const QuotesComparison = ({
 
   // Log assigned insurers data for debugging
   console.log('🏢 QuotesComparison received assignedInsurers:', assignedInsurers);
+
+  // Helper function to download quote with format data
+  const downloadQuoteWithFormat = async (proposal: ProposalBundleResponse) => {
+    try {
+      // Get insurer ID from the proposal bundle
+      const insurerId = proposal.quote_meta?.insurer_id;
+      if (!insurerId) {
+        console.error('No insurer ID found in proposal bundle');
+        generateQuotePDF(proposal); // Fallback to without format
+        return;
+      }
+
+      // Fetch quote format data
+      const quoteFormat = await getQuoteFormat(insurerId, 1); // Product ID is always 1
+      console.log('📄 Quote format data:', quoteFormat);
+      
+      // Generate PDF with quote format
+      await generateQuotePDF(proposal, quoteFormat);
+    } catch (error) {
+      console.error('Error fetching quote format:', error);
+      // Fallback to generate PDF without format
+      generateQuotePDF(proposal);
+    }
+  };
   console.log('📋 QuotesComparison received currentProposal:', currentProposal);
   console.log('⏳ QuotesComparison isLoadingProposal:', isLoadingProposal);
 
@@ -2235,7 +2259,7 @@ const QuotesComparison = ({
     }
   };
 
-  const handleDownloadQuotation = () => {
+  const handleDownloadQuotation = async () => {
     // Use the first available quote if none selected, or the first selected quote
     const quoteToUse = selectedQuotes.length > 0 ? 
       realQuotes.find(q => selectedQuotes.includes(q.id)) : 
@@ -2295,7 +2319,11 @@ const QuotesComparison = ({
 
     // Generate and download PDF
     try {
-      generateInsuranceProposalPDF(proposalData);
+      if (currentProposal) {
+        await downloadQuoteWithFormat(currentProposal);
+      } else {
+        throw new Error('No proposal data available');
+      }
       toast({
         title: "Quote Downloaded",
         description: "Insurance proposal PDF has been generated and downloaded.",
@@ -2311,7 +2339,7 @@ const QuotesComparison = ({
     }
   };
 
-  const handleDownloadCurrentQuote = () => {
+  const handleDownloadCurrentQuote = async () => {
     if (!selectedQuoteForCEW) {
       toast({
         title: "No Quote Selected",
@@ -2419,7 +2447,11 @@ const QuotesComparison = ({
 
     // Generate and download PDF
     try {
-      generateInsuranceProposalPDF(proposalData);
+      if (currentProposal) {
+        await downloadQuoteWithFormat(currentProposal);
+      } else {
+        throw new Error('No proposal data available');
+      }
       toast({
         title: "Quote Downloaded",
         description: "Insurance proposal PDF has been generated and downloaded.",
@@ -2435,7 +2467,7 @@ const QuotesComparison = ({
     }
   };
 
-  const handleDownloadProposal = () => {
+  const handleDownloadProposal = async () => {
     if (selectedQuotes.length === 0) {
       toast({
         title: "No Plan Selected",
@@ -2445,110 +2477,26 @@ const QuotesComparison = ({
       return;
     }
 
-    const selectedQuoteData = realQuotes.filter(q => selectedQuotes.includes(q.id));
-    
-    const pdf = new jsPDF();
-    let yPos = 20;
-    const lineHeight = 8;
-    const pageHeight = pdf.internal.pageSize.height;
-    const marginBottom = 20;
-
-    // Helper function to add text with page break if needed
-    const addText = (text: string, fontSize = 12, isBold = false) => {
-      if (yPos > pageHeight - marginBottom) {
-        pdf.addPage();
-        yPos = 20;
-      }
-      pdf.setFontSize(fontSize);
-      pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-      pdf.text(text, 20, yPos);
-      yPos += lineHeight;
-    };
-
-    // Title
-    addText('CONSTRUCTION INSURANCE PROPOSAL', 16, true);
-    yPos += 10;
-
-    selectedQuoteData.forEach((quote, index) => {
-      if (index > 0) {
-        pdf.addPage();
-        yPos = 20;
-      }
-
-      // Plan Header
-      addText(`PLAN ${index + 1}: ${quote.planName.toUpperCase()}`, 14, true);
-      addText(`Insurer: ${quote.insurerName}`, 12, true);
-      yPos += 5;
-
-      // Plan Details
-      addText('PLAN DETAILS', 12, true);
-      addText(`Plan Name: ${quote.planName}`);
-      addText(`Insurer: ${quote.insurerName}`);
-      addText(`Annual Premium: ${formatCurrency(getCurrentPremium(quote))}`);
-      addText(`Coverage Amount: ${formatCurrency(quote.coverageAmount)}`);
-      addText(`Deductible: ${quote.deductible}`);
-      addText(`Rating: ${quote.rating}/5.0`);
-      yPos += 5;
-
-      // Key Coverage
-      addText('KEY COVERAGE', 12, true);
-      quote.keyCoverage.forEach(coverage => {
-        addText(`• ${coverage}`);
-      });
-      yPos += 5;
-
-      // Benefits
-      addText('BENEFITS', 12, true);
-      quote.benefits.forEach(benefit => {
-        addText(`• ${benefit}`);
-      });
-      yPos += 5;
-
-      // CEW Items if available
-      const cewItems = getCEWItems(quote.id);
-      if (cewItems.length > 0) {
-        addText('SELECTED EXTENSIONS', 12, true);
-        cewItems.forEach(item => {
-          addText(`• ${item.name}: ${item.selectedOption || 'Selected'}`);
+    // Generate and download PDF using the unified PDF generator
+    try {
+      if (currentProposal) {
+        await downloadQuoteWithFormat(currentProposal);
+        toast({
+          title: "Proposal Downloaded",
+          description: "Insurance proposal PDF has been generated and downloaded.",
+          variant: "default"
         });
-        yPos += 5;
+      } else {
+        throw new Error('No proposal data available');
       }
-
-      // Footer for each plan
-      addText(`Generated on: ${new Date().toLocaleDateString()}`);
-      addText(`Valid until: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}`);
-      yPos += 10;
-
-      // Signature Section for each plan
-      addText('SIGNATURES', 12, true);
-      yPos += 10;
-
-      // Broker Signature
-      addText('BROKER SIGNATURE:', 11, true);
-      yPos += 15;
-      pdf.line(20, yPos, 120, yPos); // Signature line
-      yPos += 5;
-      addText('Broker Name: _______________________', 9);
-      addText('Date: _______________', 9);
-      yPos += 15;
-
-      // Customer Signature
-      addText('CUSTOMER SIGNATURE:', 11, true);
-      yPos += 15;
-      pdf.line(20, yPos, 120, yPos); // Signature line
-      yPos += 5;
-      addText('Customer Name: _______________________', 9);
-      addText('Date: _______________', 9);
-      yPos += 5;
-    });
-
-    // Save PDF
-    pdf.save(`Insurance_Proposal_${new Date().toISOString().split('T')[0]}.pdf`);
-    
-    toast({
-      title: "Proposal Downloaded",
-      description: `Downloaded proposal for ${selectedQuoteData.length} plan(s)`,
-    });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error generating the PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Generate real quotes from validation results

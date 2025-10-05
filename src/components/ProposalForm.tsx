@@ -30,7 +30,7 @@ import {
 } from "@/lib/api/masters";
 import { getBroker, getBrokerInsurers, type Broker, type BrokerInsurersResponse } from "@/lib/api/brokers";
 import { getBrokerCompanyId } from "@/lib/auth";
-import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse, saveRequiredDocuments, updateRequiredDocuments, type RequiredDocumentsRequest, type RequiredDocumentsResponse, getProposalBundle, type ProposalBundleResponse, getInsurerPricingConfig, type InsurerPricingConfigResponse } from "@/lib/api/quotes";
+import { createQuoteProject, updateQuoteProject, type QuoteProjectRequest, type QuoteProjectResponse, saveInsuredDetails, updateInsuredDetails, type InsuredDetailsRequest, type InsuredDetailsResponse, saveContractStructure, updateContractStructure, type ContractStructureRequest, type ContractStructureResponse, saveSiteRisks, updateSiteRisks, type SiteRisksRequest, type SiteRisksResponse, saveCoverRequirements, updateCoverRequirements, type CoverRequirementsRequest, type CoverRequirementsResponse, saveRequiredDocuments, updateRequiredDocuments, type RequiredDocumentsRequest, type RequiredDocumentsResponse, getProposalBundle, type ProposalBundleResponse, getInsurerPricingConfig, type InsurerPricingConfigResponse, uploadFile, type FileUploadResponse } from "@/lib/api/quotes";
 import { checkWaterBodyProximity } from "@/lib/api/water-body";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentUpload } from "./DocumentUpload";
@@ -122,6 +122,8 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
   
   // Site Risks API State
   const [isSavingSiteRisks, setIsSavingSiteRisks] = useState(false);
+  const [uploadedClaimDocuments, setUploadedClaimDocuments] = useState<Array<{id: string, url: string, filename: string}>>([]);
+  const [isUploadingClaimDocs, setIsUploadingClaimDocs] = useState(false);
   
   // Cover Requirements API State
   const [isSavingCoverRequirements, setIsSavingCoverRequirements] = useState(false);
@@ -2427,6 +2429,53 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
       } : claim)
     });
   };
+
+  // Handle claim document uploads
+  const handleClaimDocumentUpload = async (files: FileList) => {
+    if (!files || files.length === 0) return;
+
+    setIsUploadingClaimDocs(true);
+    const uploadPromises: Promise<FileUploadResponse>[] = [];
+
+    try {
+      // Upload all selected files
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        uploadPromises.push(uploadFile(file));
+      }
+
+      const uploadResults = await Promise.all(uploadPromises);
+      
+      // Add uploaded documents to state
+      const newDocuments = uploadResults.map((result, index) => ({
+        id: Date.now().toString() + index, // Unique ID for each document
+        url: result.files[0].url, // Get URL from the upload response
+        filename: files[index].name
+      }));
+
+      setUploadedClaimDocuments(prev => [...prev, ...newDocuments]);
+
+      toast({
+        title: "Documents Uploaded Successfully",
+        description: `${uploadResults.length} claim document(s) uploaded.`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error uploading claim documents:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload claim documents. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingClaimDocs(false);
+    }
+  };
+
+  // Remove uploaded claim document
+  const removeClaimDocument = (id: string) => {
+    setUploadedClaimDocuments(prev => prev.filter(doc => doc.id !== id));
+  };
   const updateSubcontractor = (id: number, field: string, value: string) => {
     setFormData({
       ...formData,
@@ -3302,6 +3351,65 @@ export const ProposalForm = ({ onStepChange, onQuoteReferenceChange, onStepCompl
                           <p className="text-xs text-muted-foreground mt-2">
                             * Amount and description are mandatory when claim count is greater than 0
                           </p>
+                        </div>
+
+                        {/* Claim Documents Upload Section */}
+                        <div className="bg-muted/20 p-4 rounded-lg space-y-4">
+                          <h4 className="font-medium text-foreground">Supporting Documents</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Upload supporting documents for your claims history (e.g., claim reports, settlement letters, etc.)
+                          </p>
+                          
+                          <div className="space-y-3">
+                            <Label htmlFor="claimDocuments" className="cursor-pointer">
+                              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-muted-foreground/50 transition-colors">
+                                <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                                <p className="text-sm font-medium">
+                                  {isUploadingClaimDocs ? 'Uploading...' : 'Click to upload files or drag and drop'}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  PDF, DOC, DOCX, JPG, PNG (Max 10MB each)
+                                </p>
+                              </div>
+                              <input
+                                id="claimDocuments"
+                                type="file"
+                                multiple
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                className="hidden"
+                                onChange={(e) => {
+                                  if (e.target.files) {
+                                    handleClaimDocumentUpload(e.target.files);
+                                  }
+                                }}
+                                disabled={isUploadingClaimDocs}
+                              />
+                            </Label>
+
+                            {/* Display uploaded documents */}
+                            {uploadedClaimDocuments.length > 0 && (
+                              <div className="space-y-2">
+                                <h5 className="text-sm font-medium">Uploaded Documents:</h5>
+                                {uploadedClaimDocuments.map((doc) => (
+                                  <div key={doc.id} className="flex items-center justify-between p-2 bg-background border rounded">
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="w-4 h-4 text-muted-foreground" />
+                                      <span className="text-sm">{doc.filename}</span>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeClaimDocument(doc.id)}
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      ×
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>}
                   </div>

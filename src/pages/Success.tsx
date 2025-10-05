@@ -404,31 +404,31 @@ const Success = () => {
         {/* Success Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 animate-pulse">
-              <CheckCircle className="h-10 w-10 text-green-600" />
-            </div>
-            <div>
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 animate-pulse">
+                  <CheckCircle className="h-10 w-10 text-green-600" />
+                </div>
+                <div>
               <h1 className="text-3xl font-bold text-gray-900">Policy Created Successfully!</h1>
               <p className="text-lg text-gray-600 mt-1">
-                Your insurance policy has been created.
-              </p>
+                    Your insurance policy has been created.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+            <Button onClick={handlePrintPolicy} variant="outline" className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Print Policy
+                </Button>
+            <Button onClick={() => navigate('/broker/dashboard')} className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Create New Policy
+                </Button>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={handlePrintPolicy} variant="outline" className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-              Print Policy
-            </Button>
-            <Button onClick={() => navigate('/broker/dashboard')} className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Create New Policy
-            </Button>
-          </div>
-        </div>
 
         {/* Policy Summary */}
         {policyDetails && (
@@ -438,49 +438,49 @@ const Success = () => {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                     <Shield className="h-4 w-4 text-white" />
-                  </div>
+                        </div>
                   <div>
                     <CardTitle className="text-lg font-semibold text-gray-900">
                       Policy Summary
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
                       Policy overview and key details
-                    </div>
-                  </div>
-                </div>
+                        </div>
+                        </div>
+                        </div>
                 <div className="text-right">
                   <div className="text-xs text-gray-400">Total Premium</div>
                   <div className="text-sm text-gray-600 font-medium">
                     {formatFieldValue('base_premium', policyDetails.policyInfo.base_premium)}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="grid lg:grid-cols-4">
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Policy ID</div>
                     <div className="text-sm font-medium">{policyDetails.policyInfo.policy_reference}</div>
-                  </div>
+                        </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Policy Start Date</div>
                     <div className="text-sm font-medium">{formatFieldValue('start_date', policyDetails.policyInfo.start_date)}</div>
-                  </div>
+                        </div>
                   <div className="p-3 border-r border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Policy End Date</div>
                     <div className="text-sm font-medium">{formatFieldValue('end_date', policyDetails.policyInfo.end_date)}</div>
-                  </div>
+                        </div>
                   <div className="p-3 border-b border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">Status</div>
                     <div className="text-sm font-medium">
                       <Badge variant="default" className="bg-green-100 text-green-800">
                         {formatFieldValue('status', policyDetails.policyInfo.status)}
                       </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                        </div>
+                        </div>
+                        </div>
+                        </div>
             </CardContent>
           </Card>
         )}
@@ -496,22 +496,22 @@ const Success = () => {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                     <Building className="h-4 w-4 text-white" />
-                  </div>
+                        </div>
                   <div>
                     <CardTitle className="text-lg font-semibold text-gray-900">
                       Project Details
                     </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
                       Construction project information
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <div className="text-xs text-gray-400">Project Name</div>
                     <div className="text-sm font-medium">
                       {formatFieldValue('project_name', policyDetails.policyInfo.proposal_bundle.project.project_name)}
-                    </div>
+                  </div>
                   </div>
                   {expandedSections.has('project_details') ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />
@@ -523,24 +523,24 @@ const Success = () => {
             </CardHeader>
             {expandedSections.has('project_details') && (
               <CardContent className="pt-0">
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <div className="grid lg:grid-cols-3">
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Project Name</div>
                       <div className="text-sm font-medium">{formatFieldValue('project_name', policyDetails.policyInfo.proposal_bundle.project.project_name)}</div>
-                    </div>
+                              </div>
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Project Type</div>
                       <div className="text-sm font-medium">{formatFieldValue('project_type', policyDetails.policyInfo.proposal_bundle.project.project_type)}</div>
-                    </div>
+                            </div>
                     <div className="p-3 border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Completion Date</div>
                       <div className="text-sm font-medium">{formatFieldValue('completion_date', policyDetails.policyInfo.proposal_bundle.project.completion_date)}</div>
-                    </div>
+                        </div>
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Sub Project Type</div>
                       <div className="text-sm font-medium">{formatFieldValue('sub_project_type', policyDetails.policyInfo.proposal_bundle.project.sub_project_type)}</div>
-                    </div>
+                      </div>
                     <div className="p-3 border-r border-b border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Construction Type</div>
                       <div className="text-sm font-medium">{formatFieldValue('construction_type', policyDetails.policyInfo.proposal_bundle.project.construction_type)}</div>
@@ -553,8 +553,8 @@ const Success = () => {
                 </div>
               </CardContent>
             )}
-          </Card>
-        )}
+            </Card>
+          )}
 
         {/* Insured Details */}
         {policyDetails && (
@@ -569,9 +569,9 @@ const Success = () => {
                     <User className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-semibold text-gray-900">
+                <CardTitle className="text-lg font-semibold text-gray-900">
                       Insured Details
-                    </CardTitle>
+                </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
                       {formatFieldValue('insured_name', policyDetails.policyInfo.proposal_bundle.insured.details.insured_name)}
                     </div>
@@ -591,7 +591,7 @@ const Success = () => {
                   )}
                 </div>
               </div>
-            </CardHeader>
+              </CardHeader>
             {expandedSections.has('insured_details') && (
               <CardContent className="pt-0">
                 <div className="space-y-6">
@@ -600,7 +600,7 @@ const Success = () => {
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Insured Name</div>
                         <div className="text-sm font-medium">{formatFieldValue('insured_name', policyDetails.policyInfo.proposal_bundle.insured.details.insured_name)}</div>
-                      </div>
+                        </div>
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Role of Insured</div>
                         <div className="text-sm font-medium">{formatFieldValue('role_of_insured', policyDetails.policyInfo.proposal_bundle.insured.details.role_of_insured)}</div>
@@ -608,7 +608,7 @@ const Success = () => {
                       <div className="p-3 border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Had Losses Last 5 Years</div>
                         <div className="text-sm font-medium">{formatFieldValue('had_losses_last_5yrs', policyDetails.policyInfo.proposal_bundle.insured.details.had_losses_last_5yrs)}</div>
-                      </div>
+                    </div>
                     </div>
                   </div>
                   
@@ -653,8 +653,8 @@ const Success = () => {
                 </div>
               </CardContent>
             )}
-          </Card>
-        )}
+            </Card>
+          )}
 
         {/* Site Risk Assessment */}
         {policyDetails && (
@@ -669,9 +669,9 @@ const Success = () => {
                     <MapPin className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-semibold text-gray-900">
+                <CardTitle className="text-lg font-semibold text-gray-900">
                       Site Risk Assessment
-                    </CardTitle>
+                </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
                       Risk factors and site conditions
                     </div>
@@ -691,7 +691,7 @@ const Success = () => {
                   )}
                 </div>
               </div>
-            </CardHeader>
+              </CardHeader>
             {expandedSections.has('site_risks') && (
               <CardContent className="pt-0">
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -743,9 +743,9 @@ const Success = () => {
                     <ChevronUp className="h-5 w-5 text-gray-500" />
                   ) : (
                     <ChevronDown className="h-5 w-5 text-gray-500" />
-                  )}
-                </div>
-              </div>
+                            )}
+                          </div>
+                        </div>
             </CardHeader>
             {expandedSections.has('cover_requirements') && (
               <CardContent className="pt-0">
@@ -771,20 +771,20 @@ const Success = () => {
                                 displayValue : 
                                 formatFieldValue(key, displayValue)
                               }
-                            </div>
                           </div>
-                        );
-                      })}
+                      </div>
+                    );
+                  })}
                   </div>
                 </div>
               </CardContent>
             )}
-          </Card>
-        )}
+            </Card>
+          )}
 
         {/* Selected Plan Details */}
         {policyDetails && (
-          <Card className="bg-white shadow-lg border-0">
+              <Card className="bg-white shadow-lg border-0">
             <CardHeader 
               className="pb-3 cursor-pointer"
               onClick={() => toggleSectionExpansion('selected_plan_details')}
@@ -795,9 +795,9 @@ const Success = () => {
                     <CreditCard className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-semibold text-gray-900">
+                  <CardTitle className="text-lg font-semibold text-gray-900">
                       Selected Plan Details
-                    </CardTitle>
+                  </CardTitle>
                     <div className="text-xs text-gray-400 mt-1">
                       Insurance plan configuration
                     </div>
@@ -817,20 +817,20 @@ const Success = () => {
                   )}
                 </div>
               </div>
-            </CardHeader>
+                </CardHeader>
             {expandedSections.has('selected_plan_details') && (
-              <CardContent className="pt-0">
+                <CardContent className="pt-0">
                 {policyDetails.policyInfo.proposal_bundle.plans.map((plan, index) => (
                   <div key={plan.id || index} className="border border-gray-200 rounded-lg overflow-hidden mb-4 last:mb-0">
                     <div className="grid lg:grid-cols-3">
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Premium Amount</div>
                         <div className="text-sm font-medium">{formatFieldValue('premium_amount', plan.premium_amount)}</div>
-                      </div>
+                            </div>
                       <div className="p-3 border-r border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Minimum Premium</div>
                         <div className="text-sm font-medium">{formatFieldValue('minimum_premium_value', plan.minimum_premium_value)}</div>
-                      </div>
+                          </div>
                       <div className="p-3 border-b border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Minimum Applied</div>
                         <div className="text-sm font-medium">{plan.is_minimum_premium_applied ? 'Yes' : 'No'}</div>
@@ -869,15 +869,15 @@ const Success = () => {
                                 <div>
                                   <div className="text-xs text-gray-500 mb-1">Deductible</div>
                                   <div className="text-sm font-medium">AED {plan.extensions.selected_plan.deductible?.toLocaleString()}</div>
-                                </div>
+                          </div>
                                 <div>
                                   <div className="text-xs text-gray-500 mb-1">Base Premium</div>
                                   <div className="text-sm font-medium">AED {plan.extensions.selected_plan.base_premium?.toLocaleString()}</div>
-                                </div>
+                        </div>
                                 <div>
                                   <div className="text-xs text-gray-500 mb-1">Coverage Amount</div>
                                   <div className="text-sm font-medium">AED {plan.extensions.selected_plan.coverage_amount?.toLocaleString()}</div>
-                                </div>
+                  </div>
                               </div>
                             </div>
                           )}
@@ -886,15 +886,15 @@ const Success = () => {
                     )}
                   </div>
                 ))}
-              </CardContent>
+                </CardContent>
             )}
-          </Card>
-        )}
+              </Card>
+            )}
 
         {/* Required Documents (Underwriting Documents) */}
         {proposalBundle && proposalBundle.required_documents && Object.keys(proposalBundle.required_documents).length > 0 && (
-          <Card className="bg-white shadow-lg border-0">
-            <CardHeader className="pb-3">
+              <Card className="bg-white shadow-lg border-0">
+                <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                   <FolderOpen className="h-4 w-4 text-white" />
@@ -908,37 +908,37 @@ const Success = () => {
                   </div>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
+                </CardHeader>
+                <CardContent className="pt-0">
               <div className="space-y-3">
-                {Object.entries(proposalBundle.required_documents).map(([key, doc]) => (
+                    {Object.entries(proposalBundle.required_documents).map(([key, doc]) => (
                   <div key={key} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <div className="flex items-center gap-3">
                       <FileText className="h-4 w-4 text-gray-500" />
                       <div>
                         <div className="text-sm font-medium">{doc.label}</div>
                       </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownloadDocument(doc.url, doc.label)}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadDocument(doc.url, doc.label)}
                       className="flex items-center gap-2"
-                    >
+                        >
                       <Download className="h-4 w-4" />
-                      Download
-                    </Button>
+                          Download
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </CardContent>
+              </Card>
+            )}
 
-        {/* Declaration Documents */}
-        {proposalBundle && proposalBundle.required_documents_for_policy_issue && (
-          <Card className="bg-white shadow-lg border-0">
-            <CardHeader className="pb-3">
+            {/* Declaration Documents */}
+            {proposalBundle && proposalBundle.required_documents_for_policy_issue && (
+              <Card className="bg-white shadow-lg border-0">
+                <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                   <FileCheck className="h-4 w-4 text-white" />
@@ -957,11 +957,11 @@ const Success = () => {
                   </div>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
+                </CardHeader>
+                <CardContent className="pt-0">
               <div className="space-y-3">
-                {Array.isArray(proposalBundle.required_documents_for_policy_issue) ? (
-                  proposalBundle.required_documents_for_policy_issue.map((doc: any, index: number) => (
+                    {Array.isArray(proposalBundle.required_documents_for_policy_issue) ? (
+                      proposalBundle.required_documents_for_policy_issue.map((doc: any, index: number) => (
                     <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                       <div className="flex items-center gap-3">
                         <FileText className="h-4 w-4 text-gray-500" />
@@ -979,28 +979,28 @@ const Success = () => {
                             </div>
                           )}
                         </div>
-                      </div>
-                      {doc.url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownloadDocument(doc.url, doc.label || doc.name)}
+                          </div>
+                          {doc.url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadDocument(doc.url, doc.label || doc.name)}
                           className="flex items-center gap-2"
-                        >
+                            >
                           <Download className="h-4 w-4" />
-                          Download
-                        </Button>
-                      )}
-                    </div>
-                  ))
-                ) : typeof proposalBundle.required_documents_for_policy_issue === 'object' ? (
-                  Object.entries(proposalBundle.required_documents_for_policy_issue).map(([key, doc]: [string, any]) => (
+                              Download
+                            </Button>
+                          )}
+                        </div>
+                      ))
+                    ) : typeof proposalBundle.required_documents_for_policy_issue === 'object' ? (
+                      Object.entries(proposalBundle.required_documents_for_policy_issue).map(([key, doc]: [string, any]) => (
                     <div key={key} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                       <div className="flex items-center gap-3">
                         <FileText className="h-4 w-4 text-gray-500" />
                         <div>
                           <div className="text-sm font-medium">{doc.label || key}</div>
-                          {doc.uploaded_at && (
+                              {doc.uploaded_at && (
                             <div className="text-xs text-gray-500">
                               Uploaded: {new Date(doc.uploaded_at).toLocaleDateString('en-US', {
                                 year: 'numeric',
@@ -1010,37 +1010,37 @@ const Success = () => {
                                 minute: '2-digit'
                               })}
                             </div>
+                              )}
+                            </div>
+                          </div>
+                          {doc.url ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadDocument(doc.url, doc.label || key)}
+                          className="flex items-center gap-2"
+                            >
+                          <Download className="h-4 w-4" />
+                              Download
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-gray-400 px-2 py-1">Not uploaded</span>
                           )}
                         </div>
-                      </div>
-                      {doc.url ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownloadDocument(doc.url, doc.label || key)}
-                          className="flex items-center gap-2"
-                        >
-                          <Download className="h-4 w-4" />
-                          Download
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-gray-400 px-2 py-1">Not uploaded</span>
-                      )}
-                    </div>
-                  ))
-                ) : (
+                      ))
+                    ) : (
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-600">
-                      {typeof proposalBundle.required_documents_for_policy_issue === 'string' 
-                        ? proposalBundle.required_documents_for_policy_issue 
-                        : JSON.stringify(proposalBundle.required_documents_for_policy_issue)}
-                    </span>
+                        <span className="text-sm text-gray-600">
+                          {typeof proposalBundle.required_documents_for_policy_issue === 'string' 
+                            ? proposalBundle.required_documents_for_policy_issue 
+                            : JSON.stringify(proposalBundle.required_documents_for_policy_issue)}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </CardContent>
+              </Card>
+            )}
 
         {/* Policy Documents */}
         {policyWordings && policyWordings.length > 0 && (
@@ -1049,14 +1049,14 @@ const Success = () => {
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                   <FileText className="h-4 w-4 text-white" />
-                </div>
+          </div>
                 <div>
                   <CardTitle className="text-lg font-semibold text-gray-900">
                     Policy Documents
                   </CardTitle>
                   <div className="text-xs text-gray-400 mt-1">
                     Download policy documents and wordings
-                  </div>
+        </div>
                 </div>
               </div>
             </CardHeader>
