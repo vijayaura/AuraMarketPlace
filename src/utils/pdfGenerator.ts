@@ -105,9 +105,11 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
     ] : [0, 0, 0];
   };
 
+  let isFirstPage = true; // Track if we're on the first page
+  
   // Add header with quote format data
   const addHeader = () => {
-    if (!quoteFormat) return;
+    if (!quoteFormat || !isFirstPage) return; // Only add header on first page
 
     const headerHeight = 35; // increased to avoid clipping
     const headerBgColor = hexToRgb(quoteFormat.header_bg_color || '#004080');
@@ -228,7 +230,7 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
   };
 
   // Helper function to create a table with borders
-  const createTable = (data: Array<{label: string, value: string}>, startY: number, title?: string) => {
+  const createTable = (data: Array<{label: string, value: string, bold?: boolean, boldValues?: string[]}>, startY: number, title?: string) => {
     let currentY = startY;
     
     if (title) {
@@ -248,23 +250,23 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
     data.forEach((item, index) => {
       const baseRowHeight = 8;
       
-      // Split long text into multiple lines
-      const labelLines = doc.splitTextToSize(item.label, contentWidth * 0.3);
-      const valueLines = doc.splitTextToSize(item.value, contentWidth * 0.65);
+      // Split long text into multiple lines - reduced padding
+      const labelLines = doc.splitTextToSize(item.label, contentWidth * 0.3 - 4);
+      const valueLines = doc.splitTextToSize(item.value, contentWidth * 0.65 - 4);
       
-      // Calculate the height needed for this row
+      // Calculate the height needed for this row - reduced line height and padding
       const maxLines = Math.max(labelLines.length, valueLines.length);
-      const actualRowHeight = Math.max(baseRowHeight, maxLines * 3.5 + 3);
+      const actualRowHeight = Math.max(baseRowHeight, maxLines * 3.0 + 1);
       
       // Check for page break before drawing the row
       const footerSpace = quoteFormat?.show_footer ? 25 : 10;
       if (currentY + actualRowHeight > pageHeight - margin - footerSpace) {
         // Add new page
         doc.addPage();
-        // draw header on new page
-        addHeader();
-        // ensure table resumes below header
-        currentY = margin + (quoteFormat ? 42 : 0);
+        isFirstPage = false; // Mark that we're no longer on the first page
+        // Don't draw header on subsequent pages
+        // ensure table resumes from top margin
+        currentY = margin;
       }
       
       // Row background
@@ -278,16 +280,71 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
       doc.rect(margin, currentY, contentWidth, actualRowHeight);
       doc.line(margin + contentWidth * 0.3, currentY, margin + contentWidth * 0.3, currentY + actualRowHeight);
       
-      // Text
+      // Text - reduced padding and better alignment
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(8);
       doc.setFont(undefined, 'normal');
       
-      // Draw label text
-      doc.text(labelLines, margin + 2, currentY + 5);
+      // Calculate vertical center for text
+      const textCenterY = currentY + (actualRowHeight / 2) + 2;
       
-      // Draw value text
-      doc.text(valueLines, margin + contentWidth * 0.3 + 2, currentY + 5);
+      // Draw label text - vertically centered
+      doc.text(labelLines, margin + 1, textCenterY);
+      
+      // Draw value text (with selective bold formatting for specific values)
+      if (item.boldValues && item.boldValues.length > 0) {
+        // For selective bold with wrapped text, process line by line - vertically centered
+        const totalTextHeight = valueLines.length * 3.0;
+        const startY = textCenterY - (totalTextHeight / 2) + 1;
+        let lineY = startY;
+        const lineHeight = 3.0;
+        
+        for (let lineIdx = 0; lineIdx < valueLines.length; lineIdx++) {
+          const line = valueLines[lineIdx];
+          let currentX = margin + contentWidth * 0.3 + 1;
+          let remainingText = line;
+          
+          // Check each bold value in this line
+          for (const boldValue of item.boldValues) {
+            const boldIndex = remainingText.indexOf(boldValue);
+            if (boldIndex !== -1) {
+              // Draw text before bold value in normal font
+              if (boldIndex > 0) {
+                const beforeText = remainingText.substring(0, boldIndex);
+                doc.setFont(undefined, 'normal');
+                doc.text(beforeText, currentX, lineY);
+                currentX += doc.getTextWidth(beforeText);
+              }
+              
+              // Draw bold value in lighter bold font
+              doc.setFont(undefined, 'bold');
+              doc.text(boldValue, currentX, lineY);
+              currentX += doc.getTextWidth(boldValue);
+              
+              // Remove processed text from remaining
+              remainingText = remainingText.substring(boldIndex + boldValue.length);
+            }
+          }
+          
+          // Draw remaining text in normal font
+          if (remainingText.length > 0) {
+            doc.setFont(undefined, 'normal');
+            doc.text(remainingText, currentX, lineY);
+          }
+          
+          lineY += lineHeight;
+        }
+      } else if (item.bold) {
+        // Full bold formatting (legacy) - vertically centered
+        doc.setFont(undefined, 'bold');
+        doc.text(valueLines, margin + contentWidth * 0.3 + 1, textCenterY);
+      } else {
+        // Normal text - vertically centered
+        doc.text(valueLines, margin + contentWidth * 0.3 + 1, textCenterY);
+      }
+      
+      // Reset font to normal for next iteration
+      doc.setFont(undefined, 'normal');
       
       currentY += actualRowHeight;
     });
@@ -304,18 +361,68 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
   yPosition += 10;
 
   // Combined Single Table Structure
+  const rb = (proposalData.raw || {}) as any;
+  const quoteRef = rb?.quote_meta?.quote_reference_number || rb?.quote_meta?.quote_id || '';
+  const quoteDate = rb?.quote_meta?.created_at ? new Date(rb.quote_meta.created_at).toLocaleDateString() : new Date().toLocaleDateString();
+  
   const combinedTableData = [
-    { label: 'QUOTATION REFERENCE', value: '................................dated.................................' },
+    { 
+      label: 'QUOTATION REFERENCE', 
+      value: `${quoteRef} dated ${quoteDate}`,
+      boldValues: [quoteRef, quoteDate] // Array of values to make bold
+    },
     { 
       label: 'Proposer', 
-      value: 'M/s ________________ as Principal &/or M/s. ________________ as Contractor &/o their sub-contractors for their respective rights and interests' 
+      value: (() => {
+        const principalOwner = rb?.contract_structure?.details?.principal_owner || '________________';
+        const mainContractor = rb?.contract_structure?.details?.main_contractor || '________________';
+        const subContractors = rb?.contract_structure?.sub_contractors || [];
+        
+        let proposerText = `M/s ${principalOwner} as Principal &/or M/s. ${mainContractor} as Contractor`;
+        
+        if (subContractors.length > 0) {
+          proposerText += '\n\nSub-contractors:';
+          subContractors.forEach((sc: any, index: number) => {
+            proposerText += `\n${index + 1}. ${sc.name || 'N/A'}`;
+          });
+        }
+        
+        proposerText += '\n\nFor their respective rights and interests';
+        return proposerText;
+      })(),
+      boldValues: [rb?.contract_structure?.details?.principal_owner || '', rb?.contract_structure?.details?.main_contractor || '', ...(rb?.contract_structure?.sub_contractors || []).map((sc: any) => sc.name).filter(Boolean)].filter(Boolean)
     },
-    { label: 'Scope of Work', value: '' },
+    { 
+      label: 'Scope of Work', 
+      value: (() => {
+        const formatValue = (val: string) => {
+          if (!val) return '';
+          return val.replace(/_/g, ' ').replace(/-/g, ' ')
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+        };
+        
+        const contractType = formatValue(rb?.contract_structure?.details?.contract_type || '');
+        const projectType = formatValue(rb?.project?.project_type || '');
+        const subProjectType = formatValue(rb?.project?.sub_project_type || '');
+        const constructionType = formatValue(rb?.project?.construction_type || '');
+        
+        const parts = [contractType, projectType, subProjectType, constructionType].filter(Boolean);
+        return parts.join(', ') || 'N/A';
+      })()
+    },
     { label: 'Period of insurance', value: 'Not exceeding 12 Months' },
-    { label: 'Maintenance Period', value: '12 Months from the date of handing over the project' },
+    { 
+      label: 'Maintenance Period', 
+      value: (() => {
+        const months = rb?.project?.maintenance_period_months || 12;
+        return `${months} Month${months !== 1 ? 's' : ''} from the date of handing over the project`;
+      })()
+    },
     { 
       label: 'Site of erection', 
-      value: 'Anywhere in UAE (excluding any work within 100 meter of water body/ Wet risk)' 
+      value: rb?.project?.address || 'N/A'
     },
     { 
       label: 'Interest covered', 
@@ -323,19 +430,61 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
     },
     { 
       label: 'Sum Insured', 
-      value: `(AED) Description\nContract Value\nPrincipal existing surrounding property\nContractors Plant & Machinery\nTotal\nSection I` 
+      value: (() => {
+        const formatCurrency = (value: string | number) => {
+          const num = typeof value === 'string' ? parseFloat(value) : value;
+          return isNaN(num) ? '0' : num.toLocaleString('en-AE');
+        };
+        
+        // Get values from cover_requirements
+        const projectValue = formatCurrency(rb?.cover_requirements?.project_value || 0);
+        const contractWorks = formatCurrency(rb?.cover_requirements?.contract_works || 0);
+        const plantEquipment = formatCurrency(rb?.cover_requirements?.plant_and_equipment || 0);
+        const temporaryWorks = formatCurrency(rb?.cover_requirements?.temporary_works || 0);
+        const otherMaterials = formatCurrency(rb?.cover_requirements?.other_materials || 0);
+        const principalsProperty = formatCurrency(rb?.cover_requirements?.principals_property || 0);
+        
+        // Calculate total
+        const total = formatCurrency(
+          (parseFloat(projectValue.replace(/,/g, '')) || 0) + 
+          (parseFloat(contractWorks.replace(/,/g, '')) || 0) + 
+          (parseFloat(plantEquipment.replace(/,/g, '')) || 0) + 
+          (parseFloat(temporaryWorks.replace(/,/g, '')) || 0) + 
+          (parseFloat(otherMaterials.replace(/,/g, '')) || 0) + 
+          (parseFloat(principalsProperty.replace(/,/g, '')) || 0)
+        );
+        
+        return `AED ${total}\n\nDescription:\nProject Value: ${projectValue}\nContract Works: ${contractWorks}\nPlant & Equipment: ${plantEquipment}\nTemporary Works: ${temporaryWorks}\nOther Materials: ${otherMaterials}\nPrincipal's Property: ${principalsProperty}\n\nSection I`;
+      })()
     },
     { 
       label: '', 
-      value: 'Section II\nLimit of liability AED --------/- any one accident or series of accidents arising out of one event and in the aggregate' 
+      value: (() => {
+        const tplLimit = rb?.cover_requirements?.tpl_limit?.label || '--------/-';
+        // Check if tplLimit already contains "AED" to avoid duplication
+        const limitText = tplLimit.toUpperCase().includes('AED') ? tplLimit : `AED ${tplLimit}`;
+        return `Section II\nLimit of liability ${limitText} any one accident or series of accidents arising out of one event and in the aggregate`;
+      })()
     },
     { 
       label: 'Deductible', 
-      value: 'Section I:\nAED 5,000/- each and every loss in respect of major perils / Act of God perils\nAED 3,500/- each and every loss in respect of loss or damage from any other cause\n\nSection II:\nAED 7,500/- each and every loss for Third Party Property damage\nUnderground Property / Vibration/Weakening of Support - AED 10,000/- each and every loss' 
+      value: (() => {
+        const formatCurrency = (value: string | number) => {
+          const num = typeof value === 'string' ? parseFloat(value) : value;
+          return isNaN(num) ? '0' : num.toLocaleString('en-AE');
+        };
+        
+        const majorPerils = formatCurrency(rb?.cover_requirements?.deductible_major_perils || 5000);
+        const otherCause = formatCurrency(rb?.cover_requirements?.deductible_other_cause || 3500);
+        const tplProperty = formatCurrency(rb?.cover_requirements?.deductible_tpl_property || 7500);
+        const underground = formatCurrency(rb?.cover_requirements?.deductible_underground || 10000);
+        
+        return `Section I:\nAED ${majorPerils}/- each and every loss in respect of major perils / Act of God perils\nAED ${otherCause}/- each and every loss in respect of loss or damage from any other cause\n\nSection II:\nAED ${tplProperty}/- each and every loss for Third Party Property damage\nUnderground Property / Vibration/Weakening of Support - AED ${underground}/- each and every loss`;
+      })()
     },
     { 
       label: 'Premium', 
-      value: `AED ${proposalData.premiumSummary.totalAnnualPremium.toLocaleString()}/- including policy fees` 
+      value: `AED ${proposalData.premiumSummary.totalAnnualPremium.toLocaleString()}/- including policy fees`
     }
   ];
 
@@ -343,23 +492,87 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
   combinedTableData.push(
     { 
       label: 'Cover', 
-      value: 'As per standard Contractors All Risks Takaful Cover - Munich Re wordings\n• Strike, Riot and Civil Commotion\n• Maintenance visit cover -12 Months\n• Cross Liability\n• Professional Fees Clause -10% of the claim amount subject to a maximum of AED 10,000/- in the aggregate\n• Debris Removal clause -10% of the claim amount subject to a maximum of AED 10,000/- in the aggregate\n• Fire Brigade and Extinguishing Charges -10% of the claim amount subject to a maximum of AED 10,000/- in the aggregate\n• Automatic Reinstatement of Sum Covered Clause subject to additional premium\n• 72 Hours Clause\n• Public Authorities Clause\n• Primary Insurance Cover Clause\n• 30 days' Notice of cancellation by either parties' 
+      value: (() => {
+        // Add selected extensions
+        const selectedExtensions = rb?.cover_requirements?.selected_extensions || [];
+        
+        if (selectedExtensions.length > 0) {
+          let coverText = 'As per standard Contractors All Risks - Munich Re wordings';
+          selectedExtensions.forEach((ext: any) => {
+            const label = ext.label || '';
+            const code = ext.code || '';
+            coverText += `\n• ${label}${code ? ` (${code})` : ''}`;
+          });
+          return coverText;
+        }
+        
+        return 'No specific cover extensions applicable';
+      })()
     },
     { 
       label: 'Exclusions', 
-      value: '(only indicative in nature and not exhaustive. Full list of exclusions available in the Policy document)\n• Seepage, Pollution and Contamination Exclusion Clause\n• Terrorism & Political risks Exclusion Clause\n• Nuclear Exclusion Clause\n• Cyber Clause / IT Clarification Agreement Exclusion Clause\n• Electronic Date Recognition Endorsement\n• Toxic Mould Exclusion Clause\n• Loss or damage due to Subsidence Exclusion Clause\n• Third party claims arising from Asbestos and /or derivatives thereof Excluded\n• Offshore / Marine / Wet works Excluded\n• Loss or damage to Crops, Forests and Culture Exclusion\n• UN Sanction Exclusion Clause' 
+      value: (() => {
+        // Add exclusions from selected_extensions if any
+        const selectedExtensions = rb?.cover_requirements?.selected_extensions || [];
+        const exclusions = selectedExtensions.filter((ext: any) => ext.type === 'exclusion' || ext.category === 'exclusion');
+        
+        if (exclusions.length > 0) {
+          let exclusionsText = '(only indicative in nature and not exhaustive. Full list of exclusions available in the Policy document)';
+          exclusions.forEach((excl: any) => {
+            const label = excl.label || '';
+            exclusionsText += `\n• ${label}`;
+          });
+          return exclusionsText;
+        }
+        
+        return 'No specific exclusions applicable';
+      })()
     },
     { 
       label: 'Subjectivity', 
-      value: 'No Known or reported claims at the time of binding the cover' 
+      value: (() => {
+        // Check if insured had losses in last 5 years
+        const hadLosses = rb?.insured?.details?.had_losses_last_5yrs === 1;
+        const claims = rb?.insured?.claims || [];
+        const hasClaims = hadLosses && claims.length > 0;
+        
+        if (hasClaims) {
+          const totalCount = claims.reduce((sum: number, claim: any) => sum + (claim.count_of_claims || 0), 0);
+          const totalAmount = claims.reduce((sum: number, claim: any) => sum + (parseFloat(claim.amount_of_claims) || 0), 0);
+          const formattedAmount = totalAmount.toLocaleString('en-AE');
+          
+          return `${totalCount} claim${totalCount !== 1 ? 's' : ''} reported with total value of AED ${formattedAmount} at the time of binding the cover`;
+        }
+        
+        return 'No Known or reported claims at the time of binding the cover';
+      })()
     },
     { 
       label: 'Validity', 
-      value: '30 days from the Date of Issuance of the Quote' 
+      value: (() => {
+        // Get validity days from quote format, default to 30
+        const validityDays = quoteFormat?.validity_days || 30;
+        return `${validityDays} days from the Date of Issuance of the Quote`;
+      })()
     },
     { 
       label: 'Warranties', 
-      value: '• Warranty concerning construction material\n• Warranty that work areas to be cordoned off and no Visitors are allowed entry to such areas unless authorized\n• Warranted No Smoking instruction to all staff / workers' 
+      value: (() => {
+        // Get warranties from selected_extensions if any
+        const selectedExtensions = rb?.cover_requirements?.selected_extensions || [];
+        const warranties = selectedExtensions.filter((ext: any) => ext.type === 'warranty' || ext.category === 'warranty');
+        
+        if (warranties.length > 0) {
+          let warrantiesText = '';
+          warranties.forEach((warranty: any, index: number) => {
+            const label = warranty.label || '';
+            warrantiesText += `${index > 0 ? '\n' : ''}• ${label}`;
+          });
+          return warrantiesText;
+        }
+        
+        return 'No specific warranties applicable';
+      })()
     }
   );
 

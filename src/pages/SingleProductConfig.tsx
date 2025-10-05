@@ -7041,7 +7041,6 @@ const SingleProductConfig = () => {
                             header_bg_color: quoteConfig.header.headerColor || '#000000',
                             header_text_color: quoteConfig.header.headerTextColor || '#FFFFFF',
                             logo_position: (quoteConfig.header.logoPosition || 'left').toUpperCase(),
-                            url: quoteConfig.header.logoUrl || '', // Use logo URL instead of file
                             show_project_details: !!quoteConfig.risk.showProjectDetails,
                             show_coverage_types: !!quoteConfig.risk.showCoverageTypes,
                             show_coverage_limits: !!quoteConfig.risk.showCoverageLimits,

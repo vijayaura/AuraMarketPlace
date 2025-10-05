@@ -7,7 +7,7 @@ import { CheckCircle, ArrowLeft, Edit, Download, Check, Circle, ChevronDown, Che
 import { getProposalBundle, ProposalBundleResponse, getInsurerPricingConfig, InsurerPricingConfigResponse } from "@/lib/api/quotes";
 import { getQuoteFormat, QuoteFormatResponse } from "@/lib/api/insurers";
 import jsPDF from 'jspdf';
-import { generateQuotePDF } from '@/utils/pdfGenerator';
+import { generateQuotePDF, generateInsuranceProposalPDF } from '@/utils/pdfGenerator';
 
 // Quote lifecycle steps
 const QUOTE_LIFECYCLE_STEPS = [
@@ -161,7 +161,7 @@ const formatFieldValue = (key: string, value: any): string => {
   return 'Not specified';
 };
 
-// PDF Generation Function
+// PDF Generation Function for Proposal
 const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
   const doc = new jsPDF();
   let yPosition = 20;
@@ -180,31 +180,41 @@ const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
     
     const fontSize = isHeader ? 10 : 8;
     const isBold = isHeader;
+    const rowHeight = isHeader ? 7 : 6; // Reduced header height
     
     doc.setFontSize(fontSize);
     doc.setFont('helvetica', isBold ? 'bold' : 'normal');
     
-    // Draw border
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(10, yPosition - 4, labelWidth, lineHeight + 2);
-    doc.rect(10 + labelWidth, yPosition - 4, valueWidth, lineHeight + 2);
+    // Draw border with reduced padding - no borders for section headers
+    if (!isHeader) {
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(10, yPosition - 2, labelWidth, rowHeight + 1); // Reduced top padding
+      doc.rect(10 + labelWidth, yPosition - 2, valueWidth, rowHeight + 1);
+    }
     
-    // Add text
-    doc.text(label, 12, yPosition);
-    doc.text(value, 12 + labelWidth, yPosition);
+    // Add text with proper vertical centering and reduced padding
+    const textY = yPosition + (rowHeight / 2) - 1;
+    doc.text(label, 11, textY);
+    doc.text(value, 11 + labelWidth, textY);
     
-    yPosition += lineHeight + 2;
+    // Reduce spacing for continuous table appearance
+    yPosition += isHeader ? rowHeight : rowHeight + 1;
   };
 
   // Helper function to add section header
   const addSectionHeader = (title: string) => {
-    yPosition += 3;
+    // No spacing - make it continuous table
     addTableRow(title, '', true);
   };
 
+  // Header background with light blue color
+  doc.setFillColor(173, 216, 230); // Light blue color
+  doc.rect(0, 0, pageWidth, 35, 'F'); // Fill entire header area
+  
   // Header with Title and Broker Details
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0); // Black text on light blue background
   doc.text('CONTRACTOR ALL RISK INSURANCE', 10, 15);
   doc.text('PROPOSAL FORM', 10, 22);
   
@@ -340,7 +350,6 @@ const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
       addTableRow(`Document ${index + 1}`, formatFieldValue('label', doc.label));
     });
   }
-
 
   // Save the PDF
   const fileName = `Proposal_${proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || 'Unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -620,8 +629,8 @@ const QuoteDetails = () => {
               onClick={() => proposalBundle && generateProposalPDF(proposalBundle)}
             >
               <Download className="h-4 w-4" />
-                Download Proposal
-              </Button>
+              Download Proposal
+            </Button>
             {/* Only show Download Quote button when plan selection is done */}
             {proposalBundle?.plans && proposalBundle.plans.length > 0 && (
               <Button 
