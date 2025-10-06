@@ -124,12 +124,14 @@ const MinimumPremium: React.FC<MinimumPremiumProps> = ({
             </Card>
           </div>
         )}
-        {!isLoading && error && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 mb-4">
-            {error}
-          </div>
-        )}
         {!isLoading && (
+          <>
+            {ratingConfig.subProjectEntries?.length === 0 && (
+              <div className="rounded-md border border-blue-200 bg-blue-50 text-blue-700 px-4 py-3 mb-4">
+                <p className="font-medium">Yet to configure this section</p>
+                <p className="text-sm mt-1">Start by selecting project types and configuring minimum premiums below.</p>
+              </div>
+            )}
           <SubProjectBaseRates
             projectTypes={projectTypesList.map((pt: any) => ({
               id: pt.id,
@@ -144,6 +146,7 @@ const MinimumPremium: React.FC<MinimumPremiumProps> = ({
             title="Minimum Premiums by Sub Project Type"
             description="Configure minimum premium rates and quote decisions for specific sub project categories"
           />
+          </>
         )}
       </CardContent>
     </Card>

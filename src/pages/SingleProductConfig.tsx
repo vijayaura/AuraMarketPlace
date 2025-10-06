@@ -492,12 +492,18 @@ const SingleProductConfig = () => {
         }
       } catch (err: any) {
         const status = err?.status;
-        const msg = status === 400 ? 'Bad request while loading base rates.'
-          : status === 401 ? 'Unauthorized. Please log in again.'
-          : status === 403 ? 'Forbidden. You do not have access.'
-          : status >= 500 ? 'Server error while loading base rates.'
-          : 'Failed to load base rates.';
-        setBaseRatesMastersError(msg);
+        // 404 means no configuration yet for this product - this is OK for new products
+        if (status === 404) {
+          console.log('[BaseRates] No existing configuration found (404) - starting with empty data');
+          // Don't set error for 404 - this is expected for new products
+        } else {
+          const msg = status === 400 ? 'Bad request while loading base rates.'
+            : status === 401 ? 'Unauthorized. Please log in again.'
+            : status === 403 ? 'Forbidden. You do not have access.'
+            : status >= 500 ? 'Server error while loading base rates.'
+            : 'Failed to load base rates.';
+          setBaseRatesMastersError(msg);
+        }
       }
       setRatingConfig((prev) => ({ ...prev, subProjectEntries: mappedEntries }));
       setSelectedProjectTypes(new Set(projectSlugs));
@@ -505,13 +511,19 @@ const SingleProductConfig = () => {
       try { toast({ title: 'Loaded', description: `Project Types: ${(projects||[]).length}, Sub Types: ${(subs||[]).length}` }); } catch {}
     } catch (err: any) {
       const status = err?.status;
-      const msg = status === 400 ? 'Bad request while loading project types.'
-        : status === 401 ? 'Unauthorized. Please log in again.'
-        : status === 403 ? 'Forbidden. You do not have access.'
-        : status >= 500 ? 'Server error while loading masters.'
-        : 'Failed to load masters.';
-      setBaseRatesMastersError(msg);
-      try { toast({ title: 'Failed to load', description: msg, variant: 'destructive' }); } catch {}
+      // 404 means no configuration yet - this is OK for new products
+      if (status === 404) {
+        console.log('[BaseRates] No existing master data found (404) - starting with empty data');
+        // Don't set error for 404 - this is expected for new products
+      } else {
+        const msg = status === 400 ? 'Bad request while loading project types.'
+          : status === 401 ? 'Unauthorized. Please log in again.'
+          : status === 403 ? 'Forbidden. You do not have access.'
+          : status >= 500 ? 'Server error while loading masters.'
+          : 'Failed to load masters.';
+        setBaseRatesMastersError(msg);
+        try { toast({ title: 'Failed to load', description: msg, variant: 'destructive' }); } catch {}
+      }
     } finally {
       setIsLoadingBaseRatesMasters(false);
     }
@@ -612,12 +624,18 @@ const SingleProductConfig = () => {
       try { toast({ title: 'Loaded', description: `Project Types: ${(projects||[]).length}, Sub Types: ${(subs||[]).length}` }); } catch {}
     } catch (err: any) {
       const status = err?.status;
-      const msg = status === 400 ? 'Bad request while loading project types.'
-        : status === 401 ? 'Unauthorized. Please log in again.'
-        : status === 403 ? 'Forbidden. You do not have access.'
-        : status >= 500 ? 'Server error while loading masters.'
-        : 'Failed to load masters.';
-      setMinimumPremiumsMastersError(msg);
+      // 404 means no configuration yet - this is OK for new products
+      if (status === 404) {
+        console.log('[MinimumPremiums] No existing master data found (404) - starting with empty data');
+        // Don't set error for 404 - this is expected for new products
+      } else {
+        const msg = status === 400 ? 'Bad request while loading project types.'
+          : status === 401 ? 'Unauthorized. Please log in again.'
+          : status === 403 ? 'Forbidden. You do not have access.'
+          : status >= 500 ? 'Server error while loading masters.'
+          : 'Failed to load masters.';
+        setMinimumPremiumsMastersError(msg);
+      }
       // Still show UI even if masters loading fails - use fallback data
       try { console.warn('[MinimumPremiums] Masters loading failed, showing UI with fallback data:', err); } catch {}
       // Set fallback data to ensure UI is shown
@@ -855,12 +873,19 @@ const SingleProductConfig = () => {
       setHasProjectRiskFactorsData(hasData);
     } catch (err: any) {
       const status = err?.status;
-      const msg = status === 400 ? 'Bad request while loading project risk factors.'
-        : status === 401 ? 'Unauthorized. Please log in again.'
-        : status === 403 ? 'Forbidden. You do not have access.'
-        : status >= 500 ? 'Server error while loading project risk factors.'
-        : 'Failed to load project risk factors.';
-      setProjectRiskFactorsError(msg);
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[ProjectRiskFactors] No existing configuration found (404) - starting with empty data');
+        // Don't set error for 404 - this is expected for new products
+        setHasProjectRiskFactorsData(false);
+      } else {
+        const msg = status === 400 ? 'Bad request while loading project risk factors.'
+          : status === 401 ? 'Unauthorized. Please log in again.'
+          : status === 403 ? 'Forbidden. You do not have access.'
+          : status >= 500 ? 'Server error while loading project risk factors.'
+          : 'Failed to load project risk factors.';
+        setProjectRiskFactorsError(msg);
+      }
     } finally {
       setIsLoadingProjectRiskFactors(false);
     }
@@ -1098,12 +1123,19 @@ const SingleProductConfig = () => {
       setHasContractorRiskFactorsData(hasData);
     } catch (err: any) {
       const status = err?.status;
-      const msg = status === 400 ? 'Bad request while loading contractor risk factors.'
-        : status === 401 ? 'Unauthorized. Please log in again.'
-        : status === 403 ? 'Forbidden. You do not have access.'
-        : status >= 500 ? 'Server error while loading contractor risk factors.'
-        : 'Failed to load contractor risk factors.';
-      setContractorRiskFactorsError(msg);
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[ContractorRiskFactors] No existing configuration found (404) - starting with empty data');
+        // Don't set error for 404 - this is expected for new products
+        setHasContractorRiskFactorsData(false);
+      } else {
+        const msg = status === 400 ? 'Bad request while loading contractor risk factors.'
+          : status === 401 ? 'Unauthorized. Please log in again.'
+          : status === 403 ? 'Forbidden. You do not have access.'
+          : status >= 500 ? 'Server error while loading contractor risk factors.'
+          : 'Failed to load contractor risk factors.';
+        setContractorRiskFactorsError(msg);
+      }
     } finally {
       setIsLoadingContractorRiskFactors(false);
     }
@@ -2326,7 +2358,11 @@ const SingleProductConfig = () => {
       const status = err?.status as number | undefined;
       const message = err?.message as string | undefined;
       
-      if (status === 400) {
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[CoverageOptions] No existing configuration found (404) - starting with empty data');
+        // Don't set error for 404 - this is expected for new products
+      } else if (status === 400) {
         setCoverageOptionsError(message || 'Bad request while loading coverage options.');
       } else if (status === 401) {
         setCoverageOptionsError('Unauthorized. Please log in again.');
@@ -2364,7 +2400,11 @@ const SingleProductConfig = () => {
       const status = err?.status as number | undefined;
       const message = err?.message as string | undefined;
       
-      if (status === 400) {
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[PolicyLimits] No existing configuration found (404) - starting with empty data');
+        // Don't set error for 404 - this is expected for new products
+      } else if (status === 400) {
         setPolicyLimitsError(message || 'Bad request while loading policy limits.');
       } else if (status === 401) {
         setPolicyLimitsError('Unauthorized. Please log in again.');
@@ -2438,7 +2478,11 @@ const SingleProductConfig = () => {
       const status = err?.status as number | undefined;
       const message = err?.message as string | undefined;
       
-      if (status === 400) {
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[ClauseMetadata] No existing configuration found (404) - starting with empty data');
+        // Don't set error for 404 - this is expected for new products
+      } else if (status === 400) {
         setClauseMetadataError(message || 'Bad request while loading clause metadata.');
       } else if (status === 401) {
         setClauseMetadataError('Unauthorized access to clause metadata.');
@@ -2492,7 +2536,12 @@ const SingleProductConfig = () => {
       const status = err?.status as number | undefined;
       const message = err?.message as string | undefined;
       
-      if (status === 400) {
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[ClausePricing] No existing configuration found (404) - starting with empty data');
+        // Don't set error for 404 - this is expected for new products
+        setClausePricingData({ clause_pricing: [] });
+      } else if (status === 400) {
         setClausePricingError(message || 'Bad request while loading clause pricing.');
       } else if (status === 401) {
         setClausePricingError('Unauthorized access to clause pricing.');
@@ -3503,8 +3552,16 @@ const SingleProductConfig = () => {
       }
     } catch (err: any) {
       console.error('❌ Error loading Construction Types Configuration:', err);
-      setConstructionTypesConfigError(err.message || 'Failed to load construction types configuration');
-      setConstructionTypesConfigData([]);
+      const status = err?.status;
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[ConstructionTypesConfig] No existing configuration found (404) - starting with empty data');
+        setConstructionTypesConfigData([]);
+        // Don't set error for 404 - this is expected for new products
+      } else {
+        setConstructionTypesConfigError(err.message || 'Failed to load construction types configuration');
+        setConstructionTypesConfigData([]);
+      }
     } finally {
       setIsLoadingConstructionTypesConfig(false);
     }
@@ -3841,13 +3898,20 @@ const SingleProductConfig = () => {
     } catch (err: any) {
       console.error('❌ Error loading Contract Types Configuration:', err);
       const status = err?.status;
-      const msg = status === 400 ? 'Bad request while loading contract types configuration.'
-        : status === 401 ? 'Unauthorized. Please log in again.'
-        : status === 403 ? 'Forbidden. You do not have access.'
-        : status >= 500 ? 'Server error while loading contract types configuration.'
-        : 'Failed to load contract types configuration.';
-      setContractTypesConfigError(msg);
-      setContractTypesConfigData([]);
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[ContractTypesConfig] No existing configuration found (404) - starting with empty data');
+        setContractTypesConfigData([]);
+        // Don't set error for 404 - this is expected for new products
+      } else {
+        const msg = status === 400 ? 'Bad request while loading contract types configuration.'
+          : status === 401 ? 'Unauthorized. Please log in again.'
+          : status === 403 ? 'Forbidden. You do not have access.'
+          : status >= 500 ? 'Server error while loading contract types configuration.'
+          : 'Failed to load contract types configuration.';
+        setContractTypesConfigError(msg);
+        setContractTypesConfigData([]);
+      }
     } finally {
       setIsLoadingContractTypesConfig(false);
     }
@@ -4004,14 +4068,21 @@ const SingleProductConfig = () => {
     } catch (err: any) {
       console.error('❌ Error loading Role Types Configuration:', err);
       const status = err?.status;
-      const msg = status === 400 ? 'Bad request while loading role types configuration.'
-        : status === 401 ? 'Unauthorized. Please log in again.'
-        : status === 403 ? 'Forbidden. You do not have access.'
-        : status >= 500 ? 'Server error while loading role types configuration.'
-        : 'Failed to load role types configuration.';
-      setRoleTypesConfigError(msg);
-      setRoleTypesConfigData([]);
-    } finally {
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[RoleTypesConfig] No existing configuration found (404) - starting with empty data');
+        setRoleTypesConfigData([]);
+        // Don't set error for 404 - this is expected for new products
+      } else {
+        const msg = status === 400 ? 'Bad request while loading role types configuration.'
+          : status === 401 ? 'Unauthorized. Please log in again.'
+          : status === 403 ? 'Forbidden. You do not have access.'
+          : status >= 500 ? 'Server error while loading role types configuration.'
+          : 'Failed to load role types configuration.';
+        setRoleTypesConfigError(msg);
+        setRoleTypesConfigData([]);
+      }
+    } finally{
       setIsLoadingRoleTypesConfig(false);
     }
   };
@@ -4167,13 +4238,20 @@ const SingleProductConfig = () => {
     } catch (err: any) {
       console.error('❌ Error loading Soil Types Configuration:', err);
       const status = err?.status;
-      const msg = status === 400 ? 'Bad request while loading soil types configuration.'
-        : status === 401 ? 'Unauthorized. Please log in again.'
-        : status === 403 ? 'Forbidden. You do not have access.'
-        : status >= 500 ? 'Server error while loading soil types configuration.'
-        : 'Failed to load soil types configuration.';
-      setSoilTypesConfigError(msg);
-      setSoilTypesConfigData([]);
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[SoilTypesConfig] No existing configuration found (404) - starting with empty data');
+        setSoilTypesConfigData([]);
+        // Don't set error for 404 - this is expected for new products
+      } else {
+        const msg = status === 400 ? 'Bad request while loading soil types configuration.'
+          : status === 401 ? 'Unauthorized. Please log in again.'
+          : status === 403 ? 'Forbidden. You do not have access.'
+          : status >= 500 ? 'Server error while loading soil types configuration.'
+          : 'Failed to load soil types configuration.';
+        setSoilTypesConfigError(msg);
+        setSoilTypesConfigData([]);
+      }
     } finally {
       setIsLoadingSoilTypesConfig(false);
     }
@@ -4330,13 +4408,20 @@ const SingleProductConfig = () => {
     } catch (err: any) {
       console.error('❌ Error loading Subcontractor Types Configuration:', err);
       const status = err?.status;
-      const msg = status === 400 ? 'Bad request while loading subcontractor types configuration.'
-        : status === 401 ? 'Unauthorized. Please log in again.'
-        : status === 403 ? 'Forbidden. You do not have access.'
-        : status >= 500 ? 'Server error while loading subcontractor types configuration.'
-        : 'Failed to load subcontractor types configuration.';
-      setSubcontractorTypesConfigError(msg);
-      setSubcontractorTypesConfigData([]);
+      // 404 means no configuration yet for this product - this is OK for new products
+      if (status === 404) {
+        console.log('[SubcontractorTypesConfig] No existing configuration found (404) - starting with empty data');
+        setSubcontractorTypesConfigData([]);
+        // Don't set error for 404 - this is expected for new products
+      } else {
+        const msg = status === 400 ? 'Bad request while loading subcontractor types configuration.'
+          : status === 401 ? 'Unauthorized. Please log in again.'
+          : status === 403 ? 'Forbidden. You do not have access.'
+          : status >= 500 ? 'Server error while loading subcontractor types configuration.'
+          : 'Failed to load subcontractor types configuration.';
+        setSubcontractorTypesConfigError(msg);
+        setSubcontractorTypesConfigData([]);
+      }
     } finally {
       setIsLoadingSubcontractorTypesConfig(false);
     }

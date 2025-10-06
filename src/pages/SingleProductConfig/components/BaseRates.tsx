@@ -124,24 +124,27 @@ const BaseRates: React.FC<BaseRatesProps> = ({
             </Card>
           </div>
         )}
-        {!isLoading && error && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 mb-4">
-            {error}
-          </div>
-        )}
-        {!isLoading && !error && (
-          <SubProjectBaseRates
-            projectTypes={projectTypesList.map((pt: any) => ({
-              id: pt.id,
-              value: pt.value ?? pt.label?.toLowerCase?.().replace(/[^a-z0-9]+/g, '-') ?? String(pt.id),
-              label: pt.label,
-              baseRate: 0,
-            }))}
-            subProjectEntries={ratingConfig.subProjectEntries}
-            selectedProjectTypes={selectedProjectTypes}
-            onSubProjectEntryChange={onSubProjectEntryChange}
-            onProjectTypeToggle={onProjectTypeToggle}
-          />
+        {!isLoading && (
+          <>
+            {ratingConfig.subProjectEntries?.length === 0 && (
+              <div className="rounded-md border border-blue-200 bg-blue-50 text-blue-700 px-4 py-3 mb-4">
+                <p className="font-medium">Yet to configure this section</p>
+                <p className="text-sm mt-1">Start by selecting project types and configuring their base rates below.</p>
+              </div>
+            )}
+            <SubProjectBaseRates
+              projectTypes={projectTypesList.map((pt: any) => ({
+                id: pt.id,
+                value: pt.value ?? pt.label?.toLowerCase?.().replace(/[^a-z0-9]+/g, '-') ?? String(pt.id),
+                label: pt.label,
+                baseRate: 0,
+              }))}
+              subProjectEntries={ratingConfig.subProjectEntries}
+              selectedProjectTypes={selectedProjectTypes}
+              onSubProjectEntryChange={onSubProjectEntryChange}
+              onProjectTypeToggle={onProjectTypeToggle}
+            />
+          </>
         )}
       </CardContent>
     </Card>

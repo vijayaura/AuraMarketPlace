@@ -220,13 +220,17 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
             </Card>
           </div>
         )}
-        {!isLoading && error && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 mb-4">
-            {error}
-          </div>
-        )}
-        {!isLoading && !error && (
-        <div className="space-y-6">
+        {!isLoading && (
+          <>
+            {(!ratingConfig.projectRisk?.durationLoadings?.length && 
+              !ratingConfig.projectRisk?.maintenancePeriodLoadings?.length &&
+              !ratingConfig.projectRisk?.locationHazardLoadings?.locationHazardRates?.length) && (
+              <div className="rounded-md border border-blue-200 bg-blue-50 text-blue-700 px-4 py-3 mb-4">
+                <p className="font-medium">Yet to configure this section</p>
+                <p className="text-sm mt-1">Start by adding rows to configure project risk factors below.</p>
+              </div>
+            )}
+            <div className="space-y-6">
           {/* Project Duration Loadings/Discounts */}
           <Card className="border border-border bg-card">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -944,7 +948,8 @@ const ProjectRiskFactors: React.FC<ProjectRiskFactorsProps> = ({
               </div>
             </CardContent>
           </Card>
-        </div>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

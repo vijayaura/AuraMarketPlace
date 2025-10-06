@@ -159,13 +159,19 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
             </Card>
           </div>
         )}
-        {!isLoading && error && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 mb-4">
-            {error}
-          </div>
-        )}
-        {!isLoading && !error && (
-        <div className="space-y-6">
+        {!isLoading && (
+          <>
+            {(!ratingConfig.contractorRisk?.experienceDiscounts?.length && 
+              !ratingConfig.contractorRisk?.claimFrequency?.length && 
+              !ratingConfig.contractorRisk?.claimAmountCategories?.length &&
+              !ratingConfig.contractorRisk?.contractorNumbers?.length &&
+              !ratingConfig.contractorRisk?.subcontractorNumbers?.length) && (
+              <div className="rounded-md border border-blue-200 bg-blue-50 text-blue-700 px-4 py-3 mb-4">
+                <p className="font-medium">Yet to configure this section</p>
+                <p className="text-sm mt-1">Start by adding rows to configure contractor risk factors below.</p>
+              </div>
+            )}
+            <div className="space-y-6">
           {/* Experience Loadings/Discounts */}
           <Card className="border border-border bg-card">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -675,7 +681,8 @@ const ContractorRiskFactors: React.FC<ContractorRiskFactorsProps> = ({
               </Table>
             </CardContent>
           </Card>
-        </div>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
