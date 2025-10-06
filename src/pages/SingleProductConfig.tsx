@@ -5779,7 +5779,10 @@ const SingleProductConfig = () => {
       // Only add if it's an array (new format)
       if (Array.isArray(categoryData)) {
         const currentEntries = categoryData as any[];
-        const newId = Math.max(...currentEntries.map((entry: any) => entry.id)) + 1;
+        // Use Date.now() for unique ID to avoid issues with empty arrays or duplicate IDs
+        const newId = currentEntries.length > 0 
+          ? Math.max(...currentEntries.map((entry: any) => entry.id), 0) + 1 
+          : 1;
         return {
           ...prev,
           contractorRisk: {

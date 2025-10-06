@@ -207,14 +207,14 @@ const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
     addTableRow(title, '', true);
   };
 
-  // Header background with light blue color
-  doc.setFillColor(173, 216, 230); // Light blue color
+  // Header background with dark blue color
+  doc.setFillColor(0, 64, 128); // Dark blue color
   doc.rect(0, 0, pageWidth, 35, 'F'); // Fill entire header area
   
   // Header with Title and Broker Details
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0); // Black text on light blue background
+  doc.setTextColor(255, 255, 255); // White text on dark blue background
   doc.text('CONTRACTOR ALL RISK INSURANCE', 10, 15);
   doc.text('PROPOSAL FORM', 10, 22);
   
@@ -235,6 +235,9 @@ const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
   // Quote Reference
   doc.setFontSize(8);
   doc.text(`Quote Reference: ${proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || 'N/A'}`, 10, 30);
+  
+  // Reset text color to black for table content
+  doc.setTextColor(0, 0, 0);
   yPosition = 40;
 
   // Project Details
