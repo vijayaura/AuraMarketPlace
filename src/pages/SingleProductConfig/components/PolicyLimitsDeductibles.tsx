@@ -138,11 +138,10 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
         </div>
       </CardHeader>
       <CardContent className="p-6 overflow-x-auto">
-        {(!ratingConfig.coverRequirements?.subLimits?.length && 
-          !ratingConfig.coverRequirements?.deductibles?.length) && (
+        {!ratingConfig.limits?.minimumPremium && (
           <div className="rounded-md border border-blue-200 bg-blue-50 text-blue-700 px-4 py-3 mb-6">
             <p className="font-medium">Yet to configure this section</p>
-            <p className="text-sm mt-1">Configure policy limits and deductible adjustments below.</p>
+            <p className="text-sm mt-1">Configure policy limits below.</p>
           </div>
         )}
 
@@ -296,8 +295,8 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
             </CardContent>
           </Card>
 
-          {/* Sub-limits */}
-          <Card className="border border-border bg-card">
+          {/* Sub-limits - HIDDEN */}
+          {false && <Card className="border border-border bg-card">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-sm">Sub-limits</CardTitle>
@@ -389,10 +388,10 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                 </TableBody>
               </Table>
             </CardContent>
-          </Card>
+          </Card>}
 
-          {/* Deductibles */}
-          <Card className="border border-border bg-card">
+          {/* Deductibles - HIDDEN */}
+          {false && <Card className="border border-border bg-card">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-sm">Deductibles</CardTitle>
@@ -490,7 +489,7 @@ const PolicyLimitsDeductibles: React.FC<PolicyLimitsDeductiblesProps> = ({
                 </TableBody>
               </Table>
             </CardContent>
-          </Card>
+          </Card>}
           </div>
         )}
       </CardContent>
