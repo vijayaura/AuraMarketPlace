@@ -148,10 +148,10 @@ const FeeTypes: React.FC<FeeTypesProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        {feeTypesConfigError && (
-          <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive mb-6">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span className="text-sm">{feeTypesConfigError}</span>
+        {feeTypes.length === 0 && !isLoadingFeeTypesConfig && (
+          <div className="rounded-md border border-blue-200 bg-blue-50 text-blue-700 px-4 py-3 mb-6">
+            <p className="font-medium">Yet to configure this section</p>
+            <p className="text-sm mt-1">Add fee types and configure their values below.</p>
           </div>
         )}
 

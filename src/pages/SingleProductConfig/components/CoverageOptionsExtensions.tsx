@@ -172,10 +172,15 @@ const CoverageOptionsExtensions: React.FC<CoverageOptionsExtensionsProps> = ({
         </div>
       </CardHeader>
       <CardContent className="p-6">
-        {error && (
-          <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive mb-6">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span className="text-sm">{error}</span>
+        {(!ratingConfig.coverRequirements?.projectValue?.length && 
+          !ratingConfig.coverRequirements?.contractWorks?.length &&
+          !ratingConfig.coverRequirements?.plantAndEquipment?.length &&
+          !ratingConfig.coverRequirements?.temporaryWorks?.length &&
+          !ratingConfig.coverRequirements?.otherMaterials?.length &&
+          !ratingConfig.coverRequirements?.principalsProperty?.length) && (
+          <div className="rounded-md border border-blue-200 bg-blue-50 text-blue-700 px-4 py-3 mb-6">
+            <p className="font-medium">Yet to configure this section</p>
+            <p className="text-sm mt-1">Start by adding rows to configure cover requirements below.</p>
           </div>
         )}
 

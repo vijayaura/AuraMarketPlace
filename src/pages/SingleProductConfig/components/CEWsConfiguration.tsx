@@ -39,9 +39,10 @@ const CEWsConfiguration: React.FC<CEWsConfigurationProps> = ({
 }) => {
   return (
     <>
-      {tplError && (
-        <div className="text-sm rounded-md border border-destructive/20 bg-destructive/10 text-destructive px-3 py-2">
-          {tplError}
+      {(!tplLimit && !tplExtensions?.length) && !isLoadingTpl && (
+        <div className="rounded-md border border-blue-200 bg-blue-50 text-blue-700 px-4 py-3 mb-4">
+          <p className="font-medium">Yet to configure this section</p>
+          <p className="text-sm mt-1">Configure TPL limit and extensions below.</p>
         </div>
       )}
       {isLoadingTpl && (
