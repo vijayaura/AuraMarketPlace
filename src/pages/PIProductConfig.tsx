@@ -1162,8 +1162,8 @@ const PIProductConfig = () => {
                         <Card className="border border-border bg-card">
                           <CardHeader className="pb-3 flex flex-row items-center justify-between">
                             <div>
-                              <CardTitle className="text-sm">Fee Income</CardTitle>
-                              <p className="text-xs text-muted-foreground">Rate based on annual fee income ranges (AED)</p>
+                              <CardTitle>Fee Income</CardTitle>
+                              <CardDescription>Rate based on annual fee income ranges (AED)</CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button 
@@ -1593,8 +1593,8 @@ const PIProductConfig = () => {
                         <Card className="border border-border bg-card">
                           <CardHeader className="pb-3 flex flex-row items-center justify-between">
                             <div>
-                              <CardTitle className="text-sm">Additional Coverages</CardTitle>
-                              <p className="text-xs text-muted-foreground">Configure additional coverage options by profession</p>
+                              <CardTitle>Additional Coverages</CardTitle>
+                              <CardDescription>Configure additional coverage options by profession</CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button 
@@ -2405,8 +2405,8 @@ const PIProductConfig = () => {
                         <Card className="border border-border bg-card">
                           <CardHeader className="pb-3 flex flex-row items-center justify-between">
                             <div>
-                              <CardTitle className="text-sm">Fee Types</CardTitle>
-                              <p className="text-xs text-muted-foreground">Configure fee types and their values (VAT, GST, etc.)</p>
+                              <CardTitle>Fee Types</CardTitle>
+                              <CardDescription>Configure fee types and their values (VAT, GST, etc.)</CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button 
