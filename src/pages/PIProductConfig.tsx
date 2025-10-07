@@ -936,18 +936,12 @@ const PIProductConfig = () => {
           <TabsContent value="pricing" className="space-y-6">
             <Card>
               <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Calculator className="w-5 h-5" />
-                        Pricing Configuration
-                      </CardTitle>
-                      <CardDescription>Configure base rates and policy limits for Professional Indemnity Insurance</CardDescription>
-                    </div>
-                    <Button onClick={saveConfiguration} disabled={isSaving}>
-                      <Save className="w-4 h-4 mr-2" />
-                      {isSaving ? 'Saving...' : 'Save Pricing Configuration'}
-                    </Button>
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calculator className="w-5 h-5" />
+                      Pricing Configuration
+                    </CardTitle>
+                    <CardDescription>Configure base rates and policy limits for Professional Indemnity Insurance</CardDescription>
                   </div>
               </CardHeader>
               <CardContent>
@@ -987,8 +981,16 @@ const PIProductConfig = () => {
                       {activePricingTab === "base-rates" && (
                         <Card>
                           <CardHeader>
-                            <CardTitle>Base Rates by Profession</CardTitle>
-                            <CardDescription>Configure base premium rates for different professional services</CardDescription>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle>Base Rates by Profession</CardTitle>
+                                <CardDescription>Configure base premium rates for different professional services</CardDescription>
+                    </div>
+                              <Button onClick={saveConfiguration} disabled={isSaving} size="sm">
+                                <Save className="w-4 h-4 mr-2" />
+                                {isSaving ? 'Saving...' : 'Save Base Rates'}
+                              </Button>
+                            </div>
                           </CardHeader>
                           <CardContent>
                             {!pricingConfig.baseRates.length && (
@@ -1061,8 +1063,16 @@ const PIProductConfig = () => {
                       {activePricingTab === "minimum-premiums" && (
                         <Card>
                           <CardHeader>
-                            <CardTitle>Minimum Premium by Profession</CardTitle>
-                            <CardDescription>Configure minimum premium amounts for different professional services</CardDescription>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle>Minimum Premium by Profession</CardTitle>
+                                <CardDescription>Configure minimum premium amounts for different professional services</CardDescription>
+                              </div>
+                              <Button onClick={saveConfiguration} disabled={isSaving} size="sm">
+                                <Save className="w-4 h-4 mr-2" />
+                                {isSaving ? 'Saving...' : 'Save Minimum Premiums'}
+                              </Button>
+                            </div>
                           </CardHeader>
                           <CardContent>
                             {!pricingConfig.minimumPremiums.length && (
@@ -1163,6 +1173,10 @@ const PIProductConfig = () => {
                               >
                                 Add Row
                               </Button>
+                              <Button onClick={saveConfiguration} disabled={isSaving} size="sm">
+                                <Save className="w-4 h-4 mr-2" />
+                                {isSaving ? 'Saving...' : 'Save Fee Income'}
+                              </Button>
                             </div>
                           </CardHeader>
                           <CardContent>
@@ -1254,6 +1268,18 @@ const PIProductConfig = () => {
                       {/* Coverages Tab */}
                       {activePricingTab === "coverages" && (
                         <div className="space-y-6">
+                          {/* Header with Title and Save Button */}
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <CardTitle>Coverages</CardTitle>
+                              <CardDescription>Configure coverage limits, policy period, and retroactive coverage ranges</CardDescription>
+                            </div>
+                            <Button onClick={saveConfiguration} disabled={isSaving} size="sm">
+                              <Save className="w-4 h-4 mr-2" />
+                              {isSaving ? 'Saving...' : 'Save Coverages'}
+                            </Button>
+                          </div>
+
                           {/* Limit of Indemnity Section */}
                           <Card className="border border-border bg-card">
                             <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -1578,6 +1604,10 @@ const PIProductConfig = () => {
                               >
                                 Add Row
                               </Button>
+                              <Button onClick={saveConfiguration} disabled={isSaving} size="sm">
+                                <Save className="w-4 h-4 mr-2" />
+                                {isSaving ? 'Saving...' : 'Save Additional Coverages'}
+                              </Button>
                             </div>
                           </CardHeader>
                           <CardContent>
@@ -1685,9 +1715,9 @@ const PIProductConfig = () => {
                                 <CardTitle>Risk Factors</CardTitle>
                                 <CardDescription>Configure risk adjustments based on professional profile</CardDescription>
                               </div>
-                              <Button onClick={() => console.log('Save risk factors')} size="sm">
+                              <Button onClick={saveConfiguration} disabled={isSaving} size="sm">
                                 <Save className="w-4 h-4 mr-1" />
-                                Save Risk Factors
+                                {isSaving ? 'Saving...' : 'Save Risk Factors'}
                               </Button>
                             </div>
                           </CardHeader>
@@ -2211,8 +2241,16 @@ const PIProductConfig = () => {
                       {activePricingTab === "limits-deductibles" && (
                         <Card>
                           <CardHeader>
-                            <CardTitle>Policy Limits & Deductibles</CardTitle>
-                            <CardDescription>Configure policy limits and deductible adjustments</CardDescription>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle>Policy Limits & Deductibles</CardTitle>
+                                <CardDescription>Configure policy limits and deductible adjustments</CardDescription>
+                              </div>
+                              <Button onClick={saveConfiguration} disabled={isSaving} size="sm">
+                                <Save className="w-4 h-4 mr-2" />
+                                {isSaving ? 'Saving...' : 'Save Limits & Deductibles'}
+                              </Button>
+                            </div>
                           </CardHeader>
                           <CardContent className="space-y-6">
                             {!pricingConfig.limits?.minimumPremium && (
@@ -2377,6 +2415,10 @@ const PIProductConfig = () => {
                                 onClick={addFeeTypeEntry}
                               >
                                 Add Row
+                              </Button>
+                              <Button onClick={saveConfiguration} disabled={isSaving} size="sm">
+                                <Save className="w-4 h-4 mr-2" />
+                                {isSaving ? 'Saving...' : 'Save Fee Types'}
                               </Button>
                             </div>
                           </CardHeader>
