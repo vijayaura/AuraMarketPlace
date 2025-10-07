@@ -177,13 +177,29 @@ export const PIProposalForm = ({
         return true;
       
       case 3: // Claims History
-        if (!formData.noPreviousClaims && (!formData.numberOfClaims || !formData.totalClaimsValue)) {
+        if (!formData.lossesInLastFiveYears) {
           toast({
             title: "Validation Error",
-            description: "Please provide claims information or confirm no previous claims.",
+            description: "Please select whether you have losses in the last 5 years.",
             variant: "destructive"
           });
           return false;
+        }
+        
+        // If "yes" is selected, validate that at least one year has claims data
+        if (formData.lossesInLastFiveYears === "yes") {
+          const hasAnyClaimData = Object.values(formData.claimsHistory).some(
+            claim => claim.count && parseInt(claim.count) > 0
+          );
+          
+          if (!hasAnyClaimData) {
+            toast({
+              title: "Validation Error",
+              description: "Please provide claims details for at least one year.",
+              variant: "destructive"
+            });
+            return false;
+          }
         }
         return true;
       

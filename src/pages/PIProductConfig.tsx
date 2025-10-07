@@ -665,12 +665,13 @@ const PIProductConfig = () => {
           <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
             <Button
-              variant="ghost"
-                size="sm"
-                onClick={() => navigate(`${basePath}/product-config`)}
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`${basePath}/product-config`)}
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Product Management
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Product Management
             </Button>
             <div>
                 <h1 className="text-xl font-semibold text-foreground">Professional Indemnity Insurance - Product Configuration</h1>
