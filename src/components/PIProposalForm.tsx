@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { User, Briefcase, Shield, FileText, CheckCircle, Building, MapPin, Calendar, DollarSign, Plus, Trash2, Folder, Users, Circle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatNumberWithCommas, removeCommasFromNumber, handleNumberInputChange } from "@/utils/numberFormat";
@@ -58,40 +59,45 @@ export const PIProposalForm = ({
   // Form data state
   const [formData, setFormData] = useState({
     // Business Information
-    companyName: "",
-    businessType: "",
-    annualTurnover: "1000000",
-    businessDescription: "",
-    businessAddress: "",
-    numberOfEmployees: "",
+    companyName: "TechFlow Solutions Ltd",
+    businessType: "IT Services",
+    annualTurnover: "3200000",
+    businessDescription: "We specialize in custom software development, cloud migration services, and digital transformation consulting for mid to large-scale enterprises. Our team delivers enterprise applications, mobile solutions, and AI-powered systems across various industries including healthcare, finance, and e-commerce.",
+    businessAddress: "Dubai Internet City, Building 12, Floor 8\nDubai, UAE\nP.O. Box 98765",
+    numberOfEmployees: "11-25",
     
     // Risk Profile
-    yearsInBusiness: "",
-    primaryJurisdiction: "",
-    professionalLicense: false,
+    yearsInBusiness: "6-10 years",
+    primaryJurisdiction: "UAE",
+    professionalLicense: true,
     industryAssociation: false,
-    advancedDegree: false,
-    continuingEducation: false,
-    highRiskActivities: "",
+    advancedDegree: true,
+    continuingEducation: true,
+    highRiskActivities: "We handle sensitive data processing for healthcare clients and financial institutions. Our projects include developing payment gateways, patient management systems, and trading platforms that require high security standards and compliance with data protection regulations.",
     
     // Coverage Details
-    limitOfIndemnity: "",
-    deductible: "",
-    policyPeriod: "",
-    retroactiveCoverage: "",
+    limitOfIndemnity: "1000000",
+    deductible: "10000",
+    policyPeriod: "12 months",
+    retroactiveCoverage: "Yes - 6 months",
+    additionalCoverages: ["Cyber Liability", "Media Liability", "Intellectual Property Liability"],
     defenseCosts: false,
     lossOfDocuments: false,
     dishonestyOfEmployees: false,
     copyrightInfringement: false,
     
     // Claims History
-    noPreviousClaims: false,
-    numberOfClaims: "",
-    totalClaimsValue: "0",
-    claimsDetails: "",
-    writtenProcedures: false,
-    staffTraining: false,
-    contractReview: false,
+    lossesInLastFiveYears: "no",
+    claimsHistory: {
+      2021: { count: "0", amount: "0", description: "" },
+      2022: { count: "0", amount: "0", description: "" },
+      2023: { count: "0", amount: "0", description: "" },
+      2024: { count: "0", amount: "0", description: "" },
+      2025: { count: "0", amount: "0", description: "" }
+    } as Record<number, { count: string; amount: string; description: string }>,
+    writtenProcedures: true,
+    staffTraining: true,
+    contractReview: true,
     professionalSupervision: false
   });
 
@@ -196,11 +202,56 @@ export const PIProposalForm = ({
   };
 
   const businessTypeOptions = [
-    "Sole Proprietorship",
-    "Partnership", 
-    "LLC",
-    "Corporation",
-    "Other"
+    "Consulting Services",
+    "Legal Services", 
+    "Accounting & Finance",
+    "Architecture & Engineering",
+    "IT Services",
+    "Medical Services",
+    "Other Professional Services"
+  ];
+
+  const additionalCoverageOptions = [
+    {
+      title: "Cyber Liability",
+      description: "Protection against data breaches and cyber attacks"
+    },
+    {
+      title: "Employment Practices Liability",
+      description: "Coverage for workplace discrimination and harassment claims"
+    },
+    {
+      title: "Directors & Officers Liability",
+      description: "Protection for company executives and board members"
+    },
+    {
+      title: "Crime & Fidelity",
+      description: "Coverage for employee theft and fraudulent activities"
+    },
+    {
+      title: "Media Liability",
+      description: "Protection for defamation and advertising injury claims"
+    },
+    {
+      title: "Technology Errors & Omissions",
+      description: "Coverage for software and technology service failures"
+    },
+    {
+      title: "Environmental Liability",
+      description: "Protection against environmental damage claims"
+    },
+    {
+      title: "Product Liability",
+      description: "Coverage for product-related injury or damage claims"
+    },
+    {
+      title: "Public Relations Liability",
+      description: "Protection for reputation management and PR crises"
+    },
+    {
+      title: "Intellectual Property Liability",
+      description: "Coverage for IP infringement and patent disputes"
+    }
   ];
 
   const employeeRangeOptions = [
@@ -338,27 +389,30 @@ export const PIProposalForm = ({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="businessDescription">Business Description *</Label>
-              <Textarea
-                id="businessDescription"
-                value={formData.businessDescription}
-                onChange={(e) => setFormData({ ...formData, businessDescription: e.target.value })}
-                placeholder="Describe your business activities and services"
-                rows={4}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="businessDescription">Business Description *</Label>
+                <Textarea
+                  id="businessDescription"
+                  value={formData.businessDescription}
+                  onChange={(e) => setFormData({ ...formData, businessDescription: e.target.value })}
+                  placeholder="Describe your business activities and services"
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="businessAddress">Business Address *</Label>
+                <Textarea
+                  id="businessAddress"
+                  value={formData.businessAddress}
+                  onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })}
+                  placeholder="Enter your complete business address"
+                  rows={4}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="businessAddress">Business Address *</Label>
-              <Textarea
-                id="businessAddress"
-                value={formData.businessAddress}
-                onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })}
-                placeholder="Enter your complete business address"
-                rows={3}
-              />
-            </div>
           </TabsContent>
         );
 
@@ -462,21 +516,15 @@ export const PIProposalForm = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div className="space-y-2">
                 <Label htmlFor="limitOfIndemnity">Limit of Indemnity (AED) *</Label>
-                <Select
-                  value={formData.limitOfIndemnity}
-                  onValueChange={(value) => setFormData({ ...formData, limitOfIndemnity: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select coverage limit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {coverageLimitOptions.map((limit) => (
-                      <SelectItem key={limit} value={limit}>
-                        AED {formatNumberWithCommas(limit)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="limitOfIndemnity"
+                  value={formatNumberWithCommas(formData.limitOfIndemnity)}
+                  onChange={(e) => {
+                    const value = removeCommasFromNumber(e.target.value);
+                    setFormData({ ...formData, limitOfIndemnity: value });
+                  }}
+                  placeholder="1,000,000"
+                />
               </div>
 
               <div className="space-y-2">
@@ -539,43 +587,51 @@ export const PIProposalForm = ({
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Additional Coverages</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="defenseCosts"
-                    checked={formData.defenseCosts}
-                    onCheckedChange={(checked) => setFormData({ ...formData, defenseCosts: checked as boolean })}
-                  />
-                  <Label htmlFor="defenseCosts">Defense Costs</Label>
-                  <span className="text-sm text-muted-foreground">Legal defense expenses coverage.</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="lossOfDocuments"
-                    checked={formData.lossOfDocuments}
-                    onCheckedChange={(checked) => setFormData({ ...formData, lossOfDocuments: checked as boolean })}
-                  />
-                  <Label htmlFor="lossOfDocuments">Loss of Documents</Label>
-                  <span className="text-sm text-muted-foreground">Coverage for loss of important documents.</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="dishonestyOfEmployees"
-                    checked={formData.dishonestyOfEmployees}
-                    onCheckedChange={(checked) => setFormData({ ...formData, dishonestyOfEmployees: checked as boolean })}
-                  />
-                  <Label htmlFor="dishonestyOfEmployees">Dishonesty of Employees</Label>
-                  <span className="text-sm text-muted-foreground">Coverage for employee dishonesty incidents.</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="copyrightInfringement"
-                    checked={formData.copyrightInfringement}
-                    onCheckedChange={(checked) => setFormData({ ...formData, copyrightInfringement: checked as boolean })}
-                  />
-                  <Label htmlFor="copyrightInfringement">Copyright Infringement</Label>
-                  <span className="text-sm text-muted-foreground">Protection against copyright infringement claims.</span>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {additionalCoverageOptions.map((coverage) => (
+                  <div key={coverage.title} className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => {
+                    if (formData.additionalCoverages.includes(coverage.title)) {
+                      setFormData({
+                        ...formData,
+                        additionalCoverages: formData.additionalCoverages.filter(c => c !== coverage.title)
+                      });
+                    } else {
+                      setFormData({
+                        ...formData,
+                        additionalCoverages: [...formData.additionalCoverages, coverage.title]
+                      });
+                    }
+                  }}>
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id={`coverage-${coverage.title}`}
+                        checked={formData.additionalCoverages.includes(coverage.title)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({
+                              ...formData,
+                              additionalCoverages: [...formData.additionalCoverages, coverage.title]
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              additionalCoverages: formData.additionalCoverages.filter(c => c !== coverage.title)
+                            });
+                          }
+                        }}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor={`coverage-${coverage.title}`} className="text-sm font-medium cursor-pointer block mb-1">
+                          {coverage.title}
+                        </Label>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {coverage.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </TabsContent>
@@ -584,98 +640,190 @@ export const PIProposalForm = ({
       case 3: // Claims History
         return (
           <TabsContent value="claims" className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="noPreviousClaims"
-                  checked={formData.noPreviousClaims}
-                  onCheckedChange={(checked) => setFormData({ ...formData, noPreviousClaims: checked as boolean })}
-                />
-                <Label htmlFor="noPreviousClaims">No previous claims or incidents</Label>
+            {/* Claims History Section */}
+            <div className="space-y-4 border-t border-border pt-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Claims History</h3>
               </div>
-
-              {!formData.noPreviousClaims && (
-                <div className="space-y-4 pl-6">
-                  <h3 className="text-lg font-semibold">Claims History (if any)</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="numberOfClaims">Number of Claims (Last 5 Years)</Label>
-                      <Select
-                        value={formData.numberOfClaims}
-                        onValueChange={(value) => setFormData({ ...formData, numberOfClaims: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select number" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {claimsNumberOptions.map((number) => (
-                            <SelectItem key={number} value={number}>
-                              {number}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="totalClaimsValue">Total Claims Value (AED)</Label>
-                      <Input
-                        id="totalClaimsValue"
-                        type="number"
-                        value={formData.totalClaimsValue}
-                        onChange={(e) => setFormData({ ...formData, totalClaimsValue: e.target.value })}
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="claimsDetails">Claims Details</Label>
-                    <Textarea
-                      id="claimsDetails"
-                      value={formData.claimsDetails}
-                      onChange={(e) => setFormData({ ...formData, claimsDetails: e.target.value })}
-                      placeholder="Provide details of any previous claims, incidents, or circumstances that could lead to a claim"
-                      rows={4}
-                    />
-                  </div>
-                </div>
-              )}
-
+              
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Risk Management</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
+                <div className="space-y-2">
+                  <Label htmlFor="lossesInLastFiveYears">Any insurance losses in last 5 years? *</Label>
+                  <Select value={formData.lossesInLastFiveYears || undefined} onValueChange={value => setFormData({
+                    ...formData,
+                    lossesInLastFiveYears: value
+                  })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select yes or no" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Select if you have had any insurance claims in the past 5 years</p>
+                </div>
+                
+                {formData.lossesInLastFiveYears === "yes" && <div className="space-y-4">
+                    <div className="bg-muted/30 p-4 rounded-lg">
+                      <h4 className="font-medium text-foreground mb-4">Claims History Matrix (2021-2025)</h4>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-20">Year</TableHead>
+                              <TableHead className="w-32">Count of Claims</TableHead>
+                              <TableHead className="w-40">Amount of Claims (AED)</TableHead>
+                              <TableHead>Description</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {[2021, 2022, 2023, 2024, 2025].map(year => (
+                              <TableRow key={year}>
+                                <TableCell className="font-medium">{year}</TableCell>
+                                <TableCell>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={formData.claimsHistory?.[year]?.count || ""}
+                                    onChange={(e) => setFormData({
+                                      ...formData,
+                                      claimsHistory: {
+                                        ...formData.claimsHistory,
+                                        [year]: {
+                                          ...formData.claimsHistory?.[year],
+                                          count: e.target.value
+                                        }
+                                      }
+                                    })}
+                                    placeholder="0"
+                                    className="w-full"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={formData.claimsHistory?.[year]?.amount || ""}
+                                    onChange={(e) => setFormData({
+                                      ...formData,
+                                      claimsHistory: {
+                                        ...formData.claimsHistory,
+                                        [year]: {
+                                          ...formData.claimsHistory?.[year],
+                                          amount: e.target.value
+                                        }
+                                      }
+                                    })}
+                                    placeholder="0"
+                                    className="w-full"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    value={formData.claimsHistory?.[year]?.description || ""}
+                                    onChange={(e) => setFormData({
+                                      ...formData,
+                                      claimsHistory: {
+                                        ...formData.claimsHistory,
+                                        [year]: {
+                                          ...formData.claimsHistory?.[year],
+                                          description: e.target.value
+                                        }
+                                      }
+                                    })}
+                                    placeholder="Brief description"
+                                    className="w-full"
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            {/* Risk Management Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Risk Management</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setFormData({ ...formData, writtenProcedures: !formData.writtenProcedures })}>
+                  <div className="flex items-start space-x-3">
                     <Checkbox
                       id="writtenProcedures"
                       checked={formData.writtenProcedures}
                       onCheckedChange={(checked) => setFormData({ ...formData, writtenProcedures: checked as boolean })}
+                      className="mt-1"
                     />
-                    <Label htmlFor="writtenProcedures">Written procedures and quality controls</Label>
+                    <div className="flex-1">
+                      <Label htmlFor="writtenProcedures" className="text-sm font-medium cursor-pointer block mb-1">
+                        Written Procedures
+                      </Label>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Documented quality control and operational procedures
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                </div>
+
+                <div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setFormData({ ...formData, staffTraining: !formData.staffTraining })}>
+                  <div className="flex items-start space-x-3">
                     <Checkbox
                       id="staffTraining"
                       checked={formData.staffTraining}
                       onCheckedChange={(checked) => setFormData({ ...formData, staffTraining: checked as boolean })}
+                      className="mt-1"
                     />
-                    <Label htmlFor="staffTraining">Regular staff training programs</Label>
+                    <div className="flex-1">
+                      <Label htmlFor="staffTraining" className="text-sm font-medium cursor-pointer block mb-1">
+                        Staff Training
+                      </Label>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Regular training programs for professional development
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                </div>
+
+                <div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setFormData({ ...formData, contractReview: !formData.contractReview })}>
+                  <div className="flex items-start space-x-3">
                     <Checkbox
                       id="contractReview"
                       checked={formData.contractReview}
                       onCheckedChange={(checked) => setFormData({ ...formData, contractReview: checked as boolean })}
+                      className="mt-1"
                     />
-                    <Label htmlFor="contractReview">Client contract review processes</Label>
+                    <div className="flex-1">
+                      <Label htmlFor="contractReview" className="text-sm font-medium cursor-pointer block mb-1">
+                        Contract Review
+                      </Label>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Systematic review of client contracts and agreements
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                </div>
+
+                <div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setFormData({ ...formData, professionalSupervision: !formData.professionalSupervision })}>
+                  <div className="flex items-start space-x-3">
                     <Checkbox
                       id="professionalSupervision"
                       checked={formData.professionalSupervision}
                       onCheckedChange={(checked) => setFormData({ ...formData, professionalSupervision: checked as boolean })}
+                      className="mt-1"
                     />
-                    <Label htmlFor="professionalSupervision">Professional supervision systems</Label>
+                    <div className="flex-1">
+                      <Label htmlFor="professionalSupervision" className="text-sm font-medium cursor-pointer block mb-1">
+                        Professional Supervision
+                      </Label>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Oversight systems for professional work quality
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
