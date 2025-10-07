@@ -95,12 +95,6 @@ const PISuccess = () => {
     });
   };
 
-  const handleDownloadQuote = () => {
-    toast.success('Download Started', {
-      description: 'Your quote document is being prepared...'
-    });
-  };
-
   const handleDownloadPolicy = () => {
     toast.success('Download Started', {
       description: 'Your policy document is being prepared...'
@@ -123,42 +117,44 @@ const PISuccess = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
       <Header 
         title="Professional Indemnity Insurance"
         onBackToDashboard={handleBackToDashboard}
       />
 
-      <main className="flex-1 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="flex-1">
+        <div className="max-w-7xl mx-auto space-y-8 p-6">
           {/* Success Header */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-12 h-12 text-green-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 animate-pulse">
+                <CheckCircle className="h-10 w-10 text-green-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Policy Generated Successfully!</h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  Your Professional Indemnity insurance policy has been generated and is now active.
+                </p>
+              </div>
             </div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">
-              Quote Generated Successfully!
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Your Professional Indemnity insurance quote has been generated. Review the details below.
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <Badge variant="outline" className="text-sm px-4 py-2">
-                Quote Reference: {piData.quoteReference}
-              </Badge>
+            <div className="flex gap-3">
+              <Button onClick={handleDownloadPolicy} variant="outline" className="flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Download Policy
+              </Button>
+              <Button onClick={handleBackToDashboard} className="flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
+              </Button>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex justify-center gap-4 mb-8">
-            <Button onClick={handleDownloadQuote} className="gap-2">
-              <Download className="w-4 h-4" />
-              Download Quote
-            </Button>
-            <Button variant="outline" onClick={handleBackToDashboard} className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
-            </Button>
+          {/* Policy Reference Badge */}
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-sm px-4 py-2">
+              Policy Reference: {piData.quoteReference}
+            </Badge>
           </div>
 
           {/* Insurer & Premium Summary */}
@@ -181,7 +177,7 @@ const PISuccess = () => {
                   <div className="text-3xl font-bold text-primary">
                     AED {formatNumberWithCommas(piData.totalPremium.toString())}
                   </div>
-                  <Badge className="mt-2" variant="secondary">Quote Valid for 30 Days</Badge>
+                  <Badge className="mt-2" variant="secondary">Policy Active</Badge>
                 </div>
               </div>
             </CardHeader>
@@ -366,20 +362,11 @@ const PISuccess = () => {
             )}
           </Card>
 
-          {/* Important Notes */}
-          <Alert className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Important:</strong> This quote is valid for 30 days. To proceed with policy issuance, 
-              please contact your broker or our customer service team. Final premium is subject to underwriting approval.
-            </AlertDescription>
-          </Alert>
-
           {/* Action Buttons */}
           <div className="flex justify-center gap-4 mb-8">
-            <Button onClick={handleDownloadQuote} variant="outline" size="lg" className="gap-2">
+            <Button onClick={handleDownloadPolicy} variant="outline" size="lg" className="gap-2">
               <Download className="w-4 h-4" />
-              Download Quote
+              Download Policy
             </Button>
             <Button onClick={handleBackToDashboard} size="lg" className="gap-2">
               Go to Dashboard

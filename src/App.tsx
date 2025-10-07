@@ -43,7 +43,9 @@ import MarketAdminDashboard from "./pages/MarketAdminDashboard";
 import RequireAuth from "./components/RequireAuth";
 import MarketAdminBrokerManagement from "./pages/MarketAdminBrokerManagement";
 import MarketAdminInsurerManagement from "./pages/MarketAdminInsurerManagement";
-import MastersManagement from "./pages/MastersManagement";
+import MastersProductSelection from "./pages/MastersProductSelection";
+import CARMastersManagement from "./pages/CARMastersManagement";
+import PIMastersManagement from "./pages/PIMastersManagement";
 import CreateInsurer from "./pages/CreateInsurer";
 import EditInsurer from "./pages/EditInsurer";
 import CreateBroker from "./pages/CreateBroker";
@@ -97,7 +99,9 @@ const App = () => (
           {/* Market Admin Routes - Protected */}
           <Route path="/market-admin" element={<RequireAuth requiredRole="admin"><MarketAdminLayout /></RequireAuth>}>
             <Route path="dashboard" element={<MarketAdminDashboard />} />
-            <Route path="masters-management" element={<MastersManagement />} />
+            <Route path="masters-management" element={<MastersProductSelection />} />
+            <Route path="masters-management/car" element={<CARMastersManagement />} />
+            <Route path="masters-management/pi" element={<PIMastersManagement />} />
             <Route path="broker-management" element={<MarketAdminBrokerManagement />} />
             <Route path="broker/:brokerId/details" element={<BrokerDetailsView />} />
             <Route path="broker/:brokerId/configure" element={<BrokerConfiguration />} />
