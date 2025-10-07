@@ -102,7 +102,7 @@ const PISuccess = () => {
   };
 
   const handleBackToDashboard = () => {
-    navigate('/customer/dashboard');
+    navigate('/broker/dashboard');
   };
 
   if (loading) {

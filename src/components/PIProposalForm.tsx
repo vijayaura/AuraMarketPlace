@@ -153,17 +153,17 @@ export const PIProposalForm = ({
       professionalInfo: {
         companyName: formData.companyName,
         professionType: formData.professionType,
-        businessDescription: formData.professionalServicesDescription,
-        businessAddress: formData.practiceAddress,
+        businessDescription: formData.businessDescription,
+        businessAddress: formData.businessAddress,
         yearsInBusiness: formData.yearsInPractice,
-        annualRevenue: formData.annualFeeIncome,
+        annualRevenue: formData.annualTurnover,
         numberOfEmployees: formData.numberOfEmployees
       },
       coverageDetails: {
         limitOfIndemnity: formData.limitOfIndemnity,
         deductible: formData.deductible,
         policyPeriod: formData.policyPeriod,
-        retroactiveCoverage: formData.retroactiveCoverage,
+        retroactiveCoverage: formData.retroactiveCoverage === "yes" ? `Yes - ${formData.retroactiveMonths} months` : "No",
         additionalCoverages: formData.additionalCoverages
       },
       riskProfile: {
@@ -219,10 +219,10 @@ export const PIProposalForm = ({
     annualTurnover: "3200000",
     businessDescription: "We specialize in custom software development, cloud migration services, and digital transformation consulting for mid to large-scale enterprises. Our team delivers enterprise applications, mobile solutions, and AI-powered systems across various industries including healthcare, finance, and e-commerce.",
     businessAddress: "Dubai Internet City, Building 12, Floor 8\nDubai, UAE\nP.O. Box 98765",
-    numberOfEmployees: "11-25",
+    numberOfEmployees: "25",
     
     // Risk Profile
-    yearsInBusiness: "6-10 years",
+    yearsInPractice: "8",
     primaryJurisdiction: "UAE",
     professionalLicense: true,
     industryAssociation: false,
@@ -234,7 +234,8 @@ export const PIProposalForm = ({
     limitOfIndemnity: "1000000",
     deductible: "10000",
     policyPeriod: "12 months",
-    retroactiveCoverage: "Yes - 6 months",
+    retroactiveCoverage: "yes",
+    retroactiveMonths: "6",
     additionalCoverages: ["Cyber Liability", "Media Liability", "Intellectual Property Liability"],
     defenseCosts: false,
     lossOfDocuments: false,
@@ -310,7 +311,7 @@ export const PIProposalForm = ({
         return true;
       
       case 1: // Risk Profile
-        if (!formData.yearsInBusiness || !formData.primaryJurisdiction) {
+        if (!formData.yearsInPractice || !formData.primaryJurisdiction) {
           toast({
             title: "Validation Error",
             description: "Please fill in all required risk profile fields.",
@@ -325,6 +326,16 @@ export const PIProposalForm = ({
           toast({
             title: "Validation Error",
             description: "Please fill in all required coverage details.",
+            variant: "destructive"
+          });
+          return false;
+        }
+        
+        // If retroactive coverage is yes, check for months
+        if (formData.retroactiveCoverage === "yes" && !formData.retroactiveMonths) {
+          toast({
+            title: "Validation Error",
+            description: "Please specify the retroactive coverage period in months.",
             variant: "destructive"
           });
           return false;
@@ -542,21 +553,14 @@ export const PIProposalForm = ({
 
               <div className="space-y-2">
                 <Label htmlFor="numberOfEmployees">Number of Employees *</Label>
-                <Select
+                <Input 
+                  id="numberOfEmployees" 
+                  type="number"
                   value={formData.numberOfEmployees}
-                  onValueChange={(value) => setFormData({ ...formData, numberOfEmployees: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select employee range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employeeRangeOptions.map((range) => (
-                      <SelectItem key={range} value={range}>
-                        {range}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => setFormData({ ...formData, numberOfEmployees: e.target.value })}
+                  placeholder="Enter number of employees" 
+                  min="1"
+                />
               </div>
             </div>
 
@@ -592,22 +596,15 @@ export const PIProposalForm = ({
           <TabsContent value="risk" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div className="space-y-2">
-                <Label htmlFor="yearsInBusiness">Years in Practice *</Label>
-                <Select
-                  value={formData.yearsInBusiness}
-                  onValueChange={(value) => setFormData({ ...formData, yearsInBusiness: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select experience" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {yearsInBusinessOptions.map((years) => (
-                      <SelectItem key={years} value={years}>
-                        {years}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="yearsInPractice">Years in Practice *</Label>
+                <Input 
+                  id="yearsInPractice" 
+                  type="number"
+                  value={formData.yearsInPractice}
+                  onChange={(e) => setFormData({ ...formData, yearsInPractice: e.target.value })}
+                  placeholder="Enter years in practice" 
+                  min="0"
+                />
               </div>
 
               <div className="space-y-2">
@@ -740,20 +737,31 @@ export const PIProposalForm = ({
                 <Label htmlFor="retroactiveCoverage">Would you need retroactive coverage? *</Label>
                 <Select
                   value={formData.retroactiveCoverage}
-                  onValueChange={(value) => setFormData({ ...formData, retroactiveCoverage: value })}
+                  onValueChange={(value) => setFormData({ ...formData, retroactiveCoverage: value, retroactiveMonths: value === 'no' ? '' : formData.retroactiveMonths })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
-                    {retroactiveOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {formData.retroactiveCoverage === "yes" && (
+                <div className="space-y-2">
+                  <Label htmlFor="retroactiveMonths">Retroactive Coverage Period (months) *</Label>
+                  <Input 
+                    id="retroactiveMonths" 
+                    type="number"
+                    value={formData.retroactiveMonths}
+                    onChange={(e) => setFormData({ ...formData, retroactiveMonths: e.target.value })}
+                    placeholder="Enter number of months" 
+                    min="1"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">

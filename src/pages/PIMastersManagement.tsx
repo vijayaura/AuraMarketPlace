@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Settings, Database, Building, MapPin, Shield, FileText, Percent, Globe, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Settings, Database, Building, MapPin, Shield, FileText, Percent, Globe, Loader2, ArrowLeft, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { documentTypes } from "@/lib/masters-data";
@@ -72,13 +73,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import TableSkeleton from "@/components/loaders/TableSkeleton";
 
 // Mock data for metadata management
-const initialProjectTypes = [
-  { id: 1, label: "Residential", active: true, order: 1 },
-  { id: 2, label: "Commercial", active: true, order: 2 },
-  { id: 3, label: "Industrial", active: true, order: 3 },
-  { id: 4, label: "Infrastructure", active: true, order: 4 },
-  { id: 5, label: "Mixed-Use", active: true, order: 5 },
-  { id: 6, label: "Others", active: true, order: 6 },
+const initialProfessionTypes = [
+  { id: 1, label: "Consulting Services", active: true, order: 1 },
+  { id: 2, label: "Legal Services", active: true, order: 2 },
+  { id: 3, label: "Accounting & Finance", active: true, order: 3 },
+  { id: 4, label: "Architecture & Engineering", active: true, order: 4 },
+  { id: 5, label: "IT Services", active: true, order: 5 },
+  { id: 6, label: "Medical Services", active: true, order: 6 },
+  { id: 7, label: "Other Professional Services", active: true, order: 7 },
 ];
 
 const initialSubProjectTypes = [
@@ -162,15 +164,10 @@ const initialRegions: any[] = [];
 const initialZones: any[] = [];
 
 const PIMastersManagement = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
-  const [projectTypes, setProjectTypes] = useState(initialProjectTypes);
-  const [subProjectTypes, setSubProjectTypes] = useState(initialSubProjectTypes);
-  const [constructionTypes, setConstructionTypes] = useState(initialConstructionTypes);
-  const [roleTypes, setRoleTypes] = useState(initialRoleTypes);
-  const [contractTypes, setContractTypes] = useState(initialContractTypes);
-  const [soilTypes, setSoilTypes] = useState(initialSoilTypes);
-  const [subcontractorTypes, setSubcontractorTypes] = useState(initialSubcontractorTypes);
+  const [professionTypes, setProfessionTypes] = useState(initialProfessionTypes);
   const [consultantRoles, setConsultantRoles] = useState(initialConsultantRoles);
   const [securityTypes, setSecurityTypes] = useState(initialSecurityTypes);
   const [areaTypes, setAreaTypes] = useState(initialAreaTypes);
@@ -236,7 +233,7 @@ const PIMastersManagement = () => {
   
   const [editingItem, setEditingItem] = useState<any>(null);
   const [newItem, setNewItem] = useState<any>({ label: "", active: true });
-  const [activeSection, setActiveSection] = useState("project-types");
+  const [activeSection, setActiveSection] = useState("profession-types");
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [editDialogOpenId, setEditDialogOpenId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState<boolean>(false);
@@ -1285,13 +1282,23 @@ const PIMastersManagement = () => {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
-                Masters Management
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                Manage metadata and dropdown options for proposal form fields
-              </p>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/market-admin/masters-management')}
+                className="flex-shrink-0 gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <div>
+                <h1 className="text-4xl font-bold text-foreground mb-2">
+                  PI Masters
+                </h1>
+                <p className="text-lg text-muted-foreground">
+                  Manage metadata and dropdown options for PI proposal form fields
+                </p>
+              </div>
             </div>
           </div>
 
@@ -1302,21 +1309,10 @@ const PIMastersManagement = () => {
               <h3 className="font-semibold text-foreground mb-4">Master Data Types</h3>
               <div className="space-y-2">
                 {[
-                  { id: "project-types", label: "Project Types", icon: Building, count: projectTypes.filter(t => t.active).length },
-                  { id: "sub-project-types", label: "Sub Project Types", icon: Building, count: subProjectTypes.filter(t => t.active).length },
-                  { id: "construction-types", label: "Construction Types", icon: Settings, count: constructionTypes.filter(t => t.active).length },
+                  { id: "profession-types", label: "Profession Types", icon: Briefcase, count: professionTypes.filter(t => t.active).length },
                   { id: "countries", label: "Countries", icon: Globe, count: countries.filter(t => t.active).length },
                   { id: "regions", label: "Regions", icon: MapPin, count: regions.filter(t => t.active).length },
                   { id: "zones", label: "Zones", icon: MapPin, count: zones.filter(t => t.active).length },
-                  { id: "role-types", label: "Role Types", icon: Shield, count: roleTypes.filter(t => t.active).length },
-                  { id: "contract-types", label: "Contract Types", icon: FileText, count: contractTypes.filter(t => t.active).length },
-                  { id: "soil-types", label: "Soil Types", icon: MapPin, count: soilTypes.filter(t => t.active).length },
-                  { id: "subcontractor-types", label: "Subcontractor Types", icon: Settings, count: subcontractorTypes.filter(t => t.active).length },
-                  { id: "consultant-roles", label: "Consultant Roles", icon: Shield, count: consultantRoles.filter(t => t.active).length },
-                  { id: "security-types", label: "Security Types", icon: Shield, count: securityTypes.filter(t => t.active).length },
-                  { id: "area-types", label: "Area Types", icon: MapPin, count: areaTypes.filter(t => t.active).length },
-                  
-                  { id: "document-types", label: "Document Types", icon: FileText, count: documentTypes.filter(t => t.active).length },
                 ].map((section) => (
                   <button
                     key={section.id}
@@ -1341,21 +1337,10 @@ const PIMastersManagement = () => {
 
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto">
-              {activeSection === "project-types" && renderMasterTable(projectTypes, setProjectTypes, "project-types")}
-              {activeSection === "sub-project-types" && renderSubProjectTable(subProjectTypes, setSubProjectTypes, "sub-project-types")}
-              {activeSection === "construction-types" && renderMasterTable(constructionTypes, setConstructionTypes, "construction-types")}
+              {activeSection === "profession-types" && renderMasterTable(professionTypes, setProfessionTypes, "profession-types")}
               {activeSection === "countries" && renderLocationTable(countries, setCountries, "countries")}
               {activeSection === "regions" && renderLocationTable(regions, setRegions, "regions", "countries")}
               {activeSection === "zones" && renderLocationTable(zones, setZones, "zones", "regions")}
-              {activeSection === "role-types" && renderMasterTable(roleTypes, setRoleTypes, "role-types")}
-              {activeSection === "contract-types" && renderMasterTable(contractTypes, setContractTypes, "contract-types")}
-              {activeSection === "soil-types" && renderMasterTable(soilTypes, setSoilTypes, "soil-types")}
-              {activeSection === "subcontractor-types" && renderMasterTable(subcontractorTypes, setSubcontractorTypes, "subcontractor-types")}
-              {activeSection === "consultant-roles" && renderMasterTable(consultantRoles, setConsultantRoles, "consultant-roles")}
-              {activeSection === "security-types" && renderMasterTable(securityTypes, setSecurityTypes, "security-types")}
-              {activeSection === "area-types" && renderMasterTable(areaTypes, setAreaTypes, "area-types")}
-              
-              {activeSection === "document-types" && renderDocumentTable(documentTypes, setDocumentTypes, "document-types")}
         </div>
       </div>
       

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Settings, Database, Building, MapPin, Shield, FileText, Percent, Globe, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Settings, Database, Building, MapPin, Shield, FileText, Percent, Globe, Loader2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { documentTypes } from "@/lib/masters-data";
@@ -162,6 +163,7 @@ const initialRegions: any[] = [];
 const initialZones: any[] = [];
 
 const CARMastersManagement = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
   const [projectTypes, setProjectTypes] = useState(initialProjectTypes);
@@ -1285,13 +1287,23 @@ const CARMastersManagement = () => {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
-                Masters Management
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                Manage metadata and dropdown options for proposal form fields
-              </p>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/market-admin/masters-management')}
+                className="flex-shrink-0 gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <div>
+                <h1 className="text-4xl font-bold text-foreground mb-2">
+                  CAR Masters
+                </h1>
+                <p className="text-lg text-muted-foreground">
+                  Manage metadata and dropdown options for CAR proposal form fields
+                </p>
+              </div>
             </div>
           </div>
 
