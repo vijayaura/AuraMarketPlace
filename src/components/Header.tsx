@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 interface HeaderProps {
   onBackToDashboard?: () => void;
   showBackConfirmation?: boolean;
+  title?: string;
 }
 
-export const Header = ({ onBackToDashboard, showBackConfirmation = false }: HeaderProps) => {
+export const Header = ({ onBackToDashboard, showBackConfirmation = false, title }: HeaderProps) => {
   const navigate = useNavigate();
   const {
     navigateBack
@@ -26,7 +27,7 @@ export const Header = ({ onBackToDashboard, showBackConfirmation = false }: Head
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
-            <h1 className="text-xl font-semibold text-foreground">CAR Insurance Application</h1>
+            <h1 className="text-xl font-semibold text-foreground">{title || 'CAR Insurance Application'}</h1>
             <Link to="/" className="flex items-center space-x-3">
               <img src="/lovable-uploads/bdde1c6a-a5e3-472f-8114-0bc05f7a216d.png" alt="AURA Logo" className="h-12 w-auto" />
             </Link>

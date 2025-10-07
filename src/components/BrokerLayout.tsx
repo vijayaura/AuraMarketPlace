@@ -45,7 +45,7 @@ const sidebarItems = [{
   icon: LayoutDashboard
 }, {
   title: "New Quote",
-  url: "/customer/proposal?new=true",
+  url: "/broker/product-selection",
   icon: Plus
 }, {
   title: "User Management",

@@ -17,6 +17,8 @@ import AddInsurerUser from "./pages/AddInsurerUser";
 import EditInsurerUser from "./pages/EditInsurerUser";
 import { BrokerLayout } from "./components/BrokerLayout";
 import Proposal from "./pages/Proposal";
+import ProductSelection from "./pages/ProductSelection";
+import ProposalRouter from "./pages/ProposalRouter";
 import Quotes from "./pages/Quotes";
 import Documents from "./pages/Documents";
 // Declaration component removed - now using DeclarationTab in ProposalForm
@@ -119,6 +121,13 @@ const App = () => (
             <Route path="insurer/:insurerId/pricing-config" element={<InsurerPricingConfig />} />
             <Route path="product-config" element={<ProductConfig />} />
           </Route>
+          {/* Product Selection */}
+          <Route path="/broker/product-selection" element={<ProductSelection />} />
+          
+          {/* Product-specific proposal forms */}
+          <Route path="/customer/proposal/:productCode" element={<ProposalRouter />} />
+          
+          {/* Legacy route - redirect to CAR proposal for backward compatibility */}
           <Route path="/customer/proposal" element={<Proposal />} />
           <Route path="/customer/documents" element={<Documents />} />
           <Route path="/customer/quotes" element={<Quotes />} />
