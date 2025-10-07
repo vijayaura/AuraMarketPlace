@@ -56,7 +56,15 @@ const InsurerLogin = () => {
       }
 
       toast({ title: "Login Successful", description: `Welcome, ${res.user.email}!` });
-      navigate("/insurer/dashboard");
+      
+      // Check if there's a redirect path from session expiry
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+      if (redirectPath && redirectPath.startsWith('/insurer')) {
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate(redirectPath);
+      } else {
+        navigate("/insurer/dashboard");
+      }
     } catch (err: any) {
       const message = err?.message || "Login failed";
       setErrorMessage(message);

@@ -60,7 +60,15 @@ const BrokerLogin = () => {
       }
 
       toast({ title: "Login Successful", description: `Welcome, ${res.user.email}!` });
-      navigate("/broker/dashboard");
+      
+      // Check if there's a redirect path from session expiry
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+      if (redirectPath && redirectPath.startsWith('/broker')) {
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate(redirectPath);
+      } else {
+        navigate("/broker/dashboard");
+      }
     } catch (err: any) {
       const message = err?.message || "Login failed";
       setErrorMessage(message);

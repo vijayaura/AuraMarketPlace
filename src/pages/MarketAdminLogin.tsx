@@ -47,7 +47,15 @@ const MarketAdminLogin = () => {
         title: "Login Successful",
         description: `Welcome, ${res.user.email}!`,
       });
-      navigate("/market-admin/dashboard");
+      
+      // Check if there's a redirect path from session expiry
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+      if (redirectPath && redirectPath.startsWith('/market-admin')) {
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate(redirectPath);
+      } else {
+        navigate("/market-admin/dashboard");
+      }
     } catch (err: any) {
       const message = err?.message || 'Login failed';
       toast({

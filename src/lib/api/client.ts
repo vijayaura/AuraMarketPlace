@@ -127,17 +127,29 @@ api.interceptors.response.use(
         // Notify and redirect to appropriate login page after refresh failure
         try {
           if (!originalRequest?._suppressGlobalErrorToast) {
-            toast.error('Session expired', { description: 'Please log in again.' });
+            // Show a more professional session expiry message
+            toast.error('Session Expired', { 
+              description: 'Your session has expired due to inactivity. You will be redirected to the login page.',
+              duration: 5000
+            });
           }
-          // Avoid multiple rapid redirects
+          // Save current path for redirect after login
           if (typeof window !== 'undefined') {
             const currentPath = window.location?.pathname || '/';
+            sessionStorage.setItem('redirectAfterLogin', currentPath);
+            
+            // Determine login page based on current portal
             const goTo =
               currentPath.startsWith('/broker') ? '/broker/login' :
               currentPath.startsWith('/insurer') ? '/insurer/login' :
-              '/admin/login';
+              currentPath.startsWith('/market-admin') ? '/admin/login' :
+              '/';
+            
+            // Redirect after a short delay to allow user to see the message
             if (!currentPath.startsWith(goTo)) {
-              window.location.assign(goTo);
+              setTimeout(() => {
+                window.location.assign(goTo);
+              }, 2000);
             }
           }
         } catch {
