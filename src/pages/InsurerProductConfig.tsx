@@ -179,7 +179,7 @@ const InsurerProductConfig = () => {
     const productId = productRoutes[product.code];
     if (productId) {
       if (isMarketAdmin) {
-        navigate(`/market-admin/insurer/${insurerId}/product-config/products/${productId}`);
+        navigate(`/market-admin/insurer/${insurerId}/products/${productId}`);
       } else {
         navigate(`/insurer/products/${productId}`);
       }

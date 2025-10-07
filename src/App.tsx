@@ -34,6 +34,7 @@ import NotFound from "./pages/NotFound";
 import ManageInsurers from "./pages/ManageInsurers";
 import InsurerDetailDashboard from "./pages/InsurerDetailDashboard";
 import InsurerProductConfig from "./pages/InsurerProductConfig";
+import PIProductConfig from "./pages/PIProductConfig";
 import InsurerPricingConfig from "./pages/InsurerPricingConfig";
 import BrokerAdminDashboard from "./pages/BrokerAdminDashboard";
 import { MarketAdminLayout } from "./components/MarketAdminLayout";
@@ -122,6 +123,7 @@ const App = () => (
             <Route path="insurer/:insurerId/pricing-config" element={<InsurerPricingConfig />} />
             <Route path="product-config" element={<ProductConfig />} />
           </Route>
+          <Route path="/market-admin/insurer/:insurerId/products/2" element={<PIProductConfig />} />
           {/* Product Selection */}
           <Route path="/broker/product-selection" element={<ProductSelection />} />
           
@@ -154,6 +156,7 @@ const App = () => (
           </Route>
           <Route path="/insurer/products" element={<ProductsList />} />
           <Route path="/insurer/products/:productId" element={<SingleProductConfig />} />
+          <Route path="/insurer/products/2" element={<PIProductConfig />} />
           <Route path="/insurer/product-config/new" element={<CreatePlan />} />
           <Route path="/insurer/:insurerId/pricing-config" element={<InsurerPricingConfig />} />
           {/* Legacy routes - removed for standardization */}
