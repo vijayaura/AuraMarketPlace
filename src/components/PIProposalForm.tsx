@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { User, Briefcase, Shield, FileText, CheckCircle, Building, MapPin, Calendar, DollarSign, Plus, Trash2, Folder, Users, Circle } from "lucide-react";
+import { User, Briefcase, Shield, FileText, CheckCircle, Building, MapPin, Calendar, DollarSign, Plus, Trash2, Folder, Users, Circle, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatNumberWithCommas, removeCommasFromNumber, handleNumberInputChange } from "@/utils/numberFormat";
 
@@ -25,7 +25,94 @@ export const PIProposalForm = ({
 }: PIProposalFormProps = {}) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [selectedQuotes, setSelectedQuotes] = useState<number[]>([]);
   const { toast } = useToast();
+
+  // Mock quotes from different insurers
+  const mockQuotes = [
+    { 
+      id: 1, 
+      insurerName: "AXA Gulf", 
+      insurerLogo: "/lovable-uploads/a1521c76-be1d-45e9-8d86-5df99d190608.png",
+      basePremium: 4200, 
+      riskLoading: 800, 
+      additionalCoverage: 300, 
+      totalPremium: 5300,
+      validityDays: 30
+    },
+    { 
+      id: 2, 
+      insurerName: "Oman Insurance Company", 
+      insurerLogo: "/lovable-uploads/b8cba7d5-7174-48dc-b189-00f94bb589c2.png",
+      basePremium: 3900, 
+      riskLoading: 750, 
+      additionalCoverage: 250, 
+      totalPremium: 4900,
+      validityDays: 30
+    },
+    { 
+      id: 3, 
+      insurerName: "Dubai Insurance Company", 
+      insurerLogo: "/lovable-uploads/bdde1c6a-a5e3-472f-8114-0bc05f7a216d.png",
+      basePremium: 4500, 
+      riskLoading: 850, 
+      additionalCoverage: 350, 
+      totalPremium: 5700,
+      validityDays: 30
+    },
+    { 
+      id: 4, 
+      insurerName: "Abu Dhabi National Insurance", 
+      insurerLogo: "/lovable-uploads/d633d0c0-4f36-4381-a851-f0dbdc843253.png",
+      basePremium: 4100, 
+      riskLoading: 780, 
+      additionalCoverage: 280, 
+      totalPremium: 5160,
+      validityDays: 30
+    }
+  ];
+
+  const handleQuoteSelection = (quoteId: number) => {
+    setSelectedQuotes(prev => {
+      if (prev.includes(quoteId)) {
+        return prev.filter(id => id !== quoteId);
+      } else if (prev.length < 2) {
+        return [...prev, quoteId];
+      } else {
+        toast({
+          title: "Selection Limit",
+          description: "You can only select up to 2 quotes for comparison.",
+          variant: "destructive"
+        });
+        return prev;
+      }
+    });
+  };
+
+  const handleCompareQuotes = () => {
+    if (selectedQuotes.length !== 2) {
+      toast({
+        title: "Selection Required",
+        description: "Please select exactly 2 quotes to compare.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    toast({
+      title: "Compare Quotes",
+      description: `Comparing quotes from ${selectedQuotes.length} insurers.`,
+    });
+    console.log("Comparing quotes:", selectedQuotes);
+  };
+
+  const handleDownloadQuote = (insurerName: string) => {
+    toast({
+      title: "Download Started",
+      description: `Downloading quote from ${insurerName}...`,
+    });
+    console.log("Downloading quote for:", insurerName);
+  };
 
   // Define the 5 steps matching the design
   const steps = [
@@ -50,8 +137,8 @@ export const PIProposalForm = ({
       icon: Users
     },
     {
-      id: "quote",
-      label: "Generate Quote",
+      id: "quotes",
+      label: "Quotes",
       icon: CheckCircle
     }
   ];
@@ -847,75 +934,97 @@ export const PIProposalForm = ({
           </TabsContent>
         );
 
-      case 4: // Generate Quote
+      case 4: // Quotes
         return (
-          <TabsContent value="quote" className="space-y-6">
-            <div className="bg-white rounded-lg border p-6">
-              <h3 className="text-xl font-bold mb-4">Your Professional Indemnity Quote</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-3">Coverage Details</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Professional Practice Name:</span>
-                      <span>{formData.companyName || "Not Provided"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Profession Type:</span>
-                      <span>{formData.businessType || "Not Selected"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Limit of Indemnity:</span>
-                      <span>{formData.limitOfIndemnity ? `AED ${formatNumberWithCommas(formData.limitOfIndemnity)}` : "Not Selected"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Deductible:</span>
-                      <span>{formData.deductible ? `AED ${formatNumberWithCommas(formData.deductible)}` : "Not Selected"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Policy Period:</span>
-                      <span>{formData.policyPeriod || "Not Selected"}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">Premium Breakdown</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Base Premium:</span>
-                      <span>AED 4,000</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Risk Loading:</span>
-                      <span>AED 750</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Additional Coverage:</span>
-                      <span>AED 250</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold text-primary">
-                      <span>Total Annual Premium:</span>
-                      <span>AED 5,000</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-3">
-                <Button className="w-full bg-primary hover:bg-primary/90">
-                  Accept Quote & Generate Policy
-                </Button>
-                <Button variant="outline" className="w-full">
-                  Download Quote PDF
+          <TabsContent value="quotes" className="space-y-6">
+            {/* Compare Button */}
+            {selectedQuotes.length > 0 && (
+              <div className="flex justify-end">
+                <Button 
+                  onClick={handleCompareQuotes}
+                  disabled={selectedQuotes.length !== 2}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Compare Selected Quotes ({selectedQuotes.length}/2)
                 </Button>
               </div>
+            )}
 
-              <p className="text-xs text-muted-foreground mt-4 text-center">
-                Quote valid for 30 days. Final premium subject to underwriting approval.
-              </p>
+            {/* Quotes List */}
+            <div className="space-y-4">
+              {mockQuotes.map((quote) => (
+                <Card key={quote.id} className={`border-2 transition-all ${selectedQuotes.includes(quote.id) ? 'border-primary bg-primary/5' : 'border-border'}`}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      {/* Checkbox */}
+                      <Checkbox
+                        checked={selectedQuotes.includes(quote.id)}
+                        onCheckedChange={() => handleQuoteSelection(quote.id)}
+                        className="mt-1"
+                      />
+
+                      {/* Insurer Logo */}
+                      <div className="flex-shrink-0">
+                        <img 
+                          src={quote.insurerLogo} 
+                          alt={quote.insurerName}
+                          className="w-16 h-16 object-contain rounded-lg border bg-white p-2"
+                        />
+                      </div>
+
+                      {/* Quote Details */}
+                      <div className="flex-1">
+                        <h4 className="text-lg font-semibold mb-3">{quote.insurerName}</h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Base Premium:</span>
+                              <span>AED {formatNumberWithCommas(quote.basePremium.toString())}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Risk Loading:</span>
+                              <span>AED {formatNumberWithCommas(quote.riskLoading.toString())}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Additional Coverage:</span>
+                              <span>AED {formatNumberWithCommas(quote.additionalCoverage.toString())}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center text-lg font-bold text-primary">
+                              <span>Total Premium:</span>
+                              <span>AED {formatNumberWithCommas(quote.totalPremium.toString())}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Quote valid for {quote.validityDays} days
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Download Button */}
+                      <div className="flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadQuote(quote.insurerName)}
+                          className="gap-2"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
+
+            <p className="text-xs text-muted-foreground text-center mt-6">
+              Select up to 2 quotes to compare side by side. All quotes are subject to final underwriting approval.
+            </p>
           </TabsContent>
         );
 
@@ -958,14 +1067,10 @@ export const PIProposalForm = ({
                 </Button>
               )}
               
-              {/* Next/Submit Button */}
-              {currentStep < steps.length - 1 ? (
+              {/* Next Button */}
+              {currentStep < steps.length - 1 && (
                 <Button onClick={handleNext}>
                   Next
-                </Button>
-              ) : (
-                <Button onClick={handleSubmit}>
-                  Generate Quote
                 </Button>
               )}
             </div>
