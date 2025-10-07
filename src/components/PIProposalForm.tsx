@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { User, Briefcase, Shield, FileText, CheckCircle, Building, MapPin, Calendar, DollarSign, Plus, Trash2, Folder, Users, Circle, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatNumberWithCommas, removeCommasFromNumber, handleNumberInputChange } from "@/utils/numberFormat";
+import { DocumentUpload } from "@/components/DocumentUpload";
 
 interface PIProposalFormProps {
   onStepChange?: (step: number) => void;
@@ -23,10 +25,35 @@ export const PIProposalForm = ({
   onQuoteReferenceChange,
   onStepCompletionChange 
 }: PIProposalFormProps = {}) => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [selectedQuotes, setSelectedQuotes] = useState<number[]>([]);
   const { toast } = useToast();
+
+  // PI-specific document types (mock data)
+  const [piDocuments, setPiDocuments] = useState([
+    {
+      id: 1,
+      name: "Professional License & Registration",
+      description: "Valid professional license and registration documents",
+      required: true,
+      status: "pending" as const,
+      fileSize: null,
+      fileName: undefined,
+      fileUrl: undefined
+    },
+    {
+      id: 2,
+      name: "Claims History Report",
+      description: "Detailed report of past claims and incidents (if any)",
+      required: false,
+      status: "pending" as const,
+      fileSize: null,
+      fileName: undefined,
+      fileUrl: undefined
+    }
+  ]);
 
   // Mock quotes from different insurers
   const mockQuotes = [
@@ -114,7 +141,43 @@ export const PIProposalForm = ({
     console.log("Downloading quote for:", insurerName);
   };
 
-  // Define the 5 steps matching the design
+  const handleSelectPlan = (insurerName: string, premium: number) => {
+    const selectedQuote = mockQuotes.find(q => q.insurerName === insurerName && q.totalPremium === premium);
+    
+    // Prepare data to pass to success page
+    const piSuccessData = {
+      quoteReference: 'PI-2024-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+      insurerName: selectedQuote?.insurerName || insurerName,
+      insurerLogo: selectedQuote?.insurerLogo || '',
+      totalPremium: premium,
+      professionalInfo: {
+        companyName: formData.companyName,
+        professionType: formData.professionType,
+        businessDescription: formData.professionalServicesDescription,
+        businessAddress: formData.practiceAddress,
+        yearsInBusiness: formData.yearsInPractice,
+        annualRevenue: formData.annualFeeIncome,
+        numberOfEmployees: formData.numberOfEmployees
+      },
+      coverageDetails: {
+        limitOfIndemnity: formData.limitOfIndemnity,
+        deductible: formData.deductible,
+        policyPeriod: formData.policyPeriod,
+        retroactiveCoverage: formData.retroactiveCoverage,
+        additionalCoverages: formData.additionalCoverages
+      },
+      riskProfile: {
+        previousInsurer: formData.previousInsurer,
+        yearsWithPreviousInsurer: formData.yearsWithPreviousInsurer,
+        lossesInLastFiveYears: formData.lossesInLastFiveYears
+      }
+    };
+    
+    // Navigate to PI Success page with data
+    navigate('/customer/pi-success', { state: piSuccessData });
+  };
+
+  // Define the 6 steps matching the design
   const steps = [
     {
       id: "business",
@@ -135,6 +198,11 @@ export const PIProposalForm = ({
       id: "claims",
       label: "Claims History",
       icon: Users
+    },
+    {
+      id: "documents",
+      label: "Required Documents",
+      icon: FileText
     },
     {
       id: "quotes",
@@ -934,7 +1002,34 @@ export const PIProposalForm = ({
           </TabsContent>
         );
 
-      case 4: // Quotes
+      case 4: // Required Documents
+        return (
+          <TabsContent value="documents" className="space-y-6">
+            <div className="bg-card rounded-lg border p-6">
+              <div className="text-left mb-6">
+                <h2 className="text-lg font-semibold text-foreground mb-1">
+                  Upload Required Documents
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Please upload documents needed for underwriting
+                </p>
+              </div>
+              <DocumentUpload 
+                documents={piDocuments}
+                onDocumentStatusChange={(updatedDocuments) => {
+                  // Update PI documents state with new statuses
+                  setPiDocuments(updatedDocuments);
+                  console.log("PI Documents updated:", updatedDocuments);
+                }}
+                onDocumentTypesLoaded={(documentTypes) => {
+                  console.log("Document types loaded:", documentTypes);
+                }}
+              />
+            </div>
+          </TabsContent>
+        );
+
+      case 5: // Quotes
         return (
           <TabsContent value="quotes" className="space-y-6">
             {/* Compare Button */}
@@ -955,65 +1050,44 @@ export const PIProposalForm = ({
               {mockQuotes.map((quote) => (
                 <Card key={quote.id} className={`border-2 transition-all ${selectedQuotes.includes(quote.id) ? 'border-primary bg-primary/5' : 'border-border'}`}>
                   <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      {/* Checkbox */}
-                      <Checkbox
-                        checked={selectedQuotes.includes(quote.id)}
-                        onCheckedChange={() => handleQuoteSelection(quote.id)}
-                        className="mt-1"
-                      />
-
-                      {/* Insurer Logo */}
-                      <div className="flex-shrink-0">
-                        <img 
-                          src={quote.insurerLogo} 
-                          alt={quote.insurerName}
-                          className="w-16 h-16 object-contain rounded-lg border bg-white p-2"
+                    <div className="flex items-center justify-between gap-6">
+                      {/* Left: Checkbox and Insurer Name */}
+                      <div className="flex items-center gap-4 flex-1">
+                        <Checkbox
+                          checked={selectedQuotes.includes(quote.id)}
+                          onCheckedChange={() => handleQuoteSelection(quote.id)}
                         />
+                        <h4 className="text-lg font-semibold">{quote.insurerName}</h4>
                       </div>
 
-                      {/* Quote Details */}
-                      <div className="flex-1">
-                        <h4 className="text-lg font-semibold mb-3">{quote.insurerName}</h4>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Base Premium:</span>
-                              <span>AED {formatNumberWithCommas(quote.basePremium.toString())}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Risk Loading:</span>
-                              <span>AED {formatNumberWithCommas(quote.riskLoading.toString())}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Additional Coverage:</span>
-                              <span>AED {formatNumberWithCommas(quote.additionalCoverage.toString())}</span>
-                            </div>
+                      {/* Right: Premium, Validity and Buttons */}
+                      <div className="flex items-center gap-6">
+                        {/* Premium and Validity */}
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary">
+                            AED {formatNumberWithCommas(quote.totalPremium.toString())}
                           </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center text-lg font-bold text-primary">
-                              <span>Total Premium:</span>
-                              <span>AED {formatNumberWithCommas(quote.totalPremium.toString())}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Quote valid for {quote.validityDays} days
-                            </p>
-                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Valid for {quote.validityDays} days
+                          </p>
                         </div>
-                      </div>
 
-                      {/* Download Button */}
-                      <div className="flex-shrink-0">
+                        {/* Download Quote Button */}
                         <Button
                           variant="outline"
-                          size="sm"
                           onClick={() => handleDownloadQuote(quote.insurerName)}
                           className="gap-2"
                         >
                           <Download className="w-4 h-4" />
-                          Download
+                          Download Quote
+                        </Button>
+
+                        {/* Select Plan Button */}
+                        <Button
+                          onClick={() => handleSelectPlan(quote.insurerName, quote.totalPremium)}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          Select Plan
                         </Button>
                       </div>
                     </div>

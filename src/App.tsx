@@ -24,6 +24,7 @@ import Documents from "./pages/Documents";
 // Declaration component removed - now using DeclarationTab in ProposalForm
 import Payment from "./pages/Payment";
 import Success from "./pages/Success";
+import PISuccess from "./pages/PISuccess";
 import InsurerDashboard from "./pages/InsurerDashboard";
 import QuoteDetails from "./pages/QuoteDetails";
 import PolicyDetails from "./pages/PolicyDetails";
@@ -138,6 +139,7 @@ const App = () => (
           {/* Declaration route removed - now handled within ProposalForm */}
           <Route path="/customer/payment" element={<Payment />} />
           <Route path="/customer/success" element={<Success />} />
+          <Route path="/customer/pi-success" element={<PISuccess />} />
           {/* Insurer Routes */}
           <Route path="/insurer" element={<InsurerLayout />}>
             <Route index element={<InsurerDashboard />} />
