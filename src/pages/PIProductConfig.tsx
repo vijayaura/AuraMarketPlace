@@ -165,13 +165,13 @@ const PIProductConfig = () => {
   const [activePricingTab, setActivePricingTab] = useState("base-rates");
   const [pricingConfig, setPricingConfig] = useState({
     baseRates: [
-      { id: 1, profession: "Consulting Services", riskType: "low", pricingType: "percentage", baseRate: "0.30", quoteOption: "quote" },
-      { id: 2, profession: "Legal Services", riskType: "mid", pricingType: "percentage", baseRate: "0.45", quoteOption: "quote" },
-      { id: 3, profession: "Accounting & Finance", riskType: "low", pricingType: "percentage", baseRate: "0.35", quoteOption: "quote" },
-      { id: 4, profession: "Architecture & Engineering", riskType: "high", pricingType: "percentage", baseRate: "0.55", quoteOption: "quote" },
-      { id: 5, profession: "IT Services", riskType: "mid", pricingType: "percentage", baseRate: "0.40", quoteOption: "quote" },
-      { id: 6, profession: "Medical Services", riskType: "very-high", pricingType: "percentage", baseRate: "0.75", quoteOption: "quote" },
-      { id: 7, profession: "Other Professional Services", riskType: "mid", pricingType: "percentage", baseRate: "0.40", quoteOption: "quote" }
+      { id: 1, profession: "Consulting Services", pricingType: "percentage", baseRate: "0.30", quoteOption: "quote" },
+      { id: 2, profession: "Legal Services", pricingType: "percentage", baseRate: "0.45", quoteOption: "quote" },
+      { id: 3, profession: "Accounting & Finance", pricingType: "percentage", baseRate: "0.35", quoteOption: "quote" },
+      { id: 4, profession: "Architecture & Engineering", pricingType: "percentage", baseRate: "0.55", quoteOption: "quote" },
+      { id: 5, profession: "IT Services", pricingType: "percentage", baseRate: "0.40", quoteOption: "quote" },
+      { id: 6, profession: "Medical Services", pricingType: "percentage", baseRate: "0.75", quoteOption: "quote" },
+      { id: 7, profession: "Other Professional Services", pricingType: "percentage", baseRate: "0.40", quoteOption: "quote" }
     ],
     minimumPremiums: [
       { id: 1, profession: "Consulting Services", riskType: "low", pricingType: "fixed", minimumPremium: "3000", quoteOption: "quote" },
@@ -182,11 +182,39 @@ const PIProductConfig = () => {
       { id: 6, profession: "Medical Services", riskType: "very-high", pricingType: "fixed", minimumPremium: "8000", quoteOption: "quote" },
       { id: 7, profession: "Other Professional Services", riskType: "mid", pricingType: "fixed", minimumPremium: "4000", quoteOption: "quote" }
     ],
-    limitOfIndemnity: [
+    feeIncome: [
+      { id: 1, from: 0, to: 500000, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+      { id: 2, from: 500000, to: 1000000, pricingType: 'percentage', loadingDiscount: 5, quoteOption: 'quote' },
+      { id: 3, from: 1000000, to: 2500000, pricingType: 'percentage', loadingDiscount: 10, quoteOption: 'quote' },
+      { id: 4, from: 2500000, to: 999999999, pricingType: 'percentage', loadingDiscount: 15, quoteOption: 'quote' }
+    ],
+    coverages: [
       { id: 1, from: 0, to: 500000, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
       { id: 2, from: 500000, to: 1000000, pricingType: 'percentage', loadingDiscount: 5, quoteOption: 'quote' },
       { id: 3, from: 1000000, to: 5000000, pricingType: 'percentage', loadingDiscount: 10, quoteOption: 'quote' },
       { id: 4, from: 5000000, to: 999999999, pricingType: 'percentage', loadingDiscount: 15, quoteOption: 'quote' }
+    ],
+    policyPeriodRanges: [
+      { id: 1, from: 1, to: 6, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+      { id: 2, from: 7, to: 12, pricingType: 'percentage', loadingDiscount: -5, quoteOption: 'quote' },
+      { id: 3, from: 13, to: 24, pricingType: 'percentage', loadingDiscount: -10, quoteOption: 'quote' },
+      { id: 4, from: 25, to: 999, pricingType: 'percentage', loadingDiscount: -15, quoteOption: 'quote' }
+    ],
+    retroactiveCoverage: [
+      { id: 1, from: 0, to: 12, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+      { id: 2, from: 13, to: 24, pricingType: 'percentage', loadingDiscount: 5, quoteOption: 'quote' },
+      { id: 3, from: 25, to: 60, pricingType: 'percentage', loadingDiscount: 15, quoteOption: 'quote' },
+      { id: 4, from: 61, to: 999, pricingType: 'percentage', loadingDiscount: 25, quoteOption: 'quote' }
+    ],
+    additionalCoverages: [
+      { id: 1, profession: "Consulting Services", title: "Cyber Liability Coverage", subtitle: "Protection against data breaches", pricingType: "fixed", value: "2000" },
+      { id: 2, profession: "Legal Services", title: "Extended Defense Costs", subtitle: "Additional legal defense coverage", pricingType: "percentage", value: "0.15" },
+      { id: 3, profession: "IT Services", title: "Data Recovery Coverage", subtitle: "Coverage for data recovery expenses", pricingType: "fixed", value: "5000" }
+    ],
+    feeTypes: [
+      { id: 1, label: "VAT", pricingType: "percentage", value: "5", status: "active" },
+      { id: 2, label: "Policy Fee", pricingType: "fixed", value: "100", status: "active" },
+      { id: 3, label: "Stamp Duty", pricingType: "percentage", value: "0.5", status: "active" }
     ],
     limits: {
       maximumCover: 10000000,
@@ -197,8 +225,8 @@ const PIProductConfig = () => {
     },
     coverRequirements: {
       deductibles: [
-        { id: 1, deductibleType: "fixed", value: "5000", quoteOption: "quote", loadingDiscount: "0" },
-        { id: 2, deductibleType: "percentage_loss", value: "10", quoteOption: "quote", loadingDiscount: "5" }
+        { id: 1, value: "5000", quoteOption: "quote", loadingDiscount: "0" },
+        { id: 2, value: "10000", quoteOption: "quote", loadingDiscount: "5" }
       ]
     },
     // Risk Factors (similar to contractor risk factors in CAR)
@@ -208,6 +236,18 @@ const PIProductConfig = () => {
         { id: 2, from: 2, to: 5, pricingType: 'percentage', loadingDiscount: 10, quoteOption: 'quote' },
         { id: 3, from: 5, to: 10, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
         { id: 4, from: 10, to: 999, pricingType: 'percentage', loadingDiscount: -10, quoteOption: 'quote' }
+      ],
+      employeeCounts: [
+        { id: 1, from: 1, to: 5, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 2, from: 6, to: 20, pricingType: 'percentage', loadingDiscount: 5, quoteOption: 'quote' },
+        { id: 3, from: 21, to: 50, pricingType: 'percentage', loadingDiscount: 10, quoteOption: 'quote' },
+        { id: 4, from: 51, to: 999, pricingType: 'percentage', loadingDiscount: 15, quoteOption: 'quote' }
+      ],
+      policyPeriod: [
+        { id: 1, from: 1, to: 6, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 2, from: 7, to: 12, pricingType: 'percentage', loadingDiscount: -5, quoteOption: 'quote' },
+        { id: 3, from: 13, to: 24, pricingType: 'percentage', loadingDiscount: -10, quoteOption: 'quote' },
+        { id: 4, from: 25, to: 999, pricingType: 'percentage', loadingDiscount: -15, quoteOption: 'quote' }
       ],
       claimFrequency: [
         { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
@@ -372,30 +412,165 @@ const PIProductConfig = () => {
     }));
   };
 
-  // Limit of Indemnity helper functions
-  const addLimitOfIndemnityEntry = () => {
+  // Fee Income helper functions
+  const addFeeIncomeEntry = () => {
     setPricingConfig(prev => ({
       ...prev,
-      limitOfIndemnity: [
-        ...prev.limitOfIndemnity,
+      feeIncome: [
+        ...prev.feeIncome,
         { id: Date.now(), from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' }
       ]
     }));
   };
 
-  const updateLimitOfIndemnityEntry = (id: number, field: string, value: any) => {
+  const updateFeeIncomeEntry = (id: number, field: string, value: any) => {
     setPricingConfig(prev => ({
       ...prev,
-      limitOfIndemnity: prev.limitOfIndemnity.map(entry =>
+      feeIncome: prev.feeIncome.map(entry =>
         entry.id === id ? { ...entry, [field]: value } : entry
       )
     }));
   };
 
-  const removeLimitOfIndemnityEntry = (id: number) => {
+  const removeFeeIncomeEntry = (id: number) => {
     setPricingConfig(prev => ({
       ...prev,
-      limitOfIndemnity: prev.limitOfIndemnity.filter(entry => entry.id !== id)
+      feeIncome: prev.feeIncome.filter(entry => entry.id !== id)
+    }));
+  };
+
+  // Coverages helper functions
+  const addCoveragesEntry = () => {
+    setPricingConfig(prev => ({
+      ...prev,
+      coverages: [
+        ...prev.coverages,
+        { id: Date.now(), from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' }
+      ]
+    }));
+  };
+
+  const updateCoveragesEntry = (id: number, field: string, value: any) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      coverages: prev.coverages.map(entry =>
+        entry.id === id ? { ...entry, [field]: value } : entry
+      )
+    }));
+  };
+
+  const removeCoveragesEntry = (id: number) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      coverages: prev.coverages.filter(entry => entry.id !== id)
+    }));
+  };
+
+  // Policy Period Ranges helper functions
+  const addPolicyPeriodRangesEntry = () => {
+    setPricingConfig(prev => ({
+      ...prev,
+      policyPeriodRanges: [
+        ...prev.policyPeriodRanges,
+        { id: Date.now(), from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' }
+      ]
+    }));
+  };
+
+  const updatePolicyPeriodRangesEntry = (id: number, field: string, value: any) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      policyPeriodRanges: prev.policyPeriodRanges.map(entry =>
+        entry.id === id ? { ...entry, [field]: value } : entry
+      )
+    }));
+  };
+
+  const removePolicyPeriodRangesEntry = (id: number) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      policyPeriodRanges: prev.policyPeriodRanges.filter(entry => entry.id !== id)
+    }));
+  };
+
+  // Retroactive Coverage helper functions
+  const addRetroactiveCoverageEntry = () => {
+    setPricingConfig(prev => ({
+      ...prev,
+      retroactiveCoverage: [
+        ...prev.retroactiveCoverage,
+        { id: Date.now(), from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' }
+      ]
+    }));
+  };
+
+  const updateRetroactiveCoverageEntry = (id: number, field: string, value: any) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      retroactiveCoverage: prev.retroactiveCoverage.map(entry =>
+        entry.id === id ? { ...entry, [field]: value } : entry
+      )
+    }));
+  };
+
+  const removeRetroactiveCoverageEntry = (id: number) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      retroactiveCoverage: prev.retroactiveCoverage.filter(entry => entry.id !== id)
+    }));
+  };
+
+  // Additional Coverages helper functions
+  const addAdditionalCoveragesEntry = () => {
+    setPricingConfig(prev => ({
+      ...prev,
+      additionalCoverages: [
+        ...prev.additionalCoverages,
+        { id: Date.now(), profession: "Consulting Services", title: "", subtitle: "", pricingType: 'fixed', value: "0" }
+      ]
+    }));
+  };
+
+  const updateAdditionalCoveragesEntry = (id: number, field: string, value: any) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      additionalCoverages: prev.additionalCoverages.map(entry =>
+        entry.id === id ? { ...entry, [field]: value } : entry
+      )
+    }));
+  };
+
+  const removeAdditionalCoveragesEntry = (id: number) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      additionalCoverages: prev.additionalCoverages.filter(entry => entry.id !== id)
+    }));
+  };
+
+  // Fee Types helper functions
+  const addFeeTypeEntry = () => {
+    setPricingConfig(prev => ({
+      ...prev,
+      feeTypes: [
+        ...prev.feeTypes,
+        { id: Date.now(), label: "", pricingType: "percentage", value: "0", status: "active" }
+      ]
+    }));
+  };
+
+  const updateFeeTypeEntry = (id: number, field: string, value: any) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      feeTypes: prev.feeTypes.map(entry =>
+        entry.id === id ? { ...entry, [field]: value } : entry
+      )
+    }));
+  };
+
+  const removeFeeTypeEntry = (id: number) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      feeTypes: prev.feeTypes.filter(entry => entry.id !== id)
     }));
   };
 
@@ -448,7 +623,7 @@ const PIProductConfig = () => {
     
     const newEntry = category === 'subLimits'
       ? { id: newId, title: "", description: "", value: "0", pricingType: "fixed" }
-      : { id: newId, deductibleType: "fixed", value: "0", quoteOption: "quote", loadingDiscount: "0" };
+      : { id: newId, value: "0", quoteOption: "quote", loadingDiscount: "0" };
 
     setPricingConfig(prev => ({
       ...prev,
@@ -488,57 +663,57 @@ const PIProductConfig = () => {
       <div className="border-b bg-card">
         <div className="max-w-[95%] mx-auto px-2 sm:px-3 lg:px-4">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
                 size="sm"
                 onClick={() => navigate(`${basePath}/product-config`)}
-              >
+            >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Product Management
-              </Button>
-              <div>
+            </Button>
+            <div>
                 <h1 className="text-xl font-semibold text-foreground">Professional Indemnity Insurance - Product Configuration</h1>
                 <p className="text-sm text-muted-foreground">PI</p>
               </div>
             </div>
+            </div>
           </div>
         </div>
-      </div>
 
       <div className="flex-1">
         <div className="max-w-[95%] mx-auto px-2 sm:px-3 lg:px-4 py-8">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="quote-config" className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Quote Coverage
-              </TabsTrigger>
-              <TabsTrigger value="pricing" className="flex items-center gap-2">
-                <Calculator className="w-4 h-4" />
-                Pricing Configurator
-              </TabsTrigger>
+              <FileText className="w-4 h-4" />
+              Quote Coverage
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="flex items-center gap-2">
+              <Calculator className="w-4 h-4" />
+              Pricing Configurator
+            </TabsTrigger>
               <TabsTrigger value="wording" className="flex items-center gap-2">
                 <Upload className="w-4 h-4" />
                 Wording Configurations
-              </TabsTrigger>
-              <TabsTrigger value="quote-format" className="flex items-center gap-2">
-                <Layout className="w-4 h-4" />
-                Quote Format
-              </TabsTrigger>
-              <TabsTrigger value="required-documents" className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Required Documents
-              </TabsTrigger>
-            </TabsList>
+            </TabsTrigger>
+            <TabsTrigger value="quote-format" className="flex items-center gap-2">
+              <Layout className="w-4 h-4" />
+              Quote Format
+            </TabsTrigger>
+            <TabsTrigger value="required-documents" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Required Documents
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Quote Coverage Tab */}
+          {/* Quote Coverage Tab */}
             <TabsContent value="quote-config" className="space-y-6">
-              <Card>
-                <CardHeader>
+            <Card>
+              <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Quote Coverage Configuration</CardTitle>
+                <CardTitle>Quote Coverage Configuration</CardTitle>
                       <CardDescription>Configure quotation coverage, validity, and operating regions</CardDescription>
                     </div>
                     <Button
@@ -560,7 +735,7 @@ const PIProductConfig = () => {
                       )}
                     </Button>
                   </div>
-                </CardHeader>
+              </CardHeader>
                 <CardContent className="space-y-4">
                   {isLoading ? (
                     <div className="space-y-6">
@@ -569,7 +744,7 @@ const PIProductConfig = () => {
                         <div className="space-y-2">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
                           <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                        </div>
+                </div>
                         <div className="space-y-2">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-36"></div>
                           <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
@@ -752,14 +927,14 @@ const PIProductConfig = () => {
                       </div>
                     </>
                   )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            {/* Pricing Configurator Tab */}
-            <TabsContent value="pricing" className="space-y-6">
-              <Card>
-                <CardHeader>
+          {/* Pricing Configurator Tab */}
+          <TabsContent value="pricing" className="space-y-6">
+            <Card>
+              <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
@@ -773,8 +948,8 @@ const PIProductConfig = () => {
                       {isSaving ? 'Saving...' : 'Save Pricing Configuration'}
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent>
+              </CardHeader>
+              <CardContent>
                   <div className="flex gap-6 h-[calc(100vh-20rem)] overflow-scroll custom-scrollbars">
                     {/* Sidebar Navigation */}
                     <div className="w-64 bg-muted/30 rounded-lg p-4 overflow-y-scroll custom-scrollbars">
@@ -782,10 +957,13 @@ const PIProductConfig = () => {
                       <div className="space-y-2">
                         {[
                           { id: "base-rates", label: "Base Rates by Profession" },
-                          { id: "minimum-premiums", label: "Minimum Premium by Profession" },
-                          { id: "limit-of-indemnity", label: "Limit of Indemnity" },
+                          { id: "minimum-premiums", label: "Min. Premium by Profession" },
+                          { id: "fee-income", label: "Fee Income" },
+                          { id: "coverages", label: "Coverages" },
+                          { id: "additional-coverages", label: "Additional Coverages" },
                           { id: "risk-factors", label: "Risk Factors" },
-                          { id: "limits-deductibles", label: "Policy Limits & Deductibles" }
+                          { id: "limits-deductibles", label: "Policy Limits & Deductibles" },
+                          { id: "fee-types", label: "Fee Types" }
                         ].map((section) => (
                           <button
                             key={section.id}
@@ -816,17 +994,16 @@ const PIProductConfig = () => {
                               <div className="rounded-md border border-blue-200 bg-blue-50 text-blue-700 px-4 py-3 mb-4">
                                 <p className="font-medium">No base rates configured</p>
                                 <p className="text-sm mt-1">Configure rates for professional categories below.</p>
-                              </div>
+                    </div>
                             )}
 
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>Profession Type</TableHead>
-                                  <TableHead>Risk Type</TableHead>
-                                  <TableHead>Pricing Type</TableHead>
-                                  <TableHead>Base Rate</TableHead>
-                                  <TableHead>Quote Option</TableHead>
+                                  <TableHead className="w-1/4">Profession Type</TableHead>
+                                  <TableHead className="w-1/4">Pricing Type</TableHead>
+                                  <TableHead className="w-1/4">Base Rate</TableHead>
+                                  <TableHead className="w-1/4">Quote</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -835,26 +1012,10 @@ const PIProductConfig = () => {
                                     <TableCell className="font-medium">{rate.profession}</TableCell>
                                     <TableCell>
                                       <Select
-                                        value={rate.riskType}
-                                        onValueChange={(value) => updateBaseRate(rate.id, 'riskType', value)}
-                                      >
-                                        <SelectTrigger className="w-[140px]">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="low">Low</SelectItem>
-                                          <SelectItem value="mid">Mid</SelectItem>
-                                          <SelectItem value="high">High</SelectItem>
-                                          <SelectItem value="very-high">Very High</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </TableCell>
-                                    <TableCell>
-                                      <Select
                                         value={rate.pricingType}
                                         onValueChange={(value) => updateBaseRate(rate.id, 'pricingType', value)}
                                       >
-                                        <SelectTrigger className="w-[140px]">
+                                        <SelectTrigger className="w-full">
                                           <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -870,7 +1031,7 @@ const PIProductConfig = () => {
                                         value={rate.baseRate}
                                         onChange={(e) => updateBaseRate(rate.id, 'baseRate', e.target.value)}
                                         placeholder="0.00"
-                                        className="w-32"
+                                        className="w-full"
                                       />
                                     </TableCell>
                                     <TableCell>
@@ -878,7 +1039,7 @@ const PIProductConfig = () => {
                                         value={rate.quoteOption}
                                         onValueChange={(value) => updateBaseRate(rate.id, 'quoteOption', value)}
                                       >
-                                        <SelectTrigger className="w-[140px]">
+                                        <SelectTrigger className="w-full">
                                           <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -985,19 +1146,19 @@ const PIProductConfig = () => {
                         </Card>
                       )}
 
-                      {/* Limit of Indemnity Tab */}
-                      {activePricingTab === "limit-of-indemnity" && (
+                      {/* Fee Income Tab */}
+                      {activePricingTab === "fee-income" && (
                         <Card className="border border-border bg-card">
                           <CardHeader className="pb-3 flex flex-row items-center justify-between">
                             <div>
-                              <CardTitle className="text-sm">Limit of Indemnity</CardTitle>
-                              <p className="text-xs text-muted-foreground">Rate based on limit of indemnity ranges (AED)</p>
+                              <CardTitle className="text-sm">Fee Income</CardTitle>
+                              <p className="text-xs text-muted-foreground">Rate based on annual fee income ranges (AED)</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={addLimitOfIndemnityEntry}
+                                onClick={addFeeIncomeEntry}
                               >
                                 Add Row
                               </Button>
@@ -1016,13 +1177,13 @@ const PIProductConfig = () => {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {pricingConfig.limitOfIndemnity.map((entry: any) => (
+                                {pricingConfig.feeIncome.map((entry: any) => (
                                   <TableRow key={entry.id}>
                                     <TableCell>
                                       <Input
                                         type="number"
                                         value={entry.from}
-                                        onChange={(e) => updateLimitOfIndemnityEntry(entry.id, 'from', parseFloat(e.target.value) || 0)}
+                                        onChange={(e) => updateFeeIncomeEntry(entry.id, 'from', parseFloat(e.target.value) || 0)}
                                         className="w-full"
                                       />
                                     </TableCell>
@@ -1030,14 +1191,14 @@ const PIProductConfig = () => {
                                       <Input
                                         type="number"
                                         value={entry.to}
-                                        onChange={(e) => updateLimitOfIndemnityEntry(entry.id, 'to', parseFloat(e.target.value) || 0)}
+                                        onChange={(e) => updateFeeIncomeEntry(entry.id, 'to', parseFloat(e.target.value) || 0)}
                                         className="w-full"
                                       />
                                     </TableCell>
                                     <TableCell>
                                       <Select 
                                         value={entry.pricingType} 
-                                        onValueChange={(value) => updateLimitOfIndemnityEntry(entry.id, 'pricingType', value)}
+                                        onValueChange={(value) => updateFeeIncomeEntry(entry.id, 'pricingType', value)}
                                       >
                                         <SelectTrigger className="w-full">
                                           <SelectValue />
@@ -1053,14 +1214,14 @@ const PIProductConfig = () => {
                                         type="number"
                                         step="0.01"
                                         value={entry.loadingDiscount}
-                                        onChange={(e) => updateLimitOfIndemnityEntry(entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                                        onChange={(e) => updateFeeIncomeEntry(entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
                                         className="w-full"
                                       />
                                     </TableCell>
                                     <TableCell>
                                       <Select 
                                         value={entry.quoteOption} 
-                                        onValueChange={(value) => updateLimitOfIndemnityEntry(entry.id, 'quoteOption', value)}
+                                        onValueChange={(value) => updateFeeIncomeEntry(entry.id, 'quoteOption', value)}
                                       >
                                         <SelectTrigger className="w-full">
                                           <SelectValue />
@@ -1075,7 +1236,7 @@ const PIProductConfig = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeLimitOfIndemnityEntry(entry.id)}
+                                        onClick={() => removeFeeIncomeEntry(entry.id)}
                                         className="text-destructive hover:text-destructive"
                                       >
                                         Remove
@@ -1085,6 +1246,431 @@ const PIProductConfig = () => {
                                 ))}
                               </TableBody>
                             </Table>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Coverages Tab */}
+                      {activePricingTab === "coverages" && (
+                        <div className="space-y-6">
+                          {/* Limit of Indemnity Section */}
+                          <Card className="border border-border bg-card">
+                            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                              <div>
+                                <CardTitle className="text-sm">Limit of Indemnity</CardTitle>
+                                <p className="text-xs text-muted-foreground">Rate based on limit of indemnity ranges (AED)</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={addCoveragesEntry}
+                                >
+                                  Add Row
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-1/6">From (AED)</TableHead>
+                                    <TableHead className="w-1/6">To (AED)</TableHead>
+                                    <TableHead className="w-1/5">Pricing Type</TableHead>
+                                    <TableHead className="w-1/5">Loading/Discount</TableHead>
+                                    <TableHead className="w-1/5">Quote Option</TableHead>
+                                    <TableHead className="w-16">Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {pricingConfig.coverages.map((entry: any) => (
+                                    <TableRow key={entry.id}>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          value={entry.from}
+                                          onChange={(e) => updateCoveragesEntry(entry.id, 'from', parseFloat(e.target.value) || 0)}
+                                          className="w-full"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          value={entry.to}
+                                          onChange={(e) => updateCoveragesEntry(entry.id, 'to', parseFloat(e.target.value) || 0)}
+                                          className="w-full"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Select 
+                                          value={entry.pricingType} 
+                                          onValueChange={(value) => updateCoveragesEntry(entry.id, 'pricingType', value)}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="percentage">Percentage</SelectItem>
+                                            <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          value={entry.loadingDiscount}
+                                          onChange={(e) => updateCoveragesEntry(entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                                          className="w-full"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Select 
+                                          value={entry.quoteOption} 
+                                          onValueChange={(value) => updateCoveragesEntry(entry.id, 'quoteOption', value)}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="quote">Auto Quote</SelectItem>
+                                            <SelectItem value="no-quote">No Quote</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeCoveragesEntry(entry.id)}
+                                          className="text-destructive hover:text-destructive"
+                                        >
+                                          Remove
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </CardContent>
+                          </Card>
+
+                          {/* Policy Period Section */}
+                          <Card className="border border-border bg-card">
+                            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                              <div>
+                                <CardTitle className="text-sm">Policy Period</CardTitle>
+                                <p className="text-xs text-muted-foreground">Rate based on policy period ranges (months)</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={addPolicyPeriodRangesEntry}
+                                >
+                                  Add Row
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-1/6">From (Months)</TableHead>
+                                    <TableHead className="w-1/6">To (Months)</TableHead>
+                                    <TableHead className="w-1/5">Pricing Type</TableHead>
+                                    <TableHead className="w-1/5">Loading/Discount</TableHead>
+                                    <TableHead className="w-1/5">Quote Option</TableHead>
+                                    <TableHead className="w-16">Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {pricingConfig.policyPeriodRanges.map((entry: any) => (
+                                    <TableRow key={entry.id}>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          value={entry.from}
+                                          onChange={(e) => updatePolicyPeriodRangesEntry(entry.id, 'from', parseFloat(e.target.value) || 0)}
+                                          className="w-full"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          value={entry.to}
+                                          onChange={(e) => updatePolicyPeriodRangesEntry(entry.id, 'to', parseFloat(e.target.value) || 0)}
+                                          className="w-full"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Select 
+                                          value={entry.pricingType} 
+                                          onValueChange={(value) => updatePolicyPeriodRangesEntry(entry.id, 'pricingType', value)}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="percentage">Percentage</SelectItem>
+                                            <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          value={entry.loadingDiscount}
+                                          onChange={(e) => updatePolicyPeriodRangesEntry(entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                                          className="w-full"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Select 
+                                          value={entry.quoteOption} 
+                                          onValueChange={(value) => updatePolicyPeriodRangesEntry(entry.id, 'quoteOption', value)}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="quote">Auto Quote</SelectItem>
+                                            <SelectItem value="no-quote">No Quote</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removePolicyPeriodRangesEntry(entry.id)}
+                                          className="text-destructive hover:text-destructive"
+                                        >
+                                          Remove
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </CardContent>
+                          </Card>
+
+                          {/* Retroactive Coverage Section */}
+                          <Card className="border border-border bg-card">
+                            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                              <div>
+                                <CardTitle className="text-sm">Retroactive Coverage</CardTitle>
+                                <p className="text-xs text-muted-foreground">Rate based on retroactive coverage period (months)</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={addRetroactiveCoverageEntry}
+                                >
+                                  Add Row
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-1/6">From (Months)</TableHead>
+                                    <TableHead className="w-1/6">To (Months)</TableHead>
+                                    <TableHead className="w-1/5">Pricing Type</TableHead>
+                                    <TableHead className="w-1/5">Loading/Discount</TableHead>
+                                    <TableHead className="w-1/5">Quote Option</TableHead>
+                                    <TableHead className="w-16">Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {pricingConfig.retroactiveCoverage.map((entry: any) => (
+                                    <TableRow key={entry.id}>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          value={entry.from}
+                                          onChange={(e) => updateRetroactiveCoverageEntry(entry.id, 'from', parseFloat(e.target.value) || 0)}
+                                          className="w-full"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          value={entry.to}
+                                          onChange={(e) => updateRetroactiveCoverageEntry(entry.id, 'to', parseFloat(e.target.value) || 0)}
+                                          className="w-full"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Select 
+                                          value={entry.pricingType} 
+                                          onValueChange={(value) => updateRetroactiveCoverageEntry(entry.id, 'pricingType', value)}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="percentage">Percentage</SelectItem>
+                                            <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          value={entry.loadingDiscount}
+                                          onChange={(e) => updateRetroactiveCoverageEntry(entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                                          className="w-full"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Select 
+                                          value={entry.quoteOption} 
+                                          onValueChange={(value) => updateRetroactiveCoverageEntry(entry.id, 'quoteOption', value)}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="quote">Auto Quote</SelectItem>
+                                            <SelectItem value="no-quote">No Quote</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeRetroactiveCoverageEntry(entry.id)}
+                                          className="text-destructive hover:text-destructive"
+                                        >
+                                          Remove
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      )}
+
+                      {/* Additional Coverages Tab */}
+                      {activePricingTab === "additional-coverages" && (
+                        <Card className="border border-border bg-card">
+                          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                            <div>
+                              <CardTitle className="text-sm">Additional Coverages</CardTitle>
+                              <p className="text-xs text-muted-foreground">Configure additional coverage options by profession</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={addAdditionalCoveragesEntry}
+                              >
+                                Add Row
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {pricingConfig.additionalCoverages.map((entry: any, index: number) => (
+                                <div key={entry.id}>
+                                  <div className="grid grid-cols-12 gap-4 p-4 border border-border rounded-lg bg-card">
+                                    {/* First Row */}
+                                    <div className="col-span-10">
+                                      <Label className="text-xs font-medium mb-1.5 block">Profession</Label>
+                                      <Select 
+                                        value={entry.profession} 
+                                        onValueChange={(value) => updateAdditionalCoveragesEntry(entry.id, 'profession', value)}
+                                      >
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Consulting Services">Consulting Services</SelectItem>
+                                          <SelectItem value="Legal Services">Legal Services</SelectItem>
+                                          <SelectItem value="Accounting & Finance">Accounting & Finance</SelectItem>
+                                          <SelectItem value="Architecture & Engineering">Architecture & Engineering</SelectItem>
+                                          <SelectItem value="IT Services">IT Services</SelectItem>
+                                          <SelectItem value="Medical Services">Medical Services</SelectItem>
+                                          <SelectItem value="Other Professional Services">Other Professional Services</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div className="col-span-2 flex items-end">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => removeAdditionalCoveragesEntry(entry.id)}
+                                        className="w-full text-destructive hover:text-destructive border-destructive/30"
+                                      >
+                                        Remove
+                                      </Button>
+                                    </div>
+
+                                    {/* Second Row */}
+                                    <div className="col-span-6">
+                                      <Label className="text-xs font-medium mb-1.5 block">Title</Label>
+                                      <Input
+                                        type="text"
+                                        value={entry.title}
+                                        onChange={(e) => updateAdditionalCoveragesEntry(entry.id, 'title', e.target.value)}
+                                        className="w-full"
+                                        placeholder="Coverage title"
+                                      />
+                                    </div>
+                                    <div className="col-span-6">
+                                      <Label className="text-xs font-medium mb-1.5 block">Description</Label>
+                                      <Input
+                                        type="text"
+                                        value={entry.subtitle}
+                                        onChange={(e) => updateAdditionalCoveragesEntry(entry.id, 'subtitle', e.target.value)}
+                                        className="w-full"
+                                        placeholder="Coverage description"
+                                      />
+                                    </div>
+
+                                    {/* Third Row */}
+                                    <div className="col-span-6">
+                                      <Label className="text-xs font-medium mb-1.5 block">Pricing Type</Label>
+                                      <Select 
+                                        value={entry.pricingType} 
+                                        onValueChange={(value) => updateAdditionalCoveragesEntry(entry.id, 'pricingType', value)}
+                                      >
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="percentage">Percentage</SelectItem>
+                                          <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div className="col-span-6">
+                                      <Label className="text-xs font-medium mb-1.5 block">Value</Label>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={entry.value}
+                                        onChange={(e) => updateAdditionalCoveragesEntry(entry.id, 'value', e.target.value)}
+                                        className="w-full"
+                                      />
+                                    </div>
+                                  </div>
+                                  {index < pricingConfig.additionalCoverages.length - 1 && (
+                                    <div className="my-4 border-t border-border/50" />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           </CardContent>
                         </Card>
                       )}
@@ -1129,10 +1715,10 @@ const PIProductConfig = () => {
                                       <TableRow>
                                         <TableHead className="w-1/6">From</TableHead>
                                         <TableHead className="w-1/6">To</TableHead>
-                                        <TableHead className="w-1/5">Pricing Type</TableHead>
-                                        <TableHead className="w-1/5">Loading/Discount</TableHead>
-                                        <TableHead className="w-1/5">Quote Option</TableHead>
-                                        <TableHead className="w-16">Actions</TableHead>
+                                        <TableHead className="w-1/6">Pricing Type</TableHead>
+                                        <TableHead className="w-1/6">Loading/Discount</TableHead>
+                                        <TableHead className="w-1/6">Quote Option</TableHead>
+                                        <TableHead className="w-1/6">Actions</TableHead>
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -1208,6 +1794,210 @@ const PIProductConfig = () => {
                                 </CardContent>
                               </Card>
 
+                              {/* Employee Counts */}
+                              <Card className="border border-border bg-card">
+                                <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                                  <div>
+                                    <CardTitle className="text-sm">Employee Counts</CardTitle>
+                                    <p className="text-xs text-muted-foreground">Number of employees</p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => addRiskFactorEntry('employeeCounts')}
+                                    >
+                                      Add Row
+                                    </Button>
+                                  </div>
+                                </CardHeader>
+                                <CardContent>
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead className="w-1/6">From</TableHead>
+                                        <TableHead className="w-1/6">To</TableHead>
+                                        <TableHead className="w-1/6">Pricing Type</TableHead>
+                                        <TableHead className="w-1/6">Loading/Discount</TableHead>
+                                        <TableHead className="w-1/6">Quote Option</TableHead>
+                                        <TableHead className="w-1/6">Actions</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {pricingConfig.riskFactors.employeeCounts.map((entry: any) => (
+                                        <TableRow key={entry.id}>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              value={entry.from}
+                                              onChange={(e) => updateRiskFactorEntry('employeeCounts', entry.id, 'from', parseFloat(e.target.value) || 0)}
+                                              className="w-full"
+                                            />
+                                          </TableCell>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              value={entry.to}
+                                              onChange={(e) => updateRiskFactorEntry('employeeCounts', entry.id, 'to', parseFloat(e.target.value) || 0)}
+                                              className="w-full"
+                                            />
+                                          </TableCell>
+                                          <TableCell>
+                                            <Select 
+                                              value={entry.pricingType} 
+                                              onValueChange={(value) => updateRiskFactorEntry('employeeCounts', entry.id, 'pricingType', value)}
+                                            >
+                                              <SelectTrigger className="w-full">
+                                                <SelectValue />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="percentage">Percentage</SelectItem>
+                                                <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </TableCell>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              value={entry.loadingDiscount}
+                                              onChange={(e) => updateRiskFactorEntry('employeeCounts', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                                              className="w-full"
+                                            />
+                                          </TableCell>
+                                          <TableCell>
+                                            <Select 
+                                              value={entry.quoteOption} 
+                                              onValueChange={(value) => updateRiskFactorEntry('employeeCounts', entry.id, 'quoteOption', value)}
+                                            >
+                                              <SelectTrigger className="w-full">
+                                                <SelectValue />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="quote">Auto Quote</SelectItem>
+                                                <SelectItem value="no-quote">No Quote</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </TableCell>
+                                          <TableCell>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => removeRiskFactorEntry('employeeCounts', entry.id)}
+                                              className="text-destructive hover:text-destructive"
+                                            >
+                                              Remove
+                                            </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </CardContent>
+                              </Card>
+
+                              {/* Policy Period */}
+                              <Card className="border border-border bg-card">
+                                <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                                  <div>
+                                    <CardTitle className="text-sm">Policy Period</CardTitle>
+                                    <p className="text-xs text-muted-foreground">Policy period in months</p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => addRiskFactorEntry('policyPeriod')}
+                                    >
+                                      Add Row
+                                    </Button>
+                                  </div>
+                                </CardHeader>
+                                <CardContent>
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead className="w-1/6">From</TableHead>
+                                        <TableHead className="w-1/6">To</TableHead>
+                                        <TableHead className="w-1/6">Pricing Type</TableHead>
+                                        <TableHead className="w-1/6">Loading/Discount</TableHead>
+                                        <TableHead className="w-1/6">Quote Option</TableHead>
+                                        <TableHead className="w-1/6">Actions</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {pricingConfig.riskFactors.policyPeriod.map((entry: any) => (
+                                        <TableRow key={entry.id}>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              value={entry.from}
+                                              onChange={(e) => updateRiskFactorEntry('policyPeriod', entry.id, 'from', parseFloat(e.target.value) || 0)}
+                                              className="w-full"
+                                            />
+                                          </TableCell>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              value={entry.to}
+                                              onChange={(e) => updateRiskFactorEntry('policyPeriod', entry.id, 'to', parseFloat(e.target.value) || 0)}
+                                              className="w-full"
+                                            />
+                                          </TableCell>
+                                          <TableCell>
+                                            <Select 
+                                              value={entry.pricingType} 
+                                              onValueChange={(value) => updateRiskFactorEntry('policyPeriod', entry.id, 'pricingType', value)}
+                                            >
+                                              <SelectTrigger className="w-full">
+                                                <SelectValue />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="percentage">Percentage</SelectItem>
+                                                <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </TableCell>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              value={entry.loadingDiscount}
+                                              onChange={(e) => updateRiskFactorEntry('policyPeriod', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                                              className="w-full"
+                                            />
+                                          </TableCell>
+                                          <TableCell>
+                                            <Select 
+                                              value={entry.quoteOption} 
+                                              onValueChange={(value) => updateRiskFactorEntry('policyPeriod', entry.id, 'quoteOption', value)}
+                                            >
+                                              <SelectTrigger className="w-full">
+                                                <SelectValue />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="quote">Auto Quote</SelectItem>
+                                                <SelectItem value="no-quote">No Quote</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </TableCell>
+                                          <TableCell>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => removeRiskFactorEntry('policyPeriod', entry.id)}
+                                              className="text-destructive hover:text-destructive"
+                                            >
+                                              Remove
+                                            </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </CardContent>
+                              </Card>
+
                               {/* Claims Based Loading/Discount */}
                               <Card className="border border-border bg-card">
                                 <CardHeader className="pb-3">
@@ -1232,12 +2022,12 @@ const PIProductConfig = () => {
                                       <Table>
                                         <TableHeader>
                                           <TableRow>
-                                            <TableHead>From</TableHead>
-                                            <TableHead>To</TableHead>
-                                            <TableHead>Pricing Type</TableHead>
-                                            <TableHead>Loading/Discount</TableHead>
-                                            <TableHead>Quote Option</TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            <TableHead className="w-1/6">From</TableHead>
+                                            <TableHead className="w-1/6">To</TableHead>
+                                            <TableHead className="w-1/6">Pricing Type</TableHead>
+                                            <TableHead className="w-1/6">Loading/Discount</TableHead>
+                                            <TableHead className="w-1/6">Quote Option</TableHead>
+                                            <TableHead className="w-1/6">Actions</TableHead>
                                           </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -1329,12 +2119,12 @@ const PIProductConfig = () => {
                                       <Table>
                                         <TableHeader>
                                           <TableRow>
-                                            <TableHead>From (AED)</TableHead>
-                                            <TableHead>To (AED)</TableHead>
-                                            <TableHead>Pricing Type</TableHead>
-                                            <TableHead>Loading/Discount</TableHead>
-                                            <TableHead>Quote Option</TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            <TableHead className="w-1/6">From (AED)</TableHead>
+                                            <TableHead className="w-1/6">To (AED)</TableHead>
+                                            <TableHead className="w-1/6">Pricing Type</TableHead>
+                                            <TableHead className="w-1/6">Loading/Discount</TableHead>
+                                            <TableHead className="w-1/6">Quote Option</TableHead>
+                                            <TableHead className="w-1/6">Actions</TableHead>
                                           </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -1513,8 +2303,7 @@ const PIProductConfig = () => {
                               <Table>
                                 <TableHeader>
                                   <TableRow>
-                                    <TableHead>Deductible Type</TableHead>
-                                    <TableHead>Value</TableHead>
+                                    <TableHead>Deductible Value (AED)</TableHead>
                                     <TableHead>Quote Option</TableHead>
                                     <TableHead>Loading/Discount (%)</TableHead>
                                     <TableHead className="w-[100px]">Actions</TableHead>
@@ -1524,26 +2313,11 @@ const PIProductConfig = () => {
                                   {pricingConfig.coverRequirements.deductibles.map((deductible) => (
                                     <TableRow key={deductible.id}>
                                       <TableCell>
-                                        <Select
-                                          value={deductible.deductibleType}
-                                          onValueChange={(value) => updateCoverRequirementEntry('deductibles', deductible.id, 'deductibleType', value)}
-                                        >
-                                          <SelectTrigger className="w-[180px]">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="fixed">Fixed Amount</SelectItem>
-                                            <SelectItem value="percentage_loss">% of Loss</SelectItem>
-                                            <SelectItem value="percentage_sum_insured">% of Sum Insured</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </TableCell>
-                                      <TableCell>
                                         <Input
                                           type="number"
                                           value={deductible.value}
                                           onChange={(e) => updateCoverRequirementEntry('deductibles', deductible.id, 'value', e.target.value)}
-                                          className="w-32"
+                                          className="w-40"
                                         />
                                       </TableCell>
                                       <TableCell>
@@ -1586,11 +2360,113 @@ const PIProductConfig = () => {
                           </CardContent>
                         </Card>
                       )}
+
+                      {/* Fee Types Tab */}
+                      {activePricingTab === "fee-types" && (
+                        <Card className="border border-border bg-card">
+                          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                            <div>
+                              <CardTitle className="text-sm">Fee Types</CardTitle>
+                              <p className="text-xs text-muted-foreground">Configure fee types and their values (VAT, GST, etc.)</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={addFeeTypeEntry}
+                              >
+                                Add Row
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-1/4">Label</TableHead>
+                                  <TableHead className="w-1/4">Pricing Type</TableHead>
+                                  <TableHead className="w-1/4">Value</TableHead>
+                                  <TableHead className="w-1/4">Status</TableHead>
+                                  <TableHead className="w-16">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {pricingConfig.feeTypes.map((fee: any) => (
+                                  <TableRow key={fee.id}>
+                                    <TableCell>
+                                      <Input
+                                        type="text"
+                                        value={fee.label}
+                                        onChange={(e) => updateFeeTypeEntry(fee.id, 'label', e.target.value)}
+                                        className="w-full"
+                                        placeholder="Enter fee type name"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Select 
+                                        value={fee.pricingType} 
+                                        onValueChange={(value) => updateFeeTypeEntry(fee.id, 'pricingType', value)}
+                                      >
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="percentage">Percentage</SelectItem>
+                                          <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        <Input
+                                          type="number"
+                                          step={fee.pricingType === "percentage" ? "0.01" : "1"}
+                                          value={fee.value}
+                                          onChange={(e) => updateFeeTypeEntry(fee.id, 'value', e.target.value)}
+                                          className="w-20"
+                                        />
+                                        <span className="text-sm text-muted-foreground">
+                                          {fee.pricingType === "percentage" ? "%" : "AED"}
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Select 
+                                        value={fee.status} 
+                                        onValueChange={(value) => updateFeeTypeEntry(fee.id, 'status', value)}
+                                      >
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="active">Active</SelectItem>
+                                          <SelectItem value="inactive">Inactive</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeFeeTypeEntry(fee.id)}
+                                        className="text-destructive hover:text-destructive"
+                                        disabled={pricingConfig.feeTypes.length === 1}
+                                      >
+                                        Remove
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+                  </TabsContent>
 
             {/* Wording Configurations Tab */}
             <TabsContent value="wording" className="space-y-6">
@@ -1653,8 +2529,8 @@ const PIProductConfig = () => {
                               <h4 className="font-medium text-foreground">{wording.label}</h4>
                               <p className="text-sm text-muted-foreground">
                                 {wording.is_active ? 'Active' : 'Inactive'}
-                              </p>
-                            </div>
+                      </p>
+                    </div>
                           </div>
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
@@ -1762,7 +2638,7 @@ const PIProductConfig = () => {
                                 </>
                               )}
                             </Button>
-                          </div>
+                    </div>
                           
                           <Input 
                             id="wording-file" 
@@ -1774,8 +2650,8 @@ const PIProductConfig = () => {
                           
                           <p className="text-xs text-gray-500">
                             PDF files only, max 10MB
-                          </p>
-                        </div>
+                      </p>
+                    </div>
                       </div>
 
                       {/* Selected File Display */}
@@ -1857,7 +2733,7 @@ const PIProductConfig = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </TabsContent>
+                  </TabsContent>
 
             {/* Quote Format Tab */}
             <TabsContent value="quote-format" className="space-y-6">
@@ -2013,8 +2889,8 @@ const PIProductConfig = () => {
                           </Select>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+              </CardContent>
+            </Card>
 
                   {/* Risk Details Configuration */}
                   <Card>
@@ -2272,7 +3148,7 @@ const PIProductConfig = () => {
                   </Card>
                 </>
               )}
-            </TabsContent>
+          </TabsContent>
 
             {/* Required Documents Tab */}
             <TabsContent value="required-documents" className="space-y-6">
@@ -2288,17 +3164,17 @@ const PIProductConfig = () => {
               ) : (
                 <>
                   {/* Documents required for policy to be issued */}
-                  <Card>
-                    <CardHeader>
+            <Card>
+              <CardHeader>
                       <div className="flex justify-between items-center">
                         <div>
                           <CardTitle className="flex items-center gap-2">
                             <FileText className="w-5 h-5" />
                             Documents required for policy to be issued
                           </CardTitle>
-                          <CardDescription>
+                <CardDescription>
                             Manage document types required for policy issuance
-                          </CardDescription>
+                </CardDescription>
                         </div>
                         <Dialog>
                           <DialogTrigger asChild>
@@ -2408,8 +3284,8 @@ const PIProductConfig = () => {
                           </DialogContent>
                         </Dialog>
                       </div>
-                    </CardHeader>
-                    <CardContent>
+              </CardHeader>
+              <CardContent>
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -2440,7 +3316,7 @@ const PIProductConfig = () => {
                                     <div className="flex items-center gap-2">
                                       <FileText className="w-4 h-4" />
                                       <span className="text-sm">{doc.template.name}</span>
-                                    </div>
+                </div>
                                   ) : (
                                     <span className="text-muted-foreground text-sm">No template</span>
                                   )}
@@ -2483,13 +3359,13 @@ const PIProductConfig = () => {
                           )}
                         </TableBody>
                       </Table>
-                    </CardContent>
-                  </Card>
+              </CardContent>
+            </Card>
                 </>
               )}
-            </TabsContent>
-          </Tabs>
-        </div>
+          </TabsContent>
+        </Tabs>
+      </div>
       </div>
 
       <Footer />
