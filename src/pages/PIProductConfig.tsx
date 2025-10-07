@@ -173,6 +173,21 @@ const PIProductConfig = () => {
       { id: 6, profession: "Medical Services", riskType: "very-high", pricingType: "percentage", baseRate: "0.75", quoteOption: "quote" },
       { id: 7, profession: "Other Professional Services", riskType: "mid", pricingType: "percentage", baseRate: "0.40", quoteOption: "quote" }
     ],
+    minimumPremiums: [
+      { id: 1, profession: "Consulting Services", riskType: "low", pricingType: "fixed", minimumPremium: "3000", quoteOption: "quote" },
+      { id: 2, profession: "Legal Services", riskType: "mid", pricingType: "fixed", minimumPremium: "5000", quoteOption: "quote" },
+      { id: 3, profession: "Accounting & Finance", riskType: "low", pricingType: "fixed", minimumPremium: "3500", quoteOption: "quote" },
+      { id: 4, profession: "Architecture & Engineering", riskType: "high", pricingType: "fixed", minimumPremium: "6000", quoteOption: "quote" },
+      { id: 5, profession: "IT Services", riskType: "mid", pricingType: "fixed", minimumPremium: "4000", quoteOption: "quote" },
+      { id: 6, profession: "Medical Services", riskType: "very-high", pricingType: "fixed", minimumPremium: "8000", quoteOption: "quote" },
+      { id: 7, profession: "Other Professional Services", riskType: "mid", pricingType: "fixed", minimumPremium: "4000", quoteOption: "quote" }
+    ],
+    limitOfIndemnity: [
+      { id: 1, from: 0, to: 500000, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+      { id: 2, from: 500000, to: 1000000, pricingType: 'percentage', loadingDiscount: 5, quoteOption: 'quote' },
+      { id: 3, from: 1000000, to: 5000000, pricingType: 'percentage', loadingDiscount: 10, quoteOption: 'quote' },
+      { id: 4, from: 5000000, to: 999999999, pricingType: 'percentage', loadingDiscount: 15, quoteOption: 'quote' }
+    ],
     limits: {
       maximumCover: 10000000,
       minimumPremium: 3000,
@@ -181,13 +196,29 @@ const PIProductConfig = () => {
       minimumBrokerCommission: 10
     },
     coverRequirements: {
-      subLimits: [
-        { id: 1, title: "Retroactive Coverage", description: "Coverage for claims arising from work done prior to policy start", value: "50000", pricingType: "fixed" }
-      ],
       deductibles: [
         { id: 1, deductibleType: "fixed", value: "5000", quoteOption: "quote", loadingDiscount: "0" },
         { id: 2, deductibleType: "percentage_loss", value: "10", quoteOption: "quote", loadingDiscount: "5" }
       ]
+    },
+    // Risk Factors (similar to contractor risk factors in CAR)
+    riskFactors: {
+      experienceDiscounts: [
+        { id: 1, from: 0, to: 2, pricingType: 'percentage', loadingDiscount: 20, quoteOption: 'quote' },
+        { id: 2, from: 2, to: 5, pricingType: 'percentage', loadingDiscount: 10, quoteOption: 'quote' },
+        { id: 3, from: 5, to: 10, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 4, from: 10, to: 999, pricingType: 'percentage', loadingDiscount: -10, quoteOption: 'quote' }
+      ],
+      claimFrequency: [
+        { id: 1, from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
+        { id: 2, from: 1, to: 2, pricingType: 'percentage', loadingDiscount: 15, quoteOption: 'quote' },
+        { id: 3, from: 3, to: 999, pricingType: 'percentage', loadingDiscount: 30, quoteOption: 'no-quote' }
+      ],
+      claimAmountCategories: [
+        { id: 1, from: 0, to: 50000, pricingType: 'percentage', loadingDiscount: 5, quoteOption: 'quote' },
+        { id: 2, from: 50000, to: 100000, pricingType: 'percentage', loadingDiscount: 15, quoteOption: 'quote' },
+        { id: 3, from: 100000, to: 999999999, pricingType: 'percentage', loadingDiscount: 25, quoteOption: 'no-quote' }
+      ],
     }
   });
 
@@ -329,6 +360,78 @@ const PIProductConfig = () => {
       baseRates: prev.baseRates.map(rate =>
         rate.id === id ? { ...rate, [field]: value } : rate
       )
+    }));
+  };
+
+  const updateMinimumPremium = (id: number, field: string, value: string) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      minimumPremiums: prev.minimumPremiums.map(premium =>
+        premium.id === id ? { ...premium, [field]: value } : premium
+      )
+    }));
+  };
+
+  // Limit of Indemnity helper functions
+  const addLimitOfIndemnityEntry = () => {
+    setPricingConfig(prev => ({
+      ...prev,
+      limitOfIndemnity: [
+        ...prev.limitOfIndemnity,
+        { id: Date.now(), from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' }
+      ]
+    }));
+  };
+
+  const updateLimitOfIndemnityEntry = (id: number, field: string, value: any) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      limitOfIndemnity: prev.limitOfIndemnity.map(entry =>
+        entry.id === id ? { ...entry, [field]: value } : entry
+      )
+    }));
+  };
+
+  const removeLimitOfIndemnityEntry = (id: number) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      limitOfIndemnity: prev.limitOfIndemnity.filter(entry => entry.id !== id)
+    }));
+  };
+
+  // Risk factors helper functions
+  const addRiskFactorEntry = (category: string) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      riskFactors: {
+        ...prev.riskFactors,
+        [category]: [
+          ...prev.riskFactors[category],
+          { id: Date.now(), from: 0, to: 0, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' }
+        ]
+      }
+    }));
+  };
+
+  const updateRiskFactorEntry = (category: string, id: number, field: string, value: any) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      riskFactors: {
+        ...prev.riskFactors,
+        [category]: prev.riskFactors[category].map((entry: any) =>
+          entry.id === id ? { ...entry, [field]: value } : entry
+        )
+      }
+    }));
+  };
+
+  const removeRiskFactorEntry = (category: string, id: number) => {
+    setPricingConfig(prev => ({
+      ...prev,
+      riskFactors: {
+        ...prev.riskFactors,
+        [category]: prev.riskFactors[category].filter((entry: any) => entry.id !== id)
+      }
     }));
   };
 
@@ -679,6 +782,9 @@ const PIProductConfig = () => {
                       <div className="space-y-2">
                         {[
                           { id: "base-rates", label: "Base Rates by Profession" },
+                          { id: "minimum-premiums", label: "Minimum Premium by Profession" },
+                          { id: "limit-of-indemnity", label: "Limit of Indemnity" },
+                          { id: "risk-factors", label: "Risk Factors" },
                           { id: "limits-deductibles", label: "Policy Limits & Deductibles" }
                         ].map((section) => (
                           <button
@@ -789,6 +895,527 @@ const PIProductConfig = () => {
                         </Card>
                       )}
 
+                      {/* Minimum Premium by Profession Tab */}
+                      {activePricingTab === "minimum-premiums" && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Minimum Premium by Profession</CardTitle>
+                            <CardDescription>Configure minimum premium amounts for different professional services</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            {!pricingConfig.minimumPremiums.length && (
+                              <div className="rounded-md border border-blue-200 bg-blue-50 text-blue-700 px-4 py-3 mb-4">
+                                <p className="font-medium">No minimum premiums configured</p>
+                                <p className="text-sm mt-1">Configure minimum premiums for professional categories below.</p>
+                              </div>
+                            )}
+
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Profession Type</TableHead>
+                                  <TableHead>Risk Type</TableHead>
+                                  <TableHead>Pricing Type</TableHead>
+                                  <TableHead>Minimum Premium (AED)</TableHead>
+                                  <TableHead>Quote Option</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {pricingConfig.minimumPremiums.map((premium) => (
+                                  <TableRow key={premium.id}>
+                                    <TableCell className="font-medium">{premium.profession}</TableCell>
+                                    <TableCell>
+                                      <Select
+                                        value={premium.riskType}
+                                        onValueChange={(value) => updateMinimumPremium(premium.id, 'riskType', value)}
+                                      >
+                                        <SelectTrigger className="w-[140px]">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="low">Low</SelectItem>
+                                          <SelectItem value="mid">Mid</SelectItem>
+                                          <SelectItem value="high">High</SelectItem>
+                                          <SelectItem value="very-high">Very High</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Select
+                                        value={premium.pricingType}
+                                        onValueChange={(value) => updateMinimumPremium(premium.id, 'pricingType', value)}
+                                      >
+                                        <SelectTrigger className="w-[140px]">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="percentage">Percentage</SelectItem>
+                                          <SelectItem value="fixed">Fixed Rate</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={premium.minimumPremium}
+                                        onChange={(e) => updateMinimumPremium(premium.id, 'minimumPremium', e.target.value)}
+                                        placeholder="0"
+                                        className="w-32"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Select
+                                        value={premium.quoteOption}
+                                        onValueChange={(value) => updateMinimumPremium(premium.id, 'quoteOption', value)}
+                                      >
+                                        <SelectTrigger className="w-[140px]">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="quote">Quote</SelectItem>
+                                          <SelectItem value="no-quote">No Quote</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Limit of Indemnity Tab */}
+                      {activePricingTab === "limit-of-indemnity" && (
+                        <Card className="border border-border bg-card">
+                          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                            <div>
+                              <CardTitle className="text-sm">Limit of Indemnity</CardTitle>
+                              <p className="text-xs text-muted-foreground">Rate based on limit of indemnity ranges (AED)</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={addLimitOfIndemnityEntry}
+                              >
+                                Add Row
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-1/6">From (AED)</TableHead>
+                                  <TableHead className="w-1/6">To (AED)</TableHead>
+                                  <TableHead className="w-1/5">Pricing Type</TableHead>
+                                  <TableHead className="w-1/5">Loading/Discount</TableHead>
+                                  <TableHead className="w-1/5">Quote Option</TableHead>
+                                  <TableHead className="w-16">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {pricingConfig.limitOfIndemnity.map((entry: any) => (
+                                  <TableRow key={entry.id}>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={entry.from}
+                                        onChange={(e) => updateLimitOfIndemnityEntry(entry.id, 'from', parseFloat(e.target.value) || 0)}
+                                        className="w-full"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={entry.to}
+                                        onChange={(e) => updateLimitOfIndemnityEntry(entry.id, 'to', parseFloat(e.target.value) || 0)}
+                                        className="w-full"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Select 
+                                        value={entry.pricingType} 
+                                        onValueChange={(value) => updateLimitOfIndemnityEntry(entry.id, 'pricingType', value)}
+                                      >
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="percentage">Percentage</SelectItem>
+                                          <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={entry.loadingDiscount}
+                                        onChange={(e) => updateLimitOfIndemnityEntry(entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                                        className="w-full"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Select 
+                                        value={entry.quoteOption} 
+                                        onValueChange={(value) => updateLimitOfIndemnityEntry(entry.id, 'quoteOption', value)}
+                                      >
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="quote">Auto Quote</SelectItem>
+                                          <SelectItem value="no-quote">No Quote</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeLimitOfIndemnityEntry(entry.id)}
+                                        className="text-destructive hover:text-destructive"
+                                      >
+                                        Remove
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Risk Factors Tab */}
+                      {activePricingTab === "risk-factors" && (
+                        <Card className="h-full">
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle>Risk Factors</CardTitle>
+                                <CardDescription>Configure risk adjustments based on professional profile</CardDescription>
+                              </div>
+                              <Button onClick={() => console.log('Save risk factors')} size="sm">
+                                <Save className="w-4 h-4 mr-1" />
+                                Save Risk Factors
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-6">
+                            <div className="space-y-6">
+                              {/* Experience Loadings/Discounts */}
+                              <Card className="border border-border bg-card">
+                                <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                                  <div>
+                                    <CardTitle className="text-sm">Experience Loadings/Discounts</CardTitle>
+                                    <p className="text-xs text-muted-foreground">Experience in years</p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => addRiskFactorEntry('experienceDiscounts')}
+                                    >
+                                      Add Row
+                                    </Button>
+                                  </div>
+                                </CardHeader>
+                                <CardContent>
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead className="w-1/6">From</TableHead>
+                                        <TableHead className="w-1/6">To</TableHead>
+                                        <TableHead className="w-1/5">Pricing Type</TableHead>
+                                        <TableHead className="w-1/5">Loading/Discount</TableHead>
+                                        <TableHead className="w-1/5">Quote Option</TableHead>
+                                        <TableHead className="w-16">Actions</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {pricingConfig.riskFactors.experienceDiscounts.map((entry: any) => (
+                                        <TableRow key={entry.id}>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              value={entry.from}
+                                              onChange={(e) => updateRiskFactorEntry('experienceDiscounts', entry.id, 'from', parseFloat(e.target.value) || 0)}
+                                              className="w-full"
+                                            />
+                                          </TableCell>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              value={entry.to}
+                                              onChange={(e) => updateRiskFactorEntry('experienceDiscounts', entry.id, 'to', parseFloat(e.target.value) || 0)}
+                                              className="w-full"
+                                            />
+                                          </TableCell>
+                                          <TableCell>
+                                            <Select 
+                                              value={entry.pricingType} 
+                                              onValueChange={(value) => updateRiskFactorEntry('experienceDiscounts', entry.id, 'pricingType', value)}
+                                            >
+                                              <SelectTrigger className="w-full">
+                                                <SelectValue />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="percentage">Percentage</SelectItem>
+                                                <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </TableCell>
+                                          <TableCell>
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              value={entry.loadingDiscount}
+                                              onChange={(e) => updateRiskFactorEntry('experienceDiscounts', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                                              className="w-full"
+                                            />
+                                          </TableCell>
+                                          <TableCell>
+                                            <Select 
+                                              value={entry.quoteOption} 
+                                              onValueChange={(value) => updateRiskFactorEntry('experienceDiscounts', entry.id, 'quoteOption', value)}
+                                            >
+                                              <SelectTrigger className="w-full">
+                                                <SelectValue />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="quote">Auto Quote</SelectItem>
+                                                <SelectItem value="no-quote">No Quote</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </TableCell>
+                                          <TableCell>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => removeRiskFactorEntry('experienceDiscounts', entry.id)}
+                                              className="text-destructive hover:text-destructive"
+                                            >
+                                              Remove
+                                            </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </CardContent>
+                              </Card>
+
+                              {/* Claims Based Loading/Discount */}
+                              <Card className="border border-border bg-card">
+                                <CardHeader className="pb-3">
+                                  <CardTitle className="text-sm">Claims Based Loading/Discount</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="space-y-4">
+                                    {/* Claim Frequency */}
+                                    <div>
+                                      <div className="flex items-center justify-between mb-3">
+                                        <Label className="text-sm font-medium">Claim Frequency (Last 5 Years)</Label>
+                                        <div className="flex items-center gap-2">
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm"
+                                            onClick={() => addRiskFactorEntry('claimFrequency')}
+                                          >
+                                            Add Row
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      <Table>
+                                        <TableHeader>
+                                          <TableRow>
+                                            <TableHead>From</TableHead>
+                                            <TableHead>To</TableHead>
+                                            <TableHead>Pricing Type</TableHead>
+                                            <TableHead>Loading/Discount</TableHead>
+                                            <TableHead>Quote Option</TableHead>
+                                            <TableHead>Actions</TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {pricingConfig.riskFactors.claimFrequency.map((entry: any) => (
+                                            <TableRow key={entry.id}>
+                                              <TableCell>
+                                                <Input
+                                                  type="number"
+                                                  value={entry.from}
+                                                  onChange={(e) => updateRiskFactorEntry('claimFrequency', entry.id, 'from', parseFloat(e.target.value) || 0)}
+                                                  className="w-full"
+                                                />
+                                              </TableCell>
+                                              <TableCell>
+                                                <Input
+                                                  type="number"
+                                                  value={entry.to}
+                                                  onChange={(e) => updateRiskFactorEntry('claimFrequency', entry.id, 'to', parseFloat(e.target.value) || 0)}
+                                                  className="w-full"
+                                                />
+                                              </TableCell>
+                                              <TableCell>
+                                                <Select 
+                                                  value={entry.pricingType} 
+                                                  onValueChange={(value) => updateRiskFactorEntry('claimFrequency', entry.id, 'pricingType', value)}
+                                                >
+                                                  <SelectTrigger className="w-full">
+                                                    <SelectValue />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    <SelectItem value="percentage">Percentage</SelectItem>
+                                                    <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                                  </SelectContent>
+                                                </Select>
+                                              </TableCell>
+                                              <TableCell>
+                                                <Input
+                                                  type="number"
+                                                  step="0.01"
+                                                  value={entry.loadingDiscount}
+                                                  onChange={(e) => updateRiskFactorEntry('claimFrequency', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                                                  className="w-full"
+                                                />
+                                              </TableCell>
+                                              <TableCell>
+                                                <Select 
+                                                  value={entry.quoteOption} 
+                                                  onValueChange={(value) => updateRiskFactorEntry('claimFrequency', entry.id, 'quoteOption', value)}
+                                                >
+                                                  <SelectTrigger className="w-full">
+                                                    <SelectValue />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    <SelectItem value="quote">Auto Quote</SelectItem>
+                                                    <SelectItem value="no-quote">No Quote</SelectItem>
+                                                  </SelectContent>
+                                                </Select>
+                                              </TableCell>
+                                              <TableCell>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => removeRiskFactorEntry('claimFrequency', entry.id)}
+                                                  className="text-destructive hover:text-destructive"
+                                                >
+                                                  Remove
+                                                </Button>
+                                              </TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                    </div>
+
+                                    {/* Claim Amount Categories */}
+                                    <div>
+                                      <div className="flex items-center justify-between mb-3">
+                                        <Label className="text-sm font-medium">Claim Amount Categories</Label>
+                                        <div className="flex items-center gap-2">
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm"
+                                            onClick={() => addRiskFactorEntry('claimAmountCategories')}
+                                          >
+                                            Add Row
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      <Table>
+                                        <TableHeader>
+                                          <TableRow>
+                                            <TableHead>From (AED)</TableHead>
+                                            <TableHead>To (AED)</TableHead>
+                                            <TableHead>Pricing Type</TableHead>
+                                            <TableHead>Loading/Discount</TableHead>
+                                            <TableHead>Quote Option</TableHead>
+                                            <TableHead>Actions</TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {pricingConfig.riskFactors.claimAmountCategories.map((entry: any) => (
+                                            <TableRow key={entry.id}>
+                                              <TableCell>
+                                                <Input
+                                                  type="number"
+                                                  value={entry.from}
+                                                  onChange={(e) => updateRiskFactorEntry('claimAmountCategories', entry.id, 'from', parseFloat(e.target.value) || 0)}
+                                                  className="w-full"
+                                                />
+                                              </TableCell>
+                                              <TableCell>
+                                                <Input
+                                                  type="number"
+                                                  value={entry.to}
+                                                  onChange={(e) => updateRiskFactorEntry('claimAmountCategories', entry.id, 'to', parseFloat(e.target.value) || 0)}
+                                                  className="w-full"
+                                                />
+                                              </TableCell>
+                                              <TableCell>
+                                                <Select 
+                                                  value={entry.pricingType} 
+                                                  onValueChange={(value) => updateRiskFactorEntry('claimAmountCategories', entry.id, 'pricingType', value)}
+                                                >
+                                                  <SelectTrigger className="w-full">
+                                                    <SelectValue />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    <SelectItem value="percentage">Percentage</SelectItem>
+                                                    <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                                  </SelectContent>
+                                                </Select>
+                                              </TableCell>
+                                              <TableCell>
+                                                <Input
+                                                  type="number"
+                                                  step="0.01"
+                                                  value={entry.loadingDiscount}
+                                                  onChange={(e) => updateRiskFactorEntry('claimAmountCategories', entry.id, 'loadingDiscount', parseFloat(e.target.value) || 0)}
+                                                  className="w-full"
+                                                />
+                                              </TableCell>
+                                              <TableCell>
+                                                <Select 
+                                                  value={entry.quoteOption} 
+                                                  onValueChange={(value) => updateRiskFactorEntry('claimAmountCategories', entry.id, 'quoteOption', value)}
+                                                >
+                                                  <SelectTrigger className="w-full">
+                                                    <SelectValue />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    <SelectItem value="quote">Auto Quote</SelectItem>
+                                                    <SelectItem value="no-quote">No Quote</SelectItem>
+                                                  </SelectContent>
+                                                </Select>
+                                              </TableCell>
+                                              <TableCell>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => removeRiskFactorEntry('claimAmountCategories', entry.id)}
+                                                  className="text-destructive hover:text-destructive"
+                                                >
+                                                  Remove
+                                                </Button>
+                                              </TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
                       {/* Policy Limits & Deductibles Tab */}
                       {activePricingTab === "limits-deductibles" && (
                         <Card>
@@ -870,81 +1497,6 @@ const PIProductConfig = () => {
                                       />
                                     </TableCell>
                                   </TableRow>
-                                </TableBody>
-                              </Table>
-                            </div>
-
-                            {/* Sub-Limits */}
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">Sub-Limits</h3>
-                                <Button onClick={() => addCoverRequirementEntry('subLimits')} size="sm" variant="outline">
-                                  <Plus className="w-4 h-4 mr-1" />
-                                  Add Sub-Limit
-                                </Button>
-                              </div>
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Value</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead className="w-[100px]">Actions</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {pricingConfig.coverRequirements.subLimits.map((subLimit) => (
-                                    <TableRow key={subLimit.id}>
-                                      <TableCell>
-                                        <Input
-                                          value={subLimit.title}
-                                          onChange={(e) => updateCoverRequirementEntry('subLimits', subLimit.id, 'title', e.target.value)}
-                                          placeholder="Sub-limit title"
-                                        />
-                                      </TableCell>
-                                      <TableCell>
-                                        <Input
-                                          value={subLimit.description}
-                                          onChange={(e) => updateCoverRequirementEntry('subLimits', subLimit.id, 'description', e.target.value)}
-                                          placeholder="Description"
-                                        />
-                                      </TableCell>
-                                      <TableCell>
-                                        <Input
-                                          type="number"
-                                          value={subLimit.value}
-                                          onChange={(e) => updateCoverRequirementEntry('subLimits', subLimit.id, 'value', e.target.value)}
-                                          className="w-32"
-                                        />
-                                      </TableCell>
-                                      <TableCell>
-                                        <Select
-                                          value={subLimit.pricingType}
-                                          onValueChange={(value) => updateCoverRequirementEntry('subLimits', subLimit.id, 'pricingType', value)}
-                                        >
-                                          <SelectTrigger className="w-[180px]">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="fixed">Fixed Amount</SelectItem>
-                                            <SelectItem value="percentage_sum_insured">% of Sum Insured</SelectItem>
-                                            <SelectItem value="percentage_loss">% of Loss</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </TableCell>
-                                      <TableCell>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => removeCoverRequirementEntry('subLimits', subLimit.id)}
-                                          className="text-red-600 hover:text-red-700"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
                                 </TableBody>
                               </Table>
                             </div>

@@ -31,7 +31,7 @@ export const PIProposalForm = ({
   const steps = [
     {
       id: "business",
-      label: "Business Information",
+      label: "Professional Information",
       icon: Folder
     },
     {
@@ -58,7 +58,7 @@ export const PIProposalForm = ({
 
   // Form data state
   const [formData, setFormData] = useState({
-    // Business Information
+    // Professional Information
     companyName: "TechFlow Solutions Ltd",
     businessType: "IT Services",
     annualTurnover: "3200000",
@@ -142,12 +142,12 @@ export const PIProposalForm = ({
 
   const validateStep = (step: number): boolean => {
     switch (step) {
-      case 0: // Business Information
+      case 0: // Professional Information
         if (!formData.companyName || !formData.businessType || !formData.annualTurnover || 
             !formData.businessDescription || !formData.businessAddress || !formData.numberOfEmployees) {
           toast({
             title: "Validation Error",
-            description: "Please fill in all required business information fields.",
+            description: "Please fill in all required professional information fields.",
             variant: "destructive"
           });
           return false;
@@ -201,7 +201,7 @@ export const PIProposalForm = ({
     console.log("PI Quote Data:", formData);
   };
 
-  const businessTypeOptions = [
+  const professionTypeOptions = [
     "Consulting Services",
     "Legal Services", 
     "Accounting & Finance",
@@ -323,7 +323,7 @@ export const PIProposalForm = ({
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 0: // Business Information
+      case 0: // Professional Information
         return (
           <TabsContent value="business" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -338,16 +338,16 @@ export const PIProposalForm = ({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="businessType">Business Type *</Label>
+                <Label htmlFor="businessType">Profession Type *</Label>
                 <Select
                   value={formData.businessType}
                   onValueChange={(value) => setFormData({ ...formData, businessType: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select business type" />
+                    <SelectValue placeholder="Select profession type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {businessTypeOptions.map((type) => (
+                    {professionTypeOptions.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
                       </SelectItem>
@@ -391,23 +391,23 @@ export const PIProposalForm = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div className="space-y-2">
-                <Label htmlFor="businessDescription">Business Description *</Label>
+                <Label htmlFor="businessDescription">Professional Services Description *</Label>
                 <Textarea
                   id="businessDescription"
                   value={formData.businessDescription}
                   onChange={(e) => setFormData({ ...formData, businessDescription: e.target.value })}
-                  placeholder="Describe your business activities and services"
+                  placeholder="Describe your professional activities and services"
                   rows={4}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="businessAddress">Business Address *</Label>
+                <Label htmlFor="businessAddress">Professional Practice Address *</Label>
                 <Textarea
                   id="businessAddress"
                   value={formData.businessAddress}
                   onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })}
-                  placeholder="Enter your complete business address"
+                  placeholder="Enter your complete practice address"
                   rows={4}
                 />
               </div>
@@ -421,7 +421,7 @@ export const PIProposalForm = ({
           <TabsContent value="risk" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div className="space-y-2">
-                <Label htmlFor="yearsInBusiness">Years in Business *</Label>
+                <Label htmlFor="yearsInBusiness">Years in Practice *</Label>
                 <Select
                   value={formData.yearsInBusiness}
                   onValueChange={(value) => setFormData({ ...formData, yearsInBusiness: value })}
@@ -503,7 +503,7 @@ export const PIProposalForm = ({
                 id="highRiskActivities"
                 value={formData.highRiskActivities}
                 onChange={(e) => setFormData({ ...formData, highRiskActivities: e.target.value })}
-                placeholder="Describe any high-risk activities or services your business provides"
+                placeholder="Describe any high-risk activities or services your practice provides"
                 rows={4}
               />
             </div>
@@ -842,11 +842,11 @@ export const PIProposalForm = ({
                   <h4 className="font-semibold mb-3">Coverage Details</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Business Name:</span>
+                      <span className="text-muted-foreground">Professional Practice Name:</span>
                       <span>{formData.companyName || "Not Provided"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Business Type:</span>
+                      <span className="text-muted-foreground">Profession Type:</span>
                       <span>{formData.businessType || "Not Selected"}</span>
                     </div>
                     <div className="flex justify-between">
