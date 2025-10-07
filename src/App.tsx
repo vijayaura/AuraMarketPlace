@@ -54,6 +54,7 @@ import MarketAdminSingleProductConfig from "./pages/MarketAdminSingleProductConf
 import MarketAdminBrokerConfigurator from "./pages/MarketAdminBrokerConfigurator";
 import MarketAdminQuoteFormat from "./pages/MarketAdminQuoteFormat";
 import SingleProductConfig from "./pages/SingleProductConfig";
+import PIProposal from "./pages/PIProposal";
 import BrokerConfigurator from "./pages/BrokerConfigurator";
 import QuoteFormat from "./pages/QuoteFormat";
 

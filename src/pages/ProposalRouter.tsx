@@ -1,5 +1,6 @@
 import { useParams, Navigate } from "react-router-dom";
 import Proposal from "./Proposal"; // This is the CAR proposal form
+import PIProposal from "./PIProposal"; // This is the PI proposal form
 
 // Placeholder components for other products (to be implemented later)
 const ComingSoonProposal = ({ productName }: { productName: string }) => {
@@ -36,7 +37,7 @@ const ProposalRouter = () => {
   // Product mapping
   const productComponents: Record<string, { component: React.ComponentType; name: string }> = {
     'CAR': { component: Proposal, name: 'Contractors All Risk Insurance' },
-    'PI': { component: () => <ComingSoonProposal productName="Professional Indemnity Insurance" />, name: 'Professional Indemnity Insurance' },
+    'PI': { component: PIProposal, name: 'Professional Indemnity Insurance' },
     'CGL': { component: () => <ComingSoonProposal productName="Commercial General Liability Insurance" />, name: 'Commercial General Liability Insurance' },
     'DO': { component: () => <ComingSoonProposal productName="Directors & Officers Liability Insurance" />, name: 'Directors & Officers Liability Insurance' },
     'OFFICE': { component: () => <ComingSoonProposal productName="Office Insurance" />, name: 'Office Insurance' },

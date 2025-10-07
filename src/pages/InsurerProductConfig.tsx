@@ -16,11 +16,12 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Footer } from "@/components/Footer";
-import { ArrowLeft, Save, Calculator, FileText, Upload, Eye, Plus, Minus, Image, ChevronDown, ChevronRight, Trash2, X, MapPin, Building2, Shield } from "lucide-react";
+import { ArrowLeft, Save, Calculator, FileText, Upload, Eye, Plus, Minus, Image, ChevronDown, ChevronRight, Trash2, X, MapPin, Building2, Shield, Building, User, Briefcase, Home as HomeIcon, Plane, Lock, Package, Ship, Anchor } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getActiveProjectTypes, getActiveConstructionTypes, getSubProjectTypesByProjectType } from "@/lib/masters-data";
 import { getActiveCountries, getRegionsByCountry, getZonesByRegion } from "@/lib/location-data";
 import { ClausePricingCard } from "@/components/product-config/ClausePricingCard";
+import { ProductCard } from "@/components/ProductCard";
 
 interface VariableOption {
   id: number;
@@ -41,6 +42,16 @@ interface ClausePricing {
   variableOptions: VariableOption[];
 }
 
+interface InsuranceProduct {
+  code: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+  category: string;
+  available: boolean;
+}
+
 const InsurerProductConfig = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -48,8 +59,134 @@ const InsurerProductConfig = () => {
   const location = useLocation();
   const isMarketAdmin = location.pathname.includes('/market-admin');
 
+  const insuranceProducts: InsuranceProduct[] = [
+    {
+      code: 'CAR',
+      name: 'Contractors All Risk Insurance',
+      description: 'Covers construction projects against risks like damage to property and third-party injury/death during the construction period.',
+      icon: <Building className="w-6 h-6" />,
+      color: 'primary',
+      category: 'CONSTRUCTION',
+      available: true
+    },
+    {
+      code: 'PI',
+      name: 'Professional Indemnity Insurance',
+      description: 'Protects professionals (e.g., architects, consultants, engineers) against claims of negligence, errors, or omissions in their services.',
+      icon: <User className="w-6 h-6" />,
+      color: 'primary',
+      category: 'PROFESSIONAL',
+      available: true
+    },
+    {
+      code: 'CGL',
+      name: 'Commercial General Liability Insurance',
+      description: 'Provides coverage for businesses against third-party bodily injury, property damage, and personal or advertising injury claims.',
+      icon: <Shield className="w-6 h-6" />,
+      color: 'primary',
+      category: 'COMMERCIAL',
+      available: false
+    },
+    {
+      code: 'DO',
+      name: 'Directors & Officers Liability Insurance',
+      description: 'Covers company directors and officers against legal claims arising from their decisions or actions taken while managing the company.',
+      icon: <Briefcase className="w-6 h-6" />,
+      color: 'primary',
+      category: 'COMMERCIAL',
+      available: false
+    },
+    {
+      code: 'OFFICE',
+      name: 'Office Insurance',
+      description: 'Covers office premises, equipment, and business assets against risks like fire, theft, and accidental damage.',
+      icon: <Building2 className="w-6 h-6" />,
+      color: 'primary',
+      category: 'PROPERTY',
+      available: false
+    },
+    {
+      code: 'HOME',
+      name: 'Home Insurance',
+      description: 'Provides protection for residential buildings and household contents against risks like fire, burglary, natural disasters, etc.',
+      icon: <HomeIcon className="w-6 h-6" />,
+      color: 'primary',
+      category: 'PROPERTY',
+      available: false
+    },
+    {
+      code: 'TRAVEL',
+      name: 'Travel Insurance',
+      description: 'Covers risks during travel such as trip cancellation, medical emergencies, lost luggage, and flight delays.',
+      icon: <Plane className="w-6 h-6" />,
+      color: 'primary',
+      category: 'SPECIALTY',
+      available: false
+    },
+    {
+      code: 'CYBER',
+      name: 'Cyber Liability Insurance',
+      description: 'Protects businesses from losses due to cyberattacks, data breaches, and related legal liabilities.',
+      icon: <Lock className="w-6 h-6" />,
+      color: 'primary',
+      category: 'SPECIALTY',
+      available: false
+    },
+    {
+      code: 'PAR',
+      name: 'Property All Risk Insurance',
+      description: 'Provides comprehensive coverage for physical loss or damage to property from any cause not specifically excluded (broader than standard fire insurance).',
+      icon: <Package className="w-6 h-6" />,
+      color: 'primary',
+      category: 'PROPERTY',
+      available: false
+    },
+    {
+      code: 'MARINE_HULL',
+      name: 'Marine Hull Insurance',
+      description: 'Covers loss or damage to ships, vessels, or other watercraft and their machinery.',
+      icon: <Ship className="w-6 h-6" />,
+      color: 'primary',
+      category: 'MARINE',
+      available: false
+    },
+    {
+      code: 'MARINE_CARGO',
+      name: 'Marine Cargo Insurance',
+      description: 'Provides coverage for loss or damage to goods while being transported by sea, air, or land.',
+      icon: <Anchor className="w-6 h-6" />,
+      color: 'primary',
+      category: 'MARINE',
+      available: false
+    }
+  ];
+
   // State for coming soon dialog
   const [isComingSoonDialogOpen, setIsComingSoonDialogOpen] = useState(false);
+
+  const handleProductSelect = (product: InsuranceProduct) => {
+    if (!product.available) {
+      setIsComingSoonDialogOpen(true);
+      return;
+    }
+
+    // Map product codes to configuration routes
+    const productRoutes: { [key: string]: string } = {
+      'CAR': '1',
+      'PI': '2'
+    };
+
+    const productId = productRoutes[product.code];
+    if (productId) {
+      if (isMarketAdmin) {
+        navigate(`/market-admin/insurer/${insurerId}/product-config/products/${productId}`);
+      } else {
+        navigate(`/insurer/products/${productId}`);
+      }
+    } else {
+      setIsComingSoonDialogOpen(true);
+    }
+  };
 
   const activeProjectTypes = getActiveProjectTypes();
   const activeConstructionTypes = getActiveConstructionTypes();
@@ -661,39 +798,21 @@ const InsurerProductConfig = () => {
       </div>
 
       <div className="flex-1">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           
-          {/* Insurance products in 2x2 grid */}
-          <div className="grid grid-cols-2 gap-6 mb-8">
-            <Card className="p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => {
-              if (isMarketAdmin) {
-                navigate(`/market-admin/insurer/${insurerId}/product-config/products/1`);
-              } else {
-                navigate(`/insurer/products/1`);
-              }
-            }}>
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="flex items-center justify-center w-16 h-16 bg-primary/10 rounded-lg">
-                  <Building2 className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">CAR Insurance</h3>
-                  <p className="text-muted-foreground text-sm">Manage Contractors All Risks insurance product with quote, pricing, CEWs, and wording configurations</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6 cursor-not-allowed transition-all opacity-50 grayscale" onClick={() => setIsComingSoonDialogOpen(true)}>
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="flex items-center justify-center w-16 h-16 bg-muted/20 rounded-lg">
-                  <Shield className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2 text-muted-foreground">Professional Indemnity Insurance</h3>
-                  <p className="text-muted-foreground text-sm">Professional indemnity insurance for individuals and professionals to protect against claims of negligence</p>
-                </div>
-              </div>
-            </Card>
+          {/* Insurance products grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {insuranceProducts.map(product => (
+              <ProductCard
+                key={product.code}
+                code={product.code}
+                name={product.name}
+                description={product.description}
+                icon={product.icon}
+                color="primary"
+                onClick={() => handleProductSelect(product)}
+              />
+            ))}
           </div>
 
           {/* Coming Soon Dialog */}
@@ -704,7 +823,7 @@ const InsurerProductConfig = () => {
               </DialogHeader>
               <div className="py-4">
                 <p className="text-muted-foreground">
-                  Professional Indemnity Insurance configuration will be available soon. We're working hard to bring you this feature.
+                  This insurance product configuration will be available soon. We're working hard to bring you this feature.
                 </p>
               </div>
               <div className="flex justify-end">
