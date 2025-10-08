@@ -80,7 +80,7 @@ const initialProfessionTypes = [
   { id: 4, label: "Architecture & Engineering", active: true, order: 4 },
   { id: 5, label: "IT Services", active: true, order: 5 },
   { id: 6, label: "Medical Services", active: true, order: 6 },
-  { id: 7, label: "Other Professional Services", active: true, order: 7 },
+  { id: 7, label: "Miscellaneous", active: true, order: 7 },
 ];
 
 const initialSubProjectTypes = [

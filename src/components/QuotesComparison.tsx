@@ -2447,11 +2447,55 @@ const QuotesComparison = ({
 
     // Generate and download PDF
     try {
-      if (currentProposal) {
-        await downloadQuoteWithFormat(currentProposal);
-      } else {
+      if (!currentProposal) {
         throw new Error('No proposal data available');
       }
+
+      // Create a modified proposal with updated CEW data and premium
+      const modifiedProposal = {
+        ...currentProposal,
+        quote_meta: {
+          ...currentProposal.quote_meta,
+          total_annual_premium: totalAnnualPremium,
+          base_premium: basePremium,
+          broker_commission: brokerCommissionAmount
+        },
+        // Add CEW data to the proposal
+        cew_selections: selectedCEWItems?.map(item => ({
+          cew_item_id: item.id,
+          cew_item_name: item.name,
+          selected_option_id: item.selectedOptionId,
+          selected_option_name: item.options.find(opt => opt.id === item.selectedOptionId)?.name || 'Base Rate',
+          is_mandatory: item.isMandatory,
+          adjustment_amount: (() => {
+            if (item.selectedOptionId) {
+              const selectedOption = item.options.find(opt => opt.id === item.selectedOptionId);
+              if (selectedOption) {
+                if (item.isMandatory) {
+                  const baseValue = item.defaultValue || 0;
+                  return (selectedOption.value || 0) - baseValue;
+                } else {
+                  return selectedOption.value || 0;
+                }
+              }
+            }
+            return item.isMandatory ? 0 : (item.defaultValue || 0);
+          })()
+        })) || [],
+        premium_breakdown: {
+          base_premium: basePremium,
+          tpl_adjustment: tplAdjustmentAmount,
+          mandatory_adjustments: mandatoryAdjustmentAmount,
+          optional_adjustments: optionalAdjustmentAmount,
+          total_before_commission: totalBeforeCommission,
+          broker_commission: brokerCommissionAmount,
+          broker_commission_percent: brokerCommissionPercent,
+          total_annual_premium: totalAnnualPremium
+        }
+      };
+
+      await downloadQuoteWithFormat(modifiedProposal);
+      
       toast({
         title: "Quote Downloaded",
         description: "Insurance proposal PDF has been generated and downloaded.",

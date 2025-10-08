@@ -171,7 +171,7 @@ const PIProductConfig = () => {
       { id: 4, profession: "Architecture & Engineering", pricingType: "percentage", baseRate: "0.55", quoteOption: "quote" },
       { id: 5, profession: "IT Services", pricingType: "percentage", baseRate: "0.40", quoteOption: "quote" },
       { id: 6, profession: "Medical Services", pricingType: "percentage", baseRate: "0.75", quoteOption: "quote" },
-      { id: 7, profession: "Other Professional Services", pricingType: "percentage", baseRate: "0.40", quoteOption: "quote" }
+      { id: 7, profession: "Miscellaneous", pricingType: "percentage", baseRate: "0.40", quoteOption: "quote" }
     ],
     minimumPremiums: [
       { id: 1, profession: "Consulting Services", riskType: "low", pricingType: "fixed", minimumPremium: "3000", quoteOption: "quote" },
@@ -180,7 +180,7 @@ const PIProductConfig = () => {
       { id: 4, profession: "Architecture & Engineering", riskType: "high", pricingType: "fixed", minimumPremium: "6000", quoteOption: "quote" },
       { id: 5, profession: "IT Services", riskType: "mid", pricingType: "fixed", minimumPremium: "4000", quoteOption: "quote" },
       { id: 6, profession: "Medical Services", riskType: "very-high", pricingType: "fixed", minimumPremium: "8000", quoteOption: "quote" },
-      { id: 7, profession: "Other Professional Services", riskType: "mid", pricingType: "fixed", minimumPremium: "4000", quoteOption: "quote" }
+      { id: 7, profession: "Miscellaneous", riskType: "mid", pricingType: "fixed", minimumPremium: "4000", quoteOption: "quote" }
     ],
     feeIncome: [
       { id: 1, from: 0, to: 500000, pricingType: 'percentage', loadingDiscount: 0, quoteOption: 'quote' },
@@ -1632,7 +1632,7 @@ const PIProductConfig = () => {
                                           <SelectItem value="Architecture & Engineering">Architecture & Engineering</SelectItem>
                                           <SelectItem value="IT Services">IT Services</SelectItem>
                                           <SelectItem value="Medical Services">Medical Services</SelectItem>
-                                          <SelectItem value="Other Professional Services">Other Professional Services</SelectItem>
+                                          <SelectItem value="Miscellaneous">Miscellaneous</SelectItem>
                                         </SelectContent>
                                       </Select>
                                     </div>

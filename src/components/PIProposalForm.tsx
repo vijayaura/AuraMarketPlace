@@ -9,8 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { User, Briefcase, Shield, FileText, CheckCircle, Building, MapPin, Calendar, DollarSign, Plus, Trash2, Folder, Users, Circle, Download } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { User, Briefcase, Shield, FileText, CheckCircle, Building, MapPin, Calendar, DollarSign, Plus, Trash2, Folder, Users, Circle, Download, X, CalendarIcon, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 import { formatNumberWithCommas, removeCommasFromNumber, handleNumberInputChange } from "@/utils/numberFormat";
 import { DocumentUpload } from "@/components/DocumentUpload";
 
@@ -211,19 +215,24 @@ export const PIProposalForm = ({
     }
   ];
 
+  const [jurisdictionPopoverOpen, setJurisdictionPopoverOpen] = useState(false);
+
   // Form data state
   const [formData, setFormData] = useState({
     // Professional Information
     companyName: "TechFlow Solutions Ltd",
     businessType: "IT Services",
-    annualTurnover: "3200000",
+    policyPeriod: "12 months",
+    annualTurnoverByYear: {
+      2025: "3200000"
+    } as Record<number, string>,
     businessDescription: "We specialize in custom software development, cloud migration services, and digital transformation consulting for mid to large-scale enterprises. Our team delivers enterprise applications, mobile solutions, and AI-powered systems across various industries including healthcare, finance, and e-commerce.",
     businessAddress: "Dubai Internet City, Building 12, Floor 8\nDubai, UAE\nP.O. Box 98765",
     numberOfEmployees: "25",
     
     // Risk Profile
     yearsInPractice: "8",
-    primaryJurisdiction: "UAE",
+    primaryJurisdiction: ["UAE", "Saudi Arabia"],
     professionalLicense: true,
     industryAssociation: false,
     advancedDegree: true,
@@ -233,9 +242,10 @@ export const PIProposalForm = ({
     // Coverage Details
     limitOfIndemnity: "1000000",
     deductible: "10000",
-    policyPeriod: "12 months",
     retroactiveCoverage: "yes",
+    retroactiveCoverageDate: "2024-04-08",
     retroactiveMonths: "6",
+    previousLimitOfIndemnity: "500000",
     additionalCoverages: ["Cyber Liability", "Media Liability", "Intellectual Property Liability"],
     defenseCosts: false,
     lossOfDocuments: false,
@@ -286,11 +296,94 @@ export const PIProposalForm = ({
     onStepChange?.(prevStep);
   };
 
+  // Calculate months between two dates
+  const calculateMonthsDifference = (fromDate: string, toDate: Date = new Date()): number => {
+    const from = new Date(fromDate);
+    const diffTime = Math.abs(toDate.getTime() - from.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.ceil(diffDays / 30); // Approximate months
+  };
+
+  // Handle retroactive date change
+  const handleRetroactiveDateChange = (date: Date | undefined) => {
+    if (date) {
+      const dateString = format(date, "yyyy-MM-dd");
+      const months = calculateMonthsDifference(dateString).toString();
+      setFormData({ 
+        ...formData, 
+        retroactiveCoverageDate: dateString,
+        retroactiveMonths: months
+      });
+    }
+  };
+
+  // Helper to safely get jurisdictions as array
+  const getJurisdictionsArray = (): string[] => {
+    if (Array.isArray(formData.primaryJurisdiction)) {
+      return formData.primaryJurisdiction;
+    }
+    if (typeof formData.primaryJurisdiction === 'string' && formData.primaryJurisdiction) {
+      return [formData.primaryJurisdiction];
+    }
+    return [];
+  };
+
+  // Get years based on policy period
+  const getYearsForPolicyPeriod = (): number[] => {
+    const currentYear = new Date().getFullYear();
+    const months = parseInt(formData.policyPeriod.split(' ')[0]);
+    const years = Math.ceil(months / 12);
+    
+    const yearsList = [];
+    for (let i = 0; i < years; i++) {
+      yearsList.push(currentYear + i);
+    }
+    return yearsList;
+  };
+
+  // Handle policy period change - update annual turnover years
+  const handlePolicyPeriodChange = (value: string) => {
+    const months = parseInt(value.split(' ')[0]);
+    const years = Math.ceil(months / 12);
+    const currentYear = new Date().getFullYear();
+    
+    // Create new turnover object with years
+    const newTurnoverByYear: Record<number, string> = {};
+    for (let i = 0; i < years; i++) {
+      const year = currentYear + i;
+      newTurnoverByYear[year] = formData.annualTurnoverByYear[year] || '';
+    }
+    
+    setFormData({
+      ...formData,
+      policyPeriod: value,
+      annualTurnoverByYear: newTurnoverByYear
+    });
+  };
+
+  // Handle jurisdiction toggle
+  const handleJurisdictionToggle = (jurisdiction: string) => {
+    const currentJurisdictions = getJurisdictionsArray();
+    const isSelected = currentJurisdictions.includes(jurisdiction);
+    
+    if (isSelected) {
+    setFormData({
+      ...formData,
+        primaryJurisdiction: currentJurisdictions.filter(j => j !== jurisdiction)
+      });
+    } else {
+      setFormData({
+        ...formData,
+        primaryJurisdiction: [...currentJurisdictions, jurisdiction]
+      });
+    }
+  };
+
   const updateStepCompletion = (stepIndex: number, completed: boolean) => {
     const stepKeys = ['business_information', 'risk_profile', 'coverage_details', 'claims_history', 'generate_quote'];
     if (stepKeys[stepIndex]) {
       setStepCompletionStatus(prev => ({
-        ...prev,
+      ...prev,
         [stepKeys[stepIndex]]: completed
       }));
     }
@@ -299,11 +392,15 @@ export const PIProposalForm = ({
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 0: // Professional Information
-        if (!formData.companyName || !formData.businessType || !formData.annualTurnover || 
-            !formData.businessDescription || !formData.businessAddress || !formData.numberOfEmployees) {
+        // Check if all years have turnover values
+        const years = getYearsForPolicyPeriod();
+        const allYearsHaveTurnover = years.every(year => formData.annualTurnoverByYear[year]);
+        
+        if (!formData.companyName || !formData.businessType || !allYearsHaveTurnover || 
+            !formData.businessDescription || !formData.businessAddress || !formData.numberOfEmployees || !formData.policyPeriod) {
           toast({
             title: "Validation Error",
-            description: "Please fill in all required professional information fields.",
+            description: "Please fill in all required professional information fields including annual turnover for all policy years.",
             variant: "destructive"
           });
           return false;
@@ -311,10 +408,11 @@ export const PIProposalForm = ({
         return true;
       
       case 1: // Risk Profile
-        if (!formData.yearsInPractice || !formData.primaryJurisdiction) {
+        const jurisdictions = getJurisdictionsArray();
+        if (!formData.yearsInPractice || jurisdictions.length === 0) {
           toast({
             title: "Validation Error",
-            description: "Please fill in all required risk profile fields.",
+            description: "Please fill in all required risk profile fields and select at least one jurisdiction.",
             variant: "destructive"
           });
           return false;
@@ -322,7 +420,7 @@ export const PIProposalForm = ({
         return true;
       
       case 2: // Coverage Details
-        if (!formData.limitOfIndemnity || !formData.deductible || !formData.policyPeriod || !formData.retroactiveCoverage) {
+        if (!formData.limitOfIndemnity || !formData.deductible || !formData.retroactiveCoverage) {
           toast({
             title: "Validation Error",
             description: "Please fill in all required coverage details.",
@@ -331,14 +429,24 @@ export const PIProposalForm = ({
           return false;
         }
         
-        // If retroactive coverage is yes, check for months
-        if (formData.retroactiveCoverage === "yes" && !formData.retroactiveMonths) {
-          toast({
-            title: "Validation Error",
-            description: "Please specify the retroactive coverage period in months.",
-            variant: "destructive"
-          });
-          return false;
+        // If retroactive coverage is yes, check for date and previous limit
+        if (formData.retroactiveCoverage === "yes") {
+          if (!formData.retroactiveCoverageDate) {
+            toast({
+              title: "Validation Error",
+              description: "Please specify the retroactive coverage start date.",
+              variant: "destructive"
+            });
+            return false;
+          }
+          if (!formData.previousLimitOfIndemnity) {
+            toast({
+              title: "Validation Error",
+              description: "Please specify the previous limit of indemnity.",
+              variant: "destructive"
+            });
+            return false;
+          }
         }
         return true;
       
@@ -359,16 +467,16 @@ export const PIProposalForm = ({
           );
           
           if (!hasAnyClaimData) {
-            toast({
-              title: "Validation Error",
+      toast({
+        title: "Validation Error",
               description: "Please provide claims details for at least one year.",
               variant: "destructive"
-            });
+      });
             return false;
-          }
+    }
         }
         return true;
-      
+
       default:
         return true;
     }
@@ -390,7 +498,7 @@ export const PIProposalForm = ({
     "Architecture & Engineering",
     "IT Services",
     "Medical Services",
-    "Other Professional Services"
+    "Miscellaneous"
   ];
 
   const additionalCoverageOptions = [
@@ -484,7 +592,9 @@ export const PIProposalForm = ({
   const policyPeriodOptions = [
     "12 months",
     "24 months",
-    "36 months"
+    "36 months",
+    "48 months",
+    "60 months"
   ];
 
   const retroactiveOptions = [
@@ -509,17 +619,17 @@ export const PIProposalForm = ({
         return (
           <TabsContent value="business" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="companyName">Company Name *</Label>
-                <Input
-                  id="companyName"
-                  value={formData.companyName}
+        <div className="space-y-2">
+          <Label htmlFor="companyName">Company Name *</Label>
+          <Input
+            id="companyName"
+            value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  placeholder="Enter your company name"
-                />
-              </div>
-              
-              <div className="space-y-2">
+            placeholder="Enter your company name"
+          />
+        </div>
+
+        <div className="space-y-2">
                 <Label htmlFor="businessType">Profession Type *</Label>
                 <Select
                   value={formData.businessType}
@@ -527,66 +637,111 @@ export const PIProposalForm = ({
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select profession type" />
-                  </SelectTrigger>
-                  <SelectContent>
+            </SelectTrigger>
+            <SelectContent>
                     {professionTypeOptions.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            </SelectContent>
+          </Select>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="annualTurnover">Annual Turnover (AED) *</Label>
-                <Input
-                  id="annualTurnover"
-                  value={formatNumberWithCommas(formData.annualTurnover)}
-                  onChange={(e) => {
-                    const value = removeCommasFromNumber(e.target.value);
-                    setFormData({ ...formData, annualTurnover: value });
-                  }}
-                  placeholder="1,000,000"
-                />
-              </div>
+        <div className="space-y-2">
+          <Label htmlFor="policyPeriod">Policy Period *</Label>
+          <Select
+            value={formData.policyPeriod}
+            onValueChange={handlePolicyPeriodChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select policy period" />
+            </SelectTrigger>
+            <SelectContent>
+              {policyPeriodOptions.map((period) => (
+                <SelectItem key={period} value={period}>
+                  {period}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="numberOfEmployees">Number of Employees *</Label>
-                <Input 
-                  id="numberOfEmployees" 
-                  type="number"
-                  value={formData.numberOfEmployees}
-                  onChange={(e) => setFormData({ ...formData, numberOfEmployees: e.target.value })}
-                  placeholder="Enter number of employees" 
-                  min="1"
-                />
-              </div>
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="numberOfEmployees">Number of Employees *</Label>
+          <Input
+            id="numberOfEmployees" 
+            type="number"
+            value={formData.numberOfEmployees}
+            onChange={(e) => setFormData({ ...formData, numberOfEmployees: e.target.value })}
+            placeholder="Enter number of employees" 
+            min="1"
+          />
+        </div>
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="space-y-2">
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Annual Turnover (AED) by Year *</h3>
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-1/3">Year</TableHead>
+                <TableHead>Annual Turnover (AED)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {getYearsForPolicyPeriod().map((year) => (
+                <TableRow key={year}>
+                  <TableCell className="font-medium">{year}</TableCell>
+                  <TableCell>
+                    <Input
+                      id={`turnover-${year}`}
+                      value={formatNumberWithCommas(formData.annualTurnoverByYear[year] || '')}
+                      onChange={(e) => {
+                        const value = removeCommasFromNumber(e.target.value);
+                        setFormData({ 
+                          ...formData, 
+                          annualTurnoverByYear: {
+                            ...formData.annualTurnoverByYear,
+                            [year]: value
+                          }
+                        });
+                      }}
+                      placeholder="Enter annual turnover"
+                      className="max-w-md"
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className="space-y-2">
                 <Label htmlFor="businessDescription">Professional Services Description *</Label>
-                <Textarea
-                  id="businessDescription"
-                  value={formData.businessDescription}
+          <Textarea
+            id="businessDescription"
+            value={formData.businessDescription}
                   onChange={(e) => setFormData({ ...formData, businessDescription: e.target.value })}
                   placeholder="Describe your professional activities and services"
-                  rows={4}
-                />
-              </div>
+            rows={4}
+          />
+        </div>
 
-              <div className="space-y-2">
+        <div className="space-y-2">
                 <Label htmlFor="businessAddress">Professional Practice Address *</Label>
-                <Textarea
-                  id="businessAddress"
-                  value={formData.businessAddress}
+          <Textarea
+            id="businessAddress"
+            value={formData.businessAddress}
                   onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })}
                   placeholder="Enter your complete practice address"
-                  rows={4}
-                />
-              </div>
-            </div>
+            rows={4}
+          />
+        </div>
+      </div>
 
           </TabsContent>
         );
@@ -595,7 +750,7 @@ export const PIProposalForm = ({
         return (
           <TabsContent value="risk" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="space-y-2">
+        <div className="space-y-2">
                 <Label htmlFor="yearsInPractice">Years in Practice *</Label>
                 <Input 
                   id="yearsInPractice" 
@@ -605,76 +760,128 @@ export const PIProposalForm = ({
                   placeholder="Enter years in practice" 
                   min="0"
                 />
-              </div>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="primaryJurisdiction">Primary Jurisdiction *</Label>
-                <Select
-                  value={formData.primaryJurisdiction}
-                  onValueChange={(value) => setFormData({ ...formData, primaryJurisdiction: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select jurisdiction" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {jurisdictionOptions.map((jurisdiction) => (
-                      <SelectItem key={jurisdiction} value={jurisdiction}>
-                        {jurisdiction}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="primaryJurisdiction">Primary Jurisdiction *</Label>
+                <Popover open={jurisdictionPopoverOpen} onOpenChange={setJurisdictionPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={jurisdictionPopoverOpen}
+                      className="w-full justify-between h-auto min-h-[40px] hover:bg-accent"
+                    >
+                      <div className="flex flex-wrap gap-1 flex-1">
+                        {getJurisdictionsArray().length > 0 ? (
+                          getJurisdictionsArray().map((jurisdiction) => (
+                            <Badge
+                              key={jurisdiction}
+                              variant="secondary"
+                              className="mr-1"
+                            >
+                              {jurisdiction}
+                              <button
+                                type="button"
+                                className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    handleJurisdictionToggle(jurisdiction);
+                                  }
+                                }}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleJurisdictionToggle(jurisdiction);
+                                }}
+                              >
+                                <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                              </button>
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-muted-foreground">Select jurisdictions...</span>
+                        )}
+                      </div>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-2" align="start">
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium mb-2">Select Jurisdictions</div>
+                      <div className="max-h-64 overflow-auto space-y-1">
+                        {jurisdictionOptions.map((jurisdiction) => (
+                          <div
+                            key={jurisdiction}
+                            className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm cursor-pointer"
+                            onClick={() => handleJurisdictionToggle(jurisdiction)}
+                          >
+                            <Checkbox
+                              checked={getJurisdictionsArray().includes(jurisdiction)}
+                              onCheckedChange={() => handleJurisdictionToggle(jurisdiction)}
+                            />
+                            <Label className="cursor-pointer flex-1">{jurisdiction}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+        </div>
+      </div>
 
-            <div className="space-y-4">
+        <div className="space-y-4">
               <h3 className="text-lg font-semibold">Professional Qualifications</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
+            <div className="flex items-center space-x-2">
+              <Checkbox
                     id="professionalLicense"
                     checked={formData.professionalLicense}
                     onCheckedChange={(checked) => setFormData({ ...formData, professionalLicense: checked as boolean })}
                   />
                   <Label htmlFor="professionalLicense">Professional License/Certification</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
                     id="industryAssociation"
                     checked={formData.industryAssociation}
                     onCheckedChange={(checked) => setFormData({ ...formData, industryAssociation: checked as boolean })}
                   />
                   <Label htmlFor="industryAssociation">Industry Association Membership</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
                     id="advancedDegree"
                     checked={formData.advancedDegree}
                     onCheckedChange={(checked) => setFormData({ ...formData, advancedDegree: checked as boolean })}
                   />
                   <Label htmlFor="advancedDegree">Advanced Degree/Qualification</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
                     id="continuingEducation"
                     checked={formData.continuingEducation}
                     onCheckedChange={(checked) => setFormData({ ...formData, continuingEducation: checked as boolean })}
                   />
                   <Label htmlFor="continuingEducation">Continuing Education Programs</Label>
-                </div>
-              </div>
-            </div>
+          </div>
+        </div>
+      </div>
 
-            <div className="space-y-2">
+      <div className="space-y-2">
               <h3 className="text-lg font-semibold">High-Risk Activities</h3>
-              <Textarea
-                id="highRiskActivities"
-                value={formData.highRiskActivities}
+        <Textarea
+          id="highRiskActivities"
+          value={formData.highRiskActivities}
                 onChange={(e) => setFormData({ ...formData, highRiskActivities: e.target.value })}
                 placeholder="Describe any high-risk activities or services your practice provides"
-                rows={4}
-              />
-            </div>
+          rows={4}
+        />
+      </div>
           </TabsContent>
         );
 
@@ -682,85 +889,114 @@ export const PIProposalForm = ({
         return (
           <TabsContent value="coverage" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="limitOfIndemnity">Limit of Indemnity (AED) *</Label>
-                <Input
-                  id="limitOfIndemnity"
+        <div className="space-y-2">
+          <Label htmlFor="limitOfIndemnity">Limit of Indemnity (AED) *</Label>
+          <Input
+            id="limitOfIndemnity"
                   value={formatNumberWithCommas(formData.limitOfIndemnity)}
-                  onChange={(e) => {
+            onChange={(e) => {
                     const value = removeCommasFromNumber(e.target.value);
                     setFormData({ ...formData, limitOfIndemnity: value });
                   }}
                   placeholder="1,000,000"
                 />
-              </div>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="deductible">Deductible (AED) *</Label>
+        <div className="space-y-2">
+          <Label htmlFor="deductible">Deductible (AED) *</Label>
                 <Select
                   value={formData.deductible}
                   onValueChange={(value) => setFormData({ ...formData, deductible: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select deductible" />
-                  </SelectTrigger>
-                  <SelectContent>
+            </SelectTrigger>
+            <SelectContent>
                     {deductibleOptions.map((deductible) => (
                       <SelectItem key={deductible} value={deductible}>
                         AED {formatNumberWithCommas(deductible)}
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            </SelectContent>
+          </Select>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="policyPeriod">Policy Period *</Label>
-                <Select
-                  value={formData.policyPeriod}
-                  onValueChange={(value) => setFormData({ ...formData, policyPeriod: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select policy period" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {policyPeriodOptions.map((period) => (
-                      <SelectItem key={period} value={period}>
-                        {period}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="retroactiveCoverage">Would you need retroactive coverage? *</Label>
+        <div className="space-y-2">
+          <Label htmlFor="retroactiveCoverage">Would you need retroactive coverage? *</Label>
                 <Select
                   value={formData.retroactiveCoverage}
-                  onValueChange={(value) => setFormData({ ...formData, retroactiveCoverage: value, retroactiveMonths: value === 'no' ? '' : formData.retroactiveMonths })}
+                  onValueChange={(value) => setFormData({ 
+                    ...formData, 
+                    retroactiveCoverage: value, 
+                    retroactiveCoverageDate: value === 'no' ? '' : formData.retroactiveCoverageDate,
+                    retroactiveMonths: value === 'no' ? '' : formData.retroactiveMonths,
+                    previousLimitOfIndemnity: value === 'no' ? '' : formData.previousLimitOfIndemnity
+                  })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select option" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
+              <SelectValue placeholder="Select option" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="yes">Yes</SelectItem>
+              <SelectItem value="no">No</SelectItem>
+            </SelectContent>
+          </Select>
               </div>
 
               {formData.retroactiveCoverage === "yes" && (
-                <div className="space-y-2">
-                  <Label htmlFor="retroactiveMonths">Retroactive Coverage Period (months) *</Label>
-                  <Input 
-                    id="retroactiveMonths" 
-                    type="number"
-                    value={formData.retroactiveMonths}
-                    onChange={(e) => setFormData({ ...formData, retroactiveMonths: e.target.value })}
-                    placeholder="Enter number of months" 
-                    min="1"
-                  />
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="retroactiveCoverageDate">Retroactive Coverage Period * (Date)</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.retroactiveCoverageDate ? (
+                            format(new Date(formData.retroactiveCoverageDate), "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={formData.retroactiveCoverageDate ? new Date(formData.retroactiveCoverageDate) : undefined}
+                          onSelect={handleRetroactiveDateChange}
+                          disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+        </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="retroactiveMonths">Retroactive Coverage Period (months) *</Label>
+                    <Input 
+                      id="retroactiveMonths" 
+                      type="text"
+                      value={formData.retroactiveMonths}
+                      readOnly
+                      disabled
+                      className="bg-muted cursor-not-allowed"
+                      placeholder="Auto-calculated from date" 
+                    />
+      </div>
+
+        <div className="space-y-2">
+                    <Label htmlFor="previousLimitOfIndemnity">Previous Limit of Indemnity (AED) *</Label>
+                    <Input 
+                      id="previousLimitOfIndemnity" 
+                      type="text"
+                      value={formatNumberWithCommas(formData.previousLimitOfIndemnity)}
+                      onChange={(e) => handleNumberInputChange(e.target.value, setFormData, 'previousLimitOfIndemnity')}
+                      placeholder="Enter previous limit of indemnity" 
+                    />
+                  </div>
+                </>
               )}
             </div>
 
@@ -782,7 +1018,7 @@ export const PIProposalForm = ({
                     }
                   }}>
                     <div className="flex items-start space-x-3">
-                      <Checkbox
+                <Checkbox
                         id={`coverage-${coverage.title}`}
                         checked={formData.additionalCoverages.includes(coverage.title)}
                         onCheckedChange={(checked) => {
@@ -798,21 +1034,21 @@ export const PIProposalForm = ({
                             });
                           }
                         }}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
+                  className="mt-1"
+                />
+                <div className="flex-1">
                         <Label htmlFor={`coverage-${coverage.title}`} className="text-sm font-medium cursor-pointer block mb-1">
                           {coverage.title}
-                        </Label>
+                  </Label>
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           {coverage.description}
                         </p>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                </div>
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
           </TabsContent>
         );
 
@@ -825,42 +1061,42 @@ export const PIProposalForm = ({
                 <h3 className="text-lg font-medium">Claims History</h3>
               </div>
               
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="lossesInLastFiveYears">Any insurance losses in last 5 years? *</Label>
-                  <Select value={formData.lossesInLastFiveYears || undefined} onValueChange={value => setFormData({
-                    ...formData,
-                    lossesInLastFiveYears: value
-                  })}>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="lossesInLastFiveYears">Any insurance losses in last 5 years? *</Label>
+          <Select value={formData.lossesInLastFiveYears || undefined} onValueChange={value => setFormData({
+            ...formData,
+            lossesInLastFiveYears: value
+          })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select yes or no" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="yes">Yes</SelectItem>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="yes">Yes</SelectItem>
                       <SelectItem value="no">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">Select if you have had any insurance claims in the past 5 years</p>
-                </div>
-                
-                {formData.lossesInLastFiveYears === "yes" && <div className="space-y-4">
-                    <div className="bg-muted/30 p-4 rounded-lg">
-                      <h4 className="font-medium text-foreground mb-4">Claims History Matrix (2021-2025)</h4>
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-20">Year</TableHead>
-                              <TableHead className="w-32">Count of Claims</TableHead>
-                              <TableHead className="w-40">Amount of Claims (AED)</TableHead>
-                              <TableHead>Description</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">Select if you have had any insurance claims in the past 5 years</p>
+        </div>
+        
+        {formData.lossesInLastFiveYears === "yes" && <div className="space-y-4">
+            <div className="bg-muted/30 p-4 rounded-lg">
+              <h4 className="font-medium text-foreground mb-4">Claims History Matrix (2021-2025)</h4>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-20">Year</TableHead>
+                      <TableHead className="w-32">Count of Claims</TableHead>
+                      <TableHead className="w-40">Amount of Claims (AED)</TableHead>
+                      <TableHead>Description</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                             {[2021, 2022, 2023, 2024, 2025].map(year => (
                               <TableRow key={year}>
                                 <TableCell className="font-medium">{year}</TableCell>
-                                <TableCell>
+                        <TableCell>
                                   <Input
                                     type="number"
                                     min="0"
@@ -878,11 +1114,11 @@ export const PIProposalForm = ({
                                     placeholder="0"
                                     className="w-full"
                                   />
-                                </TableCell>
-                                <TableCell>
-                                  <Input
+                        </TableCell>
+                        <TableCell>
+                          <Input 
                                     type="number"
-                                    min="0"
+                            min="0" 
                                     value={formData.claimsHistory?.[year]?.amount || ""}
                                     onChange={(e) => setFormData({
                                       ...formData,
@@ -894,11 +1130,11 @@ export const PIProposalForm = ({
                                         }
                                       }
                                     })}
-                                    placeholder="0"
+                            placeholder="0" 
                                     className="w-full"
-                                  />
-                                </TableCell>
-                                <TableCell>
+                          />
+                        </TableCell>
+                        <TableCell>
                                   <Input
                                     value={formData.claimsHistory?.[year]?.description || ""}
                                     onChange={(e) => setFormData({
@@ -914,25 +1150,25 @@ export const PIProposalForm = ({
                                     placeholder="Brief description"
                                     className="w-full"
                                   />
-                                </TableCell>
+                        </TableCell>
                               </TableRow>
                             ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
                   </div>
                 }
               </div>
-            </div>
+      </div>
 
             {/* Risk Management Section */}
-            <div className="space-y-4">
+      <div className="space-y-4">
               <h3 className="text-lg font-semibold">Risk Management</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setFormData({ ...formData, writtenProcedures: !formData.writtenProcedures })}>
                   <div className="flex items-start space-x-3">
-                    <Checkbox
+            <Checkbox
                       id="writtenProcedures"
                       checked={formData.writtenProcedures}
                       onCheckedChange={(checked) => setFormData({ ...formData, writtenProcedures: checked as boolean })}
@@ -945,13 +1181,13 @@ export const PIProposalForm = ({
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         Documented quality control and operational procedures
                       </p>
-                    </div>
-                  </div>
+          </div>
+          </div>
                 </div>
 
                 <div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setFormData({ ...formData, staffTraining: !formData.staffTraining })}>
                   <div className="flex items-start space-x-3">
-                    <Checkbox
+            <Checkbox
                       id="staffTraining"
                       checked={formData.staffTraining}
                       onCheckedChange={(checked) => setFormData({ ...formData, staffTraining: checked as boolean })}
@@ -964,13 +1200,13 @@ export const PIProposalForm = ({
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         Regular training programs for professional development
                       </p>
-                    </div>
+          </div>
                   </div>
                 </div>
 
                 <div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setFormData({ ...formData, contractReview: !formData.contractReview })}>
                   <div className="flex items-start space-x-3">
-                    <Checkbox
+            <Checkbox
                       id="contractReview"
                       checked={formData.contractReview}
                       onCheckedChange={(checked) => setFormData({ ...formData, contractReview: checked as boolean })}
@@ -983,9 +1219,9 @@ export const PIProposalForm = ({
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         Systematic review of client contracts and agreements
                       </p>
-                    </div>
-                  </div>
-                </div>
+          </div>
+        </div>
+      </div>
 
                 <div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setFormData({ ...formData, professionalSupervision: !formData.professionalSupervision })}>
                   <div className="flex items-start space-x-3">
@@ -1002,10 +1238,10 @@ export const PIProposalForm = ({
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         Oversight systems for professional work quality
                       </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      </div>
+            </div>
+            </div>
+            </div>
             </div>
           </TabsContent>
         );
@@ -1021,7 +1257,7 @@ export const PIProposalForm = ({
                 <p className="text-sm text-muted-foreground">
                   Please upload documents needed for underwriting
                 </p>
-              </div>
+            </div>
               <DocumentUpload 
                 documents={piDocuments}
                 onDocumentStatusChange={(updatedDocuments) => {
@@ -1050,7 +1286,7 @@ export const PIProposalForm = ({
                 >
                   Compare Selected Quotes ({selectedQuotes.length}/2)
                 </Button>
-              </div>
+            </div>
             )}
 
             {/* Quotes List */}
@@ -1066,7 +1302,7 @@ export const PIProposalForm = ({
                           onCheckedChange={() => handleQuoteSelection(quote.id)}
                         />
                         <h4 className="text-lg font-semibold">{quote.insurerName}</h4>
-                      </div>
+      </div>
 
                       {/* Right: Premium, Validity and Buttons */}
                       <div className="flex items-center gap-6">
@@ -1078,7 +1314,7 @@ export const PIProposalForm = ({
                           <p className="text-xs text-muted-foreground mt-1">
                             Valid for {quote.validityDays} days
                           </p>
-                        </div>
+      </div>
 
                         {/* Download Quote Button */}
                         <Button
@@ -1088,7 +1324,7 @@ export const PIProposalForm = ({
                         >
                           <Download className="w-4 h-4" />
                           Download Quote
-                        </Button>
+        </Button>
 
                         {/* Select Plan Button */}
                         <Button
@@ -1096,9 +1332,9 @@ export const PIProposalForm = ({
                           className="bg-primary hover:bg-primary/90"
                         >
                           Select Plan
-                        </Button>
-                      </div>
-                    </div>
+        </Button>
+      </div>
+    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -1118,56 +1354,56 @@ export const PIProposalForm = ({
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Main Content */}
-      <Card className="shadow-large border-border w-full overflow-hidden">
+        <Card className="shadow-large border-border w-full overflow-hidden">
         <CardHeader className="px-4 sm:px-6">
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl">
-                Create New Quote
-              </CardTitle>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">
+                  Create New Quote
+                </CardTitle>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Step {currentStep + 1} of {steps.length}
+              </div>
             </div>
-            <div className="text-xs text-muted-foreground">
-              Step {currentStep + 1} of {steps.length}
-            </div>
-          </div>
-          
-          {/* Progress Bar with Navigation Buttons */}
+
+            {/* Progress Bar with Navigation Buttons */}
           <div className="flex items-center gap-4 mt-6">
-            {/* Progress Bar */}
-            <div className="flex-1 bg-muted rounded-full h-2">
+              {/* Progress Bar */}
+              <div className="flex-1 bg-muted rounded-full h-2">
               <div className="bg-primary h-2 rounded-full transition-smooth" style={{
-                width: `${(currentStep + 1) / steps.length * 100}%`
-              }} />
-            </div>
-            
-            {/* Navigation Buttons */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              {/* Previous Button */}
-              {currentStep > 0 && (
-                <Button variant="outline" onClick={handleBack}>
-                  Previous
-                </Button>
-              )}
+                  width: `${(currentStep + 1) / steps.length * 100}%`
+                }} />
+              </div>
               
+              {/* Navigation Buttons */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {/* Previous Button */}
+                {currentStep > 0 && (
+                <Button variant="outline" onClick={handleBack}>
+                    Previous
+                  </Button>
+                )}
+                
               {/* Next Button */}
               {currentStep < steps.length - 1 && (
                 <Button onClick={handleNext}>
-                  Next
-                </Button>
-              )}
+                    Next
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
         </CardHeader>
 
         <CardContent className="px-4 sm:px-6">
-          <Tabs value={steps[currentStep].id} className="w-full">
-            {/* Step Navigation */}
+            <Tabs value={steps[currentStep].id} className="w-full">
+              {/* Step Navigation */}
             <div className="mb-8">
-              <div className="w-full">
-                {/* Mobile: Horizontal scroll */}
-                <div className="md:hidden">
-                  <div className="overflow-x-auto scrollbar-hide pb-2">
-                    <div className="flex items-center gap-2 bg-muted p-2 rounded-lg w-max">
+                <div className="w-full">
+                  {/* Mobile: Horizontal scroll */}
+                  <div className="md:hidden">
+                    <div className="overflow-x-auto scrollbar-hide pb-2">
+                      <div className="flex items-center gap-2 bg-muted p-2 rounded-lg w-max">
                       {steps.map((step, index) => (
                         <button 
                           key={step.id} 
@@ -1181,22 +1417,22 @@ export const PIProposalForm = ({
                                 : 'bg-card text-muted-foreground cursor-not-allowed opacity-60'
                           } ${index <= currentStep ? 'hover:scale-105' : ''}`}
                         >
-                          <span className="text-xs font-bold">{index + 1}</span>
+                            <span className="text-xs font-bold">{index + 1}</span>
                           {React.createElement(step.icon, { className: "w-3 h-3 flex-shrink-0" })}
-                          <span className="text-[10px] leading-tight">
-                            {step.label}
-                          </span>
+                            <span className="text-[10px] leading-tight">
+                              {step.label}
+                            </span>
                         </button>
                       ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Desktop: Horizontal scroll */}
-                <div className="hidden md:block">
-                  <div className="bg-muted p-4 rounded-lg">
-                    <div className="overflow-x-auto scrollbar-hide">
-                      <div className="flex items-center gap-3 w-max mx-auto">
+                  {/* Desktop: Horizontal scroll */}
+                  <div className="hidden md:block">
+                    <div className="bg-muted p-4 rounded-lg">
+                       <div className="overflow-x-auto scrollbar-hide">
+                        <div className="flex items-center gap-3 w-max mx-auto">
                         {steps.map((step, index) => (
                           <button 
                             key={step.id} 
@@ -1210,24 +1446,24 @@ export const PIProposalForm = ({
                                   : 'bg-card text-muted-foreground cursor-not-allowed opacity-60'
                             } ${index <= currentStep ? 'hover:scale-105' : ''}`}
                           >
-                            <span className="text-lg font-bold">{index + 1}</span>
+                              <span className="text-lg font-bold">{index + 1}</span>
                             {React.createElement(step.icon, { className: "w-5 h-5 flex-shrink-0" })}
-                            <span className="text-sm">
-                              {step.label}
-                            </span>
+                              <span className="text-sm">
+                                {step.label}
+                              </span>
                           </button>
                         ))}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
             {renderStepContent()}
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
   );
 };
