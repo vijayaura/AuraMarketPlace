@@ -2467,9 +2467,10 @@ const SingleProductConfig = () => {
         clausesPricing: defaultClausesPricing
       }));
       
-      // If we already have pricing data, merge it with the metadata
+      // If we already have pricing data, merge it with the fresh metadata
       if (clausePricingData && clausePricingData.clause_pricing && clausePricingData.clause_pricing.length > 0) {
-        setTimeout(() => updateClausePricingFromAPIData(clausePricingData.clause_pricing), 100);
+        // Pass the fresh metadata directly instead of relying on state
+        setTimeout(() => updateClausePricingFromAPIData(clausePricingData.clause_pricing, data.clauses), 100);
       }
       
       console.log('✅ Clause metadata loaded:', data);
@@ -2527,7 +2528,8 @@ const SingleProductConfig = () => {
       
       // Update ratingConfig.clausesPricing with the pricing data if we have both metadata and pricing
       if (clauseMetadata.length > 0 && data.clauses && data.clauses.length > 0) {
-        updateClausePricingFromAPIData(data.clauses);
+        // Pass clauseMetadata explicitly to ensure we use the correct data
+        updateClausePricingFromAPIData(data.clauses, clauseMetadata);
       }
       
       console.log('✅ Clause pricing data loaded:', data);
@@ -2558,13 +2560,19 @@ const SingleProductConfig = () => {
   };
 
   // Function to update clause pricing from API response data
-  const updateClausePricingFromAPIData = (pricingData: any[]) => {
+  const updateClausePricingFromAPIData = (pricingData: any[], metadata: any[] = clauseMetadata) => {
     console.log('🔄 Updating clause pricing from API data:', pricingData);
-    console.log('🔄 Current clauseMetadata:', clauseMetadata);
+    console.log('🔄 Using clauseMetadata:', metadata);
+    
+    // Safety check: if metadata is empty, skip update
+    if (!metadata || metadata.length === 0) {
+      console.warn('⚠️ Clause metadata is empty, skipping pricing update');
+      return;
+    }
     
     setRatingConfig(prev => ({
       ...prev,
-      clausesPricing: clauseMetadata.map((clause, index) => {
+      clausesPricing: metadata.map((clause, index) => {
         // Find matching pricing data for this clause
         const pricingItem = pricingData.find(p => p.clause_code === clause.clause_code);
         
@@ -2575,7 +2583,7 @@ const SingleProductConfig = () => {
             code: clause.clause_code,
             name: clause.title,
             enabled: Boolean(pricing.is_enabled),
-            isMandatory: Boolean(pricing.is_enabled), // Use is_enabled as mandatory indicator
+            isMandatory: clause.show_type === "MANDATORY", // Use show_type from clause metadata, not pricing
             pricingType: (pricing.pricing_type === 'PERCENTAGE' ? 'percentage' : 'amount') as "percentage" | "amount",
             pricingValue: pricing.pricing_value || 0,
             variableOptions: pricing.options.map((option: any, optIndex: number) => ({
@@ -2986,15 +2994,21 @@ const SingleProductConfig = () => {
         // Find pricing data for this clause
         const pricingData = ratingConfig.clausesPricing?.find((p: any) => p.code === clause.clause_code);
         
+        // Determine if clause should be enabled
+        // Priority: 1) pricingData.enabled if exists, 2) Mandatory clauses are enabled by default
+        const isEnabled = pricingData ? Boolean(pricingData.enabled) : (clause.show_type === "MANDATORY");
+        
+        console.log(`🔍 Clause ${clause.clause_code}: pricingData?.enabled =`, pricingData?.enabled, 'isEnabled =', isEnabled, 'show_type =', clause.show_type);
+        
         return {
           clause_code: clause.clause_code,
           title: clause.title,
           clause_type: clause.clause_type as 'CLAUSE' | 'WARRANTY' | 'EXCLUSION',
           show_type: clause.show_type as 'MANDATORY' | 'OPTIONAL',
           display_order: clause.display_order || (index + 1) * 10,
-          is_active: pricingData?.enabled ?? (clause.show_type === "MANDATORY"),
+          is_active: isEnabled,
           pricing: {
-            is_enabled: pricingData?.enabled ?? (clause.show_type === "MANDATORY"),
+            is_enabled: isEnabled,
             pricing_type: (pricingData?.pricingType === 'percentage' ? 'PERCENTAGE' : 'CURRENCY') as 'PERCENTAGE' | 'CURRENCY',
             pricing_value: pricingData?.pricingValue ?? 0,
             base_currency: 'AED',

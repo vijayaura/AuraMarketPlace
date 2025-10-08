@@ -761,22 +761,72 @@ const MasterDataTabs: React.FC<MasterDataTabsProps> = ({
         ...prev,
         [clauseId]: checked
       }));
+      
+      // Also update ratingConfig.clausesPricing to reflect the toggle change
+      const clause = clauseMetadata.find((c: any) => c.id === clauseId);
+      if (clause) {
+        setRatingConfig((prev: any) => {
+          const existingPricingIndex = (prev.clausesPricing || []).findIndex(
+            (pricing: any) => pricing.code === clause.clause_code
+          );
+          
+          if (existingPricingIndex !== -1) {
+            // Update existing pricing entry
+            const updatedPricing = [...(prev.clausesPricing || [])];
+            updatedPricing[existingPricingIndex] = {
+              ...updatedPricing[existingPricingIndex],
+              enabled: checked
+            };
+            return {
+              ...prev,
+              clausesPricing: updatedPricing
+            };
+          } else {
+            // Create new pricing entry if it doesn't exist
+            const newPricing = {
+              id: clauseId,
+              code: clause.clause_code,
+              name: clause.title,
+              enabled: checked,
+              isMandatory: clause.show_type === "MANDATORY",
+              pricingType: (clause.clause_type === "CLAUSE" ? "percentage" : "amount") as "percentage" | "amount",
+              pricingValue: 0,
+              variableOptions: [{
+                id: 1,
+                label: "Standard Rate",
+                limits: "All Coverage",
+                type: (clause.clause_type === "CLAUSE" ? "percentage" : "amount") as "percentage" | "amount",
+                value: 2
+              }]
+            };
+            return {
+              ...prev,
+              clausesPricing: [...(prev.clausesPricing || []), newPricing]
+            };
+          }
+        });
+      }
+      
+      markAsChanged();
     };
 
     const isClauseActive = (clause: any) => {
-      // Use state if available, otherwise fall back to pricing data
+      // Use state if available (user has explicitly toggled)
       if (activeToggles[clause.id] !== undefined) {
         return activeToggles[clause.id];
       }
       
-      // Check pricing data from ratingConfig
+      // Check pricing data from ratingConfig (saved/loaded data)
       const pricingData = ratingConfig.clausesPricing?.find((p: any) => p.code === clause.clause_code);
-      if (pricingData) {
+      if (pricingData !== undefined) {
         return pricingData.enabled;
       }
       
-      // Fall back to clause metadata
-      return clause.is_active === 1;
+      // Default behavior for clauses without pricing data:
+      // - Mandatory clauses: enabled (true)
+      // - Optional clauses: enabled (true) - show as active so they can be configured
+      // User can explicitly toggle them off if needed
+      return true;
     };
 
     return (
