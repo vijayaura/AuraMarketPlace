@@ -43,6 +43,9 @@ import MarketAdminDashboard from "./pages/MarketAdminDashboard";
 import RequireAuth from "./components/RequireAuth";
 import MarketAdminBrokerManagement from "./pages/MarketAdminBrokerManagement";
 import MarketAdminInsurerManagement from "./pages/MarketAdminInsurerManagement";
+import MarketAdminProductManagement from "./pages/MarketAdminProductManagement";
+import CreateProduct from "./pages/CreateProduct";
+import AuthorityMatrix from "./pages/AuthorityMatrix";
 import MastersProductSelection from "./pages/MastersProductSelection";
 import CARMastersManagement from "./pages/CARMastersManagement";
 import PIMastersManagement from "./pages/PIMastersManagement";
@@ -99,6 +102,9 @@ const App = () => (
           {/* Market Admin Routes - Protected */}
           <Route path="/market-admin" element={<RequireAuth requiredRole="admin"><MarketAdminLayout /></RequireAuth>}>
             <Route path="dashboard" element={<MarketAdminDashboard />} />
+            <Route path="product-management" element={<MarketAdminProductManagement />} />
+            <Route path="product-management/create" element={<CreateProduct />} />
+            <Route path="product-management/authority-matrix" element={<AuthorityMatrix />} />
             <Route path="masters-management" element={<MastersProductSelection />} />
             <Route path="masters-management/car" element={<CARMastersManagement />} />
             <Route path="masters-management/pi" element={<PIMastersManagement />} />

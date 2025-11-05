@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Building2, LayoutDashboard, Users, Shield, Settings, Bell, TrendingUp, LogOut } from "lucide-react";
+import { Building2, LayoutDashboard, Users, Shield, Settings, Bell, TrendingUp, LogOut, Package } from "lucide-react";
 import auraLogo from "/lovable-uploads/a1521c76-be1d-45e9-8d86-5df99d190608.png";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +14,10 @@ const sidebarItems = [{
   title: "Dashboard",
   url: "/market-admin/dashboard",
   icon: LayoutDashboard
+}, {
+  title: "Product Management",
+  url: "/market-admin/product-management",
+  icon: Package
 }, {
   title: "Masters Management",
   url: "/market-admin/masters-management",
