@@ -250,9 +250,13 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
     data.forEach((item, index) => {
       const baseRowHeight = 8;
       
+      // Ensure label and value are strings
+      const labelText = String(item.label || '');
+      const valueText = String(item.value ?? '');
+      
       // Split long text into multiple lines - reduced padding
-      const labelLines = doc.splitTextToSize(item.label, contentWidth * 0.3 - 4);
-      const valueLines = doc.splitTextToSize(item.value, contentWidth * 0.65 - 4);
+      const labelLines = doc.splitTextToSize(labelText, contentWidth * 0.3 - 4);
+      const valueLines = doc.splitTextToSize(valueText, contentWidth * 0.65 - 4);
       
       // Calculate the height needed for this row - reduced line height and padding
       const maxLines = Math.max(labelLines.length, valueLines.length);
@@ -306,7 +310,8 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
           
           // Check each bold value in this line
           for (const boldValue of item.boldValues) {
-            const boldIndex = remainingText.indexOf(boldValue);
+            const boldValueStr = String(boldValue);
+            const boldIndex = remainingText.indexOf(boldValueStr);
             if (boldIndex !== -1) {
               // Draw text before bold value in normal font
               if (boldIndex > 0) {
@@ -318,11 +323,11 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
               
               // Draw bold value in lighter bold font
               doc.setFont(undefined, 'bold');
-              doc.text(boldValue, currentX, lineY);
-              currentX += doc.getTextWidth(boldValue);
+              doc.text(boldValueStr, currentX, lineY);
+              currentX += doc.getTextWidth(boldValueStr);
               
               // Remove processed text from remaining
-              remainingText = remainingText.substring(boldIndex + boldValue.length);
+              remainingText = remainingText.substring(boldIndex + boldValueStr.length);
             }
           }
           

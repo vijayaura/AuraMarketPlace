@@ -3,7 +3,7 @@ import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/Footer";
-import { Users, Building, Shield } from "lucide-react";
+import { Users, Building, Shield, Eye } from "lucide-react";
 
 const FlowSelection = () => {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ const FlowSelection = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex flex-col cityscape-bg">
       <div className="flex-1 flex items-center justify-center p-4">
-        <div className="max-w-4xl w-full">
+        <div className="max-w-7xl w-full">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-foreground mb-4">
               Aura Marketplace
@@ -23,27 +23,51 @@ const FlowSelection = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card className="hover:shadow-medium transition-shadow cursor-pointer group">
               <CardHeader className="text-center pb-4">
                 <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <Users className="w-8 h-8 text-primary" />
+                  <Eye className="w-8 h-8 text-primary" />
                 </div>
-                <CardTitle className="text-2xl">Broker Portal</CardTitle>
+                <CardTitle className="text-2xl">Super Admin</CardTitle>
                 <CardDescription className="text-base">
-                  Manage contractor insurance quotes and applications
+                  Create and manage market admins with eagle eye view
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground mb-6">
-                  Access your broker dashboard to manage quotes, track applications, and create new policies for clients.
+                  Super administrative access to create and manage market admins, and have an eagle eye view of all ecosystems.
                 </p>
                 <Button 
                   size="lg" 
                   className="w-full"
-                  onClick={() => navigate("/broker/login")}
+                  onClick={() => navigate("/super-admin/login")}
                 >
-                  Access Dashboard
+                  Access Super Admin Panel
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-medium transition-shadow cursor-pointer group">
+              <CardHeader className="text-center pb-4">
+                <div className="mx-auto w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
+                  <Shield className="w-8 h-8 text-accent-foreground" />
+                </div>
+                <CardTitle className="text-2xl">Market Admin</CardTitle>
+                <CardDescription className="text-base">
+                  Manage brokers and oversee all operations
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center">
+                <p className="text-muted-foreground mb-6">
+                  Administrative access to manage broker users, view all quotes, and control platform settings.
+                </p>
+                <Button 
+                  size="lg" 
+                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                  onClick={() => navigate("/admin/login")}
+                >
+                  Access Admin Panel
                 </Button>
               </CardContent>
             </Card>
@@ -75,24 +99,24 @@ const FlowSelection = () => {
 
             <Card className="hover:shadow-medium transition-shadow cursor-pointer group">
               <CardHeader className="text-center pb-4">
-                <div className="mx-auto w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
-                  <Shield className="w-8 h-8 text-accent-foreground" />
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                  <Users className="w-8 h-8 text-primary" />
                 </div>
-                <CardTitle className="text-2xl">Market Admin</CardTitle>
+                <CardTitle className="text-2xl">Broker Portal</CardTitle>
                 <CardDescription className="text-base">
-                  Manage brokers and oversee all operations
+                  Manage contractor insurance quotes and applications
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground mb-6">
-                  Administrative access to manage broker users, view all quotes, and control platform settings.
+                  Access your broker dashboard to manage quotes, track applications, and create new policies for clients.
                 </p>
                 <Button 
                   size="lg" 
-                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-                  onClick={() => navigate("/admin/login")}
+                  className="w-full"
+                  onClick={() => navigate("/broker/login")}
                 >
-                  Access Admin Panel
+                  Access Dashboard
                 </Button>
               </CardContent>
             </Card>

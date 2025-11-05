@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Building, User, Briefcase, Plus, Copy, Calendar, UserCircle, Edit, Users, Building2, Power } from "lucide-react";
+import { Building, User, Briefcase, Plus, Copy, Calendar, UserCircle, Edit, Users, Building2, Power, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -105,11 +105,7 @@ const MarketAdminProductManagement = () => {
   };
 
   const handleEditProduct = (product: InsuranceProduct) => {
-    // TODO: Navigate to edit product page
-    toast({
-      title: "Edit Product",
-      description: `Editing ${product.name}... Edit functionality will be implemented in the next step.`,
-    });
+    navigate(`/market-admin/product-management/create?productName=${encodeURIComponent(product.name)}&productVersion=${encodeURIComponent(product.version)}&edit=true`);
   };
 
   const handleCloneProduct = (product: InsuranceProduct) => {
@@ -215,7 +211,7 @@ const MarketAdminProductManagement = () => {
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground mb-3">
                           <div className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             <span>Created: {formatDate(product.createdDate)}</span>
@@ -228,6 +224,51 @@ const MarketAdminProductManagement = () => {
                             <UserCircle className="w-3 h-3" />
                             <span>{product.createdBy}</span>
                           </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Navigate to CAR masters management for CAR products, otherwise to general masters
+                              if (product.code === 'CAR') {
+                                navigate('/market-admin/masters-management/car');
+                              } else if (product.code === 'PI') {
+                                navigate('/market-admin/masters-management/pi');
+                              } else {
+                                navigate('/market-admin/masters-management');
+                              }
+                            }}
+                            className="gap-1 text-xs h-7"
+                          >
+                            <Database className="w-3 h-3" />
+                            View Masters
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate('/market-admin/insurer-management');
+                            }}
+                            className="gap-1 text-xs h-7"
+                          >
+                            <Building2 className="w-3 h-3" />
+                            View Insurers
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate('/market-admin/broker-management');
+                            }}
+                            className="gap-1 text-xs h-7"
+                          >
+                            <Users className="w-3 h-3" />
+                            View Brokers
+                          </Button>
                         </div>
                       </div>
                     </div>

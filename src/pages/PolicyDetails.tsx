@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit, Download, Check, Circle, ChevronDown, ChevronUp, FileText, User, Building, MapPin, Shield, FolderOpen, CreditCard, Star, Calendar, DollarSign, Users, FileCheck, AlertTriangle } from "lucide-react";
-import { getPolicyDetailsById, PolicyDetailsAPIResponse } from "@/lib/api/quotes";
+import { getPolicyDetailsById, PolicyDetailsAPIResponse, ProposalBundleResponse } from "@/lib/api/quotes";
+import jsPDF from 'jspdf';
 import { toast } from "@/hooks/use-toast";
 
 // Helper functions for formatting
@@ -106,6 +107,203 @@ const formatFieldValue = (key: string, value: any): string => {
   return value.toString();
 };
 
+// Generate Proposal Form PDF
+const generateProposalPDF = (proposalBundle: ProposalBundleResponse) => {
+  const doc = new jsPDF();
+  let yPosition = 20;
+  const lineHeight = 6;
+  const pageHeight = doc.internal.pageSize.height;
+  const pageWidth = doc.internal.pageSize.width;
+  const labelWidth = 80;
+  const valueWidth = pageWidth - labelWidth - 30;
+  
+  // Helper function to add table row
+  const addTableRow = (label: string, value: string, isHeader: boolean = false) => {
+    if (yPosition > pageHeight - 15) {
+      doc.addPage();
+      yPosition = 20;
+    }
+    
+    const fontSize = isHeader ? 10 : 8;
+    const isBold = isHeader;
+    const rowHeight = isHeader ? 7 : 6;
+    
+    doc.setFontSize(fontSize);
+    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+    
+    // Draw border with reduced padding - no borders for section headers
+    if (!isHeader) {
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(10, yPosition - 2, labelWidth, rowHeight + 1);
+      doc.rect(10 + labelWidth, yPosition - 2, valueWidth, rowHeight + 1);
+    }
+    
+    // Add text with proper vertical centering and reduced padding
+    const textY = yPosition + (rowHeight / 2) - 1;
+    doc.text(label, 11, textY);
+    doc.text(value, 11 + labelWidth, textY);
+    
+    // Reduce spacing for continuous table appearance
+    yPosition += isHeader ? rowHeight : rowHeight + 1;
+  };
+
+  // Helper function to add section header
+  const addSectionHeader = (title: string) => {
+    addTableRow(title, '', true);
+  };
+
+  // Header background with dark blue color
+  doc.setFillColor(0, 64, 128);
+  doc.rect(0, 0, pageWidth, 35, 'F');
+  
+  // Header with Title and Broker Details
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text('CONTRACTOR ALL RISK INSURANCE', 10, 15);
+  doc.text('PROPOSAL FORM', 10, 22);
+  
+  // Broker Details on the right side
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  const brokerCompanyName = (proposalBundle.quote_meta as any)?.broker_company_name || 'Broker Name';
+  const createdDate = proposalBundle.quote_meta?.created_at ? 
+    new Date(proposalBundle.quote_meta.created_at).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }) : 'N/A';
+  
+  doc.text(`Broker: ${brokerCompanyName}`, pageWidth - 80, 15);
+  doc.text(`Date: ${createdDate}`, pageWidth - 80, 22);
+  
+  // Quote Reference
+  doc.setFontSize(8);
+  doc.text(`Quote Reference: ${proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || 'N/A'}`, 10, 30);
+  
+  // Reset text color to black for table content
+  doc.setTextColor(0, 0, 0);
+  yPosition = 40;
+
+  // Project Details
+  if (proposalBundle.project) {
+    addSectionHeader('PROJECT DETAILS');
+    addTableRow('Project Name', proposalBundle.project.project_name || 'N/A');
+    addTableRow('Project Type', formatFieldValue('project_type', proposalBundle.project.project_type));
+    addTableRow('Construction Type', formatFieldValue('construction_type', proposalBundle.project.construction_type));
+    addTableRow('Start Date', formatFieldValue('start_date', proposalBundle.project.start_date));
+    addTableRow('Completion Date', formatFieldValue('completion_date', proposalBundle.project.completion_date));
+    addTableRow('Construction Period', `${proposalBundle.project.construction_period_months || 0} months`);
+    addTableRow('Address', proposalBundle.project.address || 'N/A');
+    addTableRow('Country', formatFieldValue('country', proposalBundle.project.country));
+    addTableRow('Region', formatFieldValue('region', proposalBundle.project.region));
+    addTableRow('Zone', formatFieldValue('zone', proposalBundle.project.zone));
+  }
+
+  // Insured Details
+  if (proposalBundle.insured?.details) {
+    addSectionHeader('INSURED DETAILS');
+    addTableRow('Insured Name', formatFieldValue('insured_name', proposalBundle.insured.details.insured_name));
+    addTableRow('Role of Insured', formatFieldValue('role_of_insured', proposalBundle.insured.details.role_of_insured));
+    addTableRow('Had Losses (Last 5 Years)', proposalBundle.insured.details.had_losses_last_5yrs ? 'Yes' : 'No');
+  }
+
+  // Contract Structure
+  if (proposalBundle.contract_structure?.details) {
+    addSectionHeader('CONTRACT STRUCTURE');
+    addTableRow('Main Contractor', formatFieldValue('main_contractor', proposalBundle.contract_structure.details.main_contractor));
+    addTableRow('Principal Owner', formatFieldValue('principal_owner', proposalBundle.contract_structure.details.principal_owner));
+    addTableRow('Contract Type', formatFieldValue('contract_type', proposalBundle.contract_structure.details.contract_type));
+    addTableRow('Contract Number', formatFieldValue('contract_number', proposalBundle.contract_structure.details.contract_number));
+    addTableRow('Experience Years', `${proposalBundle.contract_structure.details.experience_years || 0} years`);
+  }
+
+  // Cover Requirements
+  if (proposalBundle.cover_requirements) {
+    addSectionHeader('COVER REQUIREMENTS');
+    Object.entries(proposalBundle.cover_requirements)
+      .filter(([key]) => !['id', 'created_at', 'updated_at', 'project_id'].includes(key))
+      .forEach(([key, value]) => {
+        const formattedKey = formatFieldName(key);
+        const formattedValue = formatFieldValue(key, value);
+        addTableRow(formattedKey, formattedValue);
+      });
+  }
+
+  // Site Risk Assessment
+  if (proposalBundle.site_risks) {
+    addSectionHeader('SITE RISK ASSESSMENT');
+    Object.entries(proposalBundle.site_risks)
+      .filter(([key]) => !['id', 'project_id', 'created_at', 'updated_at'].includes(key))
+      .forEach(([key, value]) => {
+        let displayValue = value;
+        if (value === 0 || value === '0') displayValue = 'No';
+        else if (value === 1 || value === '1') displayValue = 'Yes';
+        
+        const formattedKey = formatFieldName(key);
+        const formattedValue = formatFieldValue(key, displayValue);
+        addTableRow(formattedKey, formattedValue);
+      });
+  }
+
+  // Selected Plans
+  if (proposalBundle.plans && proposalBundle.plans.length > 0) {
+    addSectionHeader('SELECTED PLAN DETAILS');
+    proposalBundle.plans.forEach((plan, index) => {
+      addTableRow(`Plan ${index + 1} - Insurer`, formatFieldValue('insurer_name', plan.insurer_name));
+      addTableRow(`Plan ${index + 1} - Premium Amount`, formatFieldValue('premium_amount', plan.premium_amount));
+      if (plan.is_minimum_premium_applied) {
+        addTableRow(`Plan ${index + 1} - Minimum Premium`, formatFieldValue('minimum_premium_value', plan.minimum_premium_value));
+        addTableRow(`Plan ${index + 1} - Minimum Applied`, 'Yes');
+      }
+    });
+  }
+
+  // Claims History
+  if (proposalBundle.insured?.claims && proposalBundle.insured.claims.length > 0) {
+    addSectionHeader('CLAIMS HISTORY');
+    proposalBundle.insured.claims.forEach((claim, index) => {
+      Object.entries(claim).forEach(([key, value]) => {
+        const formattedKey = `Claim ${index + 1} - ${formatFieldName(key)}`;
+        const formattedValue = formatFieldValue(key, value);
+        addTableRow(formattedKey, formattedValue);
+      });
+    });
+  }
+
+  // Sub Contractors
+  if (proposalBundle.contract_structure?.sub_contractors && proposalBundle.contract_structure.sub_contractors.length > 0) {
+    addSectionHeader('SUB CONTRACTORS');
+    proposalBundle.contract_structure.sub_contractors.forEach((subContract, index) => {
+      addTableRow(`Sub Contractor ${index + 1} - Name`, formatFieldValue('name', subContract.name));
+      addTableRow(`Sub Contractor ${index + 1} - Contract Type`, formatFieldValue('contract_type', subContract.contract_type));
+      addTableRow(`Sub Contractor ${index + 1} - Contract Number`, formatFieldValue('contract_number', subContract.contract_number));
+    });
+  }
+
+  // Consultants
+  if (proposalBundle.contract_structure?.consultants && proposalBundle.contract_structure.consultants.length > 0) {
+    addSectionHeader('CONSULTANTS');
+    proposalBundle.contract_structure.consultants.forEach((consultant, index) => {
+      addTableRow(`Consultant ${index + 1} - Name`, formatFieldValue('name', consultant.name));
+      addTableRow(`Consultant ${index + 1} - Role`, formatFieldValue('role', consultant.role));
+      addTableRow(`Consultant ${index + 1} - License Number`, formatFieldValue('license_number', consultant.license_number));
+    });
+  }
+
+  // Required Documents
+  if (proposalBundle.required_documents && Array.isArray(proposalBundle.required_documents)) {
+    addSectionHeader('UNDERWRITING DOCUMENTS');
+    proposalBundle.required_documents.forEach((doc, index) => {
+      addTableRow(`Document ${index + 1}`, formatFieldValue('label', doc.label));
+    });
+  }
+
+  // Save the PDF
+  const fileName = `Proposal_${proposalBundle.quote_meta?.quote_reference_number || proposalBundle.quote_meta?.quote_id || 'Unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(fileName);
+};
+
 const PolicyDetails = () => {
   const { id: policyId } = useParams<{ id: string }>();
   const [policyData, setPolicyData] = useState<PolicyDetailsAPIResponse | null>(null);
@@ -162,6 +360,37 @@ const PolicyDetails = () => {
       toast({
         title: "Download Failed",
         description: error instanceof Error ? error.message : 'Failed to download document. Please try again.',
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadProposalForm = () => {
+    try {
+      if (!policyData?.policyInfo?.proposal_bundle) {
+        toast({
+          title: "No Proposal Data",
+          description: "Proposal form data is not available for this policy.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const proposalBundle = policyData.policyInfo.proposal_bundle;
+      
+      // Generate proposal form PDF
+      generateProposalPDF(proposalBundle);
+      
+      toast({
+        title: "Download Complete",
+        description: "Proposal form has been downloaded successfully.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error generating proposal form PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error generating the proposal form. Please try again.",
         variant: "destructive",
       });
     }
@@ -250,6 +479,15 @@ const PolicyDetails = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={handleDownloadProposalForm}
+            >
+              <FileText className="h-4 w-4" />
+              Download Proposal Form
+            </Button>
             <Button variant="outline" size="sm" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               Download Policy

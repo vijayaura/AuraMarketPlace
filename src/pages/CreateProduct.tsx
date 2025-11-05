@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,14 +11,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const CreateProduct = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // Check if we're in edit mode from URL params
+  const isEditMode = searchParams.get("edit") === "true";
+  const productNameFromUrl = searchParams.get("productName");
+  const productVersionFromUrl = searchParams.get("productVersion");
 
   const [formData, setFormData] = useState({
-    productName: "",
-    productVersion: "",
+    productName: productNameFromUrl || "",
+    productVersion: productVersionFromUrl || "",
     category: "",
     currency: "AED",
     owner: "",
   });
+
+  // Auto-save basic info if in edit mode and product info is available
+  useEffect(() => {
+    if (isEditMode && productNameFromUrl && productVersionFromUrl) {
+      setIsBasicInfoSaved(true);
+    }
+  }, [isEditMode, productNameFromUrl, productVersionFromUrl]);
 
   const categories = [
     { value: "CONSTRUCTION", label: "Construction" },
@@ -57,7 +70,6 @@ const CreateProduct = () => {
     },
     formsAndTemplates: {
       proposalFormDesign: false,
-      quoteDetailsPageDesign: false,
       policyDetailsPageDesign: false,
     },
     administration: {
@@ -68,8 +80,8 @@ const CreateProduct = () => {
     },
     ratingAndUnderwriting: {
       ratingConfiguratorDesign: false,
+      uwRulesDesign: false,
       documentDesign: false,
-      cewsDesign: false,
     },
     analytics: {
       kpisDesign: false,
@@ -128,8 +140,45 @@ const CreateProduct = () => {
       return;
     }
     
-    // TODO: Navigate to create design page or open dialog
     const designName = path[path.length - 1];
+    
+    // Navigate to Proposal Form Design if it's proposalFormDesign
+    if (designName === "proposalFormDesign") {
+      navigate(`/market-admin/product-management/proposal-form-design?productName=${encodeURIComponent(formData.productName)}&productVersion=${encodeURIComponent(formData.productVersion)}`);
+      return;
+    }
+    
+    // Navigate to Administration Form Design for onboarding designs
+    if (designName === "reInsurerOnboardingDesign" || designName === "insurerOnboardingDesign" || designName === "brokerOnboardingDesign" || designName === "userOnboardingDesign") {
+      navigate(`/market-admin/product-management/administration-form-design?productName=${encodeURIComponent(formData.productName)}&productVersion=${encodeURIComponent(formData.productVersion)}&designType=${encodeURIComponent(designName)}`);
+      return;
+    }
+    
+    // Navigate to Rating Configurator
+    if (designName === "ratingConfiguratorDesign") {
+      navigate(`/market-admin/product-management/rating-configurator?productName=${encodeURIComponent(formData.productName)}&productVersion=${encodeURIComponent(formData.productVersion)}`);
+      return;
+    }
+    
+    // Navigate to Document Configurator Design
+    if (designName === "documentDesign") {
+      navigate(`/market-admin/product-management/document-configurator?productName=${encodeURIComponent(formData.productName)}&productVersion=${encodeURIComponent(formData.productVersion)}`);
+      return;
+    }
+    
+    // Navigate to KPI Design
+    if (designName === "kpisDesign") {
+      navigate(`/market-admin/product-management/kpi-design?productName=${encodeURIComponent(formData.productName)}&productVersion=${encodeURIComponent(formData.productVersion)}`);
+      return;
+    }
+    
+    // Navigate to UW Rules Design
+    if (designName === "uwRulesDesign") {
+      navigate(`/market-admin/product-management/uw-rules-design?productName=${encodeURIComponent(formData.productName)}&productVersion=${encodeURIComponent(formData.productVersion)}`);
+      return;
+    }
+    
+    // TODO: Navigate to other design pages
     toast({
       title: "Create Design",
       description: `Creating ${designName}... Design creation functionality will be implemented in the next step.`,
@@ -166,9 +215,13 @@ const CreateProduct = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Create New Product</h1>
+              <h1 className="text-3xl font-bold text-foreground">
+                {isEditMode ? "Edit Product" : "Create New Product"}
+              </h1>
               <p className="text-muted-foreground mt-1">
-                Create a new insurance product with all necessary provisions
+                {isEditMode 
+                  ? "Edit product provisions and configurations"
+                  : "Create a new insurance product with all necessary provisions"}
               </p>
             </div>
           </div>
@@ -352,32 +405,8 @@ const CreateProduct = () => {
                     <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
                       <div className="flex items-center gap-3 flex-1">
                         <FileText className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Quote Details Page Design</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleCreateDesign(["formsAndTemplates", "quoteDetailsPageDesign"])}
-                        disabled={!isBasicInfoSaved}
-                      >
-                        Create
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
-                      <div className="flex items-center gap-3 flex-1">
-                        <FileText className="w-4 h-4 text-muted-foreground" />
                         <span className="text-sm font-medium">Policy Details Page Design</span>
                       </div>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleCreateDesign(["formsAndTemplates", "policyDetailsPageDesign"])}
-                        disabled={!isBasicInfoSaved}
-                      >
-                        Create
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -476,6 +505,21 @@ const CreateProduct = () => {
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
                       <div className="flex items-center gap-3 flex-1">
+                        <Shield className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">UW Rules Design</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleCreateDesign(["ratingAndUnderwriting", "uwRulesDesign"])}
+                        disabled={!isBasicInfoSaved}
+                      >
+                        Create
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
+                      <div className="flex items-center gap-3 flex-1">
                         <FileText className="w-4 h-4 text-muted-foreground" />
                         <span className="text-sm font-medium">Document Configurator Design</span>
                       </div>
@@ -484,21 +528,6 @@ const CreateProduct = () => {
                         variant="default"
                         size="sm"
                         onClick={() => handleCreateDesign(["ratingAndUnderwriting", "documentDesign"])}
-                        disabled={!isBasicInfoSaved}
-                      >
-                        Create
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
-                      <div className="flex items-center gap-3 flex-1">
-                        <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">CEWs Design (Coverages, Exclusions, Warranties)</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleCreateDesign(["ratingAndUnderwriting", "cewsDesign"])}
                         disabled={!isBasicInfoSaved}
                       >
                         Create

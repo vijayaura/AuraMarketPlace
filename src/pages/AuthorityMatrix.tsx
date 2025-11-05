@@ -38,6 +38,7 @@ const AuthorityMatrix = () => {
     
     // Rating and Underwriting
     { id: "ratingConfiguratorDesign", category: "Rating and Underwriting", name: "Rating Configurator" },
+    { id: "underwritingDesign", category: "Rating and Underwriting", name: "Underwriting" },
     { id: "documentDesign", category: "Rating and Underwriting", name: "Document Configurator" },
     { id: "cewsDesign", category: "Rating and Underwriting", name: "CEWs (Coverages, Exclusions, Warranties)" },
 

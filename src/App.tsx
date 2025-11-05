@@ -46,6 +46,12 @@ import MarketAdminInsurerManagement from "./pages/MarketAdminInsurerManagement";
 import MarketAdminProductManagement from "./pages/MarketAdminProductManagement";
 import CreateProduct from "./pages/CreateProduct";
 import AuthorityMatrix from "./pages/AuthorityMatrix";
+import ProposalFormDesign from "./pages/ProposalFormDesign";
+import AdministrationFormDesign from "./pages/AdministrationFormDesign";
+import RatingConfigurator from "./pages/RatingConfigurator";
+import DocumentConfigurator from "./pages/DocumentConfigurator";
+import KPIDesign from "./pages/KPIDesign";
+import UWRulesDesign from "./pages/UWRulesDesign";
 import MastersProductSelection from "./pages/MastersProductSelection";
 import CARMastersManagement from "./pages/CARMastersManagement";
 import PIMastersManagement from "./pages/PIMastersManagement";
@@ -103,7 +109,6 @@ const App = () => (
           <Route path="/market-admin" element={<RequireAuth requiredRole="admin"><MarketAdminLayout /></RequireAuth>}>
             <Route path="dashboard" element={<MarketAdminDashboard />} />
             <Route path="product-management" element={<MarketAdminProductManagement />} />
-            <Route path="product-management/create" element={<CreateProduct />} />
             <Route path="product-management/authority-matrix" element={<AuthorityMatrix />} />
             <Route path="masters-management" element={<MastersProductSelection />} />
             <Route path="masters-management/car" element={<CARMastersManagement />} />
@@ -134,6 +139,14 @@ const App = () => (
             <Route path="insurer/:insurerId/pricing-config" element={<InsurerPricingConfig />} />
             <Route path="product-config" element={<ProductConfig />} />
           </Route>
+          {/* Routes without sidebar */}
+          <Route path="/market-admin/product-management/create" element={<CreateProduct />} />
+          <Route path="/market-admin/product-management/proposal-form-design" element={<ProposalFormDesign />} />
+          <Route path="/market-admin/product-management/administration-form-design" element={<AdministrationFormDesign />} />
+          <Route path="/market-admin/product-management/rating-configurator" element={<RatingConfigurator />} />
+          <Route path="/market-admin/product-management/uw-rules-design" element={<UWRulesDesign />} />
+          <Route path="/market-admin/product-management/document-configurator" element={<DocumentConfigurator />} />
+          <Route path="/market-admin/product-management/kpi-design" element={<KPIDesign />} />
           <Route path="/market-admin/insurer/:insurerId/products/2" element={<PIProductConfig />} />
           {/* Product Selection */}
           <Route path="/broker/product-selection" element={<ProductSelection />} />

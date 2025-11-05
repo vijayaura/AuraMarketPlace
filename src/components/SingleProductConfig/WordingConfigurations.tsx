@@ -110,6 +110,16 @@ export default function WordingConfigurations(props: Props) {
                     <TableCell>{Number(w.is_active) === 1 ? 'Active' : 'Inactive'}</TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-2">
+                        {(w as any).document_url && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => window.open((w as any).document_url, '_blank')}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                        )}
                         <Button variant="outline" size="sm" onClick={() => { setPreviewWording(w); setIsPreviewDialogOpen(true); }}>
                           Preview
                         </Button>
@@ -190,7 +200,22 @@ export default function WordingConfigurations(props: Props) {
               <div className="flex justify-between"><span className="text-muted-foreground">Upload Date</span><span>{previewWording.upload_date}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Size</span><span>{previewWording.file_size_kb} KB</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span>{Number(previewWording.is_active) === 1 ? 'Active' : 'Inactive'}</span></div>
-              <div className="text-xs text-muted-foreground">Note: Inline PDF preview not available. Download from the management console if needed.</div>
+              {(previewWording as any).document_url && (
+                <div className="pt-2">
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => window.open((previewWording as any).document_url, '_blank')}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Document
+                  </Button>
+                </div>
+              )}
+              {!(previewWording as any).document_url && (
+                <div className="text-xs text-muted-foreground">Note: Document URL not available.</div>
+              )}
             </div>
           )}
           <DialogFooter>
