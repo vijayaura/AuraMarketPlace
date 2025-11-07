@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save, Plus, Trash2, Upload, FileSpreadsheet, Calculator, Settings, X, CheckCircle2, Type, Hash, Calendar, CheckSquare, List, ChevronDown, Edit, FileText } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Upload, FileSpreadsheet, Calculator, Settings, X, CheckCircle2, Type, Hash, Calendar, CheckSquare, List, ChevronDown, Edit, FileText, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,9 +24,10 @@ interface RatingParameter {
   options?: string[];
   isMasterData?: boolean; // Whether this parameter is linked to master data
   masterDataTable?: string; // Master data table name if applicable
-  pricingOption?: "value-based" | "range-based"; // Single select
+  pricingOption?: "value-based" | "range-based" | "risk-level"; // Single select
   pricingTypes?: ("Percentage" | "Fixed Amount" | "Percentage of Sum Insured")[]; // Multiple pricing types can be selected
   decisions?: ("Quote" | "No Quote" | "Refer to UW")[]; // Multiple decisions can be selected
+  riskLevels?: ("Low" | "Medium" | "High" | "Very High")[]; // Risk levels when pricingOption is "risk-level"
 }
 
 interface ValueBasedRate {
@@ -76,9 +77,32 @@ const RatingConfigurator = () => {
   const productName = searchParams.get("productName") || "Product";
   const productVersion = searchParams.get("productVersion") || "";
 
-  // Mock rating parameters from CAR proposal form - based on CAR pricing configurator
-  const [ratingParameters, setRatingParameters] = useState<RatingParameter[]>([
-    { id: "param1", name: "projectType", label: "Project Type", type: "dropdown", options: ["Residential", "Commercial", "Industrial", "Infrastructure", "Mixed Use"], isMasterData: true, masterDataTable: "project_types" },
+  // Get initial rating parameters based on product
+  const getInitialRatingParameters = (): RatingParameter[] => {
+    if (productName === "Directors & Officers Liability Insurance" && productVersion === "1.0") {
+      return [
+        { id: "do_param1", name: "annualTurnover", label: "Annual Turnover (USD)", type: "number" },
+        { id: "do_param2", name: "positiveOperatingIncome", label: "Positive Operating Income", type: "checkbox" },
+        { id: "do_param3", name: "breachOfDebtCovenants", label: "Breach of Debt Covenants", type: "checkbox" },
+        { id: "do_param4", name: "qualifiedAuditOpinion", label: "Qualified Audit Opinion", type: "checkbox" },
+        { id: "do_param5", name: "listedOnExchange", label: "Listed on Exchange", type: "checkbox" },
+        { id: "do_param6", name: "adrSpacInvolvement", label: "ADR/SPAC Involvement", type: "checkbox" },
+        { id: "do_param7", name: "assetsInUSA", label: "% Assets in USA", type: "number" },
+        { id: "do_param8", name: "industryType", label: "Industry Type", type: "dropdown", options: ["Professional Services", "Healthcare", "Technology", "Financial Services", "Real Estate / Construction", "Manufacturing / Trade", "Public Sector"], isMasterData: true, masterDataTable: "industry_types" },
+        { id: "do_param9", name: "regulatedByFinancialBody", label: "Regulated by Financial Body", type: "checkbox" },
+        { id: "do_param10", name: "claimsIn5Years", label: "Claims in 5 Years", type: "dropdown", options: ["0", "1", "2+"] },
+        { id: "do_param11", name: "awarenessOfPotentialClaims", label: "Awareness of Potential Claims", type: "checkbox" },
+        { id: "do_param12", name: "numberOfDirectors", label: "No. of Directors", type: "dropdown", options: ["<5", "5-10", ">10"] },
+        { id: "do_param13", name: "yearsOfOperation", label: "Years of Operation", type: "dropdown", options: ["<3", "3-10", ">10"] },
+        { id: "do_param14", name: "riskManagementQuality", label: "Risk Management Quality", type: "dropdown", options: ["Strong", "Average", "Weak"] },
+        { id: "do_param15", name: "underwriterDiscount", label: "Underwriter Discount (%)", type: "number" },
+        { id: "do_param16", name: "sumInsured", label: "Sum Insured (USD)", type: "number" },
+        { id: "do_param17", name: "baseRate", label: "Base Rate (%)", type: "number" },
+      ];
+    }
+    // Default CAR parameters
+    return [
+      { id: "param1", name: "projectType", label: "Project Type", type: "dropdown", options: ["Residential", "Commercial", "Industrial", "Infrastructure", "Mixed Use"], isMasterData: true, masterDataTable: "project_types" },
     { id: "param2", name: "constructionType", label: "Construction Type", type: "dropdown", options: ["New Construction", "Renovation", "Extension", "Demolition", "Mixed"], isMasterData: true, masterDataTable: "construction_types" },
     { id: "param3", name: "projectValue", label: "Project Value (AED)", type: "number" },
     { id: "param4", name: "sumInsured", label: "Sum Insured (AED)", type: "number" },
@@ -100,7 +124,10 @@ const RatingConfigurator = () => {
     { id: "param20", name: "floodProneZone", label: "Flood Prone Zone", type: "checkbox" },
     { id: "param21", name: "cityAreaType", label: "City Area Type", type: "dropdown", options: ["City Center", "Suburban", "Industrial", "Remote"], isMasterData: true, masterDataTable: "city_area_types" },
     { id: "param22", name: "soilType", label: "Soil Type", type: "dropdown", options: ["Sandy", "Clay", "Rocky", "Mixed"], isMasterData: true, masterDataTable: "soil_types" },
-  ]);
+    ];
+  };
+
+  const [ratingParameters, setRatingParameters] = useState<RatingParameter[]>(getInitialRatingParameters());
 
   const [valueBasedRates, setValueBasedRates] = useState<ValueBasedRate[]>([]);
   const [rangeBasedRates, setRangeBasedRates] = useState<RangeBasedRate[]>([]);
@@ -207,21 +234,35 @@ const RatingConfigurator = () => {
   const [percentageChips, setPercentageChips] = useState<Array<{ id: string; value: number }>>([]);
   
   // Master data values (mock data - would be fetched from API)
-  const masterDataValues: Record<string, string[]> = {
-    projectType: ["Residential Building", "Commercial Building", "Industrial Facility", "Infrastructure", "Bridge Construction", "Road Construction", "Shopping Center", "Hospital/Healthcare", "Educational Facility"],
-    constructionType: ["New Construction", "Renovation", "Extension", "Demolition", "Mixed"],
-    locationHazard: ["Low", "Moderate", "High", "Very High"],
-    subcontractorUsage: ["None", "Limited", "Moderate", "Heavy"],
-    safetyRecord: ["Poor", "Average", "Good", "Excellent"],
-    cityAreaType: ["City Center", "Suburban", "Industrial", "Remote"],
-    soilType: ["Sandy", "Clay", "Rocky", "Mixed"],
+  const getMasterDataValues = (): Record<string, string[]> => {
+    if (productName === "Directors & Officers Liability Insurance" && productVersion === "1.0") {
+      return {
+        industry_types: ["Professional Services", "Healthcare", "Technology", "Financial Services", "Real Estate / Construction", "Manufacturing / Trade", "Public Sector"],
+      };
+    }
+    // Default CAR master data
+    return {
+      projectType: ["Residential Building", "Commercial Building", "Industrial Facility", "Infrastructure", "Bridge Construction", "Road Construction", "Shopping Center", "Hospital/Healthcare", "Educational Facility"],
+      constructionType: ["New Construction", "Renovation", "Extension", "Demolition", "Mixed"],
+      locationHazard: ["Low", "Moderate", "High", "Very High"],
+      subcontractorUsage: ["None", "Limited", "Moderate", "Heavy"],
+      safetyRecord: ["Poor", "Average", "Good", "Excellent"],
+      cityAreaType: ["City Center", "Suburban", "Industrial", "Remote"],
+      soilType: ["Sandy", "Clay", "Rocky", "Mixed"],
+    };
   };
+
+  const masterDataValues = getMasterDataValues();
 
   // Dialog states
   const [isValueBasedDialogOpen, setIsValueBasedDialogOpen] = useState(false);
   const [isRangeBasedDialogOpen, setIsRangeBasedDialogOpen] = useState(false);
   const [isMultiSelectDialogOpen, setIsMultiSelectDialogOpen] = useState(false);
   const [isFormulaBuilderOpen, setIsFormulaBuilderOpen] = useState(false);
+  const [isPlaygroundOpen, setIsPlaygroundOpen] = useState(false);
+  const [playgroundType, setPlaygroundType] = useState<"default" | "proposal" | "cew" | "calculation" | null>(null);
+  const [playgroundTestValues, setPlaygroundTestValues] = useState<Record<string, any>>({});
+  const [playgroundResult, setPlaygroundResult] = useState<number | null>(null);
 
   // Form states for dialogs
   const [valueBasedForm, setValueBasedForm] = useState<Partial<ValueBasedRate>>({
@@ -245,6 +286,47 @@ const RatingConfigurator = () => {
     rate: 0,
     rateType: "percentage",
   });
+
+  // Formula evaluation function
+  const evaluateFormula = (formula: FormulaStep[], testValues: Record<string, any>): number | null => {
+    try {
+      if (formula.length === 0) return null;
+
+      // Convert formula steps to a string expression
+      let expression = "";
+      for (const step of formula) {
+        if (step.type === "field") {
+          const value = testValues[step.value];
+          if (value === undefined || value === null || value === "") {
+            return null; // Missing required value
+          }
+          // If it's a string (like dropdown value), try to find numeric equivalent or use 0
+          const numValue = typeof value === "number" ? value : (parseFloat(String(value)) || 0);
+          expression += numValue;
+        } else if (step.type === "operator") {
+          expression += " " + step.value + " ";
+        } else if (step.type === "number") {
+          expression += step.value;
+        } else if (step.type === "percentage") {
+          // Convert percentage to decimal (e.g., 30% becomes 0.30)
+          const percentValue = parseFloat(step.value.replace("%", "").replace(" ", ""));
+          if (isNaN(percentValue)) return null;
+          expression += (percentValue / 100).toString();
+        }
+      }
+
+      // Clean up expression (remove extra spaces)
+      expression = expression.trim().replace(/\s+/g, " ");
+
+      // Use Function constructor for safe evaluation
+      // This allows us to evaluate mathematical expressions like: BaseRate * (1 + 0.45) * (1 - 0.10)
+      const result = Function(`"use strict"; return (${expression})`)();
+      return typeof result === "number" && !isNaN(result) ? result : null;
+    } catch (error) {
+      console.error("Formula evaluation error:", error, formula);
+      return null;
+    }
+  };
 
   const handleAddValueBasedRate = () => {
     if (!valueBasedForm.parameterId || !valueBasedForm.parameterValue || valueBasedForm.rate === undefined) {
@@ -424,7 +506,7 @@ const RatingConfigurator = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/market-admin/product-management")}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -714,10 +796,15 @@ const RatingConfigurator = () => {
                     </p>
                     <Select
                       value={selectedParameter.pricingOption || ""}
-                      onValueChange={(value: "value-based" | "range-based" | "") => {
+                      onValueChange={(value: "value-based" | "range-based" | "risk-level" | "") => {
                         const updated = ratingParameters.map(p =>
                           p.id === selectedParameter.id
-                            ? { ...p, pricingOption: value === "" ? undefined : value }
+                            ? { 
+                                ...p, 
+                                pricingOption: value === "" ? undefined : value,
+                                // Clear risk levels if switching away from risk-level
+                                riskLevels: value === "risk-level" ? p.riskLevels : undefined
+                              }
                             : p
                         );
                         setRatingParameters(updated);
@@ -733,6 +820,7 @@ const RatingConfigurator = () => {
                       <SelectContent>
                         <SelectItem value="value-based">Value-Based</SelectItem>
                         <SelectItem value="range-based">Range-Based</SelectItem>
+                        <SelectItem value="risk-level">Risk Level</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -797,6 +885,69 @@ const RatingConfigurator = () => {
                       })}
                     </div>
                   </div>
+
+                  {/* Risk Levels - Show when Risk Level pricing option is selected */}
+                  {selectedParameter.pricingOption === "risk-level" && (
+                    <div className="space-y-2">
+                      <Label>Risk Levels</Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Select one or more risk levels (multiple selections allowed)
+                      </p>
+                      <div className="space-y-2">
+                        {["Low", "Medium", "High", "Very High"].map((riskLevel) => {
+                          const riskLevelKey = riskLevel as "Low" | "Medium" | "High" | "Very High";
+                          const isSelected = selectedParameter.riskLevels?.includes(riskLevelKey) || false;
+                          return (
+                            <div
+                              key={riskLevel}
+                              className={`flex items-center space-x-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                                isSelected
+                                  ? "bg-primary/10 border-primary"
+                                  : "bg-background hover:bg-muted/50"
+                              }`}
+                              onClick={() => {
+                                const currentLevels = selectedParameter.riskLevels || [];
+                                const updatedLevels = isSelected
+                                  ? currentLevels.filter(level => level !== riskLevelKey)
+                                  : [...currentLevels, riskLevelKey];
+                                const updated = ratingParameters.map(p =>
+                                  p.id === selectedParameter.id
+                                    ? { ...p, riskLevels: updatedLevels.length > 0 ? updatedLevels : undefined }
+                                    : p
+                                );
+                                setRatingParameters(updated);
+                                const updatedParam = updated.find(p => p.id === selectedParameter.id);
+                                if (updatedParam) {
+                                  setSelectedParameter(updatedParam);
+                                }
+                              }}
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => {
+                                  const currentLevels = selectedParameter.riskLevels || [];
+                                  const updatedLevels = checked
+                                    ? [...currentLevels, riskLevelKey]
+                                    : currentLevels.filter(level => level !== riskLevelKey);
+                                  const updated = ratingParameters.map(p =>
+                                    p.id === selectedParameter.id
+                                      ? { ...p, riskLevels: updatedLevels.length > 0 ? updatedLevels : undefined }
+                                      : p
+                                  );
+                                  setRatingParameters(updated);
+                                  const updatedParam = updated.find(p => p.id === selectedParameter.id);
+                                  if (updatedParam) {
+                                    setSelectedParameter(updatedParam);
+                                  }
+                                }}
+                              />
+                              <Label className="cursor-pointer flex-1">{riskLevel}</Label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Available Decisions */}
                   <div className="space-y-2">
@@ -870,7 +1021,16 @@ const RatingConfigurator = () => {
                           </div>
                           {selectedParameter.pricingOption && (
                             <div>
-                              <span className="font-medium">Pricing Option:</span> {selectedParameter.pricingOption === "value-based" ? "Value-Based" : "Range-Based"}
+                              <span className="font-medium">Pricing Option:</span> {
+                                selectedParameter.pricingOption === "value-based" ? "Value-Based" :
+                                selectedParameter.pricingOption === "range-based" ? "Range-Based" :
+                                "Risk Level"
+                              }
+                            </div>
+                          )}
+                          {selectedParameter.pricingOption === "risk-level" && selectedParameter.riskLevels && selectedParameter.riskLevels.length > 0 && (
+                            <div>
+                              <span className="font-medium">Risk Levels:</span> {selectedParameter.riskLevels.join(", ")}
                             </div>
                           )}
                           {selectedParameter.pricingTypes && selectedParameter.pricingTypes.length > 0 && (
@@ -1636,6 +1796,27 @@ const RatingConfigurator = () => {
                         Save Formula
                       </Button>
                       <Button
+                        variant="default"
+                        onClick={() => {
+                          const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                          if (currentFormula.length === 0) {
+                            toast({
+                              title: "Validation Error",
+                              description: "Please build a formula before testing.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          setPlaygroundType("calculation");
+                          setPlaygroundTestValues({});
+                          setPlaygroundResult(null);
+                          setIsPlaygroundOpen(true);
+                        }}
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        Test Formula
+                      </Button>
+                      <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => {
@@ -1689,10 +1870,10 @@ const RatingConfigurator = () => {
                     </div>
                   </div>
 
-                  {/* Formula Builder and Preview Side by Side */}
-                  <div className="grid grid-cols-3 gap-6">
+                  {/* Formula Builder and Operators Side by Side */}
+                  <div className="grid grid-cols-5 gap-4">
                     {/* Formula Builder */}
-                    <div className="col-span-2 space-y-3">
+                    <div className="col-span-3 space-y-3">
                       <div className="flex items-center justify-between">
                         <Label className="text-base font-semibold">Formula Builder</Label>
                         <Button
@@ -1817,9 +1998,33 @@ const RatingConfigurator = () => {
                                     </span>
                                   )}
                                   {step.type === "number" && (
-                                    <span 
-                                      className="font-mono text-lg cursor-pointer hover:text-primary transition-colors bg-muted px-2 py-1 rounded"
+                                    <Badge
+                                      variant="secondary"
+                                      className="cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors font-mono text-sm px-2 py-1"
                                       onClick={() => {
+                                        const newValue = prompt("Enter new number value:", step.value);
+                                        if (newValue === null) return; // User cancelled
+                                        const numValue = parseFloat(newValue);
+                                        if (isNaN(numValue)) {
+                                          toast({
+                                            title: "Invalid Input",
+                                            description: "Please enter a valid number.",
+                                            variant: "destructive",
+                                          });
+                                          return;
+                                        }
+                                        const updatedFormula = currentFormula.map((s, i) => 
+                                          i === index ? { ...s, value: String(numValue) } : s
+                                        );
+                                        setFormulaSteps(updatedFormula);
+                                        if (selectedCalculation === "sumInsured") {
+                                          setSumInsuredFormula(updatedFormula);
+                                        } else {
+                                          setPremiumFormula(updatedFormula);
+                                        }
+                                      }}
+                                      onDoubleClick={(e) => {
+                                        e.stopPropagation();
                                         const newFormula = currentFormula.filter((_, i) => i !== index);
                                         setFormulaSteps(newFormula);
                                         if (selectedCalculation === "sumInsured") {
@@ -1830,12 +2035,36 @@ const RatingConfigurator = () => {
                                       }}
                                     >
                                       {step.value}
-                                    </span>
+                                    </Badge>
                                   )}
                                   {step.type === "percentage" && (
-                                    <span 
-                                      className="font-mono text-lg text-primary cursor-pointer hover:text-primary/80 transition-colors bg-primary/10 px-2 py-1 rounded"
+                                    <Badge
+                                      variant="default"
+                                      className="cursor-pointer hover:bg-primary/80 transition-colors font-mono text-sm px-2 py-1"
                                       onClick={() => {
+                                        const newValue = prompt("Enter new percentage value (e.g., 30 for 30%):", step.value);
+                                        if (newValue === null) return; // User cancelled
+                                        const numValue = parseFloat(newValue);
+                                        if (isNaN(numValue)) {
+                                          toast({
+                                            title: "Invalid Input",
+                                            description: "Please enter a valid number for percentage.",
+                                            variant: "destructive",
+                                          });
+                                          return;
+                                        }
+                                        const updatedFormula = currentFormula.map((s, i) => 
+                                          i === index ? { ...s, value: String(numValue) } : s
+                                        );
+                                        setFormulaSteps(updatedFormula);
+                                        if (selectedCalculation === "sumInsured") {
+                                          setSumInsuredFormula(updatedFormula);
+                                        } else {
+                                          setPremiumFormula(updatedFormula);
+                                        }
+                                      }}
+                                      onDoubleClick={(e) => {
+                                        e.stopPropagation();
                                         const newFormula = currentFormula.filter((_, i) => i !== index);
                                         setFormulaSteps(newFormula);
                                         if (selectedCalculation === "sumInsured") {
@@ -1846,7 +2075,7 @@ const RatingConfigurator = () => {
                                       }}
                                     >
                                       {step.value}%
-                                    </span>
+                                    </Badge>
                                   )}
                                 </React.Fragment>
                               ))}
@@ -1856,23 +2085,38 @@ const RatingConfigurator = () => {
                       </div>
                     </div>
 
-                    {/* Right Sidebar - Operators and Percentage */}
-                    <div className="space-y-4">
-                      {/* Operators - Vertical Stack */}
-                      <div className="space-y-3">
-                        <Label className="text-base font-semibold">Operators</Label>
-                        <div className="flex flex-col gap-2 p-4 border rounded-lg bg-background">
+                    {/* Right Sidebar - Operators and Numbers */}
+                    <div className="col-span-2 space-y-4">
+                      {/* Operators - Compact Grid */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">Operators</Label>
+                        <div className="grid grid-cols-3 gap-1.5 p-2 border rounded-lg bg-background">
                           {["+", "-", "*", "/", "(", ")"].map((op) => (
                             <Badge
                               key={op}
                               variant="outline"
-                              className="cursor-move hover:bg-primary/10 hover:border-primary hover:text-primary transition-all font-mono text-lg px-4 py-2 font-bold text-center justify-center"
+                              className="cursor-move hover:bg-primary/10 hover:border-primary hover:text-primary transition-all font-mono text-sm px-1.5 py-1 font-bold text-center justify-center"
                               draggable
                               onDragStart={(e) => {
                                 e.dataTransfer.setData("application/json", JSON.stringify({
                                   type: "operator",
                                   value: op,
                                 }));
+                              }}
+                              onClick={() => {
+                                const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                                const newStep: FormulaStep = {
+                                  id: `step_${Date.now()}_${Math.random()}`,
+                                  type: "operator",
+                                  value: op,
+                                };
+                                const newFormula = [...currentFormula, newStep];
+                                setFormulaSteps(newFormula);
+                                if (selectedCalculation === "sumInsured") {
+                                  setSumInsuredFormula(newFormula);
+                                } else {
+                                  setPremiumFormula(newFormula);
+                                }
                               }}
                             >
                               {op}
@@ -1881,6 +2125,133 @@ const RatingConfigurator = () => {
                         </div>
                       </div>
 
+                      {/* Numbers Keypad */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">Numbers</Label>
+                        <div className="space-y-2">
+                          {/* Quick Number Buttons */}
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, ".", "%"].map((num) => (
+                              <Badge
+                                key={num}
+                                variant="outline"
+                                className="cursor-pointer hover:bg-primary/10 hover:border-primary hover:text-primary transition-all font-mono text-xs px-1.5 py-1 text-center justify-center"
+                                onClick={() => {
+                                  const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                                  let newStep: FormulaStep;
+                                  if (num === "%") {
+                                    // For percentage, prompt for value or use default
+                                    const percentValue = prompt("Enter percentage value (e.g., 30 for 30%):", "0");
+                                    if (percentValue === null) return; // User cancelled
+                                    const numValue = parseFloat(percentValue);
+                                    if (isNaN(numValue)) {
+                                      toast({
+                                        title: "Invalid Input",
+                                        description: "Please enter a valid number for percentage.",
+                                        variant: "destructive",
+                                      });
+                                      return;
+                                    }
+                                    newStep = {
+                                      id: `step_${Date.now()}_${Math.random()}`,
+                                      type: "percentage",
+                                      value: String(numValue),
+                                    };
+                                  } else {
+                                    newStep = {
+                                      id: `step_${Date.now()}_${Math.random()}`,
+                                      type: "number",
+                                      value: String(num),
+                                    };
+                                  }
+                                  const newFormula = [...currentFormula, newStep];
+                                  setFormulaSteps(newFormula);
+                                  if (selectedCalculation === "sumInsured") {
+                                    setSumInsuredFormula(newFormula);
+                                  } else {
+                                    setPremiumFormula(newFormula);
+                                  }
+                                }}
+                                draggable
+                                onDragStart={(e) => {
+                                  if (num === "%") {
+                                    e.dataTransfer.setData("application/json", JSON.stringify({
+                                      type: "percentage",
+                                      value: "0",
+                                    }));
+                                  } else {
+                                    e.dataTransfer.setData("application/json", JSON.stringify({
+                                      type: "number",
+                                      value: String(num),
+                                    }));
+                                  }
+                                }}
+                              >
+                                {num}
+                              </Badge>
+                            ))}
+                          </div>
+                          {/* Custom Number Input */}
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">Enter Custom Number</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                type="number"
+                                step="any"
+                                placeholder="0"
+                                className="text-sm"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    const value = e.currentTarget.value;
+                                    if (value && !isNaN(Number(value))) {
+                                      const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                                      const newStep: FormulaStep = {
+                                        id: `step_${Date.now()}_${Math.random()}`,
+                                        type: "number",
+                                        value: value,
+                                      };
+                                      const newFormula = [...currentFormula, newStep];
+                                      setFormulaSteps(newFormula);
+                                      if (selectedCalculation === "sumInsured") {
+                                        setSumInsuredFormula(newFormula);
+                                      } else {
+                                        setPremiumFormula(newFormula);
+                                      }
+                                      e.currentTarget.value = "";
+                                    }
+                                  }
+                                }}
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                  const value = input?.value;
+                                  if (value && !isNaN(Number(value))) {
+                                    const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                                    const newStep: FormulaStep = {
+                                      id: `step_${Date.now()}_${Math.random()}`,
+                                      type: "number",
+                                      value: value,
+                                    };
+                                    const newFormula = [...currentFormula, newStep];
+                                    setFormulaSteps(newFormula);
+                                    if (selectedCalculation === "sumInsured") {
+                                      setSumInsuredFormula(newFormula);
+                                    } else {
+                                      setPremiumFormula(newFormula);
+                                    }
+                                    if (input) input.value = "";
+                                  }
+                                }}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -2609,6 +2980,167 @@ const RatingConfigurator = () => {
               }}
             >
               {selectedCEWFieldId ? "Update Field" : "Add Field"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Playground Dialog */}
+      <Dialog open={isPlaygroundOpen} onOpenChange={setIsPlaygroundOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {playgroundType === "calculation" 
+                ? `${selectedCalculation === "sumInsured" ? "Sum Insured" : "Premium"} Calculation Playground`
+                : "Rating Configuration Playground"}
+            </DialogTitle>
+            <DialogDescription>
+              Test your formula with different input values to see the calculated result
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {playgroundType === "calculation" && selectedCalculation && (
+              <>
+                {/* Input Values Section */}
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Input Test Values</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {(() => {
+                      const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                      const requiredFields = currentFormula
+                        .filter(step => step.type === "field")
+                        .map(step => step.value)
+                        .filter((value, index, self) => self.indexOf(value) === index); // Unique values
+                      
+                      return requiredFields.map((fieldName) => {
+                        const param = ratingParameters.find(p => p.name === fieldName);
+                        return (
+                          <div key={fieldName} className="space-y-2">
+                            <Label>{param?.label || fieldName}</Label>
+                            {param?.type === "dropdown" ? (
+                              <Select
+                                value={playgroundTestValues[fieldName] || ""}
+                                onValueChange={(value) => {
+                                  setPlaygroundTestValues({
+                                    ...playgroundTestValues,
+                                    [fieldName]: value
+                                  });
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder={`Select ${param?.label || fieldName}`} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {param?.options?.map((opt) => (
+                                    <SelectItem key={opt} value={opt}>
+                                      {opt}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Input
+                                type={param?.type === "number" ? "number" : "text"}
+                                value={playgroundTestValues[fieldName] || ""}
+                                onChange={(e) => {
+                                  const value = param?.type === "number" 
+                                    ? parseFloat(e.target.value) || 0
+                                    : e.target.value;
+                                  setPlaygroundTestValues({
+                                    ...playgroundTestValues,
+                                    [fieldName]: value
+                                  });
+                                }}
+                                placeholder={`Enter ${param?.label || fieldName}`}
+                              />
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
+                {/* Formula Display */}
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">Formula</Label>
+                  <div className="p-4 border rounded-lg bg-muted/30">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {(() => {
+                        const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                        return currentFormula.map((step, index) => (
+                          <React.Fragment key={step.id}>
+                            {step.type === "field" && (
+                              <Badge variant="default">
+                                {ratingParameters.find(p => p.name === step.value)?.label || step.value}
+                              </Badge>
+                            )}
+                            {step.type === "operator" && (
+                              <span className="font-mono text-xl text-primary font-bold">
+                                {step.value}
+                              </span>
+                            )}
+                            {step.type === "number" && (
+                              <span className="font-mono text-lg">
+                                {step.value}
+                              </span>
+                            )}
+                            {step.type === "percentage" && (
+                              <span className="font-mono text-lg text-primary">
+                                {step.value}%
+                              </span>
+                            )}
+                          </React.Fragment>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calculate Button */}
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                    const result = evaluateFormula(currentFormula, playgroundTestValues);
+                    if (result === null) {
+                      toast({
+                        title: "Calculation Error",
+                        description: "Please fill in all required values or check your formula.",
+                        variant: "destructive",
+                      });
+                    } else {
+                      setPlaygroundResult(result);
+                    }
+                  }}
+                >
+                  <Calculator className="w-4 h-4 mr-2" />
+                  Calculate Result
+                </Button>
+
+                {/* Result Display */}
+                {playgroundResult !== null && (
+                  <div className="p-6 border rounded-lg bg-primary/10 border-primary">
+                    <div className="space-y-2">
+                      <Label className="text-base font-semibold">Calculated Result</Label>
+                      <div className="text-3xl font-bold text-primary">
+                        {playgroundResult.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })} AED
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedCalculation === "sumInsured" ? "Sum Insured" : "Premium"} based on your formula and test values
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPlaygroundOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

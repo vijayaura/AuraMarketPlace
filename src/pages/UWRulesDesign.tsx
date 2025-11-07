@@ -269,7 +269,7 @@ const UWRulesDesign = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/market-admin/product-management")}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>

@@ -82,11 +82,11 @@ const MarketAdminProductManagement = () => {
       version: '1.0',
       category: 'COMMERCIAL',
       owner: 'insurer',
-      status: 'Archived',
-      linkedInsurers: 1,
-      linkedBrokers: 0,
+      status: 'Active',
+      linkedInsurers: 2,
+      linkedBrokers: 1,
       createdDate: '2024-02-05T13:45:00Z',
-      modifiedDate: '2024-02-05T13:45:00Z',
+      modifiedDate: '2024-03-25T10:30:00Z',
       createdBy: 'Admin User',
       icon: <Briefcase className="w-5 h-5" />
     }

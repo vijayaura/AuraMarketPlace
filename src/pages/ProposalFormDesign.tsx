@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save, Plus, Trash2, Edit, Eye, GripVertical, FileText, Type, Hash, Calendar, CheckSquare, Upload, List, ChevronDown, ChevronRight, MapPin, CalendarDays, MousePointer2, ArrowRight, ArrowLeft as ArrowLeftIcon, Send, Circle, Maximize2, Minimize2, Download, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Edit, Eye, GripVertical, FileText, Type, Hash, Calendar, CheckSquare, Upload, List, ChevronDown, ChevronRight, MapPin, CalendarDays, MousePointer2, ArrowRight, ArrowLeft as ArrowLeftIcon, Send, Circle, Maximize2, Minimize2, Download, CheckCircle2, User, Mail, Phone, Building2, MapPin as MapPinIcon, CreditCard, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +69,10 @@ interface Field {
   buttonApiUrl?: string; // API URL for submitting/navigating
   buttonVariant?: "default" | "outline" | "destructive" | "secondary" | "ghost" | "link"; // Button style variant
   buttonTargetPage?: string; // Target page ID for next/back navigation
+  // Location-specific properties
+  mapApiUrl?: string; // Map service API URL (e.g., Mapbox, Google Maps)
+  mapApiKey?: string; // API key/credentials for map service
+  mapProvider?: string; // Map provider name (e.g., "mapbox", "google", "custom")
 }
 
 interface Section {
@@ -793,6 +797,413 @@ const getCARTestData = (): Page[] => {
   ];
 };
 
+// Test data for D&O v1.0
+const getDOTestData = (): Page[] => {
+  return [
+    {
+      id: "page1",
+      title: "Company Information",
+      subtitle: "Basic details about the insured company",
+      pageType: "form" as PageType,
+      sections: [
+        {
+          id: "section1",
+          title: "Company Details",
+          subtitle: "Legal and registration information",
+          fields: [
+            {
+              id: "field1",
+              type: "text",
+              label: "Company Name",
+              name: "companyName",
+              placeholder: "Enter company name",
+              required: true,
+              isRatingParameter: false,
+              validations: [{ type: "minLength", value: 3 }]
+            },
+            {
+              id: "field2",
+              type: "text",
+              label: "Registration Number",
+              name: "registrationNumber",
+              placeholder: "Enter registration number",
+              required: true,
+              isRatingParameter: false
+            },
+            {
+              id: "field3",
+              type: "text",
+              label: "Business Address",
+              name: "businessAddress",
+              placeholder: "Enter full business address",
+              required: true,
+              isRatingParameter: false
+            },
+            {
+              id: "field4",
+              type: "dropdown",
+              label: "Country",
+              name: "country",
+              placeholder: "Select country",
+              required: true,
+              isRatingParameter: false,
+              options: ["UAE", "Saudi Arabia", "Kuwait", "Oman", "Qatar", "Bahrain", "USA", "UK", "Other"]
+            },
+            {
+              id: "field5",
+              type: "number",
+              label: "Annual Turnover (USD)",
+              name: "annualTurnover",
+              placeholder: "Enter annual turnover in USD",
+              required: true,
+              isRatingParameter: true,
+              validations: [{ type: "min", value: 0 }]
+            },
+            {
+              id: "field6",
+              type: "dropdown",
+              label: "Industry Type",
+              name: "industryType",
+              placeholder: "Select industry type",
+              required: true,
+              isRatingParameter: true,
+              options: ["Professional Services", "Healthcare", "Technology", "Financial Services", "Real Estate / Construction", "Manufacturing / Trade", "Public Sector"]
+            }
+          ]
+        }
+      ],
+      navigationFields: [
+        {
+          id: "nav1",
+          type: "nextButton",
+          label: "Next",
+          name: "nextButton1",
+          buttonText: "Next",
+          buttonVariant: "default",
+          buttonApiUrl: "https://api.example.com/save-proposal",
+          buttonTargetPage: "page2"
+        }
+      ]
+    },
+    {
+      id: "page2",
+      title: "Financial Information",
+      subtitle: "Financial status and indicators",
+      pageType: "form" as PageType,
+      sections: [
+        {
+          id: "section2",
+          title: "Financial Status",
+          subtitle: "Financial health indicators",
+          fields: [
+            {
+              id: "field7",
+              type: "checkbox",
+              label: "Positive Operating Income",
+              name: "positiveOperatingIncome",
+              required: true,
+              isRatingParameter: true
+            },
+            {
+              id: "field8",
+              type: "checkbox",
+              label: "Breach of Debt Covenants",
+              name: "breachOfDebtCovenants",
+              required: true,
+              isRatingParameter: true
+            },
+            {
+              id: "field9",
+              type: "checkbox",
+              label: "Qualified Audit Opinion",
+              name: "qualifiedAuditOpinion",
+              required: true,
+              isRatingParameter: true
+            },
+            {
+              id: "field10",
+              type: "checkbox",
+              label: "Listed on Exchange",
+              name: "listedOnExchange",
+              required: true,
+              isRatingParameter: true
+            },
+            {
+              id: "field11",
+              type: "checkbox",
+              label: "ADR/SPAC Involvement",
+              name: "adrSpacInvolvement",
+              required: true,
+              isRatingParameter: true
+            },
+            {
+              id: "field12",
+              type: "number",
+              label: "% Assets in USA",
+              name: "assetsInUSA",
+              placeholder: "Enter percentage (0-100)",
+              required: true,
+              isRatingParameter: true,
+              validations: [{ type: "min", value: 0 }, { type: "max", value: 100 }]
+            }
+          ]
+        }
+      ],
+      navigationFields: [
+        {
+          id: "nav2",
+          type: "backButton",
+          label: "Back",
+          name: "backButton2",
+          buttonText: "Back",
+          buttonVariant: "outline",
+          buttonTargetPage: "page1"
+        },
+        {
+          id: "nav3",
+          type: "nextButton",
+          label: "Next",
+          name: "nextButton2",
+          buttonText: "Next",
+          buttonVariant: "default",
+          buttonApiUrl: "https://api.example.com/save-proposal",
+          buttonTargetPage: "page3"
+        }
+      ]
+    },
+    {
+      id: "page3",
+      title: "Regulatory & Compliance",
+      subtitle: "Regulatory status and compliance information",
+      pageType: "form" as PageType,
+      sections: [
+        {
+          id: "section3",
+          title: "Regulatory Information",
+          subtitle: "Compliance and regulatory details",
+          fields: [
+            {
+              id: "field13",
+              type: "checkbox",
+              label: "Regulated by Financial Body",
+              name: "regulatedByFinancialBody",
+              required: true,
+              isRatingParameter: true
+            }
+          ]
+        }
+      ],
+      navigationFields: [
+        {
+          id: "nav4",
+          type: "backButton",
+          label: "Back",
+          name: "backButton3",
+          buttonText: "Back",
+          buttonVariant: "outline",
+          buttonTargetPage: "page2"
+        },
+        {
+          id: "nav5",
+          type: "nextButton",
+          label: "Next",
+          name: "nextButton3",
+          buttonText: "Next",
+          buttonVariant: "default",
+          buttonApiUrl: "https://api.example.com/save-proposal",
+          buttonTargetPage: "page4"
+        }
+      ]
+    },
+    {
+      id: "page4",
+      title: "Claims History",
+      subtitle: "Historical claims and potential claims information",
+      pageType: "form" as PageType,
+      sections: [
+        {
+          id: "section4",
+          title: "Claims Information",
+          subtitle: "Past claims and awareness of potential claims",
+          fields: [
+            {
+              id: "field14",
+              type: "dropdown",
+              label: "Claims in 5 Years",
+              name: "claimsIn5Years",
+              placeholder: "Select number of claims",
+              required: true,
+              isRatingParameter: true,
+              options: ["0", "1", "2+"]
+            },
+            {
+              id: "field15",
+              type: "checkbox",
+              label: "Awareness of Potential Claims",
+              name: "awarenessOfPotentialClaims",
+              required: true,
+              isRatingParameter: true
+            }
+          ]
+        }
+      ],
+      navigationFields: [
+        {
+          id: "nav6",
+          type: "backButton",
+          label: "Back",
+          name: "backButton4",
+          buttonText: "Back",
+          buttonVariant: "outline",
+          buttonTargetPage: "page3"
+        },
+        {
+          id: "nav7",
+          type: "nextButton",
+          label: "Next",
+          name: "nextButton4",
+          buttonText: "Next",
+          buttonVariant: "default",
+          buttonApiUrl: "https://api.example.com/save-proposal",
+          buttonTargetPage: "page5"
+        }
+      ]
+    },
+    {
+      id: "page5",
+      title: "Governance & Operations",
+      subtitle: "Board composition and operational details",
+      pageType: "form" as PageType,
+      sections: [
+        {
+          id: "section5",
+          title: "Board & Operations",
+          subtitle: "Directors and operational information",
+          fields: [
+            {
+              id: "field16",
+              type: "dropdown",
+              label: "No. of Directors",
+              name: "numberOfDirectors",
+              placeholder: "Select number of directors",
+              required: true,
+              isRatingParameter: true,
+              options: ["<5", "5-10", ">10"]
+            },
+            {
+              id: "field17",
+              type: "dropdown",
+              label: "Years of Operation",
+              name: "yearsOfOperation",
+              placeholder: "Select years of operation",
+              required: true,
+              isRatingParameter: true,
+              options: ["<3", "3-10", ">10"]
+            },
+            {
+              id: "field18",
+              type: "dropdown",
+              label: "Risk Management Quality",
+              name: "riskManagementQuality",
+              placeholder: "Select risk management quality",
+              required: true,
+              isRatingParameter: true,
+              options: ["Strong", "Average", "Weak"]
+            }
+          ]
+        }
+      ],
+      navigationFields: [
+        {
+          id: "nav8",
+          type: "backButton",
+          label: "Back",
+          name: "backButton5",
+          buttonText: "Back",
+          buttonVariant: "outline",
+          buttonTargetPage: "page4"
+        },
+        {
+          id: "nav9",
+          type: "nextButton",
+          label: "Next",
+          name: "nextButton5",
+          buttonText: "Next",
+          buttonVariant: "default",
+          buttonApiUrl: "https://api.example.com/save-proposal",
+          buttonTargetPage: "page6"
+        }
+      ]
+    },
+    {
+      id: "page6",
+      title: "Coverage & Premium",
+      subtitle: "Coverage requirements and premium calculation",
+      pageType: "form" as PageType,
+      sections: [
+        {
+          id: "section6",
+          title: "Coverage Details",
+          subtitle: "Sum insured and premium information",
+          fields: [
+            {
+              id: "field19",
+              type: "number",
+              label: "Sum Insured (USD)",
+              name: "sumInsured",
+              placeholder: "Enter sum insured amount",
+              required: true,
+              isRatingParameter: true,
+              validations: [{ type: "min", value: 0 }]
+            },
+            {
+              id: "field20",
+              type: "number",
+              label: "Base Rate (%)",
+              name: "baseRate",
+              placeholder: "Enter base rate percentage",
+              required: true,
+              isRatingParameter: true,
+              validations: [{ type: "min", value: 0 }, { type: "max", value: 100 }]
+            },
+            {
+              id: "field21",
+              type: "number",
+              label: "Underwriter Discount (%)",
+              name: "underwriterDiscount",
+              placeholder: "Enter discount percentage (0-20)",
+              required: false,
+              isRatingParameter: true,
+              validations: [{ type: "min", value: 0 }, { type: "max", value: 20 }]
+            }
+          ]
+        }
+      ],
+      navigationFields: [
+        {
+          id: "nav10",
+          type: "backButton",
+          label: "Back",
+          name: "backButton6",
+          buttonText: "Back",
+          buttonVariant: "outline",
+          buttonTargetPage: "page5"
+        },
+        {
+          id: "nav11",
+          type: "submitButton",
+          label: "Submit",
+          name: "submitButton",
+          buttonText: "Submit Proposal",
+          buttonVariant: "default",
+          buttonApiUrl: "https://api.example.com/submit-proposal",
+          buttonTargetPage: "page7"
+        }
+      ]
+    }
+  ];
+};
+
 const ProposalFormDesign = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -801,10 +1212,13 @@ const ProposalFormDesign = () => {
   const productName = searchParams.get("productName") || "Product";
   const productVersion = searchParams.get("productVersion") || "";
 
-  // Load test data for CAR v1.0, otherwise use default empty structure
+  // Load test data for CAR v1.0 or D&O v1.0, otherwise use default empty structure
   const getInitialPages = (): Page[] => {
     if (productName === "Contractors All Risk Insurance" && productVersion === "1.0") {
       return getCARTestData();
+    }
+    if (productName === "Directors & Officers Liability Insurance" && productVersion === "1.0") {
+      return getDOTestData();
     }
     return [
       {
@@ -823,6 +1237,7 @@ const ProposalFormDesign = () => {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [isFieldDialogOpen, setIsFieldDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [selectedLibraryField, setSelectedLibraryField] = useState<string>("");
   const [isConfiguringField, setIsConfiguringField] = useState(false);
   const [draggedFieldId, setDraggedFieldId] = useState<string | null>(null);
   const [fieldConfig, setFieldConfig] = useState<Partial<Field>>({
@@ -874,6 +1289,130 @@ const ProposalFormDesign = () => {
       setSelectedCEWIds(new Set());
     }
   }, [currentPreviewPage, pages]);
+
+  // Fields Library - Pre-configured common fields
+  const fieldsLibrary: { id: string; label: string; icon: React.ReactNode; field: Partial<Field> }[] = [
+    {
+      id: "fullName",
+      label: "Full Name",
+      icon: <User className="w-4 h-4" />,
+      field: {
+        type: "text",
+        label: "Full Name",
+        name: "fullName",
+        placeholder: "Enter full name",
+        required: true,
+        validations: [
+          { type: "minLength", value: 2, message: "Name must be at least 2 characters" },
+          { type: "maxLength", value: 100, message: "Name must not exceed 100 characters" }
+        ]
+      }
+    },
+    {
+      id: "email",
+      label: "Email ID",
+      icon: <Mail className="w-4 h-4" />,
+      field: {
+        type: "text",
+        label: "Email ID",
+        name: "email",
+        placeholder: "Enter email address",
+        required: true,
+        validations: [
+          { type: "pattern", value: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message: "Please enter a valid email address" }
+        ]
+      }
+    },
+    {
+      id: "phoneNumber",
+      label: "Phone Number",
+      icon: <Phone className="w-4 h-4" />,
+      field: {
+        type: "text",
+        label: "Phone Number",
+        name: "phoneNumber",
+        placeholder: "Enter phone number",
+        required: true,
+        validations: [
+          { type: "pattern", value: "^[+]?[(]?[0-9]{1,4}[)]?[-\\s.]?[(]?[0-9]{1,4}[)]?[-\\s.]?[0-9]{1,9}$", message: "Please enter a valid phone number" }
+        ]
+      }
+    },
+    {
+      id: "companyName",
+      label: "Company Name",
+      icon: <Building2 className="w-4 h-4" />,
+      field: {
+        type: "text",
+        label: "Company Name",
+        name: "companyName",
+        placeholder: "Enter company name",
+        required: false,
+        validations: [
+          { type: "maxLength", value: 200, message: "Company name must not exceed 200 characters" }
+        ]
+      }
+    },
+    {
+      id: "address",
+      label: "Address",
+      icon: <MapPinIcon className="w-4 h-4" />,
+      field: {
+        type: "text",
+        label: "Address",
+        name: "address",
+        placeholder: "Enter address",
+        required: false,
+        validations: [
+          { type: "maxLength", value: 500, message: "Address must not exceed 500 characters" }
+        ]
+      }
+    },
+    {
+      id: "dateOfBirth",
+      label: "Date of Birth",
+      icon: <Calendar className="w-4 h-4" />,
+      field: {
+        type: "date",
+        label: "Date of Birth",
+        name: "dateOfBirth",
+        required: false,
+        validations: [
+          { type: "maxDate", value: "today", message: "Date of birth cannot be in the future" }
+        ]
+      }
+    },
+    {
+      id: "nationalId",
+      label: "National ID / Passport",
+      icon: <CreditCard className="w-4 h-4" />,
+      field: {
+        type: "text",
+        label: "National ID / Passport",
+        name: "nationalId",
+        placeholder: "Enter national ID or passport number",
+        required: false,
+        validations: [
+          { type: "maxLength", value: 50, message: "ID number must not exceed 50 characters" }
+        ]
+      }
+    },
+    {
+      id: "occupation",
+      label: "Occupation",
+      icon: <Briefcase className="w-4 h-4" />,
+      field: {
+        type: "text",
+        label: "Occupation",
+        name: "occupation",
+        placeholder: "Enter occupation",
+        required: false,
+        validations: [
+          { type: "maxLength", value: 100, message: "Occupation must not exceed 100 characters" }
+        ]
+      }
+    }
+  ];
 
   const fieldTypes: { value: FieldType; label: string; icon: React.ReactNode }[] = [
     { value: "text", label: "Text", icon: <Type className="w-4 h-4" /> },
@@ -1006,6 +1545,9 @@ const ProposalFormDesign = () => {
       isMasterData: false,
       buttonText: "",
       buttonVariant: "default",
+      mapProvider: "mapbox",
+      mapApiUrl: "",
+      mapApiKey: "",
     });
     setOptionsInput("");
     setDependentOptionsInput("");
@@ -1044,6 +1586,9 @@ const ProposalFormDesign = () => {
       buttonApiUrl: field.buttonApiUrl,
       buttonVariant: field.buttonVariant,
       buttonTargetPage: field.buttonTargetPage,
+      mapProvider: field.mapProvider || "mapbox",
+      mapApiUrl: field.mapApiUrl,
+      mapApiKey: field.mapApiKey,
     });
     setOptionsInput(field.options?.join(", ") || "");
     setDependentOptionsInput(
@@ -1112,6 +1657,26 @@ const ProposalFormDesign = () => {
       return;
     }
 
+    // Validate map configuration for location fields
+    if (fieldConfig.type === "location") {
+      if (!fieldConfig.mapApiUrl) {
+        toast({
+          title: "Validation Error",
+          description: "Map API URL is required for location coordinates field.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!fieldConfig.mapApiKey) {
+        toast({
+          title: "Validation Error",
+          description: "API Key / Credentials is required for location coordinates field.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     // Ensure field name is auto-generated
     const fieldName = fieldConfig.name || generateFieldName(fieldConfig.label);
     if (!fieldName) {
@@ -1149,6 +1714,9 @@ const ProposalFormDesign = () => {
       buttonApiUrl: fieldConfig.buttonApiUrl,
       buttonVariant: fieldConfig.buttonVariant,
       buttonTargetPage: fieldConfig.buttonTargetPage,
+      mapProvider: fieldConfig.mapProvider,
+      mapApiUrl: fieldConfig.mapApiUrl,
+      mapApiKey: fieldConfig.mapApiKey,
     };
 
     if (selectedFieldId && !isConfiguringField) {
@@ -1273,6 +1841,78 @@ const ProposalFormDesign = () => {
           }
         : page
     ));
+  };
+
+  // Add library field directly to section
+  const addLibraryField = (libraryField: { id: string; label: string; icon: React.ReactNode; field: Partial<Field> }, sectionId: string) => {
+    if (!selectedPageId) {
+      toast({
+        title: "Select Page",
+        description: "Please select a page first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedPage = pages.find(p => p.id === selectedPageId);
+    if (!selectedPage || !selectedPage.sections) {
+      toast({
+        title: "No Section",
+        description: "Please create a section first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedSection = selectedPage.sections.find(s => s.id === sectionId);
+    if (!selectedSection) {
+      toast({
+        title: "Section Not Found",
+        description: "The selected section was not found.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create field from library template
+    const fieldData: Field = {
+      id: `field${Date.now()}`,
+      type: libraryField.field.type as FieldType,
+      label: libraryField.field.label || "",
+      name: libraryField.field.name || generateFieldName(libraryField.field.label || ""),
+      placeholder: libraryField.field.placeholder,
+      required: libraryField.field.required || false,
+      isRatingParameter: libraryField.field.isRatingParameter || false,
+      isMasterData: libraryField.field.isMasterData || false,
+      validations: libraryField.field.validations || [],
+      conditionalLogic: libraryField.field.conditionalLogic,
+      options: libraryField.field.options,
+      optionsUrl: libraryField.field.optionsUrl,
+      dependentOn: libraryField.field.dependentOn,
+      dependentOptions: libraryField.field.dependentOptions,
+      dependentOptionsUrl: libraryField.field.dependentOptionsUrl,
+      masterDataTable: libraryField.field.masterDataTable,
+      defaultValue: libraryField.field.defaultValue,
+    };
+
+    // Add field to section
+    setPages(pages.map(page => 
+      page.id === selectedPageId
+        ? {
+            ...page,
+            sections: page.sections.map(section =>
+              section.id === sectionId
+                ? { ...section, fields: [...section.fields, fieldData] }
+                : section
+            )
+          }
+        : page
+    ));
+
+    toast({
+      title: "Field Added",
+      description: `${libraryField.label} has been added to the section.`,
+    });
   };
 
   const handleDragStart = (fieldId: string) => {
@@ -1911,7 +2551,7 @@ const ProposalFormDesign = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/market-admin/product-management")}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -1937,6 +2577,14 @@ const ProposalFormDesign = () => {
               <SelectItem value="liability">General Liability</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            onClick={() => setIsFullscreenPreview(true)}
+            className="gap-2"
+          >
+            <Eye className="w-4 h-4" />
+            Preview Form
+          </Button>
           <Button onClick={() => {
             toast({
               title: "Form Saved",
@@ -1949,7 +2597,7 @@ const ProposalFormDesign = () => {
         </div>
       </div>
 
-      {/* Main Content - Three Panels */}
+      {/* Main Content - Two Panels */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel - Component Selection */}
         <div className="w-64 border-r bg-muted/30 overflow-y-auto">
@@ -1981,6 +2629,48 @@ const ProposalFormDesign = () => {
                   Add Section
                 </Button>
               )}
+            </div>
+
+            <Separator className="my-4" />
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">Fields Library</h4>
+              <p className="text-xs text-muted-foreground mb-2">Select to add pre-configured fields</p>
+              <Select
+                value={selectedLibraryField}
+                onValueChange={(value) => {
+                  if (!value) return;
+                  const libField = fieldsLibrary.find(f => f.id === value);
+                  if (!libField) return;
+                  
+                  if (!selectedSectionId) {
+                    toast({
+                      title: "Select Section",
+                      description: "Please select a section first.",
+                      variant: "destructive",
+                    });
+                    setSelectedLibraryField("");
+                    return;
+                  }
+                  addLibraryField(libField, selectedSectionId);
+                  // Reset select value after adding
+                  setSelectedLibraryField("");
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a field to add" />
+                </SelectTrigger>
+                <SelectContent>
+                  {fieldsLibrary.map((libField) => (
+                    <SelectItem key={libField.id} value={libField.id}>
+                      <div className="flex items-center gap-2">
+                        {libField.icon}
+                        {libField.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <Separator className="my-4" />
@@ -2311,47 +3001,52 @@ const ProposalFormDesign = () => {
           </div>
         </div>
 
-        {/* Right Panel - Preview */}
-        <div className="w-96 border-l bg-muted/10 flex flex-col">
-          <div className="p-6 flex-1 overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Eye className="w-5 h-5" />
-                <h3 className="font-semibold">Form Preview</h3>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsFullscreenPreview(true)}
-                className="h-8 w-8"
-                title="Open in fullscreen"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {/* Horizontal Page Navigation */}
-            <div className="mb-4 border-b overflow-x-auto">
-              <div className="flex gap-1 min-w-max">
-                {pages.map((page, index) => (
-                  <button
-                    key={page.id}
-                    onClick={() => setCurrentPreviewPage(page.id)}
-                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                      currentPreviewPage === page.id
-                        ? "border-primary text-primary"
-                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground"
-                    }`}
-                  >
-                    {page.title}
-                  </button>
-                ))}
-              </div>
-            </div>
+      </div>
 
-            {/* Current Page Preview */}
-            <div className="space-y-6">
-              {pages
+      {/* Fullscreen Preview Dialog */}
+      {isFullscreenPreview && (
+        <Dialog open={isFullscreenPreview} onOpenChange={setIsFullscreenPreview}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 flex flex-col">
+            <DialogHeader className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <DialogTitle>Form Preview</DialogTitle>
+                  <DialogDescription>
+                    {productName}{productVersion ? ` - Version ${productVersion}` : ''}
+                  </DialogDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsFullscreenPreview(false)}
+                >
+                  <Minimize2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Horizontal Page Navigation */}
+              <div className="mb-4 border-b overflow-x-auto">
+                <div className="flex gap-1 min-w-max">
+                  {pages.map((page, index) => (
+                    <button
+                      key={page.id}
+                      onClick={() => setCurrentPreviewPage(page.id)}
+                      className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                        currentPreviewPage === page.id
+                          ? "border-primary text-primary"
+                          : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground"
+                      }`}
+                    >
+                      {page.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Current Page Preview */}
+              <div className="space-y-6">
+                {pages
                 .filter(page => page.id === currentPreviewPage)
                 .map((page) => (
                   <Card key={page.id}>
@@ -2797,516 +3492,9 @@ const ProposalFormDesign = () => {
                 ))}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Fullscreen Preview Dialog */}
-      <Dialog open={isFullscreenPreview} onOpenChange={setIsFullscreenPreview}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden p-0 flex flex-col">
-          <DialogHeader className="sticky top-0 bg-background z-10 border-b px-6 py-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <DialogTitle className="text-2xl">Form Preview - Fullscreen</DialogTitle>
-                <DialogDescription>
-                  {productName} {productVersion && `v${productVersion}`}
-                </DialogDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsFullscreenPreview(false)}
-                className="h-8 w-8"
-              >
-                <Minimize2 className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {/* Horizontal Page Navigation */}
-            <div className="border-b overflow-x-auto">
-              <div className="flex gap-1 min-w-max">
-                {pages.map((page) => (
-                  <button
-                    key={page.id}
-                    onClick={() => setCurrentPreviewPage(page.id)}
-                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                      currentPreviewPage === page.id
-                        ? "border-primary text-primary"
-                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground"
-                    }`}
-                  >
-                    {page.title}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </DialogHeader>
-          <div className="p-6 space-y-8 overflow-y-auto flex-1">
-            {pages
-              .filter(page => page.id === currentPreviewPage)
-              .map((page) => {
-                // Generate page URL
-                const pageUrl = page.pageType === "payment" 
-                  ? page.paymentUrl || "https://payment.example.com/checkout"
-                  : page.pageType === "quotesList"
-                  ? page.quotesUrl || "https://api.example.com/quotes"
-                  : `${window.location.origin}/proposal/${productName.toLowerCase().replace(/\s+/g, '-')}/${page.id}`;
-                
-                return (
-                <Card key={page.id} className="mb-6">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <CardTitle>{page.title}</CardTitle>
-                        {page.subtitle && (
-                          <CardDescription>{page.subtitle}</CardDescription>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded truncate max-w-md">
-                          <span className="font-medium">URL: </span>
-                          <span className="font-mono">{pageUrl}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {page.pageType === "form" && page.sections && page.sections.length > 0 ? (
-                      page.sections.map((section) => (
-                        <div key={section.id} className="space-y-4">
-                          {section.title && (
-                            <div>
-                              <h4 className="font-semibold">{section.title}</h4>
-                              {section.subtitle && (
-                                <p className="text-sm text-muted-foreground">{section.subtitle}</p>
-                              )}
-                            </div>
-                          )}
-                          <div className="grid grid-cols-2 gap-4">
-                            {section.fields.map((field) => (
-                              <div 
-                                key={field.id}
-                                className={shouldFieldSpanFullWidth(field) ? "col-span-2" : ""}
-                              >
-                                {renderFieldPreview(field)}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))
-                    ) : page.pageType === "payment" ? (
-                      <div className="space-y-6">
-                        <div className="p-6 border rounded-lg bg-muted/30">
-                          <h3 className="text-lg font-semibold mb-4">Payment</h3>
-                          <div className="space-y-4">
-                            <div>
-                              <Label className="text-sm text-muted-foreground">Payment Redirection URL</Label>
-                              <Input 
-                                value={page.paymentUrl || "https://payment.example.com/checkout"} 
-                                readOnly 
-                                className="mt-1 bg-background"
-                              />
-                            </div>
-                            
-                            {/* Dummy Payment Form */}
-                            <div className="border rounded-lg p-6 bg-background space-y-4">
-                              <h4 className="font-semibold">Payment Details</h4>
-                              
-                              <div className="space-y-2">
-                                <Label>Card Number</Label>
-                                <Input placeholder="1234 5678 9012 3456" />
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label>Expiry Date</Label>
-                                  <Input placeholder="MM/YY" />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label>CVV</Label>
-                                  <Input placeholder="123" type="password" />
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <Label>Cardholder Name</Label>
-                                <Input placeholder="John Doe" />
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <Label>Amount</Label>
-                                <Input value="AED 25,000" readOnly className="bg-muted" />
-                              </div>
-                              
-                              <Button 
-                                className="w-full"
-                                onClick={() => {
-                                  const nextPageId = getNextPage(currentPreviewPage);
-                                  if (nextPageId) {
-                                    setCurrentPreviewPage(nextPageId);
-                                  }
-                                }}
-                              >
-                                Proceed to Payment
-                              </Button>
-                              
-                              <p className="text-xs text-center text-muted-foreground">
-                                This is a demo payment page. Clicking "Proceed to Payment" will redirect to the payment gateway.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : page.pageType === "quotesList" ? (
-                      <div className="space-y-6">
-                        {/* Quotes List Header */}
-                        <h3 className="text-lg font-semibold">Quotes List</h3>
-
-                        {/* Quotes List */}
-                        <div className="space-y-2">
-                          {[
-                            { id: "Q-001", insurer: "ABC Insurance", premium: 25000 },
-                            { id: "Q-002", insurer: "XYZ Insurance", premium: 28500 },
-                            { id: "Q-003", insurer: "Global Insurance", premium: 22000 }
-                          ].map((quote) => (
-                            <div
-                              key={quote.id}
-                              className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
-                                selectedQuoteId === quote.id 
-                                  ? "bg-primary/10 border-primary" 
-                                  : "bg-background hover:bg-muted/50"
-                              }`}
-                            >
-                              <div className="flex items-center gap-4 flex-1">
-                                <div className="flex-1">
-                                  <div className="font-semibold">{quote.id}</div>
-                                  <div className="text-sm text-muted-foreground">{quote.insurer}</div>
-                                </div>
-                                <div className="flex items-center gap-0">
-                                  <div className="font-semibold">{quote.premium.toLocaleString()} AED</div>
-                                  <Button
-                                    variant={selectedQuoteId === quote.id ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedQuoteId(selectedQuoteId === quote.id ? null : quote.id);
-                                      if (selectedQuoteId !== quote.id) {
-                                        setSelectedCEWIds(new Set());
-                                      }
-                                    }}
-                                  >
-                                    {selectedQuoteId === quote.id ? "Selected" : "Select"}
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* CEWs List - Only show when quote is selected */}
-                        {selectedQuoteId && (
-                          <div className="space-y-4">
-                            <h3 className="text-lg font-semibold">CEWs List</h3>
-                            <div className="space-y-2">
-                              {[
-                                { id: "CEW-001", description: "Construction Equipment Warranty", value: 15000 },
-                                { id: "CEW-002", description: "Equipment Maintenance Warranty", value: 12500 },
-                                { id: "CEW-003", description: "Extended Warranty Coverage", value: 18000 }
-                              ].map((cew) => (
-                                <div
-                                  key={cew.id}
-                                  className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
-                                    selectedCEWIds.has(cew.id)
-                                      ? "bg-primary/10 border-primary"
-                                      : "bg-background hover:bg-muted/50"
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-4 flex-1">
-                                    <div className="flex-1">
-                                      <div className="font-semibold">{cew.id}</div>
-                                      <div className="text-sm text-muted-foreground">{cew.description}</div>
-                                    </div>
-                                    <div className="flex items-center gap-0">
-                                      <div className="font-semibold">{cew.value.toLocaleString()} AED</div>
-                                      <Button
-                                        variant={selectedCEWIds.has(cew.id) ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => {
-                                          const newSet = new Set(selectedCEWIds);
-                                          if (selectedCEWIds.has(cew.id)) {
-                                            newSet.delete(cew.id);
-                                          } else {
-                                            newSet.add(cew.id);
-                                          }
-                                          setSelectedCEWIds(newSet);
-                                        }}
-                                      >
-                                        {selectedCEWIds.has(cew.id) ? "Selected" : "Select"}
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Summary Section */}
-                        {(selectedQuoteId || selectedCEWIds.size > 0) && (
-                          <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
-                            <h3 className="text-lg font-semibold">Summary</h3>
-                            <div className="space-y-2">
-                              {selectedQuoteId && (
-                                <div className="flex justify-between items-center">
-                                  <span className="text-sm">
-                                    {selectedQuoteId === "Q-001" && "ABC Insurance Quote"}
-                                    {selectedQuoteId === "Q-002" && "XYZ Insurance Quote"}
-                                    {selectedQuoteId === "Q-003" && "Global Insurance Quote"}
-                                  </span>
-                                  <span className="font-semibold">
-                                    {selectedQuoteId === "Q-001" && "25,000"}
-                                    {selectedQuoteId === "Q-002" && "28,500"}
-                                    {selectedQuoteId === "Q-003" && "22,000"} AED
-                                  </span>
-                                </div>
-                              )}
-                              {Array.from(selectedCEWIds).map((cewId) => (
-                                <div key={cewId} className="flex justify-between items-center text-sm">
-                                  <span>
-                                    {cewId === "CEW-001" && "Construction Equipment Warranty"}
-                                    {cewId === "CEW-002" && "Equipment Maintenance Warranty"}
-                                    {cewId === "CEW-003" && "Extended Warranty Coverage"}
-                                  </span>
-                                  <span>
-                                    {cewId === "CEW-001" && "15,000"}
-                                    {cewId === "CEW-002" && "12,500"}
-                                    {cewId === "CEW-003" && "18,000"} AED
-                                  </span>
-                                </div>
-                              ))}
-                              {(() => {
-                                let subtotal = 0;
-                                if (selectedQuoteId === "Q-001") subtotal += 25000;
-                                if (selectedQuoteId === "Q-002") subtotal += 28500;
-                                if (selectedQuoteId === "Q-003") subtotal += 22000;
-                                if (selectedCEWIds.has("CEW-001")) subtotal += 15000;
-                                if (selectedCEWIds.has("CEW-002")) subtotal += 12500;
-                                if (selectedCEWIds.has("CEW-003")) subtotal += 18000;
-                                const vat = subtotal * 0.05;
-                                const total = subtotal + vat;
-                                return (
-                                  <>
-                                    <div className="border-t pt-2 mt-2 flex justify-between items-center text-sm">
-                                      <span>VAT (5%)</span>
-                                      <span>{vat.toLocaleString()} AED</span>
-                                    </div>
-                                    <div className="flex justify-between items-center font-semibold">
-                                      <span>Total</span>
-                                      <span>{total.toLocaleString()} AED</span>
-                                    </div>
-                                  </>
-                                );
-                              })()}
-                            </div>
-                            {selectedCEWIds.size > 0 && (
-                              <div className="pt-2 flex gap-2">
-                                <Button variant="outline" className="gap-2">
-                                  <Download className="w-4 h-4" />
-                                  Download Proposal
-                                </Button>
-                                <Button variant="outline" className="gap-2">
-                                  <Download className="w-4 h-4" />
-                                  Download Quote
-                                </Button>
-                                <Button>
-                                  Next
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Buttons Section */}
-                        {page.sections && page.sections.length > 0 && (
-                          <div className="space-y-4">
-                            {page.sections.map((section) => (
-                              <div key={section.id} className="space-y-4">
-                                {section.title && (
-                                  <h4 className="font-semibold">{section.title}</h4>
-                                )}
-                                <div className="flex flex-wrap gap-2">
-                                  {section.fields.map((field) => (
-                                    <div key={field.id}>
-                                      {renderFieldPreview(field)}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ) : page.pageType === "policyDetails" ? (
-                      <div className="space-y-6">
-                        <div className="p-6 border rounded-lg bg-muted/30">
-                          <h3 className="text-lg font-semibold mb-4">Policy Details</h3>
-                          
-                          {/* System Defaults */}
-                          <div className="space-y-4 mb-6">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label className="text-sm text-muted-foreground">Policy Number</Label>
-                                <div className="p-3 border rounded-lg bg-background">
-                                  <span className="font-semibold">POL-2024-001234</span>
-                                </div>
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-sm text-muted-foreground">Amount of Policy</Label>
-                                <div className="p-3 border rounded-lg bg-background">
-                                  <span className="font-semibold">AED 25,000</span>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label className="text-sm text-muted-foreground">Policy Start Date</Label>
-                                <div className="p-3 border rounded-lg bg-background">
-                                  <span className="font-semibold">01/01/2024</span>
-                                </div>
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-sm text-muted-foreground">Policy End Date</Label>
-                                <div className="p-3 border rounded-lg bg-background">
-                                  <span className="font-semibold">31/12/2024</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Policy Documents List */}
-                          <div className="space-y-4">
-                            <h4 className="font-semibold">Policy Documents</h4>
-                            <div className="space-y-2">
-                              {[
-                                { id: "DOC-001", name: "Policy Schedule", type: "PDF", size: "2.5 MB" },
-                                { id: "DOC-002", name: "Certificate of Insurance", type: "PDF", size: "1.8 MB" },
-                                { id: "DOC-003", name: "Terms and Conditions", type: "PDF", size: "3.2 MB" },
-                                { id: "DOC-004", name: "Premium Invoice", type: "PDF", size: "1.1 MB" }
-                              ].map((doc) => (
-                                <div
-                                  key={doc.id}
-                                  className="flex items-center justify-between p-4 border rounded-lg bg-background hover:bg-muted/50 transition-colors"
-                                >
-                                  <div className="flex items-center gap-3 flex-1">
-                                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                      <FileText className="w-5 h-5 text-primary" />
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="font-semibold">{doc.name}</div>
-                                      <div className="text-sm text-muted-foreground">{doc.type} • {doc.size}</div>
-                                    </div>
-                                  </div>
-                                  <Button variant="outline" size="sm" className="gap-2">
-                                    <Download className="w-4 h-4" />
-                                    Download
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No sections yet. Click + to add a section.
-                      </p>
-                    )}
-                    
-                    {/* Navigation Buttons */}
-                    {page.navigationFields && page.navigationFields.length > 0 && (
-                      <div className="flex items-center justify-between gap-2 pt-4 border-t">
-                        {page.navigationFields.map((navField) => {
-                          if (navField.type === "backButton") {
-                            return (
-                              <Button
-                                key={navField.id}
-                                variant={navField.buttonVariant || "outline"}
-                                onClick={() => {
-                                  if (navField.buttonTargetPage) {
-                                    setCurrentPreviewPage(navField.buttonTargetPage);
-                                  }
-                                }}
-                                className="gap-2"
-                              >
-                                <ArrowLeftIcon className="w-4 h-4" />
-                                {navField.buttonText || "Back"}
-                              </Button>
-                            );
-                          } else if (navField.type === "nextButton") {
-                            return (
-                              <Button
-                                key={navField.id}
-                                variant={navField.buttonVariant || "default"}
-                                onClick={() => {
-                                  // In real implementation, would call the API here
-                                  if (navField.buttonApiUrl) {
-                                    console.log("Saving page data to:", navField.buttonApiUrl);
-                                  }
-                                  // Navigate to target page or next page
-                                  if (navField.buttonTargetPage) {
-                                    setCurrentPreviewPage(navField.buttonTargetPage);
-                                  } else {
-                                    // Navigate to next page by default
-                                    const nextPageId = getNextPage(currentPreviewPage);
-                                    if (nextPageId) {
-                                      setCurrentPreviewPage(nextPageId);
-                                    }
-                                  }
-                                }}
-                                className="gap-2 ml-auto"
-                              >
-                                {navField.buttonText || "Next"}
-                                <ArrowRight className="w-4 h-4" />
-                              </Button>
-                            );
-                          } else if (navField.type === "submitButton") {
-                            return (
-                              <Button
-                                key={navField.id}
-                                variant={navField.buttonVariant || "default"}
-                                onClick={() => {
-                                  // In real implementation, would call the API here
-                                  if (navField.buttonApiUrl) {
-                                    console.log("Submitting form data to:", navField.buttonApiUrl);
-                                  }
-                                  // Navigate to target page or next page
-                                  if (navField.buttonTargetPage) {
-                                    setCurrentPreviewPage(navField.buttonTargetPage);
-                                  } else {
-                                    // Navigate to next page by default
-                                    const nextPageId = getNextPage(currentPreviewPage);
-                                    if (nextPageId) {
-                                      setCurrentPreviewPage(nextPageId);
-                                    }
-                                  }
-                                }}
-                                className="gap-2 ml-auto"
-                              >
-                                <Send className="w-4 h-4" />
-                                {navField.buttonText || "Submit"}
-                              </Button>
-                            );
-                          }
-                          return null;
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                );
-              })}
-          </div>
         </DialogContent>
       </Dialog>
+      )}
 
       {/* Add Page Dialog */}
       <Dialog open={isAddPageDialogOpen} onOpenChange={setIsAddPageDialogOpen}>
@@ -3407,31 +3595,55 @@ const ProposalFormDesign = () => {
                 value={fieldConfig.type}
                 onValueChange={(value) => {
                   const newType = value as FieldType;
-                  // Clear rating parameter if changing to file, location, or button types
                   const buttonTypes = ["chooseButton", "nextButton", "backButton", "submitButton", "button"];
+                  
+                  // Build updated config object
+                  let updatedConfig: Partial<Field> = { ...fieldConfig, type: newType };
+                  
+                  // Clear rating parameter if changing to file, location, or button types
                   if ((newType === "file" || newType === "location" || buttonTypes.includes(newType)) && fieldConfig.isRatingParameter) {
-                    setFieldConfig({ ...fieldConfig, type: newType, isRatingParameter: false });
-                  } else {
-                    setFieldConfig({ ...fieldConfig, type: newType });
+                    updatedConfig.isRatingParameter = false;
                   }
+                  
                   // Set default button text based on type
                   if (newType === "nextButton") {
-                    setFieldConfig({ ...fieldConfig, type: newType, buttonText: "Next", buttonVariant: "default" });
+                    updatedConfig.buttonText = "Next";
+                    updatedConfig.buttonVariant = "default";
                   } else if (newType === "backButton") {
-                    setFieldConfig({ ...fieldConfig, type: newType, buttonText: "Back", buttonVariant: "outline" });
+                    updatedConfig.buttonText = "Back";
+                    updatedConfig.buttonVariant = "outline";
                   } else if (newType === "submitButton") {
-                    setFieldConfig({ ...fieldConfig, type: newType, buttonText: "Submit", buttonVariant: "default" });
+                    updatedConfig.buttonText = "Submit";
+                    updatedConfig.buttonVariant = "default";
                   }
+                  
                   // Clear master data if changing to combination type
                   if (newType === "combination" && fieldConfig.isMasterData) {
-                    setFieldConfig({ ...fieldConfig, isMasterData: false });
+                    updatedConfig.isMasterData = false;
                   }
+                  
                   // Clear subFields and row config if not combination type
                   if (newType !== "combination") {
                     setSubFieldsConfig([]);
                     setCombinationRowsCount(1);
                     setCombinationRowLabels([]);
                   }
+                  
+                  // Initialize map configuration if changing to location type
+                  if (newType === "location") {
+                    if (!fieldConfig.mapProvider) {
+                      updatedConfig.mapProvider = "mapbox";
+                      updatedConfig.mapApiUrl = "https://api.mapbox.com";
+                      updatedConfig.mapApiKey = "";
+                    }
+                  } else {
+                    // Clear map configuration if changing away from location type
+                    updatedConfig.mapProvider = undefined;
+                    updatedConfig.mapApiUrl = undefined;
+                    updatedConfig.mapApiKey = undefined;
+                  }
+                  
+                  setFieldConfig(updatedConfig);
                 }}
               >
                 <SelectTrigger>
@@ -3503,14 +3715,20 @@ const ProposalFormDesign = () => {
                   </div>
                 ) : fieldConfig.type === "dropdown" ? (
                   <Select
-                    value={typeof fieldConfig.defaultValue === "string" ? fieldConfig.defaultValue : ""}
-                    onValueChange={(value) => setFieldConfig({ ...fieldConfig, defaultValue: value || undefined })}
+                    value={typeof fieldConfig.defaultValue === "string" ? fieldConfig.defaultValue : "none"}
+                    onValueChange={(value) => {
+                      if (value === "none") {
+                        setFieldConfig({ ...fieldConfig, defaultValue: undefined });
+                      } else {
+                        setFieldConfig({ ...fieldConfig, defaultValue: value });
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select default value (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No default value</SelectItem>
+                      <SelectItem value="none">No default value</SelectItem>
                       {(fieldConfig.options || []).map((option) => (
                         <SelectItem key={option} value={option}>
                           {option}
@@ -3521,7 +3739,7 @@ const ProposalFormDesign = () => {
                 ) : fieldConfig.type === "multiselect" ? (
                   <div className="space-y-2">
                     <Select
-                      value=""
+                      value={undefined}
                       onValueChange={(value) => {
                         if (value) {
                           const currentDefaults = Array.isArray(fieldConfig.defaultValue) 
@@ -3610,6 +3828,75 @@ const ProposalFormDesign = () => {
                 <p className="text-xs text-muted-foreground">
                   Value that will be pre-filled when the form loads
                 </p>
+              </div>
+            )}
+
+            {/* Location Coordinates Configuration */}
+            {fieldConfig.type === "location" && (
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-sm font-semibold">Map Service Configuration</h3>
+                <div className="space-y-2">
+                  <Label>Map Provider</Label>
+                  <Select
+                    value={fieldConfig.mapProvider || "mapbox"}
+                    onValueChange={(value) => {
+                      setFieldConfig({ 
+                        ...fieldConfig, 
+                        mapProvider: value,
+                        // Set default URLs based on provider
+                        mapApiUrl: value === "mapbox" 
+                          ? "https://api.mapbox.com" 
+                          : value === "google"
+                          ? "https://maps.googleapis.com"
+                          : fieldConfig.mapApiUrl || ""
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mapbox">Mapbox</SelectItem>
+                      <SelectItem value="google">Google Maps</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select the map service provider you want to use
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Map API URL *</Label>
+                  <Input
+                    type="url"
+                    value={fieldConfig.mapApiUrl || ""}
+                    onChange={(e) => setFieldConfig({ ...fieldConfig, mapApiUrl: e.target.value })}
+                    placeholder={
+                      fieldConfig.mapProvider === "mapbox" 
+                        ? "https://api.mapbox.com" 
+                        : fieldConfig.mapProvider === "google"
+                        ? "https://maps.googleapis.com"
+                        : "https://your-map-service.com/api"
+                    }
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Base URL for the map service API (e.g., https://api.mapbox.com)
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>API Key / Credentials *</Label>
+                  <Input
+                    type="password"
+                    value={fieldConfig.mapApiKey || ""}
+                    onChange={(e) => setFieldConfig({ ...fieldConfig, mapApiKey: e.target.value })}
+                    placeholder="Enter your API key or access token"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Your API key or access token for the map service. This will be securely stored.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -4774,6 +5061,64 @@ const ProposalFormDesign = () => {
               </div>
             </div>
           </div>
+
+          {/* Rating Parameter and Master Data Toggles */}
+          <div className="space-y-4 border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="ratingParameter">Rating Parameter</Label>
+                <p className="text-xs text-muted-foreground">
+                  Mark this field as a rating parameter to use it in premium calculations
+                </p>
+              </div>
+              <Switch
+                id="ratingParameter"
+                checked={fieldConfig.isRatingParameter || false}
+                onCheckedChange={(checked) => {
+                  setFieldConfig({ ...fieldConfig, isRatingParameter: checked });
+                }}
+                disabled={fieldConfig.type === "file" || fieldConfig.type === "location" || 
+                         fieldConfig.type === "chooseButton" || fieldConfig.type === "nextButton" || 
+                         fieldConfig.type === "backButton" || fieldConfig.type === "submitButton" || 
+                         fieldConfig.type === "button"}
+              />
+            </div>
+            {fieldConfig.type !== "combination" && (
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="masterData">Master Data</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Enable master data to auto-create a backend lookup table for this field
+                  </p>
+                </div>
+                <Switch
+                  id="masterData"
+                  checked={fieldConfig.isMasterData || false}
+                  onCheckedChange={(checked) => {
+                    setFieldConfig({ 
+                      ...fieldConfig, 
+                      isMasterData: checked,
+                      masterDataTable: checked ? generateFieldName(fieldConfig.label || fieldConfig.name) : undefined
+                    });
+                  }}
+                />
+              </div>
+            )}
+            {fieldConfig.isMasterData && fieldConfig.type !== "combination" && (
+              <div className="space-y-2">
+                <Label>Master Data Table Name</Label>
+                <Input
+                  value={fieldConfig.masterDataTable || generateFieldName(fieldConfig.label || fieldConfig.name)}
+                  onChange={(e) => setFieldConfig({ ...fieldConfig, masterDataTable: e.target.value })}
+                  placeholder="e.g., project_types"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Name of the master data table that will be created in the backend
+                </p>
+              </div>
+            )}
+          </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsFieldDialogOpen(false)}>
               Cancel

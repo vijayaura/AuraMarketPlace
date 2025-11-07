@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Save, FileText, Settings, Users, Shield, BarChart3, CheckCircle2, Key, Building2 } from "lucide-react";
+import { ArrowLeft, Save, FileText, Settings, Shield, BarChart3, CheckCircle2, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -70,13 +70,6 @@ const CreateProduct = () => {
     },
     formsAndTemplates: {
       proposalFormDesign: false,
-      policyDetailsPageDesign: false,
-    },
-    administration: {
-      reInsurerOnboardingDesign: false,
-      insurerOnboardingDesign: false,
-      brokerOnboardingDesign: false,
-      userOnboardingDesign: false,
     },
     ratingAndUnderwriting: {
       ratingConfiguratorDesign: false,
@@ -148,12 +141,6 @@ const CreateProduct = () => {
       return;
     }
     
-    // Navigate to Administration Form Design for onboarding designs
-    if (designName === "reInsurerOnboardingDesign" || designName === "insurerOnboardingDesign" || designName === "brokerOnboardingDesign" || designName === "userOnboardingDesign") {
-      navigate(`/market-admin/product-management/administration-form-design?productName=${encodeURIComponent(formData.productName)}&productVersion=${encodeURIComponent(formData.productVersion)}&designType=${encodeURIComponent(designName)}`);
-      return;
-    }
-    
     // Navigate to Rating Configurator
     if (designName === "ratingConfiguratorDesign") {
       navigate(`/market-admin/product-management/rating-configurator?productName=${encodeURIComponent(formData.productName)}&productVersion=${encodeURIComponent(formData.productVersion)}`);
@@ -210,7 +197,7 @@ const CreateProduct = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/market-admin/product-management")}
+              onClick={() => navigate(-1)}
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -402,82 +389,6 @@ const CreateProduct = () => {
                         Create
                       </Button>
                     </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
-                      <div className="flex items-center gap-3 flex-1">
-                        <FileText className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Policy Details Page Design</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Administration */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 border-b pb-2">
-                    <Settings className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Administration</h3>
-                  </div>
-                  <div className="pl-6 space-y-2">
-                    <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
-                      <div className="flex items-center gap-3 flex-1">
-                        <Shield className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Re-Insurer Onboarding Design</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleCreateDesign(["administration", "reInsurerOnboardingDesign"])}
-                        disabled={!isBasicInfoSaved}
-                      >
-                        Create
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
-                      <div className="flex items-center gap-3 flex-1">
-                        <Shield className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Insurer Onboarding Design</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleCreateDesign(["administration", "insurerOnboardingDesign"])}
-                        disabled={!isBasicInfoSaved}
-                      >
-                        Create
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
-                      <div className="flex items-center gap-3 flex-1">
-                        <Building2 className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Broker Onboarding Design</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleCreateDesign(["administration", "brokerOnboardingDesign"])}
-                        disabled={!isBasicInfoSaved}
-                      >
-                        Create
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
-                      <div className="flex items-center gap-3 flex-1">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">User Onboarding Design</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleCreateDesign(["administration", "userOnboardingDesign"])}
-                        disabled={!isBasicInfoSaved}
-                      >
-                        Create
-                      </Button>
-                    </div>
                   </div>
                 </div>
 
@@ -568,7 +479,7 @@ const CreateProduct = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/market-admin/product-management")}
+                onClick={() => navigate(-1)}
               >
                 Cancel
               </Button>
