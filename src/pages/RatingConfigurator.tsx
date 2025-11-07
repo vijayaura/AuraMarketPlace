@@ -97,7 +97,7 @@ const RatingConfigurator = () => {
         { id: "do_param14", name: "riskManagementQuality", label: "Risk Management Quality", type: "dropdown", options: ["Strong", "Average", "Weak"] },
         { id: "do_param15", name: "underwriterDiscount", label: "Underwriter Discount (%)", type: "number" },
         { id: "do_param16", name: "sumInsured", label: "Sum Insured (USD)", type: "number" },
-        { id: "do_param17", name: "baseRate", label: "Base Rate (%)", type: "number" },
+        { id: "do_param17", name: "baseRate", label: "Base Rate", type: "number" },
       ];
     }
     // Default CAR parameters
@@ -162,7 +162,7 @@ const RatingConfigurator = () => {
   }
 
   const [defaultRatingParamsList, setDefaultRatingParamsList] = useState<DefaultRatingParam[]>([
-    { id: "baseRate", name: "baseRate", label: "Base Rate (%)", value: 0 },
+    { id: "baseRate", name: "baseRate", label: "Base Rate", value: 0 },
     { id: "minimumPremium", name: "minimumPremium", label: "Minimum Premium (AED)", value: 0 },
     { id: "maximumPremium", name: "maximumPremium", label: "Maximum Premium (AED)", value: 0 },
     { id: "brokerMinimumCommission", name: "brokerMinimumCommission", label: "Broker Minimum Commission (%)", value: 0 },
@@ -1852,20 +1852,95 @@ const RatingConfigurator = () => {
                         </Badge>
                       ))}
                       {selectedCalculation === "premium" && (
-                        <Badge
-                          variant="outline"
-                          className="cursor-move hover:bg-primary/10 hover:border-primary hover:text-primary transition-all text-sm px-3 py-1.5"
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData("application/json", JSON.stringify({
-                              type: "field",
-                              value: "sumOfSelectedCEWs",
-                              label: "Sum of Selected CEWs",
-                            }));
-                          }}
-                        >
-                          Sum of Selected CEWs
-                        </Badge>
+                        <>
+                          <Badge
+                            variant="outline"
+                            className="cursor-move hover:bg-primary/10 hover:border-primary hover:text-primary transition-all text-sm px-3 py-1.5"
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("application/json", JSON.stringify({
+                                type: "field",
+                                value: "sumOfSelectedCEWs",
+                                label: "Sum of Selected CEWs",
+                              }));
+                            }}
+                            onClick={() => {
+                              const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                              const newStep: FormulaStep = {
+                                id: `step_${Date.now()}_${Math.random()}`,
+                                type: "field",
+                                value: "sumOfSelectedCEWs",
+                              };
+                              const newFormula = [...currentFormula, newStep];
+                              setFormulaSteps(newFormula);
+                              if (selectedCalculation === "sumInsured") {
+                                setSumInsuredFormula(newFormula);
+                              } else {
+                                setPremiumFormula(newFormula);
+                              }
+                            }}
+                          >
+                            Sum of Selected CEWs
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="cursor-move hover:bg-primary/10 hover:border-primary hover:text-primary transition-all text-sm px-3 py-1.5"
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("application/json", JSON.stringify({
+                                type: "field",
+                                value: "totalLoading",
+                                label: "Total Loading",
+                              }));
+                            }}
+                            onClick={() => {
+                              const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                              const newStep: FormulaStep = {
+                                id: `step_${Date.now()}_${Math.random()}`,
+                                type: "field",
+                                value: "totalLoading",
+                              };
+                              const newFormula = [...currentFormula, newStep];
+                              setFormulaSteps(newFormula);
+                              if (selectedCalculation === "sumInsured") {
+                                setSumInsuredFormula(newFormula);
+                              } else {
+                                setPremiumFormula(newFormula);
+                              }
+                            }}
+                          >
+                            Total Loading
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="cursor-move hover:bg-primary/10 hover:border-primary hover:text-primary transition-all text-sm px-3 py-1.5"
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("application/json", JSON.stringify({
+                                type: "field",
+                                value: "totalDiscount",
+                                label: "Total Discount",
+                              }));
+                            }}
+                            onClick={() => {
+                              const currentFormula = selectedCalculation === "sumInsured" ? sumInsuredFormula : premiumFormula;
+                              const newStep: FormulaStep = {
+                                id: `step_${Date.now()}_${Math.random()}`,
+                                type: "field",
+                                value: "totalDiscount",
+                              };
+                              const newFormula = [...currentFormula, newStep];
+                              setFormulaSteps(newFormula);
+                              if (selectedCalculation === "sumInsured") {
+                                setSumInsuredFormula(newFormula);
+                              } else {
+                                setPremiumFormula(newFormula);
+                              }
+                            }}
+                          >
+                            Total Discount
+                          </Badge>
+                        </>
                       )}
                     </div>
                   </div>

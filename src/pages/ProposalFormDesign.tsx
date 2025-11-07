@@ -1159,9 +1159,9 @@ const getDOTestData = (): Page[] => {
             {
               id: "field20",
               type: "number",
-              label: "Base Rate (%)",
+              label: "Base Rate",
               name: "baseRate",
-              placeholder: "Enter base rate percentage",
+              placeholder: "Enter base rate",
               required: true,
               isRatingParameter: true,
               validations: [{ type: "min", value: 0 }, { type: "max", value: 100 }]
