@@ -289,19 +289,21 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
       doc.setFontSize(8);
       doc.setFont(undefined, 'normal');
       
-      // Calculate vertical center for text
-      const textCenterY = currentY + (actualRowHeight / 2) + 2;
+      // Calculate starting Y position for text (top-aligned with padding)
+      const textStartY = currentY + 3;
+      const lineHeight = 3.5; // Increased line height to prevent overlap
       
-      // Draw label text - vertically centered
-      doc.text(labelLines, margin + 1, textCenterY);
+      // Draw label text - top-aligned, multi-line
+      let labelY = textStartY;
+      labelLines.forEach((line: string) => {
+        doc.text(line, margin + 1, labelY);
+        labelY += lineHeight;
+      });
       
       // Draw value text (with selective bold formatting for specific values)
       if (item.boldValues && item.boldValues.length > 0) {
-        // For selective bold with wrapped text, process line by line - vertically centered
-        const totalTextHeight = valueLines.length * 3.0;
-        const startY = textCenterY - (totalTextHeight / 2) + 1;
-        let lineY = startY;
-        const lineHeight = 3.0;
+        // For selective bold with wrapped text, process line by line
+        let valueY = textStartY;
         
         for (let lineIdx = 0; lineIdx < valueLines.length; lineIdx++) {
           const line = valueLines[lineIdx];
@@ -317,13 +319,13 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
               if (boldIndex > 0) {
                 const beforeText = remainingText.substring(0, boldIndex);
                 doc.setFont(undefined, 'normal');
-                doc.text(beforeText, currentX, lineY);
+                doc.text(beforeText, currentX, valueY);
                 currentX += doc.getTextWidth(beforeText);
               }
               
               // Draw bold value in lighter bold font
               doc.setFont(undefined, 'bold');
-              doc.text(boldValueStr, currentX, lineY);
+              doc.text(boldValueStr, currentX, valueY);
               currentX += doc.getTextWidth(boldValueStr);
               
               // Remove processed text from remaining
@@ -334,18 +336,26 @@ export const generateInsuranceProposalPDF = (proposalData: ProposalData, quoteFo
           // Draw remaining text in normal font
           if (remainingText.length > 0) {
             doc.setFont(undefined, 'normal');
-            doc.text(remainingText, currentX, lineY);
+            doc.text(remainingText, currentX, valueY);
           }
           
-          lineY += lineHeight;
+          valueY += lineHeight; // Move to next line
         }
       } else if (item.bold) {
-        // Full bold formatting (legacy) - vertically centered
+        // Full bold formatting (legacy) - top-aligned, multi-line
         doc.setFont(undefined, 'bold');
-        doc.text(valueLines, margin + contentWidth * 0.3 + 1, textCenterY);
+        let valueY = textStartY;
+        valueLines.forEach((line: string) => {
+          doc.text(line, margin + contentWidth * 0.3 + 1, valueY);
+          valueY += lineHeight;
+        });
       } else {
-        // Normal text - vertically centered
-        doc.text(valueLines, margin + contentWidth * 0.3 + 1, textCenterY);
+        // Normal text - top-aligned, multi-line
+        let valueY = textStartY;
+        valueLines.forEach((line: string) => {
+          doc.text(line, margin + contentWidth * 0.3 + 1, valueY);
+          valueY += lineHeight;
+        });
       }
       
       // Reset font to normal for next iteration

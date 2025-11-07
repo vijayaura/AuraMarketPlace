@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Building, ArrowLeft, Download, Eye, FileText, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 import { CEWSelection } from "./CEWSelection";
 import { useToast } from "@/hooks/use-toast";
-import { generateQuotePDF } from '@/utils/pdfGenerator';
+import { generateQuotePDF, generateInsuranceProposalPDF } from '@/utils/pdfGenerator';
 import { type BrokerInsurersResponse } from "@/lib/api/brokers";
 import { type ProposalBundleResponse, type InsurerPricingConfigResponse, getInsurerPricingConfig, createPlanSelection, updatePlanSelection, type PlanSelectionRequest } from "@/lib/api/quotes";
 import { getQuoteFormat } from "@/lib/api/insurers";
@@ -2339,7 +2339,91 @@ const QuotesComparison = ({
     }
   };
 
+  // Helper function to extract insurer ID from all available sources
+  const extractInsurerId = (): number | null => {
+    console.log('🔍 Extracting insurer ID from available sources...');
+    
+    // Source 1: selectedQuoteForCEW.id (primary source)
+    if (selectedQuoteForCEW?.id && typeof selectedQuoteForCEW.id === 'number') {
+      console.log('✅ Found insurer ID in selectedQuoteForCEW.id:', selectedQuoteForCEW.id);
+      return selectedQuoteForCEW.id;
+    }
+    
+    // Source 2: selectedQuoteForCEW alternative fields
+    if (selectedQuoteForCEW?.insurerId && typeof selectedQuoteForCEW.insurerId === 'number') {
+      console.log('✅ Found insurer ID in selectedQuoteForCEW.insurerId:', selectedQuoteForCEW.insurerId);
+      return selectedQuoteForCEW.insurerId;
+    }
+    
+    if (selectedQuoteForCEW?.insurer_id && typeof selectedQuoteForCEW.insurer_id === 'number') {
+      console.log('✅ Found insurer ID in selectedQuoteForCEW.insurer_id:', selectedQuoteForCEW.insurer_id);
+      return selectedQuoteForCEW.insurer_id;
+    }
+    
+    if (selectedQuoteForCEW?.insurer?.id && typeof selectedQuoteForCEW.insurer.id === 'number') {
+      console.log('✅ Found insurer ID in selectedQuoteForCEW.insurer.id:', selectedQuoteForCEW.insurer.id);
+      return selectedQuoteForCEW.insurer.id;
+    }
+    
+    // Source 3: Match insurerName with assignedInsurers
+    if (selectedQuoteForCEW?.insurerName && assignedInsurers?.insurers) {
+      const matchedInsurer = assignedInsurers.insurers.find(
+        (ins: any) => ins.insurer_name === selectedQuoteForCEW.insurerName
+      );
+      if (matchedInsurer?.insurer_id) {
+        console.log('✅ Found insurer ID by matching insurerName:', matchedInsurer.insurer_id);
+        return matchedInsurer.insurer_id;
+      }
+    }
+    
+    // Source 4: currentProposal.quote_meta.insurer_id
+    if (currentProposal?.quote_meta?.insurer_id && typeof currentProposal.quote_meta.insurer_id === 'number') {
+      console.log('✅ Found insurer ID in currentProposal.quote_meta.insurer_id:', currentProposal.quote_meta.insurer_id);
+      return currentProposal.quote_meta.insurer_id;
+    }
+    
+    // Source 5: currentProposal.plans[0].insurer_id
+    if (currentProposal?.plans && currentProposal.plans.length > 0) {
+      const firstPlan = currentProposal.plans[0];
+      if (firstPlan?.insurer_id && typeof firstPlan.insurer_id === 'number') {
+        console.log('✅ Found insurer ID in currentProposal.plans[0].insurer_id:', firstPlan.insurer_id);
+        return firstPlan.insurer_id;
+      }
+      
+      // Source 6: currentProposal.plans[0].created_by.insurer_id
+      if (firstPlan?.created_by?.insurer_id && typeof firstPlan.created_by.insurer_id === 'number') {
+        console.log('✅ Found insurer ID in currentProposal.plans[0].created_by.insurer_id:', firstPlan.created_by.insurer_id);
+        return firstPlan.created_by.insurer_id;
+      }
+    }
+    
+    // Source 7: Match selectedQuoteForCEW.insurerName with currentProposal.plans
+    if (selectedQuoteForCEW?.insurerName && currentProposal?.plans) {
+      const matchedPlan = currentProposal.plans.find(
+        (plan: any) => plan.insurer_name === selectedQuoteForCEW.insurerName
+      );
+      if (matchedPlan?.insurer_id) {
+        console.log('✅ Found insurer ID by matching insurerName in plans:', matchedPlan.insurer_id);
+        return matchedPlan.insurer_id;
+      }
+    }
+    
+    // Source 8: selectedQuoteForCEW.validationResult (if it has insurer info)
+    if (selectedQuoteForCEW?.validationResult?.insurer_id) {
+      console.log('✅ Found insurer ID in validationResult.insurer_id:', selectedQuoteForCEW.validationResult.insurer_id);
+      return selectedQuoteForCEW.validationResult.insurer_id;
+    }
+    
+    console.error('❌ Could not find insurer ID from any source');
+    return null;
+  };
+
   const handleDownloadCurrentQuote = async () => {
+    console.log('🔍 handleDownloadCurrentQuote called');
+    console.log('🔍 selectedQuoteForCEW:', selectedQuoteForCEW);
+    console.log('🔍 currentProposal:', currentProposal);
+    console.log('🔍 assignedInsurers:', assignedInsurers);
+    
     if (!selectedQuoteForCEW) {
       toast({
         title: "No Quote Selected",
@@ -2348,6 +2432,23 @@ const QuotesComparison = ({
       });
       return;
     }
+    
+    // Extract insurer ID from all available sources
+    const insurerId = extractInsurerId();
+    
+    if (!insurerId) {
+      console.error('❌ Could not extract insurer ID from any source');
+      console.error('❌ selectedQuoteForCEW:', JSON.stringify(selectedQuoteForCEW, null, 2));
+      console.error('❌ currentProposal:', JSON.stringify(currentProposal, null, 2));
+      toast({
+        title: "Unable to Generate PDF",
+        description: "Could not identify the insurer. Please try selecting the quote again or contact support.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log('✅ Using extracted insurer ID:', insurerId);
 
     // Get current CEW data from state
     const cewData = {
@@ -2419,7 +2520,7 @@ const QuotesComparison = ({
     const brokerCommissionAmount = totalBeforeCommission * (brokerCommissionPercent / 100);
     const totalAnnualPremium = totalBeforeCommission + brokerCommissionAmount;
 
-    // Create proposal data
+    // Create proposal data with updated quote and CEW adjustments
     const proposalData = {
       project: currentProposal?.project || {
         project_id: 'CAR-001',
@@ -2432,7 +2533,29 @@ const QuotesComparison = ({
       insured: currentProposal?.insured || null,
       contract_structure: currentProposal?.contract_structure || null,
       cover_requirements: currentProposal?.cover_requirements || null,
-      quote: selectedQuoteForCEW,
+      quote: {
+        id: selectedQuoteForCEW.id,
+        planName: selectedQuoteForCEW.planName || 'Selected Plan',
+        insurerName: selectedQuoteForCEW.insurerName,
+        annualPremium: totalAnnualPremium,
+        coverageAmount: parseFloat(currentProposal?.project?.sum_insured || '0'),
+        deductible: selectedQuoteForCEW.deductible || '0',
+        rating: selectedQuoteForCEW.rating || 0,
+        keyCoverage: selectedQuoteForCEW.keyCoverage || [],
+        benefits: selectedQuoteForCEW.benefits || [],
+        validationResult: selectedQuoteForCEW.validationResult,
+        pricingConfig: selectedQuoteForCEW.pricingConfig,
+        // Add premium breakdown details for PDF generation
+        deductibleAmount: parseFloat(selectedQuoteForCEW.deductible?.replace(/[^0-9.]/g, '') || '0'),
+        tplDeductibleAmount: 0,
+        professionalIndemnityDeductibleAmount: 0,
+        basePremium: basePremium,
+        tplAdjustmentAmount: tplAdjustmentAmount,
+        cewAdjustmentAmount: mandatoryAdjustmentAmount + optionalAdjustmentAmount,
+        subtotal: totalBeforeCommission,
+        brokerCommission: brokerCommissionAmount,
+        totalAnnualPremium: totalAnnualPremium
+      } as any,
       cewData: cewData,
       premiumSummary: {
         basePremium: basePremium,
@@ -2442,7 +2565,8 @@ const QuotesComparison = ({
         totalBeforeCommission: totalBeforeCommission,
         brokerCommission: brokerCommissionAmount,
         totalAnnualPremium: totalAnnualPremium
-      }
+      },
+      raw: currentProposal
     };
 
     // Generate and download PDF
@@ -2451,19 +2575,22 @@ const QuotesComparison = ({
         throw new Error('No proposal data available');
       }
 
-      // Get insurer ID from the proposal bundle
-      const insurerId = currentProposal.quote_meta?.insurer_id;
-      if (!insurerId) {
-        console.error('No insurer ID found in proposal bundle');
-        throw new Error('No insurer ID found');
-      }
+      // Insurer ID is already extracted and validated before this try block
+      // Use the extracted insurerId variable
 
-      // Fetch quote format data
-      const quoteFormat = await getQuoteFormat(insurerId, 1);
-      console.log('📄 Quote format data:', quoteFormat);
+      // Fetch quote format data (optional - will generate without format if it fails)
+      let quoteFormat;
+      try {
+        quoteFormat = await getQuoteFormat(insurerId, 1);
+        console.log('📄 Quote format data:', quoteFormat);
+      } catch (formatError) {
+        console.warn('⚠️ Could not fetch quote format, generating PDF without format:', formatError);
+        quoteFormat = undefined;
+      }
       
-      // Generate PDF with quote format
-      await generateQuotePDF(currentProposal, quoteFormat);
+      // Generate PDF with updated proposal data including CEW adjustments
+      // This will work even if quoteFormat is undefined
+      generateInsuranceProposalPDF(proposalData, quoteFormat);
       
       toast({
         title: "Quote Downloaded",
@@ -2472,11 +2599,22 @@ const QuotesComparison = ({
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast({
-        title: "Download Failed",
-        description: "There was an error generating the PDF. Please try again.",
-        variant: "destructive"
-      });
+      // Try to generate without format as fallback
+      try {
+        generateInsuranceProposalPDF(proposalData, undefined);
+        toast({
+          title: "Quote Downloaded",
+          description: "PDF generated without quote format.",
+          variant: "default"
+        });
+      } catch (fallbackError) {
+        console.error('Fallback PDF generation also failed:', fallbackError);
+        toast({
+          title: "Download Failed",
+          description: error instanceof Error ? error.message : "There was an error generating the PDF. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
