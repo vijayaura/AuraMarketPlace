@@ -70,7 +70,7 @@ function MarketAdminSidebar() {
             <img src={auraLogo} alt="Aura Logo" className="w-8 h-8 object-contain" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">CAR Platform</h2>
+            <h2 className="text-lg font-bold text-white">P & C 360 Platform</h2>
             <p className="text-sm text-white/80">Market Admin Portal</p>
           </div>
         </div>

@@ -86,7 +86,7 @@ const InsurerLogin = () => {
             <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
               <Users className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-semibold">CAR Platform</h2>
+            <h2 className="text-2xl font-semibold">P & C 360 Platform</h2>
           </div>
           <h1 className="text-5xl font-bold leading-tight mb-4">Welcome Back!</h1>
           <p className="text-white/70">

@@ -34,12 +34,16 @@ const CreateProduct = () => {
   }, [isEditMode, productNameFromUrl, productVersionFromUrl]);
 
   const categories = [
-    { value: "CONSTRUCTION", label: "Construction" },
-    { value: "PROFESSIONAL", label: "Professional" },
-    { value: "COMMERCIAL", label: "Commercial" },
+    { value: "CASUALTY", label: "Casualty" },
+    { value: "ENGINEERING", label: "Engineering" },
+    { value: "GENERAL_ACCIDENT", label: "General Accident" },
+    { value: "GROUP_LIFE", label: "Group Life" },
+    { value: "LIABILITY", label: "Liability" },
+    { value: "MARINE_CARGO", label: "Marine Cargo" },
+    { value: "MARINE_HULL", label: "Marine Hull" },
+    { value: "MEDICAL", label: "Medical" },
+    { value: "MOTOR", label: "Motor" },
     { value: "PROPERTY", label: "Property" },
-    { value: "SPECIALTY", label: "Specialty" },
-    { value: "MARINE", label: "Marine" },
   ];
 
   // Gulf currencies first, then others

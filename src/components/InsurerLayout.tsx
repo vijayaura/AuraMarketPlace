@@ -154,7 +154,7 @@ function InsurerSidebar() {
             ) : (
               <>
                 <h2 className="text-lg font-bold text-white">{company?.name || 'Insurer Portal'}</h2>
-                <p className="text-sm text-white/80">AURA CAR Platform</p>
+                <p className="text-sm text-white/80">AURA P & C 360 Platform</p>
               </>
             )}
           </div>

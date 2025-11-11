@@ -852,9 +852,9 @@ const getDOTestData = (): Page[] => {
             {
               id: "field5",
               type: "number",
-              label: "Annual Turnover (USD)",
+              label: "Annual Turnover (AED)",
               name: "annualTurnover",
-              placeholder: "Enter annual turnover in USD",
+              placeholder: "Enter annual turnover in AED",
               required: true,
               isRatingParameter: true,
               validations: [{ type: "min", value: 0 }]
@@ -1149,7 +1149,7 @@ const getDOTestData = (): Page[] => {
             {
               id: "field19",
               type: "number",
-              label: "Sum Insured (USD)",
+              label: "Sum Insured (AED)",
               name: "sumInsured",
               placeholder: "Enter sum insured amount",
               required: true,

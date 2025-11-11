@@ -81,7 +81,7 @@ const RatingConfigurator = () => {
   const getInitialRatingParameters = (): RatingParameter[] => {
     if (productName === "Directors & Officers Liability Insurance" && productVersion === "1.0") {
       return [
-        { id: "do_param1", name: "annualTurnover", label: "Annual Turnover (USD)", type: "number" },
+        { id: "do_param1", name: "annualTurnover", label: "Annual Turnover (AED)", type: "number" },
         { id: "do_param2", name: "positiveOperatingIncome", label: "Positive Operating Income", type: "checkbox" },
         { id: "do_param3", name: "breachOfDebtCovenants", label: "Breach of Debt Covenants", type: "checkbox" },
         { id: "do_param4", name: "qualifiedAuditOpinion", label: "Qualified Audit Opinion", type: "checkbox" },
@@ -96,7 +96,7 @@ const RatingConfigurator = () => {
         { id: "do_param13", name: "yearsOfOperation", label: "Years of Operation", type: "dropdown", options: ["<3", "3-10", ">10"] },
         { id: "do_param14", name: "riskManagementQuality", label: "Risk Management Quality", type: "dropdown", options: ["Strong", "Average", "Weak"] },
         { id: "do_param15", name: "underwriterDiscount", label: "Underwriter Discount (%)", type: "number" },
-        { id: "do_param16", name: "sumInsured", label: "Sum Insured (USD)", type: "number" },
+        { id: "do_param16", name: "sumInsured", label: "Sum Insured (AED)", type: "number" },
         { id: "do_param17", name: "baseRate", label: "Base Rate", type: "number" },
       ];
     }
