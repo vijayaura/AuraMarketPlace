@@ -1,128 +1,236 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building, User, Briefcase, Plus, Copy, Calendar, UserCircle, Edit, Users, Building2, Power, Database } from "lucide-react";
+import { Building, User, Briefcase, Plus, Copy, Calendar, UserCircle, Edit, Users, Building2, Trash2, Database, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-
-type ProductStatus = "Draft" | "Active" | "Archived";
-type ProductOwner = "broker" | "insurer";
-
-interface InsuranceProduct {
-  id: string;
-  code: string;
-  name: string;
-  version: string;
-  category: string;
-  owner: ProductOwner;
-  status: ProductStatus;
-  linkedInsurers: number;
-  linkedBrokers: number;
-  createdDate: string;
-  modifiedDate: string;
-  createdBy: string;
-  icon: React.ReactNode;
-}
+import { getProducts, cloneProduct, deleteProduct, updateProduct, type Product, type ProductStatus } from "@/lib/api/products";
 
 const MarketAdminProductManagement = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCloning, setIsCloning] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isTogglingStatus, setIsTogglingStatus] = useState<string | null>(null);
 
-  const insuranceProducts: InsuranceProduct[] = [
+  // Fallback test data for development when API is not available
+  const getFallbackProducts = (): Product[] => [
     {
       id: '1',
-      code: 'CAR',
       name: 'Contractors All Risk Insurance',
       version: '1.0',
-      category: 'CONSTRUCTION',
+      category: 'ENGINEERING',
       owner: 'insurer',
       status: 'Draft',
+      currency: 'AED',
       linkedInsurers: 0,
       linkedBrokers: 0,
       createdDate: '2024-01-15T10:30:00Z',
       modifiedDate: '2024-03-20T14:45:00Z',
       createdBy: 'Admin User',
-      icon: <Building className="w-5 h-5" />
+      code: 'CAR',
     },
     {
       id: '2',
-      code: 'CAR',
       name: 'Contractors All Risk Insurance',
       version: '1.2',
-      category: 'CONSTRUCTION',
+      category: 'ENGINEERING',
       owner: 'insurer',
       status: 'Active',
+      currency: 'AED',
       linkedInsurers: 3,
       linkedBrokers: 2,
       createdDate: '2024-02-10T09:15:00Z',
       modifiedDate: '2024-03-15T11:20:00Z',
       createdBy: 'Admin User',
-      icon: <Building className="w-5 h-5" />
+      code: 'CAR',
     },
     {
       id: '3',
-      code: 'PI',
       name: 'Professional Indemnity Insurance',
       version: '1.0',
-      category: 'PROFESSIONAL',
+      category: 'LIABILITY',
       owner: 'broker',
       status: 'Active',
+      currency: 'AED',
       linkedInsurers: 2,
       linkedBrokers: 1,
       createdDate: '2024-01-20T09:15:00Z',
       modifiedDate: '2024-02-10T11:20:00Z',
       createdBy: 'Admin User',
-      icon: <User className="w-5 h-5" />
+      code: 'PI',
     },
     {
       id: '4',
-      code: 'DO',
       name: 'Directors & Officers Liability Insurance',
       version: '1.0',
-      category: 'COMMERCIAL',
+      category: 'LIABILITY',
       owner: 'insurer',
       status: 'Active',
+      currency: 'AED',
       linkedInsurers: 2,
       linkedBrokers: 1,
       createdDate: '2024-02-05T13:45:00Z',
       modifiedDate: '2024-03-25T10:30:00Z',
       createdBy: 'Admin User',
-      icon: <Briefcase className="w-5 h-5" />
+      code: 'DO',
     }
   ];
 
+  // Load products from API
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getProducts();
+        if (response.products && response.products.length > 0) {
+          setProducts(response.products);
+        } else {
+          // If API returns empty, use fallback data for development
+          console.warn('API returned empty products list, using fallback data');
+          setProducts(getFallbackProducts());
+        }
+      } catch (error: any) {
+        console.warn('Failed to load products from API, using fallback data:', error);
+        // Fallback to test data when API is not available (for development)
+        setProducts(getFallbackProducts());
+        // Only show toast in development mode or if it's not a network error
+        if (import.meta.env.DEV || error.status !== 0) {
+          toast({
+            title: "Using Fallback Data",
+            description: "API unavailable. Showing test data for development.",
+            variant: "default",
+          });
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProducts();
+  }, [toast]);
+
   const handleProductClick = (productId: string) => {
-    // TODO: Navigate to product details or configuration page
-    toast({
-      title: "Product Selected",
-      description: `Product configuration will be implemented in the next step.`,
-    });
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      navigate(`/market-admin/product-management/create?productId=${productId}&productName=${encodeURIComponent(product.name)}&productVersion=${encodeURIComponent(product.version)}&edit=true`);
+    }
   };
 
   const handleCreateProduct = () => {
     navigate("/market-admin/product-management/create");
   };
 
-  const handleEditProduct = (product: InsuranceProduct) => {
-    navigate(`/market-admin/product-management/create?productName=${encodeURIComponent(product.name)}&productVersion=${encodeURIComponent(product.version)}&edit=true`);
+  const handleEditProduct = (product: Product) => {
+    navigate(`/market-admin/product-management/create?productId=${product.id}&productName=${encodeURIComponent(product.name)}&productVersion=${encodeURIComponent(product.version)}&edit=true`);
   };
 
-  const handleCloneProduct = (product: InsuranceProduct) => {
-    // TODO: Implement clone functionality
-    toast({
-      title: "Clone Product",
-      description: `Cloning ${product.name} v${product.version}... Clone functionality will be implemented in the next step.`,
-    });
+  const handleCloneProduct = async (product: Product) => {
+    try {
+      setIsCloning(product.id);
+      const clonedProduct = await cloneProduct(product.id);
+      toast({
+        title: "Product Cloned",
+        description: `${product.name} v${product.version} has been cloned successfully.`,
+      });
+      // Reload products
+      const response = await getProducts();
+      setProducts(response.products || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to clone product",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCloning(null);
+    }
   };
 
-  const handleDeactivateProduct = (product: InsuranceProduct) => {
-    // TODO: Implement deactivate functionality
-    toast({
-      title: "Deactivate Product",
-      description: `Deactivating ${product.name} v${product.version}... Deactivate functionality will be implemented in the next step.`,
-      variant: "destructive",
-    });
+  const handleDeleteProduct = async (product: Product) => {
+    if (!confirm(`Are you sure you want to delete ${product.name} v${product.version}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setIsDeleting(product.id);
+      await deleteProduct(product.id);
+      toast({
+        title: "Product Deleted",
+        description: `${product.name} v${product.version} has been deleted.`,
+      });
+      // Reload products
+      try {
+        const response = await getProducts();
+        setProducts(response.products || []);
+      } catch {
+        // If API fails, remove from local state
+        setProducts(products.filter(p => p.id !== product.id));
+      }
+    } catch (error: any) {
+      // If API fails, remove from local state for development
+      if (error.status === 0 || error.message?.includes('Network')) {
+        setProducts(products.filter(p => p.id !== product.id));
+        toast({
+          title: "Product Deleted (Local)",
+          description: `${product.name} v${product.version} has been removed from the list.`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete product",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const handleToggleProductStatus = async (product: Product) => {
+    const newStatus: ProductStatus = product.status === "Active" ? "Archived" : "Active";
+    
+    try {
+      setIsTogglingStatus(product.id);
+      await updateProduct(product.id, { status: newStatus });
+      toast({
+        title: "Product Status Updated",
+        description: `${product.name} v${product.version} has been ${newStatus === "Active" ? "activated" : "archived"}.`,
+      });
+      // Reload products
+      try {
+        const response = await getProducts();
+        setProducts(response.products || []);
+      } catch {
+        // If API fails, update local state
+        setProducts(products.map(p => 
+          p.id === product.id ? { ...p, status: newStatus } : p
+        ));
+      }
+    } catch (error: any) {
+      // If API fails, update local state for development
+      if (error.status === 0 || error.message?.includes('Network')) {
+        setProducts(products.map(p => 
+          p.id === product.id ? { ...p, status: newStatus } : p
+        ));
+        toast({
+          title: "Product Status Updated (Local)",
+          description: `${product.name} v${product.version} has been ${newStatus === "Active" ? "activated" : "archived"}.`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update product status",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsTogglingStatus(null);
+    }
   };
 
 
@@ -139,8 +247,27 @@ const MarketAdminProductManagement = () => {
     }
   };
 
-  const getOwnerLabel = (owner: ProductOwner): string => {
-    return owner === "broker" ? "Broker" : "Insurer";
+  const getOwnerLabel = (owner: string): string => {
+    const ownerMap: Record<string, string> = {
+      broker: "Broker",
+      insurer: "Insurer",
+      reinsurer: "Reinsurer",
+    };
+    return ownerMap[owner] || owner;
+  };
+
+  const getProductIcon = (category: string) => {
+    // Map category to icon
+    if (category.includes("CONSTRUCTION") || category === "ENGINEERING") {
+      return <Building className="w-5 h-5" />;
+    }
+    if (category.includes("PROFESSIONAL") || category === "LIABILITY") {
+      return <User className="w-5 h-5" />;
+    }
+    if (category.includes("COMMERCIAL") || category === "CASUALTY") {
+      return <Briefcase className="w-5 h-5" />;
+    }
+    return <Building className="w-5 h-5" />;
   };
 
   const formatDate = (dateString: string) => {
@@ -170,8 +297,19 @@ const MarketAdminProductManagement = () => {
           </div>
 
           {/* Products List */}
-          <div className="space-y-4">
-            {insuranceProducts.map(product => (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : products.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-muted-foreground">No products found. Create your first product to get started.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {products.map(product => (
               <Card
                 key={product.id}
                 className="cursor-pointer hover:shadow-md transition-shadow"
@@ -181,7 +319,7 @@ const MarketAdminProductManagement = () => {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1 min-w-0">
                       <div className="p-2 rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                        {product.icon}
+                        {getProductIcon(product.category)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -198,13 +336,13 @@ const MarketAdminProductManagement = () => {
                             <span className="font-medium">Owner:</span>
                             <span className="capitalize">{getOwnerLabel(product.owner)}</span>
                           </div>
-                          {product.linkedInsurers > 0 && (
+                          {product.linkedInsurers && product.linkedInsurers > 0 && (
                             <div className="flex items-center gap-1">
                               <Building2 className="w-3 h-3" />
                               <span>{product.linkedInsurers} insurer{product.linkedInsurers !== 1 ? 's' : ''}</span>
                             </div>
                           )}
-                          {product.linkedBrokers > 0 && (
+                          {product.linkedBrokers && product.linkedBrokers > 0 && (
                             <div className="flex items-center gap-1">
                               <Users className="w-3 h-3" />
                               <span>{product.linkedBrokers} broker{product.linkedBrokers !== 1 ? 's' : ''}</span>
@@ -220,10 +358,12 @@ const MarketAdminProductManagement = () => {
                             <Calendar className="w-3 h-3" />
                             <span>Modified: {formatDate(product.modifiedDate)}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <UserCircle className="w-3 h-3" />
-                            <span>{product.createdBy}</span>
-                          </div>
+                          {product.createdBy && (
+                            <div className="flex items-center gap-1">
+                              <UserCircle className="w-3 h-3" />
+                              <span>{product.createdBy}</span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <Button
@@ -231,10 +371,11 @@ const MarketAdminProductManagement = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              // Navigate to CAR masters management for CAR products, otherwise to general masters
-                              if (product.code === 'CAR') {
+                                  // Navigate to masters management based on product
+                              const productCode = product.code || product.name.substring(0, 3).toUpperCase();
+                              if (productCode === 'CAR') {
                                 navigate('/market-admin/masters-management/car');
-                              } else if (product.code === 'PI') {
+                              } else if (productCode === 'PI') {
                                 navigate('/market-admin/masters-management/pi');
                               } else {
                                 navigate('/market-admin/masters-management');
@@ -272,21 +413,15 @@ const MarketAdminProductManagement = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex-shrink-0 flex items-center gap-2 flex-wrap">
-                      {product.status === "Active" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeactivateProduct(product);
-                          }}
-                          className="gap-2 text-destructive hover:text-destructive"
-                        >
-                          <Power className="w-4 h-4" />
-                          Deactivate
-                        </Button>
-                      )}
+                    <div className="flex-shrink-0 flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Active</span>
+                        <Switch
+                          checked={product.status === "Active"}
+                          onCheckedChange={() => handleToggleProductStatus(product)}
+                          disabled={isTogglingStatus === product.id}
+                        />
+                      </div>
                       <Button
                         variant="outline"
                         size="sm"
@@ -307,16 +442,31 @@ const MarketAdminProductManagement = () => {
                           handleCloneProduct(product);
                         }}
                         className="gap-2"
+                        disabled={isCloning === product.id}
                       >
                         <Copy className="w-4 h-4" />
-                        Clone Product
+                        {isCloning === product.id ? "Cloning..." : "Clone"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProduct(product);
+                        }}
+                        className="gap-2 text-destructive hover:text-destructive"
+                        disabled={isDeleting === product.id}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        {isDeleting === product.id ? "Deleting..." : "Delete"}
                       </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

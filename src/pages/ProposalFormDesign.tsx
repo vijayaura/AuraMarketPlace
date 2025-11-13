@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { getProposalFormDesign, saveProposalFormDesign, updateProposalFormDesign, type Page } from "@/lib/api/proposalFormDesign";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save, Plus, Trash2, Edit, Eye, GripVertical, FileText, Type, Hash, Calendar, CheckSquare, Upload, List, ChevronDown, ChevronRight, MapPin, CalendarDays, MousePointer2, ArrowRight, ArrowLeft as ArrowLeftIcon, Send, Circle, Maximize2, Minimize2, Download, CheckCircle2, User, Mail, Phone, Building2, MapPin as MapPinIcon, CreditCard, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -1208,7 +1209,11 @@ const ProposalFormDesign = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  const productId = searchParams.get("productId");
   const productName = searchParams.get("productName") || "Product";
   const productVersion = searchParams.get("productVersion") || "";
 
@@ -1231,6 +1236,47 @@ const ProposalFormDesign = () => {
   };
 
   const [pages, setPages] = useState<Page[]>(getInitialPages());
+
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Load proposal form design from API if productId is available
+  useEffect(() => {
+    const loadDesign = async () => {
+      if (productId) {
+        try {
+          setIsLoading(true);
+          setIsInitialLoad(true);
+          const design = await getProposalFormDesign(productId);
+          if (design.pages && design.pages.length > 0) {
+            setPages(design.pages);
+            setHasUnsavedChanges(false);
+          }
+        } catch (error: any) {
+          // If 404, design doesn't exist yet - that's okay, use defaults
+          if (error.status !== 404) {
+            toast({
+              title: "Error",
+              description: error.message || "Failed to load proposal form design",
+              variant: "destructive",
+            });
+          }
+        } finally {
+          setIsLoading(false);
+          setIsInitialLoad(false);
+        }
+      } else {
+        setIsInitialLoad(false);
+      }
+    };
+    loadDesign();
+  }, [productId, toast]);
+
+  // Track changes to pages (but not during initial load)
+  useEffect(() => {
+    if (productId && !isInitialLoad) {
+      setHasUnsavedChanges(true);
+    }
+  }, [pages, productId, isInitialLoad]);
 
   const [selectedPageId, setSelectedPageId] = useState<string>(pages[0]?.id || "page1");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
@@ -2585,14 +2631,54 @@ const ProposalFormDesign = () => {
             <Eye className="w-4 h-4" />
             Preview Form
           </Button>
-          <Button onClick={() => {
-            toast({
-              title: "Form Saved",
-              description: "Proposal form design has been saved successfully.",
-            });
-          }} className="gap-2">
+          <Button 
+            onClick={async () => {
+              if (!productId) {
+                toast({
+                  title: "Error",
+                  description: "Product ID is required to save proposal form design",
+                  variant: "destructive",
+                });
+                return;
+              }
+
+              try {
+                setIsSaving(true);
+                // Try to update first, if it fails with 404, create new
+                try {
+                  await updateProposalFormDesign(productId, { pages });
+                  toast({
+                    title: "Form Saved",
+                    description: "Proposal form design has been updated successfully.",
+                  });
+                } catch (error: any) {
+                  if (error.status === 404) {
+                    // Design doesn't exist, create it
+                    await saveProposalFormDesign(productId, { pages });
+                    toast({
+                      title: "Form Saved",
+                      description: "Proposal form design has been saved successfully.",
+                    });
+                  } else {
+                    throw error;
+                  }
+                }
+                setHasUnsavedChanges(false);
+              } catch (error: any) {
+                toast({
+                  title: "Error",
+                  description: error.message || "Failed to save proposal form design",
+                  variant: "destructive",
+                });
+              } finally {
+                setIsSaving(false);
+              }
+            }} 
+            className="gap-2"
+            disabled={isSaving || !productId || !hasUnsavedChanges}
+          >
             <Save className="w-4 h-4" />
-            Save Form
+            {isSaving ? "Saving..." : "Save Form"}
           </Button>
         </div>
       </div>

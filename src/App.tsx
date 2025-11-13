@@ -52,6 +52,7 @@ import RatingConfigurator from "./pages/RatingConfigurator";
 import DocumentConfigurator from "./pages/DocumentConfigurator";
 import KPIDesign from "./pages/KPIDesign";
 import UWRulesDesign from "./pages/UWRulesDesign";
+import IntegrationsConfigurator from "./pages/IntegrationsConfigurator";
 import MastersProductSelection from "./pages/MastersProductSelection";
 import CARMastersManagement from "./pages/CARMastersManagement";
 import PIMastersManagement from "./pages/PIMastersManagement";
@@ -147,6 +148,7 @@ const App = () => (
           <Route path="/market-admin/product-management/uw-rules-design" element={<UWRulesDesign />} />
           <Route path="/market-admin/product-management/document-configurator" element={<DocumentConfigurator />} />
           <Route path="/market-admin/product-management/kpi-design" element={<KPIDesign />} />
+          <Route path="/market-admin/product-management/integrations" element={<IntegrationsConfigurator />} />
           <Route path="/market-admin/insurer/:insurerId/products/2" element={<PIProductConfig />} />
           {/* Product Selection */}
           <Route path="/broker/product-selection" element={<ProductSelection />} />

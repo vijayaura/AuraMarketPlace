@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +6,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-type Role = "insurer" | "reinsurer" | "broker";
+import { getAuthorityMatrix, saveAuthorityMatrix, type Role } from "@/lib/api/authorityMatrix";
 
 interface Feature {
   id: string;
@@ -19,7 +18,10 @@ const AuthorityMatrix = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
+  const productId = searchParams.get("productId");
   const productName = searchParams.get("productName") || "Product";
   const productVersion = searchParams.get("productVersion") || "";
 
@@ -67,6 +69,33 @@ const AuthorityMatrix = () => {
     return initial;
   });
 
+  // Load authority matrix if productId is available
+  useEffect(() => {
+    const loadMatrix = async () => {
+      if (productId) {
+        try {
+          setIsLoading(true);
+          const authorityMatrix = await getAuthorityMatrix(productId);
+          if (authorityMatrix.matrix) {
+            setMatrix(authorityMatrix.matrix);
+          }
+        } catch (error: any) {
+          // If 404, matrix doesn't exist yet - that's okay, use defaults
+          if (error.status !== 404) {
+            toast({
+              title: "Error",
+              description: error.message || "Failed to load authority matrix",
+              variant: "destructive",
+            });
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    loadMatrix();
+  }, [productId, toast]);
+
   const toggleFeature = (featureId: string, role: Role) => {
     setMatrix(prev => ({
       ...prev,
@@ -77,13 +106,33 @@ const AuthorityMatrix = () => {
     }));
   };
 
-  const handleSave = () => {
-    // TODO: Implement API call to save authority matrix
-    toast({
-      title: "Authority Matrix Saved",
-      description: `Authority matrix for ${productName}${productVersion ? ` - Version ${productVersion}` : ''} has been saved successfully.`,
-    });
-    navigate("/market-admin/product-management");
+  const handleSave = async () => {
+    if (!productId) {
+      toast({
+        title: "Error",
+        description: "Product ID is required to save authority matrix",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await saveAuthorityMatrix(productId, matrix);
+      toast({
+        title: "Authority Matrix Saved",
+        description: `Authority matrix for ${productName}${productVersion ? ` - Version ${productVersion}` : ''} has been saved successfully.`,
+      });
+      navigate("/market-admin/product-management");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save authority matrix",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const groupedFeatures = features.reduce((acc, feature) => {
@@ -181,9 +230,9 @@ const AuthorityMatrix = () => {
             >
               Cancel
             </Button>
-            <Button onClick={handleSave} className="gap-2">
+            <Button onClick={handleSave} className="gap-2" disabled={isSaving || isLoading || !productId}>
               <Save className="w-4 h-4" />
-              Save Authority Matrix
+              {isSaving ? "Saving..." : "Save Authority Matrix"}
             </Button>
           </div>
         </div>
