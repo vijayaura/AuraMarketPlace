@@ -99,14 +99,6 @@ const MarketAdminProductManagement = () => {
         console.warn('Failed to load products from API, using fallback data:', error);
         // Fallback to test data when API is not available (for development)
         setProducts(getFallbackProducts());
-        // Only show toast in development mode or if it's not a network error
-        if (import.meta.env.DEV || error.status !== 0) {
-          toast({
-            title: "Using Fallback Data",
-            description: "API unavailable. Showing test data for development.",
-            variant: "default",
-          });
-        }
       } finally {
         setIsLoading(false);
       }
