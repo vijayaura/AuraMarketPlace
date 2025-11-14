@@ -1286,6 +1286,9 @@ const ProposalFormDesign = () => {
   const [selectedLibraryField, setSelectedLibraryField] = useState<string>("");
   const [isConfiguringField, setIsConfiguringField] = useState(false);
   const [draggedFieldId, setDraggedFieldId] = useState<string | null>(null);
+  const [draggedPageId, setDraggedPageId] = useState<string | null>(null);
+  const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
+  const [draggedSectionPageId, setDraggedSectionPageId] = useState<string | null>(null);
   const [fieldConfig, setFieldConfig] = useState<Partial<Field>>({
     type: "text",
     label: "",
@@ -2057,10 +2060,120 @@ const ProposalFormDesign = () => {
 
   const handleDragEnd = () => {
     setDraggedFieldId(null);
+    setDraggedPageId(null);
+    setDraggedSectionId(null);
+    setDraggedSectionPageId(null);
     // Remove any remaining opacity classes
     document.querySelectorAll(".opacity-50").forEach(el => {
       el.classList.remove("opacity-50");
     });
+  };
+
+  // Page drag handlers
+  const handlePageDragStart = (e: React.DragEvent, pageId: string) => {
+    e.stopPropagation();
+    setDraggedPageId(pageId);
+  };
+
+  const handlePageDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedPageId) {
+      e.currentTarget.classList.add("opacity-50");
+    }
+  };
+
+  const handlePageDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove("opacity-50");
+  };
+
+  const handlePageDrop = (e: React.DragEvent, targetPageId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove("opacity-50");
+
+    if (!draggedPageId || draggedPageId === targetPageId) {
+      setDraggedPageId(null);
+      return;
+    }
+
+    const pagesArray = [...pages];
+    const draggedIdx = pagesArray.findIndex(p => p.id === draggedPageId);
+    const targetIdx = pagesArray.findIndex(p => p.id === targetPageId);
+
+    if (draggedIdx === -1 || targetIdx === -1) {
+      setDraggedPageId(null);
+      return;
+    }
+
+    const [draggedPage] = pagesArray.splice(draggedIdx, 1);
+    pagesArray.splice(targetIdx, 0, draggedPage);
+
+    setPages(pagesArray);
+    setDraggedPageId(null);
+  };
+
+  // Section drag handlers
+  const handleSectionDragStart = (e: React.DragEvent, pageId: string, sectionId: string) => {
+    e.stopPropagation();
+    setDraggedSectionId(sectionId);
+    setDraggedSectionPageId(pageId);
+  };
+
+  const handleSectionDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedSectionId) {
+      e.currentTarget.classList.add("opacity-50");
+    }
+  };
+
+  const handleSectionDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove("opacity-50");
+  };
+
+  const handleSectionDrop = (e: React.DragEvent, targetPageId: string, targetSectionId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove("opacity-50");
+
+    if (!draggedSectionId || !draggedSectionPageId || draggedSectionId === targetSectionId) {
+      setDraggedSectionId(null);
+      setDraggedSectionPageId(null);
+      return;
+    }
+
+    // Only allow reordering within the same page
+    if (draggedSectionPageId !== targetPageId) {
+      setDraggedSectionId(null);
+      setDraggedSectionPageId(null);
+      return;
+    }
+
+    setPages(pages.map(page => {
+      if (page.id !== targetPageId) return page;
+
+      const sections = [...page.sections];
+      const draggedIdx = sections.findIndex(s => s.id === draggedSectionId);
+      const targetIdx = sections.findIndex(s => s.id === targetSectionId);
+
+      if (draggedIdx === -1 || targetIdx === -1) return page;
+
+      const [draggedSection] = sections.splice(draggedIdx, 1);
+      sections.splice(targetIdx, 0, draggedSection);
+
+      return {
+        ...page,
+        sections
+      };
+    }));
+
+    setDraggedSectionId(null);
+    setDraggedSectionPageId(null);
   };
 
   const togglePageExpansion = (pageId: string) => {
@@ -2812,10 +2925,20 @@ const ProposalFormDesign = () => {
           <div className="p-6">
             <div className="space-y-4">
               {pages.map((page) => (
-                <Card key={page.id} className={selectedPageId === page.id ? "ring-2 ring-primary" : ""}>
+                <Card 
+                  key={page.id} 
+                  className={`${selectedPageId === page.id ? "ring-2 ring-primary" : ""} ${draggedPageId === page.id ? "opacity-50" : ""}`}
+                  draggable
+                  onDragStart={(e) => handlePageDragStart(e, page.id)}
+                  onDragOver={handlePageDragOver}
+                  onDragLeave={handlePageDragLeave}
+                  onDrop={(e) => handlePageDrop(e, page.id)}
+                  onDragEnd={handleDragEnd}
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 flex-1">
+                        <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab active:cursor-grabbing flex-shrink-0" />
                         <Button
                           variant="ghost"
                           size="icon"
@@ -2866,10 +2989,20 @@ const ProposalFormDesign = () => {
                   {expandedPages.has(page.id) && (
                     <CardContent className="space-y-4">
                       {(page.pageType === "form" || page.pageType === "quotesList") && page.sections && page.sections.map((section) => (
-                        <Card key={section.id} className="bg-muted/30">
+                        <Card 
+                          key={section.id} 
+                          className={`bg-muted/30 ${draggedSectionId === section.id ? "opacity-50" : ""}`}
+                          draggable
+                          onDragStart={(e) => handleSectionDragStart(e, page.id, section.id)}
+                          onDragOver={handleSectionDragOver}
+                          onDragLeave={handleSectionDragLeave}
+                          onDrop={(e) => handleSectionDrop(e, page.id, section.id)}
+                          onDragEnd={handleDragEnd}
+                        >
                           <CardHeader className="pb-3">
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex items-center gap-2 flex-1">
+                                <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab active:cursor-grabbing flex-shrink-0" />
                                 <Button
                                   variant="ghost"
                                   size="icon"

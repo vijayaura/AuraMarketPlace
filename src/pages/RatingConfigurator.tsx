@@ -25,7 +25,7 @@ interface RatingParameter {
   isMasterData?: boolean; // Whether this parameter is linked to master data
   masterDataTable?: string; // Master data table name if applicable
   pricingOption?: "value-based" | "range-based" | "risk-level"; // Single select
-  pricingTypes?: ("Percentage" | "Fixed Amount" | "Percentage of Sum Insured")[]; // Multiple pricing types can be selected
+  pricingTypes?: ("Percentage" | "Fixed Amount" | "Per Mille")[]; // Multiple pricing types can be selected
   decisions?: ("Quote" | "No Quote" | "Refer to UW")[]; // Multiple decisions can be selected
   riskLevels?: ("Low" | "Medium" | "High" | "Very High")[]; // Risk levels when pricingOption is "risk-level"
 }
@@ -143,6 +143,7 @@ const RatingConfigurator = () => {
   // Default Rating Parameters
   const [defaultRatingParams, setDefaultRatingParams] = useState({
     baseRate: 0,
+    factors: 0,
     minimumPremium: 0,
     maximumPremium: 0,
     brokerMinimumCommission: 0,
@@ -157,12 +158,13 @@ const RatingConfigurator = () => {
     value: number;
     selectedRatingParameters?: string[]; // IDs of rating parameters to use
     pricingOption?: "value-based" | "range-based"; // Single select
-    pricingTypes?: ("Percentage" | "Fixed Amount" | "Percentage of Sum Insured")[]; // Multiple pricing types can be selected
+    pricingTypes?: ("Percentage" | "Fixed Amount" | "Per Mille")[]; // Multiple pricing types can be selected
     decisions?: ("Quote" | "No Quote" | "Refer to UW")[]; // Multiple decisions can be selected
   }
 
   const [defaultRatingParamsList, setDefaultRatingParamsList] = useState<DefaultRatingParam[]>([
-    { id: "baseRate", name: "baseRate", label: "Base Rate", value: 0 },
+    { id: "baseRate", name: "baseRate", label: "Choose Base Rate Parameters", value: 0 },
+    { id: "factors", name: "factors", label: "Choose Factors", value: 0 },
     { id: "minimumPremium", name: "minimumPremium", label: "Minimum Premium (AED)", value: 0 },
     { id: "maximumPremium", name: "maximumPremium", label: "Maximum Premium (AED)", value: 0 },
     { id: "brokerMinimumCommission", name: "brokerMinimumCommission", label: "Broker Minimum Commission (%)", value: 0 },
@@ -203,7 +205,7 @@ const RatingConfigurator = () => {
     code: string;
     formPages?: CEWPage[]; // Form design data
     pricingOption?: "value-based" | "range-based";
-    pricingTypes?: ("Percentage" | "Fixed Amount" | "Percentage of Sum Insured")[];
+    pricingTypes?: ("Percentage" | "Fixed Amount" | "Per Mille")[];
     decisions?: ("Quote" | "No Quote" | "Refer to UW")[];
   }
 
@@ -532,33 +534,33 @@ const RatingConfigurator = () => {
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar */}
         <div className="w-80 border-r bg-muted/30 overflow-y-auto">
-          <div className="p-4 space-y-6">
+          <div className="p-3 space-y-4">
             {/* Calculations Section */}
-            <div className="space-y-4">
-              <h3 className="font-semibold">Calculations</h3>
-              <div className="space-y-2">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm">Calculations</h3>
+              <div className="space-y-1.5">
                 <Button
                   variant={selectedCalculation === "sumInsured" ? "default" : "outline"}
-                  className="w-full justify-start"
+                  className="w-full justify-start text-xs h-8"
                   onClick={() => {
                     setSelectedCalculation("sumInsured");
                     setSelectedParameter(null);
                     setFormulaSteps([...sumInsuredFormula]);
                   }}
                 >
-                  <Calculator className="w-4 h-4 mr-2" />
-                  Sum Insured Calculation
+                  <Calculator className="w-3 h-3 mr-2" />
+                  Total Sum Insured Calculation
                 </Button>
                 <Button
                   variant={selectedCalculation === "premium" ? "default" : "outline"}
-                  className="w-full justify-start"
+                  className="w-full justify-start text-xs h-8"
                   onClick={() => {
                     setSelectedCalculation("premium");
                     setSelectedParameter(null);
                     setFormulaSteps([...premiumFormula]);
                   }}
                 >
-                  <Calculator className="w-4 h-4 mr-2" />
+                  <Calculator className="w-3 h-3 mr-2" />
                   Premium Calculation
                 </Button>
               </div>
@@ -567,12 +569,12 @@ const RatingConfigurator = () => {
             <Separator />
 
             {/* Default Rating Parameters */}
-            <div className="space-y-4">
-              <h3 className="font-semibold">Default Rating Parameters</h3>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm">Default Rating Parameters</h3>
               <p className="text-xs text-muted-foreground">
                 Click on a parameter to design its rule structure (pricing options and decisions)
               </p>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {defaultRatingParamsList.map((param) => {
                   const isSelected = selectedDefaultParam?.id === param.id;
                   const isConfigured = param.pricingOption !== undefined || (param.decisions && param.decisions.length > 0);
@@ -584,7 +586,7 @@ const RatingConfigurator = () => {
                         setSelectedCalculation(null);
                         setSelectedParameter(null);
                       }}
-                      className={`p-3 border rounded-lg transition-colors cursor-pointer ${
+                      className={`p-2 border rounded-lg transition-colors cursor-pointer ${
                         isSelected
                           ? "bg-primary/10 border-primary"
                           : isConfigured
@@ -592,12 +594,12 @@ const RatingConfigurator = () => {
                           : "bg-background hover:bg-muted/50"
                       }`}
                     >
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-1.5">
                         {isConfigured && (
-                          <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle2 className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm">{param.label}</h4>
+                          <h4 className="font-medium text-xs">{param.label}</h4>
                         </div>
                       </div>
                     </div>
@@ -609,9 +611,9 @@ const RatingConfigurator = () => {
             <Separator />
 
             {/* CEWs Configuration */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold">CEWs Configuration</h3>
+                <h3 className="font-semibold text-sm">CEWs Configuration</h3>
                 <Button
                   variant="outline"
                   size="sm"
@@ -648,7 +650,7 @@ const RatingConfigurator = () => {
               <p className="text-xs text-muted-foreground">
                 Create and configure CEWs (Clauses, Exclusions, Warranties)
               </p>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {cewsList.map((cew) => {
                   const isSelected = selectedCEW?.id === cew.id;
                   const hasFormDesign = cew.formPages && cew.formPages.length > 0;
@@ -662,7 +664,7 @@ const RatingConfigurator = () => {
                         setSelectedParameter(null);
                         setSelectedDefaultParam(null);
                       }}
-                      className={`p-3 border rounded-lg transition-colors cursor-pointer ${
+                      className={`p-2 border rounded-lg transition-colors cursor-pointer ${
                         isSelected
                           ? "bg-primary/10 border-primary"
                           : (hasFormDesign && isConfigured)
@@ -670,17 +672,17 @@ const RatingConfigurator = () => {
                           : "bg-background hover:bg-muted/50"
                       }`}
                     >
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-1.5">
                         {(hasFormDesign && isConfigured) && (
-                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle2 className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm">{cew.title || "Untitled CEW"}</h4>
+                          <h4 className="font-medium text-xs">{cew.title || "Untitled CEW"}</h4>
                           {cew.code && (
-                            <p className="text-xs text-muted-foreground mt-1">Code: {cew.code}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Code: {cew.code}</p>
                           )}
                           {!hasFormDesign && (
-                            <p className="text-xs text-muted-foreground mt-1 italic">Form design pending</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 italic">Form design pending</p>
                           )}
                         </div>
                       </div>
@@ -693,12 +695,12 @@ const RatingConfigurator = () => {
             <Separator />
 
             {/* Proposal Rating Parameters */}
-            <div className="space-y-4">
-              <h3 className="font-semibold">Proposal Rating Parameters</h3>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm">Proposal Rating Parameters</h3>
               <p className="text-xs text-muted-foreground">
                 Fields from proposal form marked as rating parameters
               </p>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {ratingParameters.map((param) => {
                   const isConfigured = isParameterConfigured(param.id) || param.pricingOption !== undefined || (param.pricingTypes && param.pricingTypes.length > 0) || (param.decisions && param.decisions.length > 0);
                   const isSelected = selectedParameter?.id === param.id;
@@ -710,7 +712,7 @@ const RatingConfigurator = () => {
                         setSelectedCalculation(null);
                         setSelectedDefaultParam(null);
                       }}
-                      className={`p-3 border rounded-lg transition-colors cursor-pointer ${
+                      className={`p-2 border rounded-lg transition-colors cursor-pointer ${
                         isSelected
                           ? "bg-primary/10 border-primary"
                           : isConfigured
@@ -718,18 +720,18 @@ const RatingConfigurator = () => {
                           : "bg-background hover:bg-muted/50"
                       }`}
                     >
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-1.5">
                         {isConfigured && (
-                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle2 className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm">{param.label}</h4>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
+                          <h4 className="font-medium text-xs">{param.label}</h4>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Badge variant="outline" className="text-xs px-1 py-0">
                               {param.type}
                             </Badge>
                             {param.isMasterData && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-xs px-1 py-0">
                                 Master Data
                               </Badge>
                             )}
@@ -832,8 +834,8 @@ const RatingConfigurator = () => {
                       Select one or more pricing types (multiple selections allowed)
                     </p>
                     <div className="space-y-2">
-                      {["Percentage", "Fixed Amount", "Percentage of Sum Insured"].map((pricingType) => {
-                        const pricingTypeKey = pricingType as "Percentage" | "Fixed Amount" | "Percentage of Sum Insured";
+                      {["Percentage", "Fixed Amount", "Per Mille"].map((pricingType) => {
+                        const pricingTypeKey = pricingType as "Percentage" | "Fixed Amount" | "Per Mille";
                         const isSelected = selectedParameter.pricingTypes?.includes(pricingTypeKey) || false;
                         return (
                           <div
@@ -1338,8 +1340,8 @@ const RatingConfigurator = () => {
                       Select one or more pricing types (multiple selections allowed)
                     </p>
                     <div className="space-y-2">
-                      {["Percentage", "Fixed Amount", "Percentage of Sum Insured"].map((pricingType) => {
-                        const pricingTypeKey = pricingType as "Percentage" | "Fixed Amount" | "Percentage of Sum Insured";
+                      {["Percentage", "Fixed Amount", "Per Mille"].map((pricingType) => {
+                        const pricingTypeKey = pricingType as "Percentage" | "Fixed Amount" | "Per Mille";
                         const isSelected = selectedCEW.pricingTypes?.includes(pricingTypeKey) || false;
                         const isDisabled = !selectedCEW.formPages || selectedCEW.formPages.length === 0;
                         return (
@@ -1608,8 +1610,8 @@ const RatingConfigurator = () => {
                       Select one or more pricing types (multiple selections allowed)
                     </p>
                     <div className="space-y-2">
-                      {["Percentage", "Fixed Amount", "Percentage of Sum Insured"].map((pricingType) => {
-                        const pricingTypeKey = pricingType as "Percentage" | "Fixed Amount" | "Percentage of Sum Insured";
+                      {["Percentage", "Fixed Amount", "Per Mille"].map((pricingType) => {
+                        const pricingTypeKey = pricingType as "Percentage" | "Fixed Amount" | "Per Mille";
                         const isSelected = selectedDefaultParam.pricingTypes?.includes(pricingTypeKey) || false;
                         return (
                           <div
@@ -1762,7 +1764,7 @@ const RatingConfigurator = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>
-                        {selectedCalculation === "sumInsured" ? "Sum Insured Calculation" : "Premium Calculation"}
+                        {selectedCalculation === "sumInsured" ? "Total Sum Insured Calculation" : "Premium Calculation"}
                       </CardTitle>
                       <CardDescription>
                         Build formula for {selectedCalculation === "sumInsured" ? "sum insured" : "premium"} calculation
@@ -1788,7 +1790,7 @@ const RatingConfigurator = () => {
                           }
                           toast({
                             title: "Formula Saved",
-                            description: `${selectedCalculation === "sumInsured" ? "Sum Insured" : "Premium"} calculation formula has been saved successfully.`,
+                            description: `${selectedCalculation === "sumInsured" ? "Total Sum Insured" : "Premium"} calculation formula has been saved successfully.`,
                           });
                         }}
                       >
@@ -1834,7 +1836,7 @@ const RatingConfigurator = () => {
                   <div className="space-y-3">
                     <Label className="text-base font-semibold">Available Parameters</Label>
                     <div className="flex flex-wrap gap-2 p-4 border rounded-lg bg-background">
-                      {ratingParameters.map((param) => (
+                      {ratingParameters.filter((param) => param.name !== "baseRate" && param.name !== "factors").map((param) => (
                         <Badge
                           key={param.id}
                           variant="outline"
@@ -2698,7 +2700,7 @@ const RatingConfigurator = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Formula Builder - {selectedCalculation === "sumInsured" ? "Sum Insured Calculation" : selectedCalculation === "premium" ? "Premium Calculation" : "Formula Builder"}
+              Formula Builder - {selectedCalculation === "sumInsured" ? "Total Sum Insured Calculation" : selectedCalculation === "premium" ? "Premium Calculation" : "Formula Builder"}
             </DialogTitle>
             <DialogDescription>
               Build custom formulas for {selectedCalculation === "sumInsured" ? "sum insured" : selectedCalculation === "premium" ? "premium" : ""} calculation
@@ -2835,7 +2837,7 @@ const RatingConfigurator = () => {
                 setSumInsuredFormula(formulaSteps);
                 toast({
                   title: "Formula Saved",
-                  description: "Sum Insured calculation formula has been saved successfully.",
+                  description: "Total Sum Insured calculation formula has been saved successfully.",
                 });
               } else if (selectedCalculation === "premium") {
                 setPremiumFormula(formulaSteps);
@@ -3066,7 +3068,7 @@ const RatingConfigurator = () => {
           <DialogHeader>
             <DialogTitle>
               {playgroundType === "calculation" 
-                ? `${selectedCalculation === "sumInsured" ? "Sum Insured" : "Premium"} Calculation Playground`
+                ? `${selectedCalculation === "sumInsured" ? "Total Sum Insured" : "Premium"} Calculation Playground`
                 : "Rating Configuration Playground"}
             </DialogTitle>
             <DialogDescription>
@@ -3205,7 +3207,7 @@ const RatingConfigurator = () => {
                         })} AED
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {selectedCalculation === "sumInsured" ? "Sum Insured" : "Premium"} based on your formula and test values
+                        {selectedCalculation === "sumInsured" ? "Total Sum Insured" : "Premium"} based on your formula and test values
                       </p>
                     </div>
                   </div>

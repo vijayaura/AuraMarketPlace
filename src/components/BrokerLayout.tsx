@@ -222,7 +222,7 @@ function BrokerSidebar() {
             ) : (
               <>
                 <h2 className="text-lg font-bold text-white">{company?.name || 'Broker Portal'}</h2>
-                <p className="text-sm text-white/80">AURA P & C 360 Platform</p>
+                <p className="text-sm text-white/80">AURA P&C 360 Platform</p>
               </>
             )}
           </div>
@@ -437,6 +437,7 @@ export function BrokerLayout() {
                 <h1 className="text-xl font-bold text-foreground">Broker Portal</h1>
                 <p className="text-sm text-muted-foreground">Insurance broker management platform</p>
               </div>
+              <img src="/orient-logo.jpg" alt="Orient Insurance" className="h-10 w-auto mr-4" />
               <Dialog open={licenseDialogOpen} onOpenChange={setLicenseDialogOpen}>
                 <DialogTrigger asChild>
                   <div className="cursor-pointer">

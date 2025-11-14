@@ -1,6 +1,7 @@
 import { apiGet, apiPost } from './client';
 
 export type Role = 'insurer' | 'reinsurer' | 'broker';
+export type SubRole = string; // e.g., "Broker Admin", "Broker User", "Insurer Admin", etc.
 
 export interface Feature {
   id: string;
@@ -8,9 +9,14 @@ export interface Feature {
   name: string;
 }
 
+export interface Permission {
+  read: boolean;
+  write: boolean;
+}
+
 export interface AuthorityMatrix {
   productId: string;
-  matrix: Record<string, Record<Role, boolean>>;
+  matrix: Record<string, Record<Role, Record<SubRole, Permission>>>;
 }
 
 export interface AuthorityMatrixCheckRequest {
@@ -29,7 +35,7 @@ export async function getAuthorityMatrix(productId: string): Promise<AuthorityMa
 }
 
 // Save authority matrix for a product
-export async function saveAuthorityMatrix(productId: string, matrix: Record<string, Record<Role, boolean>>): Promise<AuthorityMatrix> {
+export async function saveAuthorityMatrix(productId: string, matrix: Record<string, Record<Role, Record<SubRole, Permission>>>): Promise<AuthorityMatrix> {
   return apiPost<AuthorityMatrix>(`/admin/products/${productId}/authority-matrix`, { matrix });
 }
 

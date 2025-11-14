@@ -30,8 +30,8 @@ export interface FieldMapping {
 }
 
 export interface SuccessAction {
-  forwardToQuote?: boolean; // Forward response data to create quote API
-  showInQuotesList?: boolean; // Show response as products in quotes list
+  forwardToPage?: string; // Forward response data to selected page (e.g., quotes page)
+  showInPage?: string; // Show response data in selected page (e.g., quotes list page)
   navigateToPage?: string; // Navigate to specific page ID on success
   customAction?: {
     apiUrl?: string; // Custom API to call on success

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Save, Plus, Trash2, Image, FileText, Table, Type, GripVertical, X, Edit } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Image, FileText, Table, Type, GripVertical, X, Edit, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -119,7 +119,7 @@ const DocumentConfigurator = () => {
   ]);
 
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
-  const [selectedSection, setSelectedSection] = useState<"header" | "body" | "footer">("body");
+  const [selectedSection, setSelectedSection] = useState<"preview" | "header" | "body" | "footer">("preview");
   const [draggedElement, setDraggedElement] = useState<{ type: "parameter" | "element", id: string } | null>(null);
   const [isAddTemplateDialogOpen, setIsAddTemplateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState("");
@@ -169,6 +169,8 @@ const DocumentConfigurator = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (!draggedElement || !selectedTemplate) return;
+    if (selectedSection === "preview") return;
+    if (selectedSection !== "header" && selectedSection !== "body" && selectedSection !== "footer") return;
 
     const section = selectedTemplate[selectedSection];
     const rect = e.currentTarget.getBoundingClientRect();
@@ -215,6 +217,14 @@ const DocumentConfigurator = () => {
       });
       return;
     }
+    if (selectedSection === "preview") {
+      toast({
+        title: "Cannot Add Element",
+        description: "Please select Header, Body, or Footer section to add elements.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const newElement: DocumentElement = {
       id: `element-${Date.now()}`,
@@ -227,18 +237,20 @@ const DocumentConfigurator = () => {
       },
     };
 
-    const section = selectedTemplate[selectedSection];
-    const updatedTemplate = {
-      ...selectedTemplate,
-      [selectedSection]: [...section, newElement],
-    };
+    if (selectedSection === "header" || selectedSection === "body" || selectedSection === "footer") {
+      const section = selectedTemplate[selectedSection];
+      const updatedTemplate = {
+        ...selectedTemplate,
+        [selectedSection]: [...section, newElement],
+      };
 
-    setSelectedTemplate(updatedTemplate);
-    setTemplates(templates.map(t => t.id === updatedTemplate.id ? updatedTemplate : t));
-    toast({
-      title: "Element Added",
-      description: `${type.charAt(0).toUpperCase() + type.slice(1)} element has been added.`,
-    });
+      setSelectedTemplate(updatedTemplate);
+      setTemplates(templates.map(t => t.id === updatedTemplate.id ? updatedTemplate : t));
+      toast({
+        title: "Element Added",
+        description: `${type.charAt(0).toUpperCase() + type.slice(1)} element has been added.`,
+      });
+    }
   };
 
   const handleEditElement = (element: DocumentElement) => {
@@ -248,6 +260,8 @@ const DocumentConfigurator = () => {
 
   const handleSaveElement = () => {
     if (!editingElement || !selectedTemplate) return;
+    if (selectedSection === "preview") return;
+    if (selectedSection !== "header" && selectedSection !== "body" && selectedSection !== "footer") return;
 
     const section = selectedTemplate[selectedSection];
     const updatedSection = section.map(el => el.id === editingElement.id ? editingElement : el);
@@ -265,6 +279,8 @@ const DocumentConfigurator = () => {
 
   const handleDeleteElement = (elementId: string) => {
     if (!selectedTemplate) return;
+    if (selectedSection === "preview") return;
+    if (selectedSection !== "header" && selectedSection !== "body" && selectedSection !== "footer") return;
 
     const section = selectedTemplate[selectedSection];
     const updatedSection = section.filter(el => el.id !== elementId);
@@ -321,37 +337,38 @@ const DocumentConfigurator = () => {
 
       <div className="flex-1 overflow-hidden flex">
         {/* Left Sidebar - Templates List */}
-        <div className="w-80 border-r bg-muted/20 p-4 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Document Templates</h2>
+        <div className="w-80 border-r bg-muted/20 p-2 overflow-y-auto">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold">Document Templates</h2>
             <Button
               size="sm"
+              className="h-7 w-7 p-0"
               onClick={() => setIsAddTemplateDialogOpen(true)}
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3 h-3" />
             </Button>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {templates.map((template) => (
-              <Card
+              <div
                 key={template.id}
-                className={`cursor-pointer transition-colors ${
-                  selectedTemplate?.id === template.id ? "border-primary bg-primary/5" : ""
+                className={`p-2 border rounded cursor-pointer transition-colors ${
+                  selectedTemplate?.id === template.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"
                 }`}
                 onClick={() => setSelectedTemplate(template)}
               >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">{template.name}</CardTitle>
-                  {template.description && (
-                    <CardDescription className="text-xs">{template.description}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="text-xs text-muted-foreground">
-                    Updated: {new Date(template.updatedAt).toLocaleDateString()}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xs font-medium truncate">{template.name}</h3>
+                    {template.description && (
+                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">{template.description}</p>
+                    )}
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      {new Date(template.updatedAt).toLocaleDateString()}
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -360,8 +377,16 @@ const DocumentConfigurator = () => {
         {selectedTemplate ? (
           <div className="flex-1 flex flex-col">
             {/* Section Tabs */}
-            <div className="border-b px-6 py-2">
+            <div className="border-b px-6 py-2 flex items-center justify-between">
               <div className="flex gap-2">
+                <Button
+                  variant={selectedSection === "preview" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setSelectedSection("preview")}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Preview
+                </Button>
                 <Button
                   variant={selectedSection === "header" ? "default" : "ghost"}
                   size="sm"
@@ -384,70 +409,302 @@ const DocumentConfigurator = () => {
                   Footer
                 </Button>
               </div>
+              <Button variant="outline" size="sm">
+                <FileText className="w-4 h-4 mr-2" />
+                Upload your template
+              </Button>
             </div>
 
-            <div className="flex-1 flex overflow-hidden">
-              {/* Middle - Rating Parameters & Elements */}
-              <div className="w-80 border-r bg-muted/20 p-4 overflow-y-auto">
-                <h3 className="text-sm font-semibold mb-3">Rating Parameters</h3>
-                <div className="space-y-2 mb-6">
-                  {ratingParameters.map((param) => (
-                    <Badge
-                      key={param.id}
-                      variant="outline"
-                      className="w-full justify-start p-2 cursor-move hover:bg-primary/10"
-                      draggable
-                      onDragStart={() => handleDragStart("parameter", param.id)}
-                    >
-                      <GripVertical className="w-4 h-4 mr-2" />
-                      {param.label}
-                    </Badge>
-                  ))}
-                </div>
+            {selectedSection === "preview" && (
+              <div className="flex-1 p-6 overflow-auto bg-muted/20">
+                <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+                  {/* Full Quote Document Preview */}
+                  <div className="p-10 space-y-8">
+                    {/* Header Section */}
+                    <div className="border-b-2 border-primary/20 pb-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <img src="/orient-logo.jpg" alt="Orient Insurance" className="h-16 w-auto mb-2" />
+                          <p className="text-xs text-muted-foreground">Orient Insurance Company</p>
+                        </div>
+                        <div className="text-right">
+                          <h1 className="text-2xl font-bold text-primary mb-2">QUOTE DOCUMENT</h1>
+                          <div className="text-sm space-y-1">
+                            <p><strong>Quote Number:</strong> {"{{quoteNumber}}"}</p>
+                            <p><strong>Date:</strong> {"{{quoteDate}}"}</p>
+                            <p><strong>Valid Until:</strong> {"{{validUntilDate}}"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                <Separator className="my-4" />
+                    {/* Client Information Section */}
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-bold text-primary border-b pb-2">Client Information</h2>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p><strong>Client Name:</strong> {"{{clientName}}"}</p>
+                          <p><strong>Contact Person:</strong> {"{{contactPerson}}"}</p>
+                          <p><strong>Email:</strong> {"{{clientEmail}}"}</p>
+                          <p><strong>Phone:</strong> {"{{clientPhone}}"}</p>
+                        </div>
+                        <div>
+                          <p><strong>Address:</strong> {"{{clientAddress}}"}</p>
+                          <p><strong>City:</strong> {"{{clientCity}}"}</p>
+                          <p><strong>Country:</strong> {"{{clientCountry}}"}</p>
+                        </div>
+                      </div>
+                    </div>
 
-                <h3 className="text-sm font-semibold mb-3">Add Elements</h3>
-                <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => handleAddElement("logo")}
-                  >
-                    <Image className="w-4 h-4 mr-2" />
-                    Logo
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => handleAddElement("text")}
-                  >
-                    <Type className="w-4 h-4 mr-2" />
-                    Text Box
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => handleAddElement("table")}
-                  >
-                    <Table className="w-4 h-4 mr-2" />
-                    Table
-                  </Button>
+                    {/* Project Details Section */}
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-bold text-primary border-b pb-2">Project Details</h2>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p><strong>Project Type:</strong> {"{{projectType}}"}</p>
+                          <p><strong>Construction Type:</strong> {"{{constructionType}}"}</p>
+                          <p><strong>Project Value:</strong> {"{{projectValue}}"}</p>
+                          <p><strong>Sum Insured:</strong> {"{{sumInsured}}"}</p>
+                        </div>
+                        <div>
+                          <p><strong>Contract Works:</strong> {"{{contractWorks}}"}</p>
+                          <p><strong>Plant & Equipment:</strong> {"{{plantEquipment}}"}</p>
+                          <p><strong>Project Duration:</strong> {"{{projectDuration}}"}</p>
+                          <p><strong>Location:</strong> {"{{projectLocation}}"}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Coverage Summary */}
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-bold text-primary border-b pb-2">Coverage Summary</h2>
+                      <div className="bg-muted/30 p-4 rounded-lg">
+                        <p className="text-sm leading-relaxed">
+                          {"{{coverageDescription}}"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Premium Breakdown */}
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-bold text-primary border-b pb-2">Premium Breakdown</h2>
+                      <div className="border rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-primary/10">
+                            <tr>
+                              <th className="text-left p-3 font-semibold">Description</th>
+                              <th className="text-right p-3 font-semibold">Amount (AED)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-b">
+                              <td className="p-3">Base Premium</td>
+                              <td className="p-3 text-right">{"{{basePremium}}"}</td>
+                            </tr>
+                            <tr className="border-b">
+                              <td className="p-3">Loading</td>
+                              <td className="p-3 text-right">{"{{loading}}"}</td>
+                            </tr>
+                            <tr className="border-b">
+                              <td className="p-3">Discount</td>
+                              <td className="p-3 text-right text-green-600">-{"{{discount}}"}</td>
+                            </tr>
+                            <tr className="border-b">
+                              <td className="p-3">VAT ({"{{vatPercentage}}"})</td>
+                              <td className="p-3 text-right">{"{{vat}}"}</td>
+                            </tr>
+                            <tr className="bg-primary/5 font-bold">
+                              <td className="p-3">Total Premium</td>
+                              <td className="p-3 text-right text-primary text-lg">{"{{totalPremium}}"}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Terms and Conditions */}
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-bold text-primary border-b pb-2">Terms and Conditions</h2>
+                      <div className="space-y-2 text-sm">
+                        <p className="leading-relaxed">
+                          {"{{termsAndConditions}}"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Additional Notes */}
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-bold text-primary border-b pb-2">Additional Notes</h2>
+                      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                        <p className="text-sm leading-relaxed">
+                          {"{{additionalNotes}}"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Footer Section */}
+                    <div className="border-t-2 border-primary/20 pt-6 mt-8">
+                      <div className="grid grid-cols-3 gap-6 text-xs text-muted-foreground">
+                        <div>
+                          <p className="font-semibold text-foreground mb-2">Orient Insurance Company</p>
+                          <p>{"{{companyAddress}}"}</p>
+                          <p>P.O. Box 20767, Dubai, UAE</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground mb-2">Contact Information</p>
+                          <p>Tel: {"{{companyPhone}}"}</p>
+                          <p>Email: {"{{companyEmail}}"}</p>
+                          <p>Website: {"{{companyWebsite}}"}</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground mb-2">Important Notice</p>
+                          <p className="leading-relaxed">
+                            {"{{footerNotice}}"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-6 pt-4 border-t text-center text-xs text-muted-foreground">
+                        <p>This is a computer-generated quote document. Terms and conditions apply.</p>
+                        <p className="mt-1">Generated on {"{{generatedDate}}"} | Page 1 of 1</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {/* Right - Document Canvas */}
-              <div className="flex-1 p-6 overflow-auto">
-                <div
-                  className="relative border-2 border-dashed border-muted-foreground/20 rounded-lg min-h-[600px] bg-white"
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  style={{ position: "relative" }}
-                >
-                  <div className="absolute top-2 left-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                    {selectedSection.charAt(0).toUpperCase() + selectedSection.slice(1)} Section
+            )}
+            {selectedSection !== "preview" && (
+              <div className="flex-1 flex overflow-hidden">
+                {/* Middle - Rating Parameters & Elements */}
+                <div className="w-80 border-r bg-muted/20 p-4 overflow-y-auto">
+                  <h3 className="text-sm font-semibold mb-3">Rating Parameters</h3>
+                  <div className="space-y-2 mb-6">
+                    {ratingParameters.map((param) => (
+                      <Badge
+                        key={param.id}
+                        variant="outline"
+                        className="w-full justify-start p-2 cursor-move hover:bg-primary/10"
+                        draggable
+                        onDragStart={() => handleDragStart("parameter", param.id)}
+                      >
+                        <GripVertical className="w-4 h-4 mr-2" />
+                        {param.label}
+                      </Badge>
+                    ))}
                   </div>
-                  {selectedTemplate[selectedSection].map((element) => {
+
+                  <Separator className="my-4" />
+
+                  <h3 className="text-sm font-semibold mb-3">Add Elements</h3>
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => handleAddElement("logo")}
+                    >
+                      <Image className="w-4 h-4 mr-2" />
+                      Logo
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => handleAddElement("text")}
+                    >
+                      <Type className="w-4 h-4 mr-2" />
+                      Text Box
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => handleAddElement("table")}
+                    >
+                      <Table className="w-4 h-4 mr-2" />
+                      Table
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Right - Document Canvas */}
+                <div className="flex-1 p-6 overflow-auto">
+                  {selectedTemplate.name === "Quote Document" ? (
+                  <div className="relative border rounded-lg min-h-[600px] bg-white shadow-sm">
+                    {/* Document Preview with Test Data */}
+                    <div className="p-8 space-y-6">
+                      {/* Header Section */}
+                      <div className="border-b pb-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <img src="/orient-logo.jpg" alt="Orient Insurance" className="h-12 w-auto" />
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold">QUOTE DOCUMENT</p>
+                            <p className="text-xs text-muted-foreground">Quote #: Q-2024-001234</p>
+                            <p className="text-xs text-muted-foreground">Date: {new Date().toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground font-semibold mb-2">Header</div>
+                      </div>
+
+                      {/* Body Section */}
+                      <div className="space-y-4">
+                        <div className="text-xs text-muted-foreground font-semibold mb-2">Body</div>
+                        <div className="space-y-3">
+                          <div>
+                            <h2 className="text-lg font-bold mb-4">Insurance Quote</h2>
+                            <div className="space-y-2 text-sm">
+                              <p><strong>Project Type:</strong> Commercial</p>
+                              <p><strong>Construction Type:</strong> New Construction</p>
+                              <p><strong>Project Value:</strong> AED 5,000,000</p>
+                              <p><strong>Sum Insured:</strong> AED 4,500,000</p>
+                              <p><strong>Project Duration:</strong> 24 months</p>
+                            </div>
+                          </div>
+                          <div className="border-t pt-4">
+                            <h3 className="font-semibold mb-2">Premium Breakdown</h3>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span>Base Premium:</span>
+                                <span>AED 125,000</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Loading:</span>
+                                <span>AED 12,500</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Discount:</span>
+                                <span>-AED 5,000</span>
+                              </div>
+                              <div className="flex justify-between font-semibold border-t pt-2">
+                                <span>Total Premium:</span>
+                                <span>AED 132,500</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer Section */}
+                      <div className="border-t pt-4 mt-6">
+                        <div className="text-xs text-muted-foreground font-semibold mb-2">Footer</div>
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p>Orient Insurance Company</p>
+                          <p>P.O. Box 20767, Dubai, UAE</p>
+                          <p>Tel: +971 4 123 4567 | Email: info@orientinsurance.ae</p>
+                          <p className="mt-2">This is a computer-generated quote. Terms and conditions apply.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="relative border-2 border-dashed border-muted-foreground/20 rounded-lg min-h-[600px] bg-white"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    style={{ position: "relative" }}
+                  >
+                    <div className="absolute top-2 left-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                      {selectedSection.charAt(0).toUpperCase() + selectedSection.slice(1)} Section
+                    </div>
+                  {(selectedSection === "header" || selectedSection === "body" || selectedSection === "footer") && selectedTemplate[selectedSection].map((element) => {
                     const param = element.type === "field" && element.fieldId
                       ? ratingParameters.find(p => p.id === element.fieldId)
                       : null;
@@ -511,8 +768,10 @@ const DocumentConfigurator = () => {
                     );
                   })}
                 </div>
+                )}
               </div>
-            </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">

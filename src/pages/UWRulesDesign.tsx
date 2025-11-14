@@ -293,11 +293,12 @@ const UWRulesDesign = () => {
 
       <div className="flex-1 overflow-hidden flex">
         {/* Left Sidebar - Rules List */}
-        <div className="w-80 border-r bg-muted/20 p-4 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">UW Rules</h2>
+        <div className="w-80 border-r bg-muted/20 p-2 overflow-y-auto">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold">UW Rules</h2>
             <Button
               size="sm"
+              className="h-7 w-7 p-0"
               onClick={() => {
                 setSelectedRule(null);
                 setNewRuleName("");
@@ -313,50 +314,49 @@ const UWRulesDesign = () => {
                 setIsAddRuleDialogOpen(true);
               }}
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3 h-3" />
             </Button>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {rules.map((rule) => (
-              <Card
+              <div
                 key={rule.id}
-                className={`cursor-pointer transition-colors ${
-                  selectedRule?.id === rule.id ? "border-primary bg-primary/5" : ""
+                className={`p-2 border rounded cursor-pointer transition-colors ${
+                  selectedRule?.id === rule.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"
                 }`}
                 onClick={() => setSelectedRule(rule)}
               >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">{rule.name}</CardTitle>
-                    <Badge variant={rule.isActive ? "default" : "secondary"}>
-                      {rule.isActive ? "Active" : "Inactive"}
-                    </Badge>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <h3 className="text-xs font-medium truncate">{rule.name}</h3>
+                      <Badge variant={rule.isActive ? "default" : "secondary"} className="text-[10px] px-1 py-0 h-4">
+                        {rule.isActive ? "A" : "I"}
+                      </Badge>
+                    </div>
+                    {rule.description && (
+                      <p className="text-[10px] text-muted-foreground truncate mb-1">{rule.description}</p>
+                    )}
+                    <div className="text-[10px] text-muted-foreground">
+                      {rule.conditions.length} cond • P:{rule.priority}
+                    </div>
                   </div>
-                  {rule.description && (
-                    <CardDescription className="text-xs">{rule.description}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="text-xs text-muted-foreground mb-2">
-                    {rule.conditions.length} condition(s) • Priority: {rule.priority}
-                  </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 flex-shrink-0">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 text-xs"
+                      className="h-5 w-5 p-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleStartEditing(rule);
                       }}
                     >
-                      <Edit className="w-3 h-3 mr-1" />
-                      Edit
+                      <Edit className="w-3 h-3" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 text-xs text-destructive"
+                      className="h-5 w-5 p-0 text-destructive hover:text-destructive"
                       onClick={(e) => {
                         e.stopPropagation();
                         setRules(rules.filter(r => r.id !== rule.id));
@@ -369,12 +369,11 @@ const UWRulesDesign = () => {
                         });
                       }}
                     >
-                      <Trash2 className="w-3 h-3 mr-1" />
-                      Delete
+                      <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -422,40 +421,75 @@ const UWRulesDesign = () => {
                   </CardContent>
                 </Card>
 
-                {/* True Actions */}
+                {/* Actions */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                      True Actions (When conditions match)
-                    </CardTitle>
+                    <CardTitle>Actions</CardTitle>
+                    <CardDescription>
+                      Actions to execute based on whether conditions match or not
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedRule.trueActions.map((action) => (
-                        <Badge key={action} variant="default" className="bg-green-600">
-                          {action}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* True Actions */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <Label className="text-sm font-semibold">When Conditions Match</Label>
+                        </div>
+                        <div className="space-y-2 pl-4">
+                          {quoteOptions.map((option) => {
+                            const isSelected = selectedRule.trueActions.includes(option);
+                            return (
+                              <div
+                                key={option}
+                                className={`flex items-center gap-2 p-2 rounded border transition-colors ${
+                                  isSelected
+                                    ? "bg-green-50 border-green-200 text-green-900"
+                                    : "bg-muted/30 border-muted text-muted-foreground"
+                                }`}
+                              >
+                                {isSelected ? (
+                                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
+                                )}
+                                <span className="text-sm font-medium">{option}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
 
-                {/* False Actions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <XCircle className="w-5 h-5 text-red-600" />
-                      False Actions (When conditions don't match)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedRule.falseActions.map((action) => (
-                        <Badge key={action} variant="destructive">
-                          {action}
-                        </Badge>
-                      ))}
+                      {/* False Actions */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                          <Label className="text-sm font-semibold">When Conditions Don't Match</Label>
+                        </div>
+                        <div className="space-y-2 pl-4">
+                          {quoteOptions.map((option) => {
+                            const isSelected = selectedRule.falseActions.includes(option);
+                            return (
+                              <div
+                                key={option}
+                                className={`flex items-center gap-2 p-2 rounded border transition-colors ${
+                                  isSelected
+                                    ? "bg-red-50 border-red-200 text-red-900"
+                                    : "bg-muted/30 border-muted text-muted-foreground"
+                                }`}
+                              >
+                                {isSelected ? (
+                                  <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
+                                )}
+                                <span className="text-sm font-medium">{option}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

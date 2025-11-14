@@ -140,8 +140,8 @@ const IntegrationsConfigurator = () => {
         successValue: 'success',
         dataField: 'data',
         onSuccess: {
-          forwardToQuote: true,
-          showInQuotesList: true,
+          forwardToPage: 'page2', // Example: forward to quotes page
+          showInPage: 'page2', // Example: show in quotes list page
         },
         onFailure: {
           showError: true,
@@ -532,17 +532,17 @@ const IntegrationsConfigurator = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-hidden flex">
+    <div className="flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Integrations List */}
-        <div className="w-64 border-r bg-muted/30 flex flex-col overflow-hidden">
+        <div className="w-64 border-r bg-muted/30 flex flex-col min-w-0">
           <div className="p-4 border-b flex-shrink-0">
             <h2 className="text-lg font-semibold mb-2">Integrations</h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               {productName}{productVersion ? ` v${productVersion}` : ''}
             </p>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
             {isLoading ? (
               <div className="text-center py-8 text-sm text-muted-foreground">
                 Loading...
@@ -584,8 +584,8 @@ const IntegrationsConfigurator = () => {
         </div>
 
         {/* Main Content - Integration Form */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex-1 overflow-y-auto px-0 py-6 min-w-0">
+          <div className="w-full px-6 space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -675,11 +675,11 @@ const IntegrationsConfigurator = () => {
                         <div>
                           <p className="text-xs font-semibold text-green-600 mb-1">On Success:</p>
                           <div className="space-y-1 text-sm text-muted-foreground ml-2">
-                            {selectedIntegration.responseMapping.onSuccess.forwardToQuote && (
-                              <div>• Forward to Create Quote API</div>
+                            {selectedIntegration.responseMapping.onSuccess.forwardToPage && (
+                              <div>• Forward to: {proposalFormPages.find(p => p.id === selectedIntegration.responseMapping?.onSuccess?.forwardToPage)?.title || selectedIntegration.responseMapping.onSuccess.forwardToPage}</div>
                             )}
-                            {selectedIntegration.responseMapping.onSuccess.showInQuotesList && (
-                              <div>• Show in Quotes List</div>
+                            {selectedIntegration.responseMapping.onSuccess.showInPage && (
+                              <div>• Show in: {proposalFormPages.find(p => p.id === selectedIntegration.responseMapping?.onSuccess?.showInPage)?.title || selectedIntegration.responseMapping.onSuccess.showInPage}</div>
                             )}
                             {selectedIntegration.responseMapping.onSuccess.navigateToPage && (
                               <div>• Navigate to: {proposalFormPages.find(p => p.id === selectedIntegration.responseMapping?.onSuccess?.navigateToPage)?.title || selectedIntegration.responseMapping.onSuccess.navigateToPage}</div>
@@ -1173,51 +1173,71 @@ const IntegrationsConfigurator = () => {
               <div className="space-y-4">
                 <h4 className="font-semibold text-green-600">If Success</h4>
                 <div className="space-y-4 pl-4 border-l-2 border-green-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Forward to Create Quote</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Forward response data to create quote API call
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.responseMapping?.onSuccess?.forwardToQuote || false}
-                      onCheckedChange={(checked) =>
+                  <div className="space-y-2">
+                    <Label>Forward to Page</Label>
+                    <Select
+                      value={formData.responseMapping?.onSuccess?.forwardToPage || ""}
+                      onValueChange={(value) =>
                         setFormData({
                           ...formData,
                           responseMapping: {
                             ...formData.responseMapping,
                             onSuccess: {
                               ...formData.responseMapping?.onSuccess,
-                              forwardToQuote: checked,
+                              forwardToPage: value === "none" ? undefined : value,
                             },
                           },
                         })
                       }
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select page (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {proposalFormPages.map((page) => (
+                          <SelectItem key={page.id} value={page.id}>
+                            {page.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Forward response data to selected page
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Show in Quotes List</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Display response as products in quotes list page
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.responseMapping?.onSuccess?.showInQuotesList || false}
-                      onCheckedChange={(checked) =>
+                  <div className="space-y-2">
+                    <Label>Show in Page</Label>
+                    <Select
+                      value={formData.responseMapping?.onSuccess?.showInPage || ""}
+                      onValueChange={(value) =>
                         setFormData({
                           ...formData,
                           responseMapping: {
                             ...formData.responseMapping,
                             onSuccess: {
                               ...formData.responseMapping?.onSuccess,
-                              showInQuotesList: checked,
+                              showInPage: value === "none" ? undefined : value,
                             },
                           },
                         })
                       }
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select page (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {proposalFormPages.map((page) => (
+                          <SelectItem key={page.id} value={page.id}>
+                            {page.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Display response data in selected page
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label>Navigate to Page</Label>

@@ -154,7 +154,7 @@ function InsurerSidebar() {
             ) : (
               <>
                 <h2 className="text-lg font-bold text-white">{company?.name || 'Insurer Portal'}</h2>
-                <p className="text-sm text-white/80">AURA P & C 360 Platform</p>
+                <p className="text-sm text-white/80">AURA P&C 360 Platform</p>
               </>
             )}
           </div>
@@ -368,6 +368,7 @@ export function InsurerLayout() {
                 <h1 className="text-xl font-bold text-foreground">Insurer Portal</h1>
                 <p className="text-sm text-muted-foreground">Insurance provider management platform</p>
               </div>
+              <img src="/orient-logo.jpg" alt="Orient Insurance" className="h-10 w-auto" />
             </div>
           </header>
           <main className="flex-1 overflow-hidden">
